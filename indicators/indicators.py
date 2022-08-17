@@ -17,10 +17,11 @@ class RSI(Indicators):
         super().__init__()
         self.kind = 'RSI'
         # timeperiod: 14
-        self.params = params[self.type][self.kind]
+        print(params[self.type][self.kind])
+        self.params = params[self.type][self.kind]['params']
 
-    def get_indicator(self, close):
-        rsi = ta.RSI(close, **self.params)
+    def get_indicator(self, cc_df, ticker, timeframe):
+        rsi = ta.RSI(cc_df[f'{ticker}_{timeframe}_close'], **self.params)
         return rsi
 
 
@@ -28,12 +29,13 @@ class STOCH(Indicators):
     def __init__(self, params):
         super().__init__()
         self.kind = 'STOCH'
-        # fastk_period: 14, slowk_period: 3, slowd_period:  3
-        self.params = params[self.type][self.kind]
+        # default fastk_period: 14, slowk_period: 3, slowd_period:  3
+        self.params = params[self.type][self.kind]['params']
 
-    def get_indicator(self, high, low, close):
-        lowk, slowd = ta.STOCH(high, low, close, **self.params)
-        return lowk, slowd
+    def get_indicator(self, cc_df, ticker, timeframe):
+        slowk, slowd = ta.STOCH(cc_df[f'{ticker}_{timeframe}_high'], cc_df[f'{ticker}_{timeframe}_low'],
+                               cc_df[f'{ticker}_{timeframe}_close'], **self.params)
+        return slowk, slowd
 
 
 class MACD(Indicators):
@@ -41,9 +43,9 @@ class MACD(Indicators):
         super().__init__()
         self.kind = 'RSI'
         # timeperiod: 14
-        self.params = params[self.type][self.kind]
+        self.params = params[self.type][self.kind]['params']
 
-    def get_indicator(self, close):
-        macd, macdsignal, macdhist = ta.MACD(close, **self.params)
+    def get_indicator(self, cc_df, ticker, timeframe):
+        macd, macdsignal, macdhist = ta.MACD(cc_df[f'{ticker}_{timeframe}_close'], **self.params)
         return macd, macdsignal, macdhist
 

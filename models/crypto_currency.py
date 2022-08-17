@@ -4,6 +4,7 @@ class CryptoCurrency:
     high_values = list()
     low_values = list()
     volume_values = list()
+    time = list()
 
     def __init__(self, symbol, interval, limit):
         self.symbol = symbol

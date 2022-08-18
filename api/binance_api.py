@@ -37,5 +37,3 @@ class Binance(ApiBase):
             crypto_currency.volume_values.append(float(kline[5]))
 
         return crypto_currency
-
-

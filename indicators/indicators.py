@@ -1,51 +1,68 @@
 import talib as ta
-import numpy as np
 from abc import abstractmethod
 
 
-class Indicators:
+class IndicatorFactory(object):
+    """ Return indicator according to 'indicator' variable value """
+    @staticmethod
+    def factory(indicator, params):
+        if indicator == 'RSI':
+            return RSI(params)
+        elif indicator == 'STOCH':
+            return STOCH(params)
+        elif indicator == 'MACD':
+            return MACD(params)
+
+
+class Indicator:
+    """ Abstract indicator class """
     def __init__(self):
         self.type = 'Indicator'
 
+    """ Get indicator data and write it to the dataframe """
     @abstractmethod
     def get_indicator(self, *args, **kwargs):
         pass
 
 
-class RSI(Indicators):
+class RSI(Indicator):
+    """ RSI indicator, default settings: timeperiod: 14"""
     def __init__(self, params):
-        super().__init__()
+        super(RSI, self).__init__()
         self.kind = 'RSI'
-        # timeperiod: 14
-        print(params[self.type][self.kind])
         self.params = params[self.type][self.kind]['params']
 
     def get_indicator(self, cc_df, ticker, timeframe):
         rsi = ta.RSI(cc_df[f'{ticker}_{timeframe}_close'], **self.params)
-        return rsi
+        cc_df[f'{ticker}_{timeframe}_rsi'] = rsi
+        return cc_df
 
 
-class STOCH(Indicators):
+class STOCH(Indicator):
+    """ STOCH indicator, default settings: fastk_period: 14, slowk_period: 3, slowd_period:  3 """
     def __init__(self, params):
-        super().__init__()
+        super(STOCH, self).__init__()
         self.kind = 'STOCH'
-        # default fastk_period: 14, slowk_period: 3, slowd_period:  3
         self.params = params[self.type][self.kind]['params']
 
     def get_indicator(self, cc_df, ticker, timeframe):
         slowk, slowd = ta.STOCH(cc_df[f'{ticker}_{timeframe}_high'], cc_df[f'{ticker}_{timeframe}_low'],
-                               cc_df[f'{ticker}_{timeframe}_close'], **self.params)
-        return slowk, slowd
+                                cc_df[f'{ticker}_{timeframe}_close'], **self.params)
+        cc_df[f'{ticker}_{timeframe}_stoch_slowk'] = slowk
+        cc_df[f'{ticker}_{timeframe}_stoch_slowd'] = slowd
+        return cc_df
 
 
-class MACD(Indicators):
+class MACD(Indicator):
+    """ MACD indicator, default settings: fastperiod: 12, slowperiod: 26, signalperiod: 9 """
     def __init__(self, params):
-        super().__init__()
-        self.kind = 'RSI'
-        # timeperiod: 14
+        super(MACD, self).__init__()
+        self.kind = 'MACD'
         self.params = params[self.type][self.kind]['params']
 
     def get_indicator(self, cc_df, ticker, timeframe):
         macd, macdsignal, macdhist = ta.MACD(cc_df[f'{ticker}_{timeframe}_close'], **self.params)
-        return macd, macdsignal, macdhist
-
+        cc_df[f'{ticker}_{timeframe}_macd'] = macd
+        cc_df[f'{ticker}_{timeframe}_macdsignal'] = macdsignal
+        cc_df[f'{ticker}_{timeframe}_macdhist'] = macdhist
+        return cc_df

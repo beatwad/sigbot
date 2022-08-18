@@ -1,53 +1,51 @@
-import numpy as np
 import pandas as pd
 from time import sleep
-from views.api import API
+from os import environ
+from data.get_data import DataFactory
 from config.config import ConfigFactory
-from indicators.indicators import RSI, STOCH, MACD
+from indicators.indicators import IndicatorFactory
 
 if __name__ == "__main__":
-    # Connect to API
-    cc_df = pd.DataFrame()
-    tickers = {'BTCUSDT': ['5m']}
-    api = API()
-    api.connect_to_api("7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy",
-                       "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4")
-    configs = ConfigFactory.factory().configs
+    # Set environment variable
+    environ["ENV"] = "development"
+    # Set dataframe dict
+    cc_dfs = dict()
+    # Set list of available exchanges, cryptocurrencies and tickers
+    exchanges = {'Binance': {'BTCUSDT': ['5m']}}
+    # Get configs
+    configs = ConfigFactory.factory(environ).configs
 
     i = 1
-    for ticker in tickers:
-        print(f'Ticker is {ticker}')
-        # Taking Crypto Currency Values
-        timeframes = tickers[ticker]
-        for timeframe in timeframes:
-            crypto_currency = api.get_crypto_currency(ticker, timeframe, 500)
-            # Save candle and volume data id Pandas Dataframe
-            cc_df[f'{ticker}_{timeframe}_time'] = np.asarray(crypto_currency.time)
-            cc_df[f'{ticker}_{timeframe}_open'] = np.asarray(crypto_currency.open_values)
-            cc_df[f'{ticker}_{timeframe}_close'] = np.asarray(crypto_currency.close_values)
-            cc_df[f'{ticker}_{timeframe}_high'] = np.asarray(crypto_currency.high_values)
-            cc_df[f'{ticker}_{timeframe}_low'] = np.asarray(crypto_currency.low_values)
-            cc_df[f'{ticker}_{timeframe}_volume'] = np.asarray(crypto_currency.volume_values)
 
-            # To check some information about the cryptocurrency which we got its values
-            print("Symbol: {}\nInterval: {}\nLimit: {}".format(crypto_currency.symbol,
-                                                               crypto_currency.interval,
-                                                               crypto_currency.limit))
-            # RSI Scores
-            rsi = RSI(configs)
-            stoch = STOCH(configs)
-            macd = MACD(configs)
-            cc_df[f'{ticker}_{timeframe}_rsi'] = rsi.get_indicator(cc_df, ticker, timeframe)
-            cc_df[f'{ticker}_{timeframe}_stoch_slowk'], cc_df[f'{ticker}_{timeframe}_stoch_slowd'] =\
-                stoch.get_indicator(cc_df, ticker, timeframe)
-            cc_df.to_pickle('cc_df.pkl')
-            i += 1
-            # sleep(10)
-            break
-
-
-
-
-
-
-
+    while True:
+        # For every exchange, ticker and timeframe in base get cryptocurrency data and write it to correspond dataframe
+        for exchange in exchanges:
+            exchange_api = DataFactory.factory(exchange)
+            tickers = exchanges[exchange]
+            for ticker in tickers:
+                timeframes = tickers[ticker]
+                for timeframe in timeframes:
+                    print(f'Cycle number is {i}, exchange is {exchange}, ticker is {ticker}, timeframe is {timeframe}')
+                    # If cryptocurrency dataframe is in dataframe dict - get it, else create new
+                    cc_df = cc_dfs.get(f'{ticker}_{timeframe}', pd.DataFrame())
+                    # If dataframe is empty - get all available data to fill it,
+                    # else - just get necessary for update data
+                    if cc_df.shape == (0, 0):
+                        interval = configs['Intervals']['creation_interval']
+                    else:
+                        interval = configs['Intervals']['update_interval']
+                    # Write data to the dataframe
+                    cc_df = exchange_api.get_data(cc_df, ticker, timeframe, interval)
+                    # Create indicator list
+                    indicator_list = configs['Indicator_list']
+                    indicators = list()
+                    for indicator in indicator_list:
+                        indicators.append(IndicatorFactory.factory(indicator, configs))
+                    # Write indicators to dataframe
+                    cc_df = exchange_api.add_indicator_data(cc_df, indicators, ticker, timeframe)
+                    # Save dataframe to the disk
+                    cc_df.to_pickle('cc_df.pkl')
+                    # Update dataframe dict
+                    cc_dfs[f'{ticker}_{timeframe}'] = cc_df
+                    i += 1
+                    sleep(600)

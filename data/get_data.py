@@ -14,8 +14,7 @@ class DataFactory(object):
 
 
 class GetData:
-    def __init__(self):
-        self.type = 'Data'
+    type = 'Data'
 
     @abstractmethod
     def get_data(self, cc_df, ticker, timeframe, interval):
@@ -54,11 +53,9 @@ class GetData:
 
 
 class GetBinanceData(GetData):
-    def __init__(self):
-        super(GetBinanceData, self).__init__()
-        self.api = Binance()
-        self.key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
-        self.secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
+    api = Binance()
+    key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
+    secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
 
     def get_data(self, cc_df, ticker, timeframe, interval):
         self.api.connect_to_api(self.key, self.secret)
@@ -67,10 +64,7 @@ class GetBinanceData(GetData):
         return cc_df
 
 
-class GetOKEXData:
-    def __init__(self):
-        self.type = 'Data'
-
+class GetOKEXData(GetData):
     @abstractmethod
     def get_data(self, *args, **kwargs):
         pass

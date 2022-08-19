@@ -27,10 +27,10 @@ if __name__ == "__main__":
                 for timeframe in timeframes:
                     print(f'Cycle number is {i}, exchange is {exchange}, ticker is {ticker}, timeframe is {timeframe}')
                     # If all cryptocurrencies signal stat is in dataframe dict - get it, else create new
-                    total_stat = dfs.get('total_stat', pd.DataFrame())
+                    stat = dfs.get('stat', pd.DataFrame())
                     # If cryptocurrency dataframe and it's signal stat is in dataframe dict - get it,
                     # else - create the new ones
-                    df, stat = dfs.get(f'{ticker}_{timeframe}', (pd.DataFrame(), pd.Series()))
+                    df = dfs.get(f'{ticker}_{timeframe}', pd.DataFrame())
                     # If dataframe is empty - get all available data to fill it,
                     # else - just get necessary for update data
                     if df.shape == (0, 0):

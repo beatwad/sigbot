@@ -1,6 +1,8 @@
 import numpy as np
 from abc import abstractmethod
 
+import pandas as pd
+
 
 class SignalFactory(object):
     """ Return indicator according to 'indicator' variable value """
@@ -26,28 +28,28 @@ class SignalBase:
         pass
 
     @staticmethod
-    def lower_bound(indicator, low_bound):
+    def lower_bound(indicator: float, low_bound: float) -> bool:
         """ Returns True if indicator is lower than low_bound param """
         if indicator <= low_bound:
             return True
         return False
 
     @staticmethod
-    def higher_bound(indicator, high_bound):
+    def higher_bound(indicator: float, high_bound: float) -> bool:
         """ Returns True if indicator is higher than high_bound param """
         if indicator <= high_bound:
             return True
         return False
 
     @staticmethod
-    def up_direction(indicator_dir):
+    def up_direction(indicator_dir: float) -> bool:
         """ Returns True if indicator values are moving up """
         if indicator_dir > 0:
             return True
         return False
 
     @staticmethod
-    def down_direction(indicator_dir):
+    def down_direction(indicator_dir: float) -> bool:
         """ Returns True if indicator values are moving down """
         if indicator_dir < 0:
             return True
@@ -55,6 +57,7 @@ class SignalBase:
 
 
 class STOCHSignal(SignalBase):
+    type = 'Indicator_signal'
     name = 'STOCH'
 
     def __init__(self, **params):
@@ -63,7 +66,7 @@ class STOCHSignal(SignalBase):
         self.high_bound = self.params.get('high_bound', 80)
 
     @staticmethod
-    def crossed_lines(df, row, i, up=True):
+    def crossed_lines(df: pd.DataFrame, row: pd.Series, i, up: bool):  # pd.Series???
         """ Returns True if slowk and slowd lines of RSI has crossed """
         if up:
             if row['diff'] < 0 and df.loc[i - 1]['diff'] < 0 and df.loc[i - 2]['diff'] < 0:
@@ -77,59 +80,48 @@ class STOCHSignal(SignalBase):
                     return True
         return False
 
-    def find_signal(self, df, ticker, timeframe):
+    def find_signal(self, row: pd.Series, df: pd.DataFrame, index: int) -> bool:
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """
-        points = list()
 
-        slowk = df['stoch_slowk'].values
-        slowk_shift = df['stoch_slowk'].shift(1)
-        slowd = df['stoch_slowd'].values
-        slowd_shift = df['stoch_slowd'].shift(1)
-
-        df['stoch_slowk_dir'] = (slowk - slowk_shift) / np.maximum(np.abs(slowk), np.abs(slowd_shift))
-        df['stoch_slowd_dir'] = (slowd - slowd_shift) / np.maximum(np.abs(slowd), np.abs(slowd_shift))
-        df['diff'] = slowk - slowd
-
-        for i, row in df.iterrows():
-            if i > 2 and self.lower_bound(row['{stoch_slowk'], self.low_bound) \
-                    and self.lower_bound(row['stoch_slowd'], self.low_bound):
-                if self.crossed_lines(df, row, i, up=False):
-                    if self.up_direction(row['stoch_slowk_dir']) and self.up_direction(row['stoch_slowd_dir']):
-                        points.append([row['stoch_slowk'], i])  # !!!
-            elif i > 2 and self.higher_bound(row['stoch_slowk'], self.high_bound) \
-                    and self.higher_bound(row['stoch_slowd'], self.high_bound):
-                if self.crossed_lines(df, row, i, up=True):
-                    if self.down_direction(row['stoch_slowk_dir']) and self.down_direction(row['stoch_slowd_dir']):
-                        points.append([row['stoch_slowk'], i])  # !!!
-        return True, points
+        # Find STOCH signal
+        if index > 2 and self.lower_bound(row['{stoch_slowk'], self.low_bound) \
+                and self.lower_bound(row['stoch_slowd'], self.low_bound):
+            if self.crossed_lines(df, row, index, up=False):
+                if self.up_direction(row['stoch_slowk_dir']) and self.up_direction(row['stoch_slowd_dir']):
+                    return True
+        elif index > 2 and self.higher_bound(row['stoch_slowk'], self.high_bound) \
+                and self.higher_bound(row['stoch_slowd'], self.high_bound):
+            if self.crossed_lines(df, row, index, up=True):
+                if self.down_direction(row['stoch_slowk_dir']) and self.down_direction(row['stoch_slowd_dir']):
+                    return False
+        return False
 
 
 class RSISignal(SignalBase):
-    signal_name = "STOCH"
-    signal_type = None
+    type = 'Indicator_signal'
+    name = "RSI"
 
     def __init__(self, **params):
         super(RSISignal, self).__init__(params)
         self.low_bound = self.params.get('low_bound', 25)
         self.high_bound = self.params.get('high_bound', 75)
 
-    def find_signal(self, df, ticker, timeframe):
+    def find_signal(self, row: pd.Series, *args) -> bool:
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """
-        points = list()
 
-        for row in df['rsi']:
-            if self.lower_bound(row, self.low_bound):
-                return True
-            elif self.higher_bound(row, self.high_bound):
-                return True
+        # Find RSI signal
+        if self.lower_bound(row['rsi'], self.low_bound):
+            return True
+        elif self.higher_bound(row['rsi'], self.high_bound):
+            return True
         return False
 
 
 class MACDSignal(SignalBase):
-    signal_name = "MACD"
-    signal_type = None
+    type = 'Indicator_signal'
+    name = "MACD"
 
     def __init__(self, **params):
         super(MACDSignal, self).__init__(params)
@@ -138,3 +130,50 @@ class MACDSignal(SignalBase):
 
     def find_signal(self):
         pass
+
+
+class FindSignal:
+    """ Class for search the indicator combination"""
+    def __int__(self, configs):
+        self.configs = configs
+        self.indicator_list = configs['Indicator_list']
+
+    def prepare_dataframe(self, df):
+        """ Add all necessary indicator data to dataframe """
+        if 'STOCH' in self.indicator_list:
+            slowk = df['stoch_slowk'].values
+            slowk_shift = df['stoch_slowk'].shift(1)
+            slowd = df['stoch_slowd'].values
+            slowd_shift = df['stoch_slowd'].shift(1)
+
+            df['stoch_slowk_dir'] = (slowk - slowk_shift) / np.maximum(np.abs(slowk), np.abs(slowd_shift))
+            df['stoch_slowd_dir'] = (slowd - slowd_shift) / np.maximum(np.abs(slowd), np.abs(slowd_shift))
+            df['diff'] = slowk - slowd
+
+        return df
+
+    def prepare_indicator_signals(self) -> list:
+        """ Get all indicator signal classes """
+        indicator_signals = list()
+        for indicator in self.indicator_list:
+            indicator_signals.append(SignalFactory.factory(indicator, self.configs))
+        return indicator_signals
+
+    def find_signal(self, df: pd.DataFrame, first: bool) -> list:
+        """ Search for the signals through the dataframe """
+        points = list()
+
+        df = self.prepare_dataframe(df)
+        indicator_signals = self.prepare_indicator_signals()
+
+        for index, row in df.iterrows():
+            # If we update our signal data, it's not necessary to check it all
+            if index > 5 and not first:
+                break
+            for indicator_signal in indicator_signals:
+                if not indicator_signal.find_signal(row, df, index):
+                    break
+            else:
+                points.append(index)
+
+        return points

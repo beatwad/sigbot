@@ -1,3 +1,4 @@
+import pandas as pd
 import talib as ta
 from abc import abstractmethod
 
@@ -22,9 +23,9 @@ class Indicator:
     def __init__(self, params):
         self.params = params[self.type][self.name]['params']
 
-    """ Get indicator data and write it to the dataframe """
     @abstractmethod
     def get_indicator(self, *args, **kwargs):
+        """ Get indicator data and write it to the dataframe """
         pass
 
 
@@ -32,10 +33,10 @@ class RSI(Indicator):
     """ RSI indicator, default settings: timeperiod: 14"""
     name = 'RSI'
 
-    def __init__(self, params):
+    def __init__(self, params: dict):
         super(RSI, self).__init__(params)
 
-    def get_indicator(self, df, ticker, timeframe):
+    def get_indicator(self, df, ticker: str, timeframe: str) -> pd.DataFrame:
         rsi = ta.RSI(df['close'], **self.params)
         df['rsi'] = rsi
         return df
@@ -48,7 +49,7 @@ class STOCH(Indicator):
     def __init__(self, params):
         super(STOCH, self).__init__(params)
 
-    def get_indicator(self, df, ticker, timeframe):
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str) -> pd.DataFrame:
         slowk, slowd = ta.STOCH(df['high'], df['low'],
                                 df['close'], **self.params)
         df['stoch_slowk'] = slowk
@@ -63,7 +64,7 @@ class MACD(Indicator):
     def __init__(self, params):
         super(MACD, self).__init__(params)
 
-    def get_indicator(self, df, ticker, timeframe):
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str) -> pd.DataFrame:
         macd, macdsignal, macdhist = ta.MACD(df[f'{ticker}_{timeframe}_close'], **self.params)
         df['macd'] = macd
         df['macdsignal'] = macdsignal

@@ -36,8 +36,8 @@ class RSI(Indicator):
         super(RSI, self).__init__(params)
 
     def get_indicator(self, df, ticker, timeframe):
-        rsi = ta.RSI(df[f'{ticker}_{timeframe}_close'], **self.params)
-        df[f'{ticker}_{timeframe}_rsi'] = rsi
+        rsi = ta.RSI(df['close'], **self.params)
+        df['rsi'] = rsi
         return df
 
 
@@ -49,10 +49,10 @@ class STOCH(Indicator):
         super(STOCH, self).__init__(params)
 
     def get_indicator(self, df, ticker, timeframe):
-        slowk, slowd = ta.STOCH(df[f'{ticker}_{timeframe}_high'], df[f'{ticker}_{timeframe}_low'],
-                                df[f'{ticker}_{timeframe}_close'], **self.params)
-        df[f'{ticker}_{timeframe}_stoch_slowk'] = slowk
-        df[f'{ticker}_{timeframe}_stoch_slowd'] = slowd
+        slowk, slowd = ta.STOCH(df['high'], df['low'],
+                                df['close'], **self.params)
+        df['stoch_slowk'] = slowk
+        df['stoch_slowd'] = slowd
         return df
 
 
@@ -65,7 +65,7 @@ class MACD(Indicator):
 
     def get_indicator(self, df, ticker, timeframe):
         macd, macdsignal, macdhist = ta.MACD(df[f'{ticker}_{timeframe}_close'], **self.params)
-        df[f'{ticker}_{timeframe}_macd'] = macd
-        df[f'{ticker}_{timeframe}_macdsignal'] = macdsignal
-        df[f'{ticker}_{timeframe}_macdhist'] = macdhist
+        df['macd'] = macd
+        df['macdsignal'] = macdsignal
+        df['macdhist'] = macdhist
         return df

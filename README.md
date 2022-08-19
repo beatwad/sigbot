@@ -1,12 +1,15 @@
-# Cryptocurrency Signal Bot with Indicators
+# Cryptocurrency Signal Bot with Indicators and Profitability Statistics
 
-This project is for the purpose of generating signals using technical indicators in cryptocurrencies.
-I've used Python language to code and Binance API used for API Service.
+This project is for the purpose of searching of the signals and analysing their profitability using 
+technical indicators on cryptocurrency exchanges and statistics.
+Works with Binance API
 
 # Requirements
 
-* Python `3.9`
-
-* Numpy `1.20.2`
-* TA-Lib `0.4.19`
-* Python-Binance `0.7.9`
+* python `3.10`
+* pandas `1.4.3`
+* numpy `1.23.2`
+* ta-lib `0.4.19`
+* python-binance `1.0.16`
+* python-dotenv `0.20.0`
+* jupyter `1.0.0`

@@ -1,5 +1,4 @@
 config/.env
-config/config.json
 *.pkl
 .idea/
 .ipynb_checkpoints/

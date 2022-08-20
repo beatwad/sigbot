@@ -5,15 +5,17 @@ class SignalStat:
     """ Class for acquiring signal statistics """
     type = 'SignalStat'
 
-    def __init__(self, params):
-        self.params = params[self.type]['params']
+    # def __init__(self, params):
+    #     self.params = params[self.type]['params']
 
     @staticmethod
     def write_stat(dfs: dict, ticker: str, timeframe: str, signal_points: list) -> dict:
-        """ Calculate signal statistics for every signal point for current ticker on current timeframe """
-        stat = dfs['stat']
+        """ Calculate signal statistics for every signal point for current ticker on current timeframe.
+            Statistics for buy and sell trades is written separately """
+        stat_buy = dfs.get('stat').get('buy', pd.DataFrame())
+        stat_sell = dfs.get('stat').get('sell', pd.DataFrame())
         df = dfs[ticker][timeframe]
-        for index in signal_points:
+        for index, ttype in zip(signal_points):
             # Try to get information about price movement after signal if can't - continue
             try:
                 signal_price = df['close'].iloc[index]
@@ -28,6 +30,10 @@ class SignalStat:
             tmp['ticker'] = [ticker]
             tmp['timeframe'] = [timeframe]
             # If current statistics is not in stat dataframe - write it
+            if ttype == 'buy':
+                stat = stat_buy
+            else:
+                stat = stat_sell
             if stat[(stat['time'] == time) & (stat['ticker'] == ticker) &
                     (stat['timeframe'] == timeframe)].shape[0] > 0:
                 tmp['signal_price'] = [signal_price]
@@ -38,13 +44,16 @@ class SignalStat:
                 tmp['diff_10'] = tmp['price_lag_10'] - tmp['signal_price']
                 tmp['pct_diff_10'] = ((tmp['price_lag_10'] - tmp['signal_price']) / tmp['signal_price']) * 100
                 stat = pd.concat([stat, tmp])
-                dfs['stat'] = stat
+                if ttype == 'buy':
+                    dfs['stat']['buy'] = stat
+                else:
+                    dfs['stat']['sell'] = stat
         return dfs
 
     @staticmethod
-    def calculate_total_stat(dfs: dict) -> tuple:
+    def calculate_total_stat(dfs: dict, type) -> tuple:
         """ Calculate statistics for all found signals for all tickers on all timeframes """
-        stat = dfs['stat']
+        stat = dfs['stat'][type]
         if stat.shape[0] == 0:
             return ()
         avg_5_mean = stat['diff_5'].mean()

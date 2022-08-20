@@ -13,3 +13,4 @@ Works with Binance API
 * python-binance `1.0.16`
 * python-dotenv `0.20.0`
 * jupyter `1.0.0`
+* mplfinance `0.12.9b1`

@@ -33,6 +33,7 @@ class GetData:
         tmp['low'] = np.asarray(crypto_currency.low_values)
         tmp['volume'] = np.asarray(crypto_currency.volume_values)
         tmp['time'] = pd.to_datetime(tmp['time'], unit='ms')
+        tmp['time'] = tmp['time'] + pd.to_timedelta(3, unit='h')
         # If dataframe is empty - fill it with new data
         if df.shape[0] == 0:
             df = tmp

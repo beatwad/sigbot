@@ -77,7 +77,7 @@ class STOCHSignal(SignalBase):
 
         return False
 
-    def find_signal(self, row: pd.Series, df: pd.DataFrame, index: int) -> bool:
+    def find_signal(self, row: pd.Series, df: pd.DataFrame, index: int) -> (bool, str):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """
 
@@ -86,13 +86,13 @@ class STOCHSignal(SignalBase):
                 and self.lower_bound(row['stoch_slowd'], self.low_bound):
             if self.crossed_lines(df, row, index, up=False):
                 if self.up_direction(row['stoch_slowk_dir']) and self.up_direction(row['stoch_slowd_dir']):
-                    return True
+                    return True, 'buy'
         elif index > 2 and self.higher_bound(row['stoch_slowk'], self.high_bound) \
                 and self.higher_bound(row['stoch_slowd'], self.high_bound):
             if self.crossed_lines(df, row, index, up=True):
                 if self.down_direction(row['stoch_slowk_dir']) and self.down_direction(row['stoch_slowd_dir']):
-                    return False
-        return False
+                    return True, 'sell'
+        return False, ''
 
 
 class RSISignal(SignalBase):
@@ -104,16 +104,16 @@ class RSISignal(SignalBase):
         self.low_bound = self.params.get('low_bound', 25)
         self.high_bound = self.params.get('high_bound', 75)
 
-    def find_signal(self, row: pd.Series, *args) -> bool:
+    def find_signal(self, row: pd.Series, *args) -> (bool, str):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """
 
         # Find RSI signal
         if self.lower_bound(row['rsi'], self.low_bound):
-            return True
+            return True, 'buy'
         elif self.higher_bound(row['rsi'], self.high_bound):
-            return True
-        return False
+            return True, 'sell'
+        return False, ''
 
 
 class MACDSignal(SignalBase):
@@ -139,8 +139,8 @@ class FindSignal:
     def prepare_dataframe(self, df):
         """ Add all necessary indicator data to dataframe """
         if 'STOCH' in self.indicator_list:
-            df['stoch_slowk_dir'] = df['stoch_slowk'].pct_change()
-            df['stoch_slowd_dir'] = df['stoch_slowd'].pct_change()
+            df['stoch_slowk_dir'] = df['stoch_slowk'].pct_change().rolling(5).mean()
+            df['stoch_slowd_dir'] = df['stoch_slowd'].pct_change().rolling(5).mean()
             df['diff'] = df['stoch_slowk'] - df['stoch_slowd']
             df['diff'] = df['diff'].rolling(5).mean()
 
@@ -154,7 +154,7 @@ class FindSignal:
         return indicator_signals
 
     def find_signal(self, df: pd.DataFrame) -> list:
-        """ Search for the signals through the dataframe """
+        """ Search for the signals through the dataframe, if found - add its index and trade type to the list """
         points = list()
 
         df = self.prepare_dataframe(df)
@@ -165,10 +165,10 @@ class FindSignal:
             if index > 5 and not self.first:
                 break
             for indicator_signal in indicator_signals:
-                if not indicator_signal.find_signal(row, df, index):
+                if not indicator_signal.find_signal(row, df, index)[0]:
                     break
             else:
-                points.append(index)
+                points.append((index, indicator_signals[0].find_signal(row, df, index)[1]))
 
         self.first = False
 

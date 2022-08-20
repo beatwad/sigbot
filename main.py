@@ -3,6 +3,7 @@ from time import sleep
 from os import environ
 from data.get_data import DataFactory
 from config.config import ConfigFactory
+from signals.find_signal import FindSignal
 from indicators.indicators import IndicatorFactory
 
 if __name__ == "__main__":
@@ -46,9 +47,12 @@ if __name__ == "__main__":
                         indicators.append(IndicatorFactory.factory(indicator, configs))
                     # Write indicators to dataframe
                     df = exchange_api.add_indicator_data(df, indicators, ticker, timeframe)
-                    # Save dataframe to the disk
-                    df.to_pickle('df.pkl')
                     # Update dataframe dict
                     dfs[f'{ticker}_{timeframe}'] = df
+                    # Get signal
+                    fs = FindSignal(configs)
+                    points = fs.find_signal(df)
+                    # Save dataframe to the disk
+                    df.to_pickle('df.pkl')
                     i += 1
                     sleep(10)

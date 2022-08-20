@@ -26,20 +26,20 @@ class GetData:
         """ Update dataframe for current ticker or create new dataframe if it's first run """
         # Create dataframe and fill it with data
         tmp = pd.DataFrame()
-        tmp[f'{ticker}_{timeframe}_time'] = np.asarray(crypto_currency.time)
-        tmp[f'{ticker}_{timeframe}_open'] = np.asarray(crypto_currency.open_values)
-        tmp[f'{ticker}_{timeframe}_close'] = np.asarray(crypto_currency.close_values)
-        tmp[f'{ticker}_{timeframe}_high'] = np.asarray(crypto_currency.high_values)
-        tmp[f'{ticker}_{timeframe}_low'] = np.asarray(crypto_currency.low_values)
-        tmp[f'{ticker}_{timeframe}_volume'] = np.asarray(crypto_currency.volume_values)
-        tmp[f'{ticker}_{timeframe}_time'] = pd.to_datetime(tmp[f'{ticker}_{timeframe}_time'], unit='ms')
+        tmp['time'] = np.asarray(crypto_currency.time)
+        tmp['open'] = np.asarray(crypto_currency.open_values)
+        tmp['close'] = np.asarray(crypto_currency.close_values)
+        tmp['high'] = np.asarray(crypto_currency.high_values)
+        tmp['low'] = np.asarray(crypto_currency.low_values)
+        tmp['volume'] = np.asarray(crypto_currency.volume_values)
+        tmp['time'] = pd.to_datetime(tmp['time'], unit='ms')
         # If dataframe is empty - fill it with new data
         if df.shape[0] == 0:
             df = tmp
         else:
             # Update dataframe with new candles if it's not empty
-            latest_time = df['BTCUSDT_5m_time'].iloc[-1]
-            tmp = tmp[tmp['BTCUSDT_5m_time'] > latest_time]
+            latest_time = df['time'].iloc[-1]
+            tmp = tmp[tmp['time'] > latest_time]
             df = pd.concat([df, tmp])
             df = df.iloc[tmp.shape[0]:].reset_index(drop=True)
         return df

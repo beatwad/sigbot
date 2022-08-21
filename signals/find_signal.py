@@ -14,9 +14,12 @@ class SignalFactory(object):
             return STOCHSignal(**params)
         elif indicator == 'MACD':
             return MACDSignal(**params)
+        elif indicator == 'SUPRES':
+            return SupResSignal(**params)
 
 
 class SignalBase:
+    """ Base signal searching class """
     type = 'Indicator_signal'
     name = 'Base'
 
@@ -57,6 +60,7 @@ class SignalBase:
 
 
 class STOCHSignal(SignalBase):
+    """ Check if STOCH is in overbuy/oversell zone and is going to change its direction to opposite """
     type = 'Indicator_signal'
     name = 'STOCH'
 
@@ -96,6 +100,7 @@ class STOCHSignal(SignalBase):
 
 
 class RSISignal(SignalBase):
+    """ Check if RSI is in overbuy/oversell zone """
     type = 'Indicator_signal'
     name = "RSI"
 
@@ -127,6 +132,54 @@ class MACDSignal(SignalBase):
 
     def find_signal(self):
         pass
+
+
+class SupResSignal(SignalBase):
+    """ Find support and resistance levels on the candle plot """
+    type = 'Indicator_signal'
+    name = 'SUPRES'
+
+    def __init__(self, **params):
+        super(SupResSignal, self).__init__(params)
+        self.merge_level_multiplier = self.params.get('merge_level_multiplier', 1.5)
+
+    def find_signal(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def is_support(df: pd.DataFrame, i):
+        """ Find support levels """
+        support = df['low'][i] < df['low'][i-1] and df['low'][i] < df['low'][i+1] < df['low'][i+2] and \
+                  df['low'][i-1] < df['low'][i-2]
+        return support
+
+    @staticmethod
+    def is_resistance(df, i):
+        """ Find resistance levels """
+        resistance = df['high'][i] > df['high'][i-1] and df['high'][i] > df['high'][i+1] \
+                     and df['high'][i+1] > df['high'][i+2] and df['high'][i-1] > df['high'][i-2]
+        return resistance
+
+    def find_levels(self, df):
+        """ Find levels and merge them if they are both of the same type and too close to each other """
+        levels = list()
+        # level proximity measure * multiplier (from configs)
+        s = np.mean(df['high'] - df['low']) * self.merge_level_multiplier
+
+        for index, row in df.iterrows():
+            if 2 <= index <= df.shape[0] - 2:
+                if self.is_support(df, index):
+                    level = row['low']
+
+                    if np.sum([abs(level - x[0]) < s and x[1] == 'sup' for x in levels]) == 0:
+                        levels.append((level, 'sup'))
+
+                elif self.is_resistance(df, index):
+                    level = row['high']
+
+                    if np.sum([abs(level - x[0]) < s and x[1] == 'res' for x in levels]) == 0:
+                        levels.append((level, 'res'))
+        return levels
 
 
 class FindSignal:
@@ -173,3 +226,4 @@ class FindSignal:
         self.first = False
 
         return points
+

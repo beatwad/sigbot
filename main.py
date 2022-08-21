@@ -8,10 +8,12 @@ from signal_stat.signal_stat import SignalStat
 from indicators.indicators import IndicatorFactory
 
 if __name__ == "__main__":
+    debug = True
     # Set environment variable
     environ["ENV"] = "development"
     # Set dataframe dict
-    dfs = {'stat': {'buy': pd.DataFrame(), 'sell': pd.DataFrame()}}
+    dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),
+                    'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe'])}}
     # Set list of available exchanges, cryptocurrencies and tickers
     exchanges = {'Binance': {'BTCUSDT': ['5m']}}
     # Get configs
@@ -40,7 +42,10 @@ if __name__ == "__main__":
                     else:
                         interval = configs['Interval']['update_interval']
                     # Write data to the dataframe
-                    df = exchange_api.get_data(df, ticker, timeframe, interval)
+                    if debug:
+                        df = pd.read_pickle('debug.pkl')
+                    else:
+                        df = exchange_api.get_data(df, ticker, timeframe, interval)
                     # Create indicator list
                     indicator_list = configs['Indicator_list']
                     indicators = list()
@@ -57,8 +62,7 @@ if __name__ == "__main__":
                     points = fs.find_signal(df)
                     # Write statistics
                     ss = SignalStat()
-                    ss.write_stat(dfs, ticker, timeframe, points)
-                    print(dfs['stat']['sell'])
+                    dfs = ss.write_stat(dfs, ticker, timeframe, points)
                     ss.calculate_total_stat(dfs, 'buy')
                     # ss.calculate_ticker_stat(dfs, ticker, timeframe)
                     # Save dataframe to the disk

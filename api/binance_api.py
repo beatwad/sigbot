@@ -27,7 +27,6 @@ class Binance(ApiBase):
     def get_crypto_currency(self, symbol, interval, limit):
         klines = self.client.get_klines(symbol=symbol, interval=interval, limit=limit)
         crypto_currency = CryptoCurrency(symbol, interval, limit)
-
         for kline in klines:
             crypto_currency.time.append(float(kline[0]))
             crypto_currency.open_values.append(float(kline[1]))

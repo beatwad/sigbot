@@ -15,6 +15,7 @@ if __name__ == "__main__":
     dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),
                     'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe'])}}
     # Set list of available exchanges, cryptocurrencies and tickers
+    # exchanges = {'Binance': {'BTCUSDT': ['5m'], 'ETHUSDT': ['5m']}}
     exchanges = {'Binance': {'BTCUSDT': ['5m']}}
     # Get configs
     configs = ConfigFactory.factory(environ).configs
@@ -43,14 +44,16 @@ if __name__ == "__main__":
                         interval = configs['Interval']['update_interval']
                     # Write data to the dataframe
                     if debug:
-                        df = pd.read_pickle('debug.pkl')
+                        df = pd.read_pickle('BTCUSDT_5m.pkl')
                     else:
                         df = exchange_api.get_data(df, ticker, timeframe, interval)
-                    # Create indicator list
-                    indicator_list = configs['Indicator_list']
+                    # Create indicator list from search signal patterns list
                     indicators = list()
+                    indicator_list = configs['Indicator_list']
                     for indicator in indicator_list:
-                        indicators.append(IndicatorFactory.factory(indicator, configs))
+                        ind_factory = IndicatorFactory.factory(indicator, configs)
+                        if ind_factory:
+                            indicators.append(ind_factory)
                     # Write indicators to dataframe
                     df = exchange_api.add_indicator_data(df, indicators, ticker, timeframe)
                     # Update dataframe dict
@@ -63,13 +66,15 @@ if __name__ == "__main__":
                     # Write statistics
                     ss = SignalStat()
                     dfs = ss.write_stat(dfs, ticker, timeframe, points)
-                    ss.calculate_total_stat(dfs, 'buy')
-                    # ss.calculate_ticker_stat(dfs, ticker, timeframe)
+                    # print(ss.calculate_total_stat(dfs, 'buy'))
+                    # print(ss.calculate_total_stat(dfs, 'sell'))
+                    # print(ss.calculate_ticker_stat(dfs, 'buy', ticker, timeframe))
+                    # print(ss.calculate_ticker_stat(dfs, 'sell', ticker, timeframe))
                     # Save dataframe to the disk
                     try:
-                        open('df.pkl', 'w').close()
+                        open(f'{ticker}_{timeframe}.pkl', 'w').close()
                     except FileNotFoundError:
                         pass
-                    df.to_pickle('df.pkl')
-                    i += 1
-                    sleep(10)
+                    df.to_pickle(f'{ticker}_{timeframe}.pkl')
+        i += 1
+        sleep(10)

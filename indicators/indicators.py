@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import talib as ta
 from abc import abstractmethod
@@ -8,11 +7,11 @@ class IndicatorFactory(object):
     """ Return indicator according to 'indicator' variable value """
     @staticmethod
     def factory(indicator, params):
-        if indicator == 'RSI':
+        if indicator.startswith('RSI'):
             return RSI(params)
-        elif indicator == 'STOCH':
+        elif indicator.startswith('STOCH'):
             return STOCH(params)
-        elif indicator == 'MACD':
+        elif indicator.startswith('MACD'):
             return MACD(params)
 
 

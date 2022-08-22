@@ -1,12 +1,11 @@
 class CryptoCurrency:
-    open_values = list()
-    close_values = list()
-    high_values = list()
-    low_values = list()
-    volume_values = list()
-    time = list()
-
     def __init__(self, symbol, interval, limit):
         self.symbol = symbol
         self.interval = interval
         self.limit = limit
+        self.open_values = list()
+        self.close_values = list()
+        self.high_values = list()
+        self.low_values = list()
+        self.volume_values = list()
+        self.time = list()

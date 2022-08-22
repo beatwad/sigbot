@@ -3,8 +3,9 @@
                  "STOCH":  {"params": {"fastk_period":  14, "slowk_period": 3, "slowd_period":  3}},
                  "MACD" :  {"params": {"fastperiod": 12, "slowperiod": 26, "signalperiod": 9}}
                  },
-  "Indicator_signal":  {"RSI" :  {"params": {"low_bound": 25, "high_bound": 75}},
-                        "STOCH":  {"params": {"low_bound": 15, "high_bound": 85}},
+  "Indicator_signal":  {"RSI" :  {"params": {"low_bound": 45, "high_bound": 55}},
+                        "STOCH":  {"params": {"low_bound": 45, "high_bound": 55}},
                         "MACD" :  {"params": {}},
-                        "SUPRES" :  {"params":  {"merge_level_multiplier":  1.5}}},
-  "Indicator_list":  ["STOCH", "RSI"]}
+                        "SUP_RES" :  {"params":  {"merge_level_multiplier":  1}}},
+  "Indicator_list": ["STOCH", "RSI", "SUP_RES"],
+  "Patterns":  [["STOCH", "RSI"], ["STOCH", "RSI", "SUP_RES"]]}

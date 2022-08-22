@@ -14,3 +14,4 @@ Works with Binance API
 * python-dotenv `0.20.0`
 * jupyter `1.0.0`
 * mplfinance `0.12.9b1`
+* matplotlib `3.5.3`

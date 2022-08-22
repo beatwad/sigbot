@@ -85,8 +85,6 @@ class STOCHSignal(SignalBase):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """
         # Find STOCH signal
-        if index == 540:
-            print(row['stoch_slowk'], self.low_bound)
         if index > 2 and self.lower_bound(row['stoch_slowk'], self.low_bound) \
                 and self.lower_bound(row['stoch_slowd'], self.low_bound):
             if self.crossed_lines(df, row, index, up=False):
@@ -249,5 +247,4 @@ class FindSignal:
                     points.append((index, 'sell'))
 
         self.first = False
-        print(len(points))
         return points

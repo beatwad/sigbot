@@ -15,8 +15,8 @@ if __name__ == "__main__":
     dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),
                     'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe'])}}
     # Set list of available exchanges, cryptocurrencies and tickers
-    # exchanges = {'Binance': {'BTCUSDT': ['5m'], 'ETHUSDT': ['5m']}}
-    exchanges = {'Binance': {'BTCUSDT': ['5m']}}
+    exchanges = {'Binance': {'BTCUSDT': ['5m'], 'ETHUSDT': ['5m']}}
+    # exchanges = {'Binance': {'BTCUSDT': ['5m']}}
     # Get configs
     configs = ConfigFactory.factory(environ).configs
 
@@ -31,8 +31,6 @@ if __name__ == "__main__":
                 timeframes = tickers[ticker]
                 for timeframe in timeframes:
                     print(f'Cycle number is {i}, exchange is {exchange}, ticker is {ticker}, timeframe is {timeframe}')
-                    # # If all cryptocurrencies signal stat is in dataframe dict - get it, else create new
-                    # stat = dfs.get('stat', pd.DataFrame())
                     # If cryptocurrency dataframe and it's signal stat is in dataframe dict - get it,
                     # else - create the new ones
                     df = dfs.get(ticker, dict()).get(timeframe, pd.DataFrame())

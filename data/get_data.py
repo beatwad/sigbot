@@ -19,10 +19,16 @@ class GetData:
     name = 'Basic'
 
     def __init__(self, **params):
-        self.dt = datetime.now()
         self.params = params[self.type][self.name]['params']
+        # basic interval (number of candles) to upload at startup
         self.interval = self.params['interval']
+        # parameter to convert seconds to intervals
         self.timeframe_div = self.params['timeframe_div']
+        # dict to store timestamp for every timeframe
+        self.timestamp_dict = dict()
+        dt = datetime.now()
+        for tf in self.timeframe_div.keys():
+            self.timestamp_dict[tf] = dt
 
     @abstractmethod
     def get_data(self, df, ticker, timeframe):
@@ -74,15 +80,14 @@ class GetBinanceData(GetData):
         """ Get interval needed to download from exchange according to difference between current time and
             time of previous download"""
         if df.shape == (0, 0):
-            self.dt = datetime.now()
             return self.interval
         else:
             # get time passed from previous download and select appropriate interval
-            time_diff_sec = (datetime.now() - self.dt).seconds
+            time_diff_sec = (datetime.now() - self.timestamp_dict[timeframe]).seconds
             interval = int(time_diff_sec/self.timeframe_div[timeframe]) + 1
             # if time passed more than one interval - get it
             if interval > 1:
-                return max(self.interval, interval)
+                return min(self.interval, interval)
             return 0
 
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str):
@@ -94,6 +99,8 @@ class GetBinanceData(GetData):
             print(interval)
             crypto_currency = self.api.get_crypto_currency(ticker, timeframe, interval)
             df = self.process_data(crypto_currency, df)
+            # update timestamp for current timeframe
+            self.timestamp_dict[timeframe] = datetime.now()
         return df
 
 

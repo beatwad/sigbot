@@ -19,13 +19,16 @@ if __name__ == "__main__":
     # exchanges = {'Binance': {'BTCUSDT': ['5m']}}
     # Get configs
     configs = ConfigFactory.factory(environ).configs
+    # Get dict of exchange APIs
+    exchange_apis = dict()
+    for exchange in exchanges:
+        exchange_apis[exchange] = DataFactory.factory(exchange, **configs)
 
     i = 1
 
     while True:
         # For every exchange, ticker and timeframe in base get cryptocurrency data and write it to correspond dataframe
-        for exchange in exchanges:
-            exchange_api = DataFactory.factory(exchange, **configs)
+        for exchange, exchange_api in exchange_apis.items():
             tickers = exchanges[exchange]
             for ticker in tickers:
                 timeframes = tickers[ticker]

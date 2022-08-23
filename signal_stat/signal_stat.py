@@ -12,7 +12,7 @@ class SignalStat:
     def write_stat(dfs: dict, ticker: str, timeframe: str, signal_points: list) -> dict:
         """ Calculate signal statistics for every signal point for current ticker on current timeframe.
             Statistics for buy and sell trades is written separately """
-        df = dfs[ticker][timeframe]
+        df = dfs[ticker][timeframe]['data']
         for point in signal_points:
             index, ttype = point
             # Try to get information about price movement after signal if can't - continue

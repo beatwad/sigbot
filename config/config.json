@@ -4,11 +4,12 @@
                                                       "1d":  86400, "4d":  345600, "1w":  604800}}}},
   "Indicator":  {"RSI" :  {"params": {"timeperiod":  14}},
                  "STOCH":  {"params": {"fastk_period":  14, "slowk_period": 3, "slowd_period":  3}},
-                 "MACD" :  {"params": {"fastperiod": 12, "slowperiod": 26, "signalperiod": 9}}
-                 },
-  "Indicator_signal":  {"RSI" :  {"params": {"low_bound": 45, "high_bound": 55}},
-                        "STOCH":  {"params": {"low_bound": 45, "high_bound": 55}},
+                 "MACD" :  {"params": {"fastperiod": 12, "slowperiod": 26, "signalperiod": 9}},
+                 "SUP_RES" :  {"params":  {"merge_level_multiplier":  1}}},
+  "Indicator_signal":  {"RSI" :  {"params": {"low_bound": 25, "high_bound": 75}},
+                        "STOCH":  {"params": {"low_bound": 15, "high_bound": 85}},
                         "MACD" :  {"params": {}},
-                        "SUP_RES" :  {"params":  {"merge_level_multiplier":  1}}},
+                        "SUP_RES" :  {"params": {"merge_level_multiplier":  1}}},
   "Indicator_list": ["STOCH", "RSI", "SUP_RES"],
-  "Patterns":  [["STOCH", "RSI"], ["STOCH", "RSI", "SUP_RES"]]}
+  "Patterns":  [["STOCH", "RSI"], ["STOCH", "RSI", "SUP_RES"]],
+  "Timeframes":  {"work_timeframe":  "5m", "higher_timeframe":  "1h"}}

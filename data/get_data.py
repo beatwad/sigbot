@@ -60,11 +60,26 @@ class GetData:
         return df
 
     @staticmethod
-    def add_indicator_data(df, indicators, ticker, timeframe):
+    def add_indicator_data(dfs, df, indicators, ticker, timeframe, configs):
         """ Add indicator data to cryptocurrency dataframe """
+        levels = list()
         for indicator in indicators:
-            df = indicator.get_indicator(df, ticker, timeframe)
-        return df
+            # If indicator is support-resistance levels - get levels and add them to 'levels' category of dfs dict
+            if indicator.name == 'SUP_RES':
+                merge = timeframe == configs['Timeframes']['work_timeframe']
+                higher_timeframe = configs['Timeframes']['higher_timeframe']
+                higher_levels = dfs.get(ticker, dict()).get(higher_timeframe, dict()).get('level', list())
+                levels = indicator.get_indicator(df, ticker, timeframe, higher_levels, merge)
+            else:
+                df = indicator.get_indicator(df, ticker, timeframe)
+        # Update dataframe dict
+        if ticker not in dfs:
+            dfs[ticker] = dict()
+        if timeframe not in dfs[ticker]:
+            dfs[ticker][timeframe] = dict()
+        dfs[ticker][timeframe]['data'] = df
+        dfs[ticker][timeframe]['levels'] = levels
+        return dfs, df
 
 
 class GetBinanceData(GetData):
@@ -86,22 +101,21 @@ class GetBinanceData(GetData):
             time_diff_sec = (datetime.now() - self.timestamp_dict[timeframe]).seconds
             interval = int(time_diff_sec/self.timeframe_div[timeframe]) + 1
             # if time passed more than one interval - get it
-            if interval > 1:
-                return min(self.interval, interval)
-            return 0
+            return min(self.interval, interval)
 
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str):
         """ Get data from Binance exchange """
         self.api.connect_to_api(self.key, self.secret)
         interval = self.get_interval(df, timeframe)
         # get data from exchange only when there is at least one interval to get
-        if interval > 0:
+        if interval > 1:
             print(interval)
             crypto_currency = self.api.get_crypto_currency(ticker, timeframe, interval)
             df = self.process_data(crypto_currency, df)
             # update timestamp for current timeframe
             self.timestamp_dict[timeframe] = datetime.now()
-        return df
+            return df, True
+        return df, False
 
 
 class GetOKEXData(GetData):

@@ -2,27 +2,35 @@ import numpy as np
 import pandas as pd
 from abc import abstractmethod
 from api.binance_api import Binance
+from datetime import datetime
 
 
 class DataFactory(object):
     @staticmethod
-    def factory(exchange):
+    def factory(exchange, **params):
         if exchange == 'Binance':
-            return GetBinanceData()
+            return GetBinanceData(**params)
         elif exchange == 'OKEX':
-            return GetOKEXData()
+            return GetOKEXData(**params)
 
 
 class GetData:
     type = 'Data'
+    name = 'Basic'
+
+    def __init__(self, **params):
+        self.dt = datetime.now()
+        self.params = params[self.type][self.name]['params']
+        self.interval = self.params['interval']
+        self.timeframe_div = self.params['timeframe_div']
 
     @abstractmethod
-    def get_data(self, df, ticker, timeframe, interval):
+    def get_data(self, df, ticker, timeframe):
         """ Get candle and volume data from exchange """
         pass
 
     @staticmethod
-    def process_data(crypto_currency, df, ticker, timeframe):
+    def process_data(crypto_currency, df):
         """ Update dataframe for current ticker or create new dataframe if it's first run """
         # Create dataframe and fill it with data
         tmp = pd.DataFrame()
@@ -54,14 +62,38 @@ class GetData:
 
 
 class GetBinanceData(GetData):
+    name = 'Binance'
     api = Binance()
     key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
     secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
 
-    def get_data(self, df, ticker, timeframe, interval):
+    def __int__(self, **params):
+        super(GetBinanceData, self).__init__(**params)
+
+    def get_interval(self, df: pd.DataFrame, timeframe: str) -> int:
+        """ Get interval needed to download from exchange according to difference between current time and
+            time of previous download"""
+        if df.shape == (0, 0):
+            self.dt = datetime.now()
+            return self.interval
+        else:
+            # get time passed from previous download and select appropriate interval
+            time_diff_sec = (datetime.now() - self.dt).seconds
+            interval = int(time_diff_sec/self.timeframe_div[timeframe]) + 1
+            # if time passed more than one interval - get it
+            if interval > 1:
+                return max(self.interval, interval)
+            return 0
+
+    def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str):
+        """ Get data from Binance exchange """
         self.api.connect_to_api(self.key, self.secret)
-        crypto_currency = self.api.get_crypto_currency(ticker, timeframe, interval)
-        df = self.process_data(crypto_currency, df, ticker, timeframe)
+        interval = self.get_interval(df, timeframe)
+        # get data from exchange only when there is at least one interval to get
+        if interval > 0:
+            print(interval)
+            crypto_currency = self.api.get_crypto_currency(ticker, timeframe, interval)
+            df = self.process_data(crypto_currency, df)
         return df
 
 

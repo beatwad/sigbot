@@ -8,7 +8,7 @@ from signal_stat.signal_stat import SignalStat
 from indicators.indicators import IndicatorFactory
 
 if __name__ == "__main__":
-    debug = True
+    debug = False
     # Set environment variable
     environ["ENV"] = "development"
     # Set dataframe dict
@@ -25,26 +25,19 @@ if __name__ == "__main__":
     while True:
         # For every exchange, ticker and timeframe in base get cryptocurrency data and write it to correspond dataframe
         for exchange in exchanges:
-            exchange_api = DataFactory.factory(exchange)
+            exchange_api = DataFactory.factory(exchange, **configs)
             tickers = exchanges[exchange]
             for ticker in tickers:
                 timeframes = tickers[ticker]
                 for timeframe in timeframes:
                     print(f'Cycle number is {i}, exchange is {exchange}, ticker is {ticker}, timeframe is {timeframe}')
-                    # If cryptocurrency dataframe and it's signal stat is in dataframe dict - get it,
-                    # else - create the new ones
-                    df = dfs.get(ticker, dict()).get(timeframe, pd.DataFrame())
-                    # If dataframe is empty - get all available data to fill it,
-                    # else - just get necessary for update data
-                    if df.shape == (0, 0):
-                        interval = configs['Interval']['creation_interval']
-                    else:
-                        interval = configs['Interval']['update_interval']
-                    # Write data to the dataframe
+                    # If cryptocurrency dataframe is in dataframe dict - get it, else - create the new one
                     if debug:
                         df = pd.read_pickle('BTCUSDT_5m.pkl')
                     else:
-                        df = exchange_api.get_data(df, ticker, timeframe, interval)
+                        df = dfs.get(ticker, dict()).get(timeframe, pd.DataFrame())
+                        # Write data to the dataframe
+                        df = exchange_api.get_data(df, ticker, timeframe)
                     # Create indicator list from search signal patterns list
                     indicators = list()
                     indicator_list = configs['Indicator_list']
@@ -75,4 +68,4 @@ if __name__ == "__main__":
                         pass
                     df.to_pickle(f'{ticker}_{timeframe}.pkl')
         i += 1
-        sleep(10)
+        sleep(300)

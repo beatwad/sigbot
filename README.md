@@ -16,3 +16,5 @@ Works with Binance API
 * mplfinance `0.12.9b1`
 * matplotlib `3.5.3`
 * pytest `7.1.2`
+* pytest-mock `3.8.2`
+* freezegun `1.2.2`

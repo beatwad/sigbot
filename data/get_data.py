@@ -98,7 +98,9 @@ class GetBinanceData(GetData):
             return self.interval
         else:
             # get time passed from previous download and select appropriate interval
-            time_diff_sec = (datetime.now() - self.timestamp_dict[timeframe]).seconds
+            x = datetime.now()
+            y = self.timestamp_dict[timeframe]
+            time_diff_sec = (datetime.now() - self.timestamp_dict[timeframe]).total_seconds()
             interval = int(time_diff_sec/self.timeframe_div[timeframe]) + 1
             # if time passed more than one interval - get it
             return min(self.interval, interval)

@@ -9,8 +9,8 @@ environ["ENV"] = "test"
 
 configs = ConfigFactory.factory(environ).configs
 
-df_btc = pd.read_pickle('BTCUSDT_5m.pkl')
-df_eth = pd.read_pickle('ETHUSDT_5m.pkl')
+df_btc = pd.read_pickle('test_BTCUSDT_5m.pkl')
+df_eth = pd.read_pickle('test_ETHUSDT_5m.pkl')
 points_btc = [(995, 'buy'), (98, 'sell'), (513, 'buy'), (576, 'sell'), (673, 'sell')]
 points_eth = [(55, 'sell'), (97, 'sell'), (512, 'buy'), (645, 'buy'), (840, 'buy'), (955, 'sell')]
 
@@ -21,11 +21,11 @@ sell_eth = pd.read_pickle('signal_stat/eth_sell_stat.pkl')
 expected_write_stat = [{'buy': buy_btc, 'sell': sell_btc}, {'buy': buy_eth, 'sell': sell_eth}]
 
 
-@pytest.mark.parametrize('ticker, timeframe, signal_points, expected', [
-                                                                        ('BTCUSDT', '5m', points_btc, expected_write_stat[0]),
-                                                                        # ('ETHUSDT', '5m', points_eth, expected_write_stat[1])
-],
-                         )
+@pytest.mark.parametrize('ticker, timeframe, signal_points, expected',
+                         [
+                          ('BTCUSDT', '5m', points_btc, expected_write_stat[0]),
+                          # ('ETHUSDT', '5m', points_eth, expected_write_stat[1])
+                          ], ids=repr)
 def test_get_last_transaction(ticker, timeframe, signal_points, expected):
     ss = SignalStat(**configs)
     dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),

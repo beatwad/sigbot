@@ -11,7 +11,7 @@ class ConfigFactory(object):
     @staticmethod
     def factory(environ):
         env = environ.get("ENV", "development")
-        if env == 'testing':
+        if env == 'test':
             return Testing(environ)
         elif env == 'development':
             return Development(environ)

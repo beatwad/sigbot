@@ -15,3 +15,4 @@ Works with Binance API
 * jupyter `1.0.0`
 * mplfinance `0.12.9b1`
 * matplotlib `3.5.3`
+* pytest `7.1.2`

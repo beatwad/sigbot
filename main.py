@@ -15,8 +15,8 @@ if __name__ == "__main__":
     dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),
                     'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe'])}}
     # Set list of available exchanges, cryptocurrencies and tickers
-    # exchanges = {'Binance': {'BTCUSDT': ['1h', '5m'], 'ETHUSDT': ['1h', '5m']}}
-    exchanges = {'Binance': {'ETHUSDT': ['1h', '5m']}}
+    exchanges = {'Binance': {'BTCUSDT': ['1h', '5m'], 'ETHUSDT': ['1h', '5m']}}
+    # exchanges = {'Binance': {'ETHUSDT': ['1h', '5m']}}
     # Get configs
     configs = ConfigFactory.factory(environ).configs
     # Get dict of exchange APIs
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     for exchange in exchanges:
         exchange_apis[exchange] = DataFactory.factory(exchange, **configs)
     # Higher timeframe from which we take levels
-    higher_timeframe = configs['Timeframes']['higher_timeframe']
+    work_timeframe = configs['Timeframes']['work_timeframe']
     # Counter
     i = 1
 
@@ -44,28 +44,33 @@ if __name__ == "__main__":
                         df = dfs.get(ticker, dict()).get(timeframe, dict()).get('data', pd.DataFrame())
                         # Write data to the dataframe
                         df, new_data_flag = exchange_api.get_data(df, ticker, timeframe)
-                    if new_data_flag and timeframe != higher_timeframe:
-                        # Create indicator list from search signal patterns list
+                    # Create indicator list from search signal patterns list, if has new data and 
+                    # data not from higher timeframe, else get only levels
+                    if new_data_flag:
                         indicators = list()
-                        indicator_list = configs['Indicator_list']
+                        if timeframe == work_timeframe:
+                            indicator_list = configs['Indicator_list']
+                        else:
+                            indicator_list = ['SUP_RES']
                         for indicator in indicator_list:
                             ind_factory = IndicatorFactory.factory(indicator, configs)
                             if ind_factory:
                                 indicators.append(ind_factory)
                         # Write indicators to dataframe, update dataframe dict
                         dfs, df = exchange_api.add_indicator_data(dfs, df, indicators, ticker, timeframe, configs)
-                        # Get signal
-                        fs = FindSignal(configs)
-                        points = fs.find_signal(df, dfs[ticker][timeframe]['levels'])
-                        print(points)
-                        # Write statistics
-                        ss = SignalStat()
-                        dfs = ss.write_stat(dfs, ticker, timeframe, points)
-                        # print(ss.calculate_total_stat(dfs, 'buy'))
-                        # print(ss.calculate_total_stat(dfs, 'sell'))
-                        # print(ss.calculate_ticker_stat(dfs, 'buy', ticker, timeframe))
-                        # print(ss.calculate_ticker_stat(dfs, 'sell', ticker, timeframe))
-                        # Save dataframe to the disk
+                        # Get signals
+                        if timeframe == work_timeframe:
+                            fs = FindSignal(configs)
+                            points = fs.find_signal(df, dfs[ticker][timeframe]['levels'])
+                            # Write statistics
+                            ss = SignalStat(**configs)
+                            dfs = ss.write_stat(dfs, ticker, timeframe, points)
+                            print(points)
+                            print(ss.calculate_total_stat(dfs, 'buy'))
+                            print(ss.calculate_total_stat(dfs, 'sell'))
+                            # print(ss.calculate_ticker_stat(dfs, 'buy', ticker, timeframe))
+                            # print(ss.calculate_ticker_stat(dfs, 'sell', ticker, timeframe))
+                            # Save dataframe to the disk
                         try:
                             open(f'{ticker}_{timeframe}.pkl', 'w').close()
                         except FileNotFoundError:

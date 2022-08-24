@@ -184,7 +184,6 @@ class FindSignal:
                 df['high_roll'] = df['high'].rolling(3).mean()
                 df['low_roll'] = df['low'].rolling(3).mean()
                 break
-
         return df
 
     def prepare_indicator_signals(self) -> list:

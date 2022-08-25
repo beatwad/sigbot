@@ -24,7 +24,7 @@ expected_write_stat = [{'buy': buy_btc, 'sell': sell_btc}, {'buy': buy_eth, 'sel
 @pytest.mark.parametrize('ticker, timeframe, signal_points, expected',
                          [
                           ('BTCUSDT', '5m', points_btc, expected_write_stat[0]),
-                          # ('ETHUSDT', '5m', points_eth, expected_write_stat[1])
+                          ('ETHUSDT', '5m', points_eth, expected_write_stat[1])
                           ], ids=repr)
 def test_get_last_transaction(ticker, timeframe, signal_points, expected):
     ss = SignalStat(**configs)

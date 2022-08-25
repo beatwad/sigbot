@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 from abc import abstractmethod
+
+import models.cryptocurrency
 from api.binance_api import Binance
 from datetime import datetime
 
@@ -21,7 +23,7 @@ class GetData:
     def __init__(self, **params):
         self.params = params[self.type][self.name]['params']
         # basic interval (number of candles) to upload at startup
-        self.interval = self.params['interval']
+        self.limit = self.params['limit']
         # parameter to convert seconds to intervals
         self.timeframe_div = self.params['timeframe_div']
         # dict to store timestamp for every timeframe
@@ -36,7 +38,7 @@ class GetData:
         pass
 
     @staticmethod
-    def process_data(crypto_currency, df):
+    def process_data(crypto_currency: models.cryptocurrency.CryptoCurrency, df: pd.DataFrame) -> pd.DataFrame:
         """ Update dataframe for current ticker or create new dataframe if it's first run """
         # Create dataframe and fill it with data
         tmp = pd.DataFrame()
@@ -47,8 +49,11 @@ class GetData:
         tmp['low'] = np.asarray(crypto_currency.low_values)
         tmp['volume'] = np.asarray(crypto_currency.volume_values)
         tmp['time'] = pd.to_datetime(tmp['time'], unit='ms')
+        # convert time to UTC+3
         tmp['time'] = tmp['time'] + pd.to_timedelta(3, unit='h')
-        # If dataframe is empty - fill it with new data
+        # If dataframe is empty - fill it with the new data
+        print(df.columns)
+        print(tmp.columns)
         if df.shape[0] == 0:
             df = tmp
         else:
@@ -60,7 +65,8 @@ class GetData:
         return df
 
     @staticmethod
-    def add_indicator_data(dfs, df, indicators, ticker, timeframe, configs):
+    def add_indicator_data(dfs: dict, df: pd.DataFrame, indicators: list, ticker: str, timeframe: str,
+                           configs: dict) -> (dict, pd.DataFrame):
         """ Add indicator data to cryptocurrency dataframe """
         levels = list()
         for indicator in indicators:
@@ -68,7 +74,7 @@ class GetData:
             if indicator.name == 'SUP_RES':
                 merge = timeframe == configs['Timeframes']['work_timeframe']
                 higher_timeframe = configs['Timeframes']['higher_timeframe']
-                higher_levels = dfs.get(ticker, dict()).get(higher_timeframe, dict()).get('level', list())
+                higher_levels = dfs.get(ticker, dict()).get(higher_timeframe, dict()).get('levels', list())
                 levels = indicator.get_indicator(df, ticker, timeframe, higher_levels, merge)
             else:
                 df = indicator.get_indicator(df, ticker, timeframe)
@@ -91,28 +97,25 @@ class GetBinanceData(GetData):
     def __int__(self, **params):
         super(GetBinanceData, self).__init__(**params)
 
-    def get_interval(self, df: pd.DataFrame, timeframe: str) -> int:
+    def get_limit(self, df: pd.DataFrame, timeframe: str) -> int:
         """ Get interval needed to download from exchange according to difference between current time and
             time of previous download"""
         if df.shape == (0, 0):
-            return self.interval
+            return self.limit
         else:
             # get time passed from previous download and select appropriate interval
-            x = datetime.now()
-            y = self.timestamp_dict[timeframe]
             time_diff_sec = (datetime.now() - self.timestamp_dict[timeframe]).total_seconds()
-            interval = int(time_diff_sec/self.timeframe_div[timeframe]) + 1
+            limit = int(time_diff_sec/self.timeframe_div[timeframe]) + 1
             # if time passed more than one interval - get it
-            return min(self.interval, interval)
+            return min(self.limit, limit)
 
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str):
         """ Get data from Binance exchange """
         self.api.connect_to_api(self.key, self.secret)
-        interval = self.get_interval(df, timeframe)
+        limit = self.get_limit(df, timeframe)
         # get data from exchange only when there is at least one interval to get
-        if interval > 1:
-            print(interval)
-            crypto_currency = self.api.get_crypto_currency(ticker, timeframe, interval)
+        if limit > 1:
+            crypto_currency = self.api.get_crypto_currency(ticker, timeframe, limit)
             df = self.process_data(crypto_currency, df)
             # update timestamp for current timeframe
             self.timestamp_dict[timeframe] = datetime.now()

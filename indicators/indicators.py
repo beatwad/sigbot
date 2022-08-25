@@ -151,12 +151,13 @@ class SupRes(Indicator):
     def add_higher_levels(levels, ticker_levels, s):
         """ Merge levels with the levels from higher timeframe. If layers from lower and higher timeframe are
             coincided - increase the importance value of lower timeframe """
+        levels_to_add = list()
         for t_level in ticker_levels:
             distinct_level = True
             for i in range(len(levels)):
                 if abs(t_level[0] - levels[i][0]) < s:
-                    levels[i][2] = 3
+                    levels[i][1] = 3
                     distinct_level = False
             if distinct_level:
-                levels.append([t_level, 1])
-        return levels
+                levels_to_add.append([t_level, 1])
+        return levels + levels_to_add

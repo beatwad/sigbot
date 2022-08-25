@@ -44,7 +44,7 @@ if __name__ == "__main__":
                         df = dfs.get(ticker, dict()).get(timeframe, dict()).get('data', pd.DataFrame())
                         # Write data to the dataframe
                         df, new_data_flag = exchange_api.get_data(df, ticker, timeframe)
-                    # Create indicator list from search signal patterns list, if has new data and 
+                    # Create indicator list from search signal patterns list, if has new data and
                     # data not from higher timeframe, else get only levels
                     if new_data_flag:
                         indicators = list()
@@ -77,4 +77,4 @@ if __name__ == "__main__":
                             pass
                         df.to_pickle(f'{ticker}_{timeframe}.pkl')
         i += 1
-        sleep(300)
+        sleep(10)

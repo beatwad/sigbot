@@ -15,7 +15,7 @@ if __name__ == "__main__":
     dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),
                     'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe'])}}
     # Set list of available exchanges, cryptocurrencies and tickers
-    exchanges = {'Binance': {'BTCUSDT': ['1h', '5m'], 'ETHUSDT': ['1h', '5m']}}
+    exchanges = {'Binance': {'BTCUSDT': ['1d', '4h', '1h', '5m'], 'ETHUSDT': ['1d', '4h', '1h', '5m']}}
     # exchanges = {'Binance': {'ETHUSDT': ['1h', '5m']}}
     # Get configs
     configs = ConfigFactory.factory(environ).configs
@@ -77,4 +77,4 @@ if __name__ == "__main__":
                             pass
                         df.to_pickle(f'{ticker}_{timeframe}.pkl')
         i += 1
-        sleep(10)
+        sleep(300)

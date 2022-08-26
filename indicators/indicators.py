@@ -75,21 +75,6 @@ class MACD(Indicator):
         return df
 
 
-class DACD(Indicator):
-    """ MACD indicator, default settings: fastperiod: 12, slowperiod: 26, signalperiod: 9 """
-    name = 'MACD'
-
-    def __init__(self, params):
-        super(DACD, self).__init__(params)
-
-    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str) -> pd.DataFrame:
-        macd, macdsignal, macdhist = ta.MACD(df['close'], **self.params)
-        df['macd'] = macd
-        df['macdsignal'] = macdsignal
-        df['macdhist'] = macdhist
-        return df
-
-
 class SupRes(Indicator):
     """ Find support and resistance levels on the candle plot """
     name = 'SUP_RES'

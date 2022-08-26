@@ -44,16 +44,14 @@ class GetData:
         tmp = pd.DataFrame()
         tmp['time'] = np.asarray(crypto_currency.time)
         tmp['open'] = np.asarray(crypto_currency.open_values)
-        tmp['close'] = np.asarray(crypto_currency.close_values)
         tmp['high'] = np.asarray(crypto_currency.high_values)
         tmp['low'] = np.asarray(crypto_currency.low_values)
+        tmp['close'] = np.asarray(crypto_currency.close_values)
         tmp['volume'] = np.asarray(crypto_currency.volume_values)
         tmp['time'] = pd.to_datetime(tmp['time'], unit='ms')
         # convert time to UTC+3
         tmp['time'] = tmp['time'] + pd.to_timedelta(3, unit='h')
         # If dataframe is empty - fill it with the new data
-        print(df.columns)
-        print(tmp.columns)
         if df.shape[0] == 0:
             df = tmp
         else:
@@ -100,7 +98,7 @@ class GetBinanceData(GetData):
     def get_limit(self, df: pd.DataFrame, timeframe: str) -> int:
         """ Get interval needed to download from exchange according to difference between current time and
             time of previous download"""
-        if df.shape == (0, 0):
+        if df.shape[0] == 0:
             return self.limit
         else:
             # get time passed from previous download and select appropriate interval

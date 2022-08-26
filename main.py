@@ -15,8 +15,8 @@ if __name__ == "__main__":
     dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),
                     'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe'])}}
     # Set list of available exchanges, cryptocurrencies and tickers
-    exchanges = {'Binance': {'BTCUSDT': ['1d', '4h', '1h', '5m'], 'ETHUSDT': ['1d', '4h', '1h', '5m']}}
-    # exchanges = {'Binance': {'ETHUSDT': ['1h', '5m']}}
+    # exchanges = {'Binance': {'BTCUSDT': ['1d', '4h', '1h', '5m'], 'ETHUSDT': ['1d', '4h', '1h', '5m']}}
+    exchanges = {'Binance': {'ETHUSDT': ['1h', '5m']}}
     # Get configs
     configs = ConfigFactory.factory(environ).configs
     # Get dict of exchange APIs
@@ -37,7 +37,7 @@ if __name__ == "__main__":
                 for timeframe in timeframes:
                     print(f'Cycle number is {i}, exchange is {exchange}, ticker is {ticker}, timeframe is {timeframe}')
                     if debug:
-                        df = pd.read_pickle('BTCUSDT_5m.pkl')
+                        df = pd.read_pickle('test_levels.pkl')
                         new_data_flag = True
                     else:
                         # If cryptocurrency dataframe is in dataframe dict - get it, else - create the new one
@@ -65,9 +65,9 @@ if __name__ == "__main__":
                             # Write statistics
                             ss = SignalStat(**configs)
                             dfs = ss.write_stat(dfs, ticker, timeframe, points)
-                            print(points)
-                            print(ss.calculate_total_stat(dfs, 'buy'))
-                            print(ss.calculate_total_stat(dfs, 'sell'))
+                            # print(points)
+                            # print(ss.calculate_total_stat(dfs, 'buy'))
+                            # print(ss.calculate_total_stat(dfs, 'sell'))
                             # print(ss.calculate_ticker_stat(dfs, 'buy', ticker, timeframe))
                             # print(ss.calculate_ticker_stat(dfs, 'sell', ticker, timeframe))
                             # Save dataframe to the disk

@@ -95,17 +95,20 @@ class SupRes(Indicator):
     @staticmethod
     def is_support(df: pd.DataFrame, i):
         """ Find support levels """
-        support = df['low_roll'][i] < df['low_roll'][i - 1] < df['low_roll'][i - 2] < df['low_roll'][i - 3] and \
-                  df['low_roll'][i] < df['low_roll'][i + 1] < df['low_roll'][i + 2] < df['low_roll'][i + 3]
-        return support
+        support = df['low'][i] < df['low'][i-1] < df['low'][i-2] and \
+                  df['low'][i] < df['low'][i+1] < df['low'][i+2]
+        support_roll = df['low_roll'][i] < df['low_roll'][i-1] < df['low_roll'][i-2] < df['low_roll'][i-3] and \
+                       df['low_roll'][i] < df['low_roll'][i+1] < df['low_roll'][i+2] < df['low_roll'][i+3]
+        return support or support_roll
 
     @staticmethod
-    def is_resistance(df, i):
+    def is_resistance(df: pd.DataFrame, i):
         """ Find resistance levels """
-        resistance = df['high_roll'][i] > df['high_roll'][i - 1] > df['high_roll'][i - 2] > df['high_roll'][i - 3] and \
-                     df['high_roll'][i] > df['high_roll'][i + 1] > df['high_roll'][i + 2] > df['high_roll'][i + 3]
-
-        return resistance
+        resistance = df['high'][i] > df['high'][i-1] > df['high'][i-2] and \
+                     df['high'][i] > df['high'][i+1] > df['high'][i+2]
+        resistance_roll = df['high_roll'][i] > df['high_roll'][i-1] > df['high_roll'][i-2] > df['high_roll'][i-3] and \
+                          df['high_roll'][i] > df['high_roll'][i+1] > df['high_roll'][i+2] > df['high_roll'][i+3]
+        return resistance or resistance_roll
 
     def find_levels(self, df, level_proximity):
         """ Find levels and save their value and their importance """
@@ -114,7 +117,7 @@ class SupRes(Indicator):
         df['low_roll'] = df['low'].rolling(3).mean()
 
         # find levels and increase importance of those where price changed direction twice or more
-        for index, row in df.iterrows():
+        for index, row in df[::-1].iterrows():
             if 2 <= index <= df.shape[0] - 4:
                 distinct_level = True
                 sup, res = self.is_support(df, index), self.is_resistance(df, index)
@@ -129,20 +132,29 @@ class SupRes(Indicator):
                             distinct_level = False
                     if distinct_level:
                         levels.append([level, 1])
-
-        return levels
+        print(sorted(levels, key=lambda x: x[0]))
+        return sorted(levels, key=lambda x: x[0])
 
     @staticmethod
-    def add_higher_levels(levels, ticker_levels, s):
+    def add_higher_levels(levels, higher_levels, s):
         """ Merge levels with the levels from higher timeframe. If layers from lower and higher timeframe are
             coincided - increase the importance value of lower timeframe """
         levels_to_add = list()
-        for t_level in ticker_levels:
+        for h_level in higher_levels:
             distinct_level = True
+            # if level from higher timeframe too small or too big for our current level range - continue
+            if levels[0][0] - h_level[0] > s or h_level[0] - levels[-1][0] > s:
+                continue
+            # if level from higher timeframe too close to one of current levels - increase it importance
+            # else just add it to level list
             for i in range(len(levels)):
-                if abs(t_level[0] - levels[i][0]) < s:
+                # if one of current level is already bigger than level that we want to add -
+                # there is no sense to continue
+                if levels[i][0] - h_level[0] > s:
+                    break
+                if abs(h_level[0] - levels[i][0]) < s:
                     levels[i][1] = 3
                     distinct_level = False
             if distinct_level:
-                levels_to_add.append([t_level, 1])
+                levels_to_add.append(h_level)
         return levels + levels_to_add

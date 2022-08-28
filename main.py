@@ -37,7 +37,7 @@ if __name__ == "__main__":
                 for timeframe in timeframes:
                     print(f'Cycle number is {i}, exchange is {exchange}, ticker is {ticker}, timeframe is {timeframe}')
                     if debug:
-                        df = pd.read_pickle('tests/test_ETHUSDT_1d.pkl')
+                        df = pd.read_pickle('tests/test_ETHUSDT_5m.pkl')
                         new_data_flag = True
                     else:
                         # If cryptocurrency dataframe is in dataframe dict - get it, else - create the new one

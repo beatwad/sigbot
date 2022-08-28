@@ -138,3 +138,26 @@ def test_down_direction(dfs, timeframe, ticker, index, expected):
 def test_crossed_lines(dfs, timeframe, ticker, index, up, expected):
     stoch_sig = SignalFactory().factory('STOCH', configs)
     assert stoch_sig.crossed_lines(dfs[ticker][timeframe]['data']['diff'], index, up) == expected
+
+
+@pytest.mark.parametrize('dfs, ticker, timeframe, index, expected',
+                         [
+                          (dfs, 'BTCUSDT', '5m', 2, (False, '', ())),
+                          (dfs, 'BTCUSDT', '5m', 242, (False, '', ())),
+                          (dfs, 'ETHUSDT', '5m', 2, (False, '', ())),
+                          (dfs, 'ETHUSDT', '5m', 146, (True, 'buy', (15, 85))),
+                          ], ids=repr)
+def test_find_stoch_signal(dfs, timeframe, ticker, index, expected):
+    stoch_sig = SignalFactory().factory('STOCH', configs)
+    if index == 146:
+        dfs[ticker][timeframe]['data'].loc[145, 'stoch_slowd'] -= 1
+        dfs[ticker][timeframe]['data'].loc[145, 'stoch_slowk_dir'] *= -1
+        dfs[ticker][timeframe]['data'].loc[146, 'stoch_slowk_dir'] *= -1
+        dfs[ticker][timeframe]['data'].loc[146, 'stoch_slowd_dir'] *= -1
+        dfs[ticker][timeframe]['data'].loc[146, 'diff'] *= -1
+    assert stoch_sig.find_signal(dfs[ticker][timeframe]['data'], index) == expected
+
+# ETH
+# [(74, 'sell', Timestamp('2020-02-13 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (242, 'sell', Timestamp('2020-07-30 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (247, 'sell', Timestamp('2020-08-04 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (248, 'sell', Timestamp('2020-08-05 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (401, 'sell', Timestamp('2021-01-05 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (407, 'sell', Timestamp('2021-01-11 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (521, 'sell', Timestamp('2021-05-05 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (528, 'sell', Timestamp('2021-05-12 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (928, 'buy', Timestamp('2022-06-16 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (929, 'buy', Timestamp('2022-06-17 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))])]
+# BTC
+# [(242, 'sell', Timestamp('2020-07-30 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (354, 'sell', Timestamp('2020-11-19 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (358, 'sell', Timestamp('2020-11-23 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (401, 'sell', Timestamp('2021-01-05 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (407, 'sell', Timestamp('2021-01-11 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (690, 'sell', Timestamp('2021-10-21 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (931, 'buy', Timestamp('2022-06-19 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))])]

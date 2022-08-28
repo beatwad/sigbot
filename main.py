@@ -8,7 +8,7 @@ from signal_stat.signal_stat import SignalStat
 from indicators.indicators import IndicatorFactory
 
 if __name__ == "__main__":
-    debug = False
+    debug = True
     # Set environment variable
     environ["ENV"] = "development"
     # Set dataframe dict
@@ -37,7 +37,7 @@ if __name__ == "__main__":
                 for timeframe in timeframes:
                     print(f'Cycle number is {i}, exchange is {exchange}, ticker is {ticker}, timeframe is {timeframe}')
                     if debug:
-                        df = pd.read_pickle('test_levels.pkl')
+                        df = pd.read_pickle('tests/test_ETHUSDT_1d.pkl')
                         new_data_flag = True
                     else:
                         # If cryptocurrency dataframe is in dataframe dict - get it, else - create the new one
@@ -65,7 +65,6 @@ if __name__ == "__main__":
                             # Write statistics
                             ss = SignalStat(**configs)
                             dfs = ss.write_stat(dfs, ticker, timeframe, points)
-                            # print(points)
                             # print(ss.calculate_total_stat(dfs, 'buy'))
                             # print(ss.calculate_total_stat(dfs, 'sell'))
                             # print(ss.calculate_ticker_stat(dfs, 'buy', ticker, timeframe))

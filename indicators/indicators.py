@@ -132,7 +132,6 @@ class SupRes(Indicator):
                             distinct_level = False
                     if distinct_level:
                         levels.append([level, 1])
-        print(sorted(levels, key=lambda x: x[0]))
         return sorted(levels, key=lambda x: x[0])
 
     @staticmethod
@@ -143,8 +142,6 @@ class SupRes(Indicator):
         if not levels:
             return higher_levels
         for h_level in higher_levels:
-            if h_level == [2300.0, 2]:
-                print(h_level)
             distinct_level = True
             # if level from higher timeframe too small or too big for our current level range - continue
             if levels[0][0] - h_level[0] > s or h_level[0] - levels[-1][0] > s:

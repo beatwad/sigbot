@@ -18,7 +18,7 @@ class SignalStat:
             Statistics for buy and sell trades is written separately """
         df = dfs[ticker][timeframe]['data']
         for point in signal_points:
-            index, ttype = point
+            index, ttype, time, pattern = point
             # array of prices after signal
             high_price_points = np.zeros(self.stat_range)
             low_price_points = np.zeros(self.stat_range)
@@ -86,6 +86,7 @@ class SignalStat:
             tmp['time'] = [time]
             tmp['ticker'] = [ticker]
             tmp['timeframe'] = [timeframe]
+            tmp['pattern'] = [pattern]
             # If current statistics is not in stat dataframe - write it
             if ttype == 'buy':
                 stat = dfs.get('stat').get('buy')
@@ -118,18 +119,18 @@ class SignalStat:
         return dfs
 
     @staticmethod
-    def calculate_total_stat(dfs: dict, type) -> tuple:
+    def calculate_total_stat(dfs: dict, ttype) -> tuple:
         """ Calculate statistics for all found signals for all tickers on all timeframes """
-        stat = dfs['stat'][type]
+        stat = dfs['stat'][ttype]
         if stat.shape[0] == 0:
             return ()
         pct_price_diff_mean = stat['pct_price_diff'].mean()
         return pct_price_diff_mean, stat.shape[0]
 
     @staticmethod
-    def calculate_ticker_stat(dfs: dict, type, ticker: str, timeframe: str) -> tuple:
+    def calculate_ticker_stat(dfs: dict, ttype, ticker: str, timeframe: str) -> tuple:
         """ Calculate statistics for signals for current ticker on current timeframe """
-        stat = dfs['stat'][type]
+        stat = dfs['stat'][ttype]
         stat = stat[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe)]
         if stat.shape[0] == 0:
             return ()

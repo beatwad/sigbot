@@ -16,6 +16,8 @@ class SignalFactory(object):
             return MACDSignal(**params)
         elif indicator == 'SUP_RES':
             return SupResSignal(**params)
+        elif indicator == 'SUP_RES_Robust':
+            return SupResSignal(**params)
 
 
 class SignalBase:
@@ -28,21 +30,21 @@ class SignalBase:
 
     @abstractmethod
     def find_signal(self, *args, **kwargs):
-        return False, ''
+        return False, '', []
 
     @staticmethod
     def lower_bound(indicator: pd.Series, i: int, low_bound: float) -> bool:
-        """ Returns True if indicator is lower than low_bound param """
-        if indicator.loc[i] < low_bound or indicator.loc[i-1] < low_bound or \
-                indicator.loc[i-2] < low_bound:
+        """ Returns True if at least two of three last points of indicator are lower than low_bound param """
+        res = [indicator.loc[i] < low_bound, indicator.loc[i-1] < low_bound, indicator.loc[i-2] < low_bound]
+        if sum(res) >= 2:
             return True
         return False
 
     @staticmethod
     def higher_bound(indicator: pd.Series, i: int, high_bound: float) -> bool:
-        """ Returns True if indicator is higher than high_bound param """
-        if indicator.loc[i] > high_bound or indicator.loc[i-1] > high_bound or \
-                indicator.loc[i-2] > high_bound:
+        """ Returns True if at least two of three last points of indicator are higher than high_bound param """
+        res = [indicator.loc[i] > high_bound, indicator.loc[i-1] > high_bound, indicator.loc[i-2] > high_bound]
+        if sum(res) >= 2:
             return True
         return False
 
@@ -85,7 +87,7 @@ class STOCHSignal(SignalBase):
 
         return False
 
-    def find_signal(self, df: pd.DataFrame, index: int, *args) -> (bool, str):
+    def find_signal(self, df: pd.DataFrame, index: int, *args) -> (bool, str, tuple):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """
         # Find STOCH signal
@@ -94,14 +96,14 @@ class STOCHSignal(SignalBase):
             if self.crossed_lines(df['diff'], index, up=False):
                 if self.up_direction(df['stoch_slowk_dir'], index) and \
                         self.up_direction(df['stoch_slowd_dir'], index):
-                    return True, 'buy'
+                    return True, 'buy', (self.low_bound, self.high_bound)
         if self.higher_bound(df['stoch_slowk'], index, self.low_bound) and \
                 self.higher_bound(df['stoch_slowd'], index, self.low_bound):
             if self.crossed_lines(df['diff'], index, up=True):
                 if self.down_direction(df['stoch_slowk_dir'], index) and \
                         self.down_direction(df['stoch_slowd_dir'], index):
-                    return True, 'sell'
-        return False, ''
+                    return True, 'sell', (self.low_bound, self.high_bound)
+        return False, '', ()
 
 
 class RSISignal(SignalBase):
@@ -114,15 +116,15 @@ class RSISignal(SignalBase):
         self.low_bound = self.params.get('low_bound', 25)
         self.high_bound = self.params.get('high_bound', 75)
 
-    def find_signal(self, df: pd.DataFrame, index: int, *args) -> (bool, str):
+    def find_signal(self, df: pd.DataFrame, index: int, *args) -> (bool, str, tuple):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """
         # Find RSI signal
         if self.lower_bound(df['rsi'], index, self.low_bound):
-            return True, 'buy'
+            return True, 'buy', (self.low_bound, self.high_bound)
         elif self.higher_bound(df['rsi'], index, self.high_bound):
-            return True, 'sell'
-        return False, ''
+            return True, 'sell', (self.low_bound, self.high_bound)
+        return False, '', ()
 
 
 class MACDSignal(SignalBase):
@@ -135,7 +137,7 @@ class MACDSignal(SignalBase):
         self.high_bound = self.params.get('high_bound', 80)
 
     def find_signal(self, *args, **kwargs):
-        return False
+        return False, '', ()
 
 
 class SupResSignal(SignalBase):
@@ -148,7 +150,7 @@ class SupResSignal(SignalBase):
         self.merge_level_multiplier = self.params.get('merge_level_multiplier', 1)
 
     def find_signal(self, *args, **kwargs):
-        return True, ''
+        return True, '', ()
 
     @staticmethod
     def check_levels(df, index, levels, level_proximity, buy):
@@ -161,11 +163,30 @@ class SupResSignal(SignalBase):
         return False
 
 
+class SupResSignalRobust(SupResSignal):
+    """ Find support and resistance levels on the candle plot but return True only if support level is
+        lower than buy point or resistance level is higher than sell point """
+    name = 'SUP_RES_Robust'
+
+    @staticmethod
+    def check_levels(df, index, levels, level_proximity, buy):
+        """ Check if buy points are near support levels and sell points are near resistance levels"""
+        for level in levels:
+            if buy and abs(df.loc[index, 'low'] - level[0]) < level_proximity and \
+                    df.loc[index, 'low'] >= level[0]:
+                return True
+            if not buy and abs(df.loc[index, 'high'] - level[0]) < level_proximity \
+                    and df.loc[index, 'high'] <= level[0]:
+                return True
+        return False
+
+
 class FindSignal:
     """ Class for searching of the indicator combination """
     def __init__(self, configs):
         self.first = True
         self.configs = configs
+        self.time_proximity = configs['Signal_params']['params']['Time_proximity']
         self.indicator_list = configs['Indicator_list']
         self.patterns = configs['Patterns']
 
@@ -212,6 +233,7 @@ class FindSignal:
                 break
 
         for index in range(2, df.shape[0]):
+            time = df.loc[index, 'time']
             sig_patterns = [p.copy() for p in self.patterns]
             # If we update our signal data, it's not necessary to check it all
             if index < df.shape[0]-10 and not self.first:
@@ -222,22 +244,37 @@ class FindSignal:
                 if fs[0] is True:
                     for pattern in sig_patterns:
                         if indicator_signal.name in pattern:
-                            pattern[pattern.index(indicator_signal.name)] = fs
+                            pattern[pattern.index(indicator_signal.name)] = \
+                                (pattern[pattern.index(indicator_signal.name)], fs[0], fs[1], fs[2])
 
             # If any pattern has all 1 - add corresponding point as signal
             for pattern in sig_patterns:
-                if pattern == [(True, 'buy') or (True, '') for _ in range(len(pattern))]:
+                if [(p[1], p[2]) for p in pattern] == [(True, 'buy') or (True, '') for _ in pattern]:
                     if "SUP_RES" in sig_patterns:
                         if sup_res.check_levels(self, df, index, levels, level_proximity, True):
-                            points.append((index, 'buy'))
+                            points.append((index, 'buy', time, [(p[3], p[2]) for p in pattern]))
                     else:
-                        points.append((index, 'buy'))
-                elif pattern == [(True, 'sell') or (True, '') for _ in range(len(pattern))]:
+                        points.append((index, 'buy', time, [(p[0], p[3]) for p in pattern]))
+                elif [(p[1], p[2]) for p in pattern] == [(True, 'sell') or (True, '') for _ in pattern]:
                     if "SUP_RES" in sig_patterns:
                         if sup_res.check_levels(self, df, index, levels, level_proximity, False):
-                            points.append((index, 'sell'))
+                            points.append((index, 'sell', time, [(p[0], p[3]) for p in pattern]))
                     else:
-                        points.append((index, 'sell'))
+                        points.append((index, 'sell', time, [(p[0], p[3]) for p in pattern]))
 
         self.first = False
+
+        print(points)
+        return points
+
+    def check_close_points(self, points):
+        """ Sort points by index and check if indexes of some of them too close to each other.
+            If it's true - delete point with smaller index """
+        i = 0
+        points.sort(key=lambda x: x[0])
+        while i < len(points)-1:
+            if (points[i+1][2] - points[i][2]).total_seconds() < self.time_proximity:
+                points.pop(i)
+            else:
+                i += 1
         return points

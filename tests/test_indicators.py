@@ -88,8 +88,8 @@ levels = [levels1, levels2, levels3, levels4]
 def test_sup_res_find_levels(df, timeframe, ticker, expected):
     indicator = IndicatorFactory.factory('SUP_RES', configs)
     level_proximity = np.mean(df['high'] - df['low'])
-    levels = indicator.find_levels(df, level_proximity)
-    assert levels == expected
+    res = indicator.find_levels(df, level_proximity)
+    assert res == expected
 
 
 # Test adding support and resistance levels from higher timeframe to current timeframe

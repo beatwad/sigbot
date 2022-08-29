@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 import pandas as pd
 from os import environ
 from data.get_data import DataFactory
@@ -137,27 +138,72 @@ def test_down_direction(dfs, timeframe, ticker, index, expected):
                           ], ids=repr)
 def test_crossed_lines(dfs, timeframe, ticker, index, up, expected):
     stoch_sig = SignalFactory().factory('STOCH', configs)
-    assert stoch_sig.crossed_lines(dfs[ticker][timeframe]['data']['diff'], index, up) == expected
+    assert stoch_sig.crossed_lines(dfs[ticker][timeframe]['data']['stoch_diff'], index, up) == expected
 
 
 @pytest.mark.parametrize('dfs, ticker, timeframe, index, expected',
                          [
                           (dfs, 'BTCUSDT', '5m', 2, (False, '', ())),
                           (dfs, 'BTCUSDT', '5m', 242, (False, '', ())),
+                          (dfs, 'BTCUSDT', '5m', 447, (True, 'sell', (15, 85))),
                           (dfs, 'ETHUSDT', '5m', 2, (False, '', ())),
                           (dfs, 'ETHUSDT', '5m', 146, (True, 'buy', (15, 85))),
+                          (dfs, 'ETHUSDT', '5m', 203, (False, '', ())),
                           ], ids=repr)
 def test_find_stoch_signal(dfs, timeframe, ticker, index, expected):
     stoch_sig = SignalFactory().factory('STOCH', configs)
-    if index == 146:
-        dfs[ticker][timeframe]['data'].loc[145, 'stoch_slowd'] -= 1
-        dfs[ticker][timeframe]['data'].loc[145, 'stoch_slowk_dir'] *= -1
-        dfs[ticker][timeframe]['data'].loc[146, 'stoch_slowk_dir'] *= -1
-        dfs[ticker][timeframe]['data'].loc[146, 'stoch_slowd_dir'] *= -1
-        dfs[ticker][timeframe]['data'].loc[146, 'diff'] *= -1
+    if ticker == 'BTCUSDT' and index == 447:
+        dfs[ticker][timeframe]['data'].loc[index, 'stoch_diff'] *= -1
+        dfs[ticker][timeframe]['data'].loc[index-1, 'stoch_slowk'] += 3
+        dfs[ticker][timeframe]['data'].loc[index-1, 'stoch_slowd'] += 3
+        dfs[ticker][timeframe]['data'].loc[index, 'stoch_slowk_dir'] *= -1
+        dfs[ticker][timeframe]['data'].loc[index, 'stoch_slowd_dir'] *= -1
+    elif ticker == 'ETHUSDT' and index == 146:
+        dfs[ticker][timeframe]['data'].loc[index-1, 'stoch_slowd'] -= 1
+        dfs[ticker][timeframe]['data'].loc[index-1, 'stoch_slowk_dir'] *= -1
+        dfs[ticker][timeframe]['data'].loc[index, 'stoch_slowk_dir'] *= -1
+        dfs[ticker][timeframe]['data'].loc[index, 'stoch_slowd_dir'] *= -1
+        dfs[ticker][timeframe]['data'].loc[index, 'stoch_diff'] *= -1
     assert stoch_sig.find_signal(dfs[ticker][timeframe]['data'], index) == expected
 
-# ETH
-# [(74, 'sell', Timestamp('2020-02-13 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (242, 'sell', Timestamp('2020-07-30 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (247, 'sell', Timestamp('2020-08-04 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (248, 'sell', Timestamp('2020-08-05 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (401, 'sell', Timestamp('2021-01-05 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (407, 'sell', Timestamp('2021-01-11 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (521, 'sell', Timestamp('2021-05-05 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (528, 'sell', Timestamp('2021-05-12 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (928, 'buy', Timestamp('2022-06-16 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (929, 'buy', Timestamp('2022-06-17 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))])]
-# BTC
-# [(242, 'sell', Timestamp('2020-07-30 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (354, 'sell', Timestamp('2020-11-19 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (358, 'sell', Timestamp('2020-11-23 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (401, 'sell', Timestamp('2021-01-05 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (407, 'sell', Timestamp('2021-01-11 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (690, 'sell', Timestamp('2021-10-21 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))]), (931, 'buy', Timestamp('2022-06-19 03:00:00'), [('STOCH', (15, 85)), ('RSI', (25, 75))])]
+
+@pytest.mark.parametrize('dfs, ticker, timeframe, index, buy, expected',
+                         [
+                          (dfs, 'BTCUSDT', '5m', 71, True, False),
+                          (dfs, 'BTCUSDT', '5m', 242, True, True),
+                          (dfs, 'BTCUSDT', '5m', 247, True, False),
+                          (dfs, 'BTCUSDT', '5m', 447, False, True),
+                          (dfs, 'BTCUSDT', '5m', 462, False, False),
+                          (dfs, 'ETHUSDT', '5m', 30, True, True),
+                          (dfs, 'ETHUSDT', '5m', 30, False, True),
+                          (dfs, 'ETHUSDT', '5m', 68, True, False),
+                          (dfs, 'ETHUSDT', '5m', 133, False, False),
+                          ], ids=repr)
+def test_check_levels(dfs, timeframe, ticker, index, buy, expected):
+    sup_res_sig = SignalFactory().factory('SUP_RES', configs)
+    df = dfs[ticker][timeframe]['data']
+    levels = dfs[ticker][timeframe]['levels']
+    level_proximity = np.mean(df['high'] - df['low']) * sup_res_sig.proximity_multiplier
+    assert sup_res_sig.check_levels(df, index, levels, level_proximity, buy) == expected
+
+
+@pytest.mark.parametrize('dfs, ticker, timeframe, index, buy, expected',
+                         [
+                          (dfs, 'BTCUSDT', '5m', 71, True, False),
+                          (dfs, 'BTCUSDT', '5m', 242, True, True),
+                          (dfs, 'BTCUSDT', '5m', 247, True, False),
+                          (dfs, 'BTCUSDT', '5m', 253, True, False),
+                          (dfs, 'BTCUSDT', '5m', 447, False, True),
+                          (dfs, 'BTCUSDT', '5m', 448, False, False),
+                          (dfs, 'ETHUSDT', '5m', 30, True, False),
+                          (dfs, 'ETHUSDT', '5m', 30, False, False),
+                          (dfs, 'ETHUSDT', '5m', 68, True, False),
+                          (dfs, 'ETHUSDT', '5m', 133, False, False),
+                          ], ids=repr)
+def test_check_levels_robust(dfs, timeframe, ticker, index, buy, expected):
+    sup_res_sig = SignalFactory().factory('SUP_RES_Robust', configs)
+    df = dfs[ticker][timeframe]['data']
+    levels = dfs[ticker][timeframe]['levels']
+    level_proximity = np.mean(df['high'] - df['low']) * sup_res_sig.proximity_multiplier
+    assert sup_res_sig.check_levels(df, index, levels, level_proximity, buy) == expected
+

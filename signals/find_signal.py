@@ -17,7 +17,7 @@ class SignalFactory(object):
         elif indicator == 'SUP_RES':
             return SupResSignal(**params)
         elif indicator == 'SUP_RES_Robust':
-            return SupResSignal(**params)
+            return SupResSignalRobust(**params)
 
 
 class SignalBase:
@@ -93,13 +93,13 @@ class STOCHSignal(SignalBase):
         # Find STOCH signal
         if self.lower_bound(df['stoch_slowk'], index, self.low_bound) and \
                 self.lower_bound(df['stoch_slowd'], index, self.low_bound):
-            if self.crossed_lines(df['diff'], index, up=False):
+            if self.crossed_lines(df['stoch_diff'], index, up=False):
                 if self.up_direction(df['stoch_slowk_dir'], index) and \
                         self.up_direction(df['stoch_slowd_dir'], index):
                     return True, 'buy', (self.low_bound, self.high_bound)
-        if self.higher_bound(df['stoch_slowk'], index, self.low_bound) and \
-                self.higher_bound(df['stoch_slowd'], index, self.low_bound):
-            if self.crossed_lines(df['diff'], index, up=True):
+        if self.higher_bound(df['stoch_slowk'], index, self.high_bound) and \
+                self.higher_bound(df['stoch_slowd'], index, self.high_bound):
+            if self.crossed_lines(df['stoch_diff'], index, up=True):
                 if self.down_direction(df['stoch_slowk_dir'], index) and \
                         self.down_direction(df['stoch_slowd_dir'], index):
                     return True, 'sell', (self.low_bound, self.high_bound)
@@ -147,7 +147,7 @@ class SupResSignal(SignalBase):
 
     def __init__(self, **params):
         super(SupResSignal, self).__init__(params)
-        self.merge_level_multiplier = self.params.get('merge_level_multiplier', 1)
+        self.proximity_multiplier = self.params.get('proximity_multiplier', 1)
 
     def find_signal(self, *args, **kwargs):
         return True, '', ()
@@ -172,11 +172,9 @@ class SupResSignalRobust(SupResSignal):
     def check_levels(df, index, levels, level_proximity, buy):
         """ Check if buy points are near support levels and sell points are near resistance levels"""
         for level in levels:
-            if buy and abs(df.loc[index, 'low'] - level[0]) < level_proximity and \
-                    df.loc[index, 'low'] >= level[0]:
+            if buy and abs(df.loc[index, 'low'] - level[0]) < level_proximity and df.loc[index, 'low'] >= level[0]:
                 return True
-            if not buy and abs(df.loc[index, 'high'] - level[0]) < level_proximity \
-                    and df.loc[index, 'high'] <= level[0]:
+            if not buy and abs(df.loc[index, 'high'] - level[0]) < level_proximity and df.loc[index, 'high'] <= level[0]:
                 return True
         return False
 
@@ -194,10 +192,10 @@ class FindSignal:
         """ Add all necessary indicator data to dataframe """
         for i in self.indicator_list:
             if i.startswith('STOCH'):
-                df['stoch_slowk_dir'] = df['stoch_slowk'].pct_change().rolling(5).mean()
-                df['stoch_slowd_dir'] = df['stoch_slowd'].pct_change().rolling(5).mean()
-                df['diff'] = df['stoch_slowk'] - df['stoch_slowd']
-                df['diff'] = df['diff'].rolling(5).mean()
+                df['stoch_slowk_dir'] = df['stoch_slowk'].pct_change().rolling(3).mean()
+                df['stoch_slowd_dir'] = df['stoch_slowd'].pct_change().rolling(3).mean()
+                df['stoch_diff'] = df['stoch_slowk'] - df['stoch_slowd']
+                df['stoch_diff'] = df['stoch_diff'].rolling(3).mean()
                 break
 
         for i in self.indicator_list:
@@ -229,7 +227,7 @@ class FindSignal:
         for indicator_signal in indicator_signals:
             if indicator_signal.name == 'SUP_RES':
                 sup_res = indicator_signal
-                level_proximity = np.mean(df['high'] - df['low']) * sup_res.merge_level_multiplier
+                level_proximity = np.mean(df['high'] - df['low']) * sup_res.proximity_multiplier
                 break
 
         for index in range(2, df.shape[0]):
@@ -264,17 +262,16 @@ class FindSignal:
 
         self.first = False
 
-        print(points)
         return points
-
-    def check_close_points(self, points):
-        """ Sort points by index and check if indexes of some of them too close to each other.
-            If it's true - delete point with smaller index """
-        i = 0
-        points.sort(key=lambda x: x[0])
-        while i < len(points)-1:
-            if (points[i+1][2] - points[i][2]).total_seconds() < self.time_proximity:
-                points.pop(i)
-            else:
-                i += 1
-        return points
+    #
+    # def check_close_points(self, points):
+    #     """ Sort points by index and check if indexes of some of them too close to each other.
+    #         If it's true - delete point with smaller index """
+    #     i = 0
+    #     points.sort(key=lambda x: x[0])
+    #     while i < len(points)-1:
+    #         if (points[i+1][2] - points[i][2]).total_seconds() < self.time_proximity:
+    #             points.pop(i)
+    #         else:
+    #             i += 1
+    #     return points

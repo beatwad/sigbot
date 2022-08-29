@@ -216,6 +216,7 @@ class FindSignal:
         """ Search for the signals through the dataframe, if found - add its index and trade type to the list
         """
         points = list()
+        index_list = list()
 
         df = self.prepare_dataframe(df)
         indicator_signals = self.prepare_indicator_signals()
@@ -247,18 +248,31 @@ class FindSignal:
 
             # If any pattern has all 1 - add corresponding point as signal
             for pattern in sig_patterns:
-                if [(p[1], p[2]) for p in pattern] == [(True, 'buy') or (True, '') for _ in pattern]:
-                    if "SUP_RES" in sig_patterns:
-                        if sup_res.check_levels(self, df, index, levels, level_proximity, True):
-                            points.append((index, 'buy', time, [(p[3], p[2]) for p in pattern]))
+                point = None
+                if index == 83:
+                    print(index)
+                for p in pattern:
+                    if (p[1], p[2]) != (True, 'buy') and (p[1], p[2]) != (True, ''):
+                        break
+                else:
+                    if "SUP_RES" in [p[0] for p in pattern]:
+                        if sup_res.check_levels(df, index, levels, level_proximity, True):
+                            point = (index, 'buy', time, [(p[0], p[3]) for p in pattern])
                     else:
-                        points.append((index, 'buy', time, [(p[0], p[3]) for p in pattern]))
-                elif [(p[1], p[2]) for p in pattern] == [(True, 'sell') or (True, '') for _ in pattern]:
-                    if "SUP_RES" in sig_patterns:
-                        if sup_res.check_levels(self, df, index, levels, level_proximity, False):
-                            points.append((index, 'sell', time, [(p[0], p[3]) for p in pattern]))
+                        point = (index, 'buy', time, [(p[0], p[3]) for p in pattern])
+
+                for p in pattern:
+                    if (p[1], p[2]) != (True, 'sell') and (p[1], p[2]) != (True, ''):
+                        break
+                else:
+                    if "SUP_RES" in [p[0] for p in pattern]:
+                        if sup_res.check_levels(df, index, levels, level_proximity, False):
+                            point = (index, 'sell', time, [(p[0], p[3]) for p in pattern])
                     else:
-                        points.append((index, 'sell', time, [(p[0], p[3]) for p in pattern]))
+                        point = (index, 'sell', time, [(p[0], p[3]) for p in pattern])
+                if point and index not in index_list:
+                    index_list.append(index)
+                    points.append(point)
 
         self.first = False
 

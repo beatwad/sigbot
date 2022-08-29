@@ -62,6 +62,7 @@ if __name__ == "__main__":
                         if timeframe == work_timeframe:
                             fs = FindSignal(configs)
                             points = fs.find_signal(df, dfs[ticker][timeframe]['levels'])
+                            print(points)
                             # Write statistics
                             ss = SignalStat(**configs)
                             dfs = ss.write_stat(dfs, ticker, timeframe, points)

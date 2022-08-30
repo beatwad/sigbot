@@ -17,7 +17,7 @@ if __name__ == "__main__":
                     'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe'])}}
     # Set list of available exchanges, cryptocurrencies and tickers
     # exchanges = {'Binance': {'BTCUSDT': ['1d', '4h', '1h', '5m'], 'ETHUSDT': ['1d', '4h', '1h', '5m']}}
-    exchanges = {'Binance': {'ETHUSDT': ['1h', '5m']}}
+    exchanges = {'Binance': {'BTCUSDT': ['1h', '5m']}}
     # Get configs
     configs = ConfigFactory.factory(environ).configs
     # Get dict of exchange APIs
@@ -38,7 +38,7 @@ if __name__ == "__main__":
                 for timeframe in timeframes:
                     print(f'Cycle number is {i}, exchange is {exchange}, ticker is {ticker}, timeframe is {timeframe}')
                     if debug:
-                        df = pd.read_pickle('tests/test_ETHUSDT_5m.pkl')
+                        df = pd.read_pickle('tests/test_BTCUSDT_5m.pkl')
                         new_data_flag = True
                     else:
                         # If cryptocurrency dataframe is in dataframe dict - get it, else - create the new one

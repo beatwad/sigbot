@@ -16,4 +16,13 @@
   "SignalStat":  {"params": {"take_profit_multiplier":  2, "stop_loss_multiplier":  2, "test":  1}},
   "Indicator_list": ["STOCH", "RSI", "SUP_RES"],
   "Patterns":  [["STOCH", "RSI"], ["STOCH", "RSI", "SUP_RES"], ["STOCH", "RSI", "SUP_RES_Robust"]],
-  "Timeframes":  {"work_timeframe":  "5m", "higher_timeframe":  "1h", "stat_range":  12}}
+  "Timeframes":  {"work_timeframe":  "5m", "higher_timeframe":  "1h", "stat_range":  12},
+  "Visualizer": {"params":  {"plot_width": 30,
+                             "save_path": "visualizer/images",
+                             "level_indicators": ["SUP_RES", "SUP_RES_Robust"],
+                             "boundary_indicators": ["STOCH", "RSI"],
+                             "indicator_dict":  {"STOCH" :  ["stoch_slowk", "stoch_slowd"],
+                                                  "RSI":  ["rsi"],
+                                                  "MACD": [],
+                                                  "SUP_RES": [],
+                                                  "SUP_RES_Robust": []}}}}

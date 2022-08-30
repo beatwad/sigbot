@@ -5,6 +5,7 @@ from data.get_data import DataFactory
 from config.config import ConfigFactory
 from signals.find_signal import FindSignal
 from signal_stat.signal_stat import SignalStat
+from visualizer.visualizer import Visualizer
 from indicators.indicators import IndicatorFactory
 
 if __name__ == "__main__":
@@ -61,11 +62,16 @@ if __name__ == "__main__":
                         # Get signals
                         if timeframe == work_timeframe:
                             fs = FindSignal(configs)
-                            points = fs.find_signal(df, dfs[ticker][timeframe]['levels'])
-                            print(points)
+                            levels = dfs[ticker][timeframe]['levels']
+                            points = fs.find_signal(df, levels)
                             # Write statistics
                             ss = SignalStat(**configs)
                             dfs = ss.write_stat(dfs, ticker, timeframe, points)
+                            # Generate and save the plot
+                            # v = Visualizer(**configs)
+                            # filename1 = v.create_plot(dfs, 'ETHUSDT', '5m', points[0], levels)
+                            # filename2 = v.create_plot(dfs, 'ETHUSDT', '5m', points[1], levels)
+                            # Calculate statistics
                             # print(ss.calculate_total_stat(dfs, 'buy'))
                             # print(ss.calculate_total_stat(dfs, 'sell'))
                             # print(ss.calculate_ticker_stat(dfs, 'buy', ticker, timeframe))

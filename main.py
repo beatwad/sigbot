@@ -1,6 +1,8 @@
 import pandas as pd
 from time import sleep
+from datetime import datetime
 from os import environ
+from data.get_data import GetData
 from data.get_data import DataFactory
 from config.config import ConfigFactory
 from signals.find_signal import FindSignal
@@ -9,32 +11,40 @@ from visualizer.visualizer import Visualizer
 from indicators.indicators import IndicatorFactory
 
 if __name__ == "__main__":
-    debug = True
+    debug = False
     # Set environment variable
     environ["ENV"] = "development"
     # Set dataframe dict
     dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),
                     'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe'])}}
-    # Set list of available exchanges, cryptocurrencies and tickers
-    # exchanges = {'Binance': {'BTCUSDT': ['1d', '4h', '1h', '5m'], 'ETHUSDT': ['1d', '4h', '1h', '5m']}}
-    exchanges = {'Binance': {'BTCUSDT': ['1h', '5m']}}
+
     # Get configs
     configs = ConfigFactory.factory(environ).configs
-    # Get dict of exchange APIs
-    exchange_apis = dict()
-    for exchange in exchanges:
-        exchange_apis[exchange] = DataFactory.factory(exchange, **configs)
-    # Higher timeframe from which we take levels
+    # Set list of available exchanges, cryptocurrencies and tickers
+    exchanges = {'Binance': {'API': GetData(**configs), 'tickers': []}}
+
+    # Get timeframes timeframe from which we take levels
     work_timeframe = configs['Timeframes']['work_timeframe']
+    higher_timeframe = configs['Timeframes']['higher_timeframe']
+    timeframes = [higher_timeframe, work_timeframe]
+
+    # Get API and ticker list for every exchange in list
+    for ex in list(exchanges.keys()):
+        exchange_api = DataFactory.factory(ex, **configs)
+        exchanges[ex]['API'] = exchange_api
+        tickers = exchanges[ex]['API'].get_tickers()
+        exchanges[ex]['tickers'] = tickers
+
     # Counter
     i = 1
+    print(f'Begin, time is {datetime.now()}')
 
     while True:
         # For every exchange, ticker and timeframe in base get cryptocurrency data and write it to correspond dataframe
-        for exchange, exchange_api in exchange_apis.items():
-            tickers = exchanges[exchange]
+        for exchange, exchange_data in exchanges.items():
+            exchange_api = exchange_data['API']
+            tickers = exchange_data['tickers']
             for ticker in tickers:
-                timeframes = tickers[ticker]
                 for timeframe in timeframes:
                     print(f'Cycle number is {i}, exchange is {exchange}, ticker is {ticker}, timeframe is {timeframe}')
                     if debug:
@@ -77,10 +87,12 @@ if __name__ == "__main__":
                             # print(ss.calculate_ticker_stat(dfs, 'buy', ticker, timeframe))
                             # print(ss.calculate_ticker_stat(dfs, 'sell', ticker, timeframe))
                             # Save dataframe to the disk
-                        try:
-                            open(f'{ticker}_{timeframe}.pkl', 'w').close()
-                        except FileNotFoundError:
-                            pass
-                        df.to_pickle(f'{ticker}_{timeframe}.pkl')
-        i += 1
-        sleep(300)
+                        # try:
+                        #     open(f'{ticker}_{timeframe}.pkl', 'w').close()
+                        # except FileNotFoundError:
+                        #     pass
+                        # df.to_pickle(f'{ticker}_{timeframe}.pkl')
+        # i += 1
+        # sleep(3000)
+        print(f'End, time is {datetime.now()}')
+        break

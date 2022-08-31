@@ -23,9 +23,11 @@ class GetData:
     def __init__(self, **params):
         self.params = params[self.type][self.name]['params']
         # basic interval (number of candles) to upload at startup
-        self.limit = self.params['limit']
+        self.limit = self.params.get('limit', 0)
+        # minimum trading volume (USD) for exchange ticker to be added to watch list
+        self.min_volume = self.params.get('min_volume', 0)
         # parameter to convert seconds to intervals
-        self.timeframe_div = self.params['timeframe_div']
+        self.timeframe_div = self.params.get('timeframe_div', dict())
         # dict to store timestamp for every timeframe
         self.timestamp_dict = dict()
         dt = datetime.now()
@@ -35,6 +37,11 @@ class GetData:
     @abstractmethod
     def get_data(self, df, ticker, timeframe):
         """ Get candle and volume data from exchange """
+        pass
+
+    @abstractmethod
+    def get_tickers(self):
+        """ Get list of available ticker names """
         pass
 
     @staticmethod
@@ -92,8 +99,9 @@ class GetBinanceData(GetData):
     key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
     secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
 
-    def __int__(self, **params):
+    def __init__(self, **params):
         super(GetBinanceData, self).__init__(**params)
+        self.api.connect_to_api(self.key, self.secret)
 
     def get_limit(self, df: pd.DataFrame, timeframe: str) -> int:
         """ Get interval needed to download from exchange according to difference between current time and
@@ -109,7 +117,6 @@ class GetBinanceData(GetData):
 
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str):
         """ Get data from Binance exchange """
-        self.api.connect_to_api(self.key, self.secret)
         limit = self.get_limit(df, timeframe)
         # get data from exchange only when there is at least one interval to get
         if limit > 1:
@@ -119,6 +126,13 @@ class GetBinanceData(GetData):
             self.timestamp_dict[timeframe] = datetime.now()
             return df, True
         return df, False
+
+    def get_tickers(self):
+        """ Get list of available ticker names """
+        ticker_names = self.api.get_ticker_names()
+        df = self.api.get_ticker_volume(ticker_names)
+        tickers = df.loc[df['volume'] >= self.min_volume, 'ticker'].to_list()
+        return tickers
 
 
 class GetOKEXData(GetData):

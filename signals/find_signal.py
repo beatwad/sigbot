@@ -249,8 +249,6 @@ class FindSignal:
             # If any pattern has all 1 - add corresponding point as signal
             for pattern in sig_patterns:
                 point = None
-                if index == 506:
-                    print(index)
                 for p in pattern:
                     if (p[1], p[2]) != (True, 'buy') and (p[1], p[2]) != (True, ''):
                         break

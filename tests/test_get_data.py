@@ -118,15 +118,15 @@ def test_process_data(mocker, df, cryptocurrency, expected):
 @pytest.mark.parametrize('df, ticker, timeframe, cryptocurrency, limit, expected',
                          [
                           (pd.DataFrame(), 'BTCUSDT', '5m', cryptocurrencies[0], 1000,
-                           (df.loc[498:500].reset_index(drop=True), True)),
-                          (df.loc[:500], 'BTCUSDT', '5m', cryptocurrencies[0], 0, (df.loc[:500], False)),
-                          (df.loc[:500], 'BTCUSDT', '5m', cryptocurrencies[0], 1, (df.loc[:500], False)),
+                           (df.loc[498:500].reset_index(drop=True), 1000, True)),
+                          (df.loc[:500], 'BTCUSDT', '5m', cryptocurrencies[0], 0, (df.loc[:500], 0, False)),
+                          (df.loc[:500], 'BTCUSDT', '5m', cryptocurrencies[0], 1, (df.loc[:500], 1, False)),
                           (df.loc[:500], 'BTCUSDT', '5m', cryptocurrencies[1], 2,
-                           (df.loc[2:502].reset_index(drop=True), True)),
+                           (df.loc[2:502].reset_index(drop=True), 2, True)),
                           (df.loc[:500], 'BTCUSDT', '5m', cryptocurrencies[2], 100,
-                           (df.loc[100:600].reset_index(drop=True), True)),
+                           (df.loc[100:600].reset_index(drop=True), 100, True)),
                           (df.loc[:500], 'BTCUSDT', '5m', cryptocurrencies[3], 200,
-                           (df.loc[100:600].reset_index(drop=True), True)),
+                           (df.loc[100:600].reset_index(drop=True), 200, True)),
                           ], ids=repr)
 def test_get_data_get_data(mocker, df, ticker, timeframe, cryptocurrency, limit, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
@@ -136,6 +136,7 @@ def test_get_data_get_data(mocker, df, ticker, timeframe, cryptocurrency, limit,
     res = gd.get_data(df, ticker, timeframe)
     assert res[0].equals(expected[0])
     assert res[1] == expected[1]
+    assert res[2] == expected[2]
 
 
 # test_add_indicator_data

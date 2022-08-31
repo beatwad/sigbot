@@ -11,7 +11,7 @@ from visualizer.visualizer import Visualizer
 from indicators.indicators import IndicatorFactory
 
 if __name__ == "__main__":
-    debug = False
+    debug = True
     # Set environment variable
     environ["ENV"] = "development"
     # Set dataframe dict
@@ -33,7 +33,7 @@ if __name__ == "__main__":
         exchange_api = DataFactory.factory(ex, **configs)
         exchanges[ex]['API'] = exchange_api
         tickers = exchanges[ex]['API'].get_tickers()
-        exchanges[ex]['tickers'] = tickers
+        exchanges[ex]['tickers'] = ['BTCUSDT']#tickers
 
     # Counter
     i = 1
@@ -48,13 +48,17 @@ if __name__ == "__main__":
                 for timeframe in timeframes:
                     print(f'Cycle number is {i}, exchange is {exchange}, ticker is {ticker}, timeframe is {timeframe}')
                     if debug:
-                        df = pd.read_pickle('tests/test_BTCUSDT_5m.pkl')
+                        df = pd.read_pickle('tests/test_ETHUSDT_5m.pkl')
                         new_data_flag = True
+                        if i > 1:
+                            limit = 10
+                        else:
+                            limit = 1000
                     else:
                         # If cryptocurrency dataframe is in dataframe dict - get it, else - create the new one
                         df = dfs.get(ticker, dict()).get(timeframe, dict()).get('data', pd.DataFrame())
                         # Write data to the dataframe
-                        df, new_data_flag = exchange_api.get_data(df, ticker, timeframe)
+                        df, limit, new_data_flag = exchange_api.get_data(df, ticker, timeframe)
                     # Create indicator list from search signal patterns list, if has new data and
                     # data not from higher timeframe, else get only levels
                     if new_data_flag:
@@ -73,7 +77,8 @@ if __name__ == "__main__":
                         if timeframe == work_timeframe:
                             fs = FindSignal(configs)
                             levels = dfs[ticker][timeframe]['levels']
-                            points = fs.find_signal(df, levels)
+                            points = fs.find_signal(df, levels, limit)
+                            # print(points)
                             # Write statistics
                             ss = SignalStat(**configs)
                             dfs = ss.write_stat(dfs, ticker, timeframe, points)
@@ -92,7 +97,7 @@ if __name__ == "__main__":
                         # except FileNotFoundError:
                         #     pass
                         # df.to_pickle(f'{ticker}_{timeframe}.pkl')
-        # i += 1
-        # sleep(3000)
-        print(f'End, time is {datetime.now()}')
-        break
+        i += 1
+        sleep(10)
+        # print(f'End, time is {datetime.now()}')
+        # break

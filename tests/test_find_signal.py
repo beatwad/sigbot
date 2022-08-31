@@ -212,20 +212,28 @@ def test_check_levels_robust(dfs, timeframe, ticker, index, buy, expected):
 points1 = [(91, 'sell', datetime(2022, 8, 21, 11, 20), [('STOCH', (15, 85)), ('RSI', (25, 75))]),
            (506, 'buy', datetime(2022, 8, 22, 21, 55), [('STOCH', (15, 85)), ('RSI', (25, 75))]),
            (569, 'sell', datetime(2022, 8, 23, 3, 10), [('STOCH', (15, 85)), ('RSI', (25, 75))])]
-points2 = [(83, 'sell', datetime(2022, 8, 21, 11, 20), [('STOCH', (15, 85)), ('RSI', (25, 75))]),
+points2 = [(506, 'buy', datetime(2022, 8, 22, 21, 55), [('STOCH', (15, 85)), ('RSI', (25, 75))]),
+           (569, 'sell', datetime(2022, 8, 23, 3, 10), [('STOCH', (15, 85)), ('RSI', (25, 75))])]
+points3 = [(83, 'sell', datetime(2022, 8, 21, 11, 20), [('STOCH', (15, 85)), ('RSI', (25, 75))]),
            (370, 'buy', datetime(2022, 8, 22, 11, 15), [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())]),
            (629, 'buy', datetime(2022, 8, 23, 8, 50), [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())]),
            (631, 'buy', datetime(2022, 8, 23, 9), [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())])]
-expected = [points1, points2]
+points4 = [(629, 'buy', datetime(2022, 8, 23, 8, 50), [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())]),
+           (631, 'buy', datetime(2022, 8, 23, 9), [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())])]
+expected = [points1, points2, points3, points4]
 
 
-@pytest.mark.parametrize('dfs, ticker, timeframe, expected',
+@pytest.mark.parametrize('dfs, ticker, timeframe, limit, expected',
                          [
-                          (dfs, 'BTCUSDT', '5m', expected[0]),
-                          (dfs, 'ETHUSDT', '5m', expected[1]),
+                          (dfs, 'BTCUSDT', '5m', 1000, expected[0]),
+                          (dfs, 'BTCUSDT', '5m', 500, expected[1]),
+                          (dfs, 'BTCUSDT', '5m', 10, []),
+                          (dfs, 'ETHUSDT', '5m', 1000, expected[2]),
+                          (dfs, 'ETHUSDT', '5m', 400, expected[3]),
+                          (dfs, 'ETHUSDT', '5m', 10, []),
                           ], ids=repr)
-def test_find_signal(dfs, timeframe, ticker, expected):
+def test_find_signal(dfs, timeframe, ticker, limit, expected):
     fs = FindSignal(configs)
     df = dfs[ticker][timeframe]['data']
     levels = dfs[ticker][timeframe]['levels']
-    assert fs.find_signal(df, levels) == expected
+    assert fs.find_signal(df, levels, limit) == expected

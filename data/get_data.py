@@ -124,8 +124,8 @@ class GetBinanceData(GetData):
             df = self.process_data(crypto_currency, df)
             # update timestamp for current timeframe
             self.timestamp_dict[timeframe] = datetime.now()
-            return df, True
-        return df, False
+            return df, limit, True
+        return df, limit, False
 
     def get_tickers(self):
         """ Get list of available ticker names """

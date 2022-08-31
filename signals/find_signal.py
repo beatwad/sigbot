@@ -1,7 +1,6 @@
 import numpy as np
-from abc import abstractmethod
-
 import pandas as pd
+from abc import abstractmethod
 
 
 class SignalFactory(object):
@@ -212,8 +211,9 @@ class FindSignal:
             indicator_signals.append(SignalFactory.factory(indicator, self.configs))
         return indicator_signals
 
-    def find_signal(self, df: pd.DataFrame, levels: list) -> list:
-        """ Search for the signals through the dataframe, if found - add its index and trade type to the list
+    def find_signal(self, df: pd.DataFrame, levels: list, limit: int) -> list:
+        """ Search for the signals through the dataframe, if found - add its index and trade type to the list.
+            If dataset was updated - don't search through the whole dataset, only through updated part.
         """
         points = list()
         index_list = list()
@@ -231,7 +231,7 @@ class FindSignal:
                 level_proximity = np.mean(df['high'] - df['low']) * sup_res.proximity_multiplier
                 break
 
-        for index in range(2, df.shape[0]):
+        for index in range(max(df.shape[0]-limit, 2), df.shape[0]):
             time = df.loc[index, 'time']
             sig_patterns = [p.copy() for p in self.patterns]
             # If we update our signal data, it's not necessary to check it all

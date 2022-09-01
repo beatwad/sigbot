@@ -171,6 +171,6 @@ if __name__ == "__main__":
         main.main_cycle()
         dt2 = datetime.now()
         dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
-        print(f'Cycle is {i}, time for cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
+        print(f'Cycle is {i}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
         i += 1
         sleep(300)

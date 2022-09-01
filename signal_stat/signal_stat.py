@@ -18,7 +18,7 @@ class SignalStat:
             Statistics for buy and sell trades is written separately """
         df = dfs[ticker][timeframe]['data']
         for point in signal_points:
-            index, ttype, time, pattern, plotpath, exchange_list = point
+            index, ttype, time, pattern, plot_path, exchange_list = point
             # array of prices after signal
             high_price_points = np.zeros(self.stat_range)
             low_price_points = np.zeros(self.stat_range)

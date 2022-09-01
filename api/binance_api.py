@@ -29,6 +29,17 @@ class Binance(ApiBase):
     def get_exchange_info(self):
         return self.client.get_exchange_info()
 
+    @staticmethod
+    def check_symbol(symbol):
+        """ Check if ticker is not pair with fiat currency or stablecoin """
+        fiat = ['EUR', 'CHF', 'GBP', 'JPY', 'CNY', 'RUB']
+        if re.match('.?USD', symbol) or re.match('.?UST', symbol):
+            return False
+        for f in fiat:
+            if symbol.startswith(f):
+                return False
+        return True
+
     def get_ticker_names(self) -> list:
         """ Get non-stable tickers from Binance exchange that are in pair with USDT or BUSD and have TRADING status """
         ticker_names = list()
@@ -37,16 +48,17 @@ class Binance(ApiBase):
         for s in exchange_info['symbols']:
             symbol = s['symbol']
             if s['status'] == 'TRADING' and symbol.endswith('USDT'):
-                if not (re.match('.?USD', symbol) or re.match('.?UST', symbol)):
-                    ticker_names.append(s['symbol'])
+                    if self.check_symbol(symbol):
+                        ticker_names.append(s['symbol'])
 
         for s in exchange_info['symbols']:
             symbol = s['symbol']
             if s['status'] == 'TRADING' and symbol.endswith('BUSD'):
-                if not (re.match('.?USD', symbol) or re.match('.?UST', symbol)):
-                    prefix = s['symbol'][:-4]
-                    if prefix + 'USDT' not in ticker_names:
+                prefix = s['symbol'][:-4]
+                if prefix + 'USDT' not in ticker_names:
+                    if self.check_symbol(symbol):
                         ticker_names.append(s['symbol'])
+
         return ticker_names
 
     def get_ticker_volume(self, ticker_names: list) -> pd.DataFrame:

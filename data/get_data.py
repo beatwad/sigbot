@@ -115,7 +115,7 @@ class GetBinanceData(GetData):
             # if time passed more than one interval - get it
             return min(self.limit, limit)
 
-    def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str):
+    def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str) -> (pd.DataFrame, int):
         """ Get data from Binance exchange """
         limit = self.get_limit(df, timeframe)
         # get data from exchange only when there is at least one interval to get
@@ -124,13 +124,13 @@ class GetBinanceData(GetData):
             df = self.process_data(crypto_currency, df)
             # update timestamp for current timeframe
             self.timestamp_dict[timeframe] = datetime.now()
-            return df, limit, True
-        return df, limit, False
+        return df, limit
 
     def get_tickers(self):
         """ Get list of available ticker names """
         ticker_names = self.api.get_ticker_names()
         df = self.api.get_ticker_volume(ticker_names)
+        df = df.sort_values('volume', ascending=False)
         tickers = df.loc[df['volume'] >= self.min_volume, 'ticker'].to_list()
         return tickers
 

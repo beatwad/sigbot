@@ -1,8 +1,9 @@
-import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 import matplotlib.style as style
 
+matplotlib.use('Agg')
 style.use('fivethirtyeight')
 
 
@@ -11,12 +12,15 @@ class Visualizer:
 
     def __init__(self, **params):
         self.params = params[self.type]['params']
+        # Path to save plot files
         self.save_path = self.params['save_path']
         self.indicator_params = params['Indicator_signal']
         self.plot_width = self.params.get('plot_width', 10)
         self.indicator_dict = self.params.get('indicator_dict', dict())
         self.level_indicators = self.params.get('level_indicators', list())
         self.boundary_indicators = self.params.get('boundary_indicators', list())
+        # Max number of previous candles for which signal can be searched for
+        self.max_prev_candle_limit = self.params.get('max_prev_candle_limit', 0)
 
     def plot_indicator_parameters(self, point, index, indicator, axs, indicator_params):
         """ Plot parameters of indicator (like low or high boundary, etc.)"""
@@ -55,7 +59,9 @@ class Visualizer:
         df = dfs[ticker][timeframe]['data']
         data = df.loc[point_index - self.plot_width:point_index]
         ohlc = data[['time', 'open', 'high', 'low', 'close', 'volume']]
-
+        # if too much time has passed after signal was found - skip it
+        if point_index < df.shape[0] - self.max_prev_candle_limit:
+            return ''
         # get indicator list
         indicator_list = [p[0] for p in point[3] if p[0] not in self.level_indicators]
         indicator_params = [p[1] for p in point[3] if p not in self.level_indicators]

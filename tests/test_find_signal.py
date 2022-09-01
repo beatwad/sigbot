@@ -209,17 +209,20 @@ def test_check_levels_robust(dfs, timeframe, ticker, index, buy, expected):
     assert sup_res_sig.check_levels(df, index, levels, level_proximity, buy) == expected
 
 
-points1 = [(91, 'sell', datetime(2022, 8, 21, 11, 20), [('STOCH', (15, 85)), ('RSI', (25, 75))]),
-           (506, 'buy', datetime(2022, 8, 22, 21, 55), [('STOCH', (15, 85)), ('RSI', (25, 75))]),
-           (569, 'sell', datetime(2022, 8, 23, 3, 10), [('STOCH', (15, 85)), ('RSI', (25, 75))])]
-points2 = [(506, 'buy', datetime(2022, 8, 22, 21, 55), [('STOCH', (15, 85)), ('RSI', (25, 75))]),
-           (569, 'sell', datetime(2022, 8, 23, 3, 10), [('STOCH', (15, 85)), ('RSI', (25, 75))])]
-points3 = [(83, 'sell', datetime(2022, 8, 21, 11, 20), [('STOCH', (15, 85)), ('RSI', (25, 75))]),
-           (370, 'buy', datetime(2022, 8, 22, 11, 15), [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())]),
-           (629, 'buy', datetime(2022, 8, 23, 8, 50), [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())]),
-           (631, 'buy', datetime(2022, 8, 23, 9), [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())])]
-points4 = [(629, 'buy', datetime(2022, 8, 23, 8, 50), [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())]),
-           (631, 'buy', datetime(2022, 8, 23, 9), [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())])]
+points1 = [(91, 'sell', datetime(2022, 8, 21, 11, 20), [('STOCH', (15, 85)), ('RSI', (25, 75))], [], []),
+           (506, 'buy', datetime(2022, 8, 22, 21, 55), [('STOCH', (15, 85)), ('RSI', (25, 75))], [], []),
+           (569, 'sell', datetime(2022, 8, 23, 3, 10), [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [])]
+points2 = [(506, 'buy', datetime(2022, 8, 22, 21, 55), [('STOCH', (15, 85)), ('RSI', (25, 75))], [], []),
+           (569, 'sell', datetime(2022, 8, 23, 3, 10), [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [])]
+points3 = [(83, 'sell', datetime(2022, 8, 21, 11, 20), [('STOCH', (15, 85)), ('RSI', (25, 75))], [], []),
+           (370, 'buy', datetime(2022, 8, 22, 11, 15),
+            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], []),
+           (629, 'buy', datetime(2022, 8, 23, 8, 50),
+            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], []),
+           (631, 'buy', datetime(2022, 8, 23, 9), [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], [])]
+points4 = [(629, 'buy', datetime(2022, 8, 23, 8, 50),
+            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], []),
+           (631, 'buy', datetime(2022, 8, 23, 9), [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], [])]
 expected = [points1, points2, points3, points4]
 
 

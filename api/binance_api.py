@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 from binance.client import Client
 from api.api_base import ApiBase
@@ -29,23 +30,23 @@ class Binance(ApiBase):
         return self.client.get_exchange_info()
 
     def get_ticker_names(self) -> list:
-        """ Get tickers from Binance exchange which are in pair with USDT or BUSD and have TRADING status """
+        """ Get non-stable tickers from Binance exchange that are in pair with USDT or BUSD and have TRADING status """
         ticker_names = list()
         exchange_info = self.client.get_exchange_info()
 
         for s in exchange_info['symbols']:
             symbol = s['symbol']
-            if s['status'] == 'TRADING' and symbol.endswith('USDT') and \
-                    not (symbol.endswith('UPUSDT') or symbol.endswith('DOWNUSDT')):
-                ticker_names.append(s['symbol'])
+            if s['status'] == 'TRADING' and symbol.endswith('USDT'):
+                if not (re.match('.?USD', symbol) or re.match('.?UST', symbol)):
+                    ticker_names.append(s['symbol'])
 
         for s in exchange_info['symbols']:
             symbol = s['symbol']
-            if s['status'] == 'TRADING' and symbol.endswith('BUSD') and \
-                    not (symbol.endswith('UPBUSD') or symbol.endswith('DOWNBUSD')):
-                prefix = s['symbol'][:-4]
-                if prefix + 'USDT' not in ticker_names:
-                    ticker_names.append(s['symbol'])
+            if s['status'] == 'TRADING' and symbol.endswith('BUSD'):
+                if not (re.match('.?USD', symbol) or re.match('.?UST', symbol)):
+                    prefix = s['symbol'][:-4]
+                    if prefix + 'USDT' not in ticker_names:
+                        ticker_names.append(s['symbol'])
         return ticker_names
 
     def get_ticker_volume(self, ticker_names: list) -> pd.DataFrame:

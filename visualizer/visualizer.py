@@ -13,7 +13,7 @@ class Visualizer:
     def __init__(self, **params):
         self.params = params[self.type]['params']
         # Path to save plot files
-        self.save_path = self.params['save_path']
+        self.image_path = self.params['image_path']
         self.indicator_params = params['Indicator_signal']
         self.plot_width = self.params.get('plot_width', 10)
         self.indicator_dict = self.params.get('indicator_dict', dict())
@@ -22,9 +22,8 @@ class Visualizer:
         # Max number of previous candles for which signal can be searched for
         self.max_prev_candle_limit = self.params.get('max_prev_candle_limit', 0)
 
-    def plot_indicator_parameters(self, point, index, indicator, axs, indicator_params):
+    def plot_indicator_parameters(self, point_type, index, indicator, axs, indicator_params):
         """ Plot parameters of indicator (like low or high boundary, etc.)"""
-        point_type = point[1]
         indicator_param = indicator_params[index]
         if indicator_param:
             if indicator in self.boundary_indicators:
@@ -33,9 +32,8 @@ class Visualizer:
                 else:
                     axs[index + 1].axhline(y=indicator_param[1], color='r', linestyle='--', linewidth=1.5)
 
-    def plot_point(self, point, data, ax):
+    def plot_point(self, point_type, data, ax):
         """ Plot trade point """
-        point_type = point[1]
         if point_type == 'buy':
             ax.scatter(self.plot_width, data['close'].iloc[-1], s=50, color='blue')
         else:
@@ -49,13 +47,13 @@ class Visualizer:
                 axs[0].axhline(y=level[0], color='b', linestyle='dotted', linewidth=1.5)
 
     def save_plot(self, ticker, timeframe, data):
-        filename = f"{self.save_path}/{ticker}_{timeframe}_{data['time'].iloc[-1]}.png"
+        filename = f"{self.image_path}/{ticker}_{timeframe}_{data['time'].iloc[-1]}.png"
         plt.savefig(filename, bbox_inches='tight')
         return filename
 
-    def create_plot(self, dfs, ticker, timeframe, point, levels):
+    def create_plot(self, dfs, point, levels):
         # get necessary info
-        point_index = point[0]
+        ticker, timeframe, point_index, point_type, time, pattern, plot_path, exchange_list = point
         df = dfs[ticker][timeframe]['data']
         data = df.loc[point_index - self.plot_width:point_index]
         ohlc = data[['time', 'open', 'high', 'low', 'close', 'volume']]
@@ -63,8 +61,8 @@ class Visualizer:
         if point_index < df.shape[0] - self.max_prev_candle_limit:
             return ''
         # get indicator list
-        indicator_list = [p[0] for p in point[3] if p[0] not in self.level_indicators]
-        indicator_params = [p[1] for p in point[3] if p not in self.level_indicators]
+        indicator_list = [p[0] for p in pattern if p[0] not in self.level_indicators]
+        indicator_params = [p[1] for p in pattern if p not in self.level_indicators]
         plot_num = len(indicator_list) + 1
 
         # make subplots
@@ -81,20 +79,21 @@ class Visualizer:
                 m = mpf.make_addplot(data[i_c], panel=index + 1, title=indicator, ax=axs[index + 1], width=2)
                 ap.append(m)
             # plot indicator parameters
-            self.plot_indicator_parameters(point, index, indicator, axs, indicator_params)
+            self.plot_indicator_parameters(point_type, index, indicator, axs, indicator_params)
             # plot y-labels from right side
             axs[index + 1].yaxis.set_label_position("right")
             axs[index + 1].yaxis.tick_right()
 
-        # set xlabel
+        # set x-labels
         axs[-1].set_xlabel(f"\n{data['time'].iloc[-1].date()}")
+        plt.xticks(rotation=30)
 
         # plot all subplots
         mpf.plot(ohlc, type='candle', ax=axs[0], addplot=ap, warn_too_much_data=1001, style='yahoo',
                  axtitle=f'{ticker}-{timeframe}', ylabel='')
 
         # plot point of trade
-        self.plot_point(point, data, axs[0])
+        self.plot_point(point_type, data, axs[0])
 
         # plot levels
         self.plot_levels(data, levels, axs)

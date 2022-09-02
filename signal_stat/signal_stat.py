@@ -13,12 +13,12 @@ class SignalStat:
         self.stat_range = self.params.get('stat_range', 12)
         self.test = self.params.get('test', False)
 
-    def write_stat(self, dfs: dict, ticker: str, timeframe: str, signal_points: list) -> dict:
+    def write_stat(self, dfs: dict, signal_points: list) -> dict:
         """ Calculate signal statistics for every signal point for current ticker on current timeframe.
             Statistics for buy and sell trades is written separately """
-        df = dfs[ticker][timeframe]['data']
         for point in signal_points:
-            index, ttype, time, pattern, plot_path, exchange_list = point
+            ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list = point
+            df = dfs[ticker][timeframe]['data']
             # array of prices after signal
             high_price_points = np.zeros(self.stat_range)
             low_price_points = np.zeros(self.stat_range)

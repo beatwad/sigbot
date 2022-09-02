@@ -211,7 +211,7 @@ class FindSignal:
             indicator_signals.append(SignalFactory.factory(indicator, self.configs))
         return indicator_signals
 
-    def find_signal(self, df: pd.DataFrame, levels: list, data_qty: int) -> list:
+    def find_signal(self, df: pd.DataFrame, ticker: str, timeframe: str, levels: list, data_qty: int) -> list:
         """ Search for the signals through the dataframe, if found - add its index and trade type to the list.
             If dataset was updated - don't search through the whole dataset, only through updated part.
         """
@@ -255,9 +255,9 @@ class FindSignal:
                 else:
                     if "SUP_RES" in [p[0] for p in pattern]:
                         if sup_res.check_levels(df, index, levels, level_proximity, True):
-                            point = (index, 'buy', time, [(p[0], p[3]) for p in pattern], [], [])
+                            point = (ticker, timeframe, index, 'buy', time, [(p[0], p[3]) for p in pattern], [], [])
                     else:
-                        point = (index, 'buy', time, [(p[0], p[3]) for p in pattern], [], [])
+                        point = (ticker, timeframe, index, 'buy', time, [(p[0], p[3]) for p in pattern], [], [])
 
                 for p in pattern:
                     if (p[1], p[2]) != (True, 'sell') and (p[1], p[2]) != (True, ''):
@@ -265,9 +265,9 @@ class FindSignal:
                 else:
                     if "SUP_RES" in [p[0] for p in pattern]:
                         if sup_res.check_levels(df, index, levels, level_proximity, False):
-                            point = (index, 'sell', time, [(p[0], p[3]) for p in pattern], [], [])
+                            point = (ticker, timeframe, index, 'sell', time, [(p[0], p[3]) for p in pattern], [], [])
                     else:
-                        point = (index, 'sell', time, [(p[0], p[3]) for p in pattern], [], [])
+                        point = (ticker, timeframe, index, 'sell', time, [(p[0], p[3]) for p in pattern], [], [])
                 if point and index not in index_list:
                     index_list.append(index)
                     points.append(point)

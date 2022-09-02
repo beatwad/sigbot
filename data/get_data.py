@@ -29,10 +29,7 @@ class GetData:
         # parameter to convert seconds to intervals
         self.timeframe_div = self.params.get('timeframe_div', dict())
         # dict to store timestamp for every timeframe
-        self.timestamp_dict = dict()
-        dt = datetime.now()
-        for tf in self.timeframe_div.keys():
-            self.timestamp_dict[tf] = dt
+        self.ticker_dict = dict()
 
     @abstractmethod
     def get_data(self, df, ticker, timeframe):
@@ -43,6 +40,14 @@ class GetData:
     def get_tickers(self):
         """ Get list of available ticker names """
         pass
+
+    def fill_ticker_dict(self, tickers):
+        """ For every ticker set timestamp of the current time """
+        dt = datetime.now()
+        for ticker in tickers:
+            self.ticker_dict[ticker] = dict()
+            for tf in self.timeframe_div.keys():
+                self.ticker_dict[ticker][tf] = dt
 
     @staticmethod
     def process_data(crypto_currency: models.cryptocurrency.CryptoCurrency, df: pd.DataFrame) -> pd.DataFrame:
@@ -103,27 +108,27 @@ class GetBinanceData(GetData):
         super(GetBinanceData, self).__init__(**params)
         self.api.connect_to_api(self.key, self.secret)
 
-    def get_limit(self, df: pd.DataFrame, timeframe: str) -> int:
+    def get_limit(self, df: pd.DataFrame, ticker: str, timeframe: str) -> int:
         """ Get interval needed to download from exchange according to difference between current time and
             time of previous download"""
         if df.shape[0] == 0:
             return self.limit
         else:
             # get time passed from previous download and select appropriate interval
-            time_diff_sec = (datetime.now() - self.timestamp_dict[timeframe]).total_seconds()
+            time_diff_sec = (datetime.now() - self.ticker_dict[ticker][timeframe]).total_seconds()
             limit = int(time_diff_sec/self.timeframe_div[timeframe]) + 1
             # if time passed more than one interval - get it
             return min(self.limit, limit)
 
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str) -> (pd.DataFrame, int):
         """ Get data from Binance exchange """
-        limit = self.get_limit(df, timeframe)
+        limit = self.get_limit(df, ticker, timeframe)
         # get data from exchange only when there is at least one interval to get
         if limit > 1:
             crypto_currency = self.api.get_crypto_currency(ticker, timeframe, limit)
             df = self.process_data(crypto_currency, df)
             # update timestamp for current timeframe
-            self.timestamp_dict[timeframe] = datetime.now()
+            self.ticker_dict[ticker][timeframe] = datetime.now()
         return df, limit
 
     def get_tickers(self):

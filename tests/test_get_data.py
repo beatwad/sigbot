@@ -28,25 +28,28 @@ work_timeframe = configs['Timeframes']['work_timeframe']
 
 # test get_limit method
 
-@pytest.mark.parametrize('exchange, df, timeframe, expected',
+@pytest.mark.parametrize('exchange, df, ticker, timeframe, expected',
                          [
-                          ('Binance', pd.DataFrame(columns=df_btc_5m.columns), '5m',
+                          ('Binance', pd.DataFrame(columns=df_btc_5m.columns), 'BTCUSDT', '5m',
                            configs['Data']['Binance']['params']['limit']),
-                          ('Binance', df_btc_5m, '5m', 3),
-                          ('Binance', df_btc_5m, '1h', 2),
-                          ('Binance', df_btc_5m, '4h', 7),
-                          ('Binance', df_btc_5m, '1d', 5),
+                          ('Binance', df_btc_5m, 'BTCUSDT', '5m', 3),
+                          ('Binance', df_btc_5m, 'ETHUSDT', '1h', 2),
+                          ('Binance', df_btc_5m, 'ETHUSDT', '4h', 7),
+                          ('Binance', df_btc_5m, 'ETHUSDT', '1d', 5),
                           ], ids=repr)
-def test_get_limit(exchange, df, timeframe, expected):
+def test_get_limit(exchange, df, ticker, timeframe, expected):
+    tickers = ['BTCUSDT', 'ETHUSDT']
     gd = DataFactory.factory(exchange, **configs)
-    gd.timestamp_dict['5m'] = datetime.datetime(2022, 8, 24, 15, 0, 0, 0)
-    gd.timestamp_dict['1h'] = datetime.datetime(2022, 8, 24, 14, 0, 0, 0)
-    gd.timestamp_dict['4h'] = datetime.datetime(2022, 8, 23, 14, 0, 0, 0)
-    gd.timestamp_dict['1d'] = datetime.datetime(2022, 8, 20, 10, 0, 0, 0)
+    gd.fill_ticker_dict(tickers)
+
+    gd.ticker_dict[ticker]['5m'] = datetime.datetime(2022, 8, 24, 15, 0, 0, 0)
+    gd.ticker_dict[ticker]['1h'] = datetime.datetime(2022, 8, 24, 14, 0, 0, 0)
+    gd.ticker_dict[ticker]['4h'] = datetime.datetime(2022, 8, 23, 14, 0, 0, 0)
+    gd.ticker_dict[ticker]['1d'] = datetime.datetime(2022, 8, 20, 10, 0, 0, 0)
 
     @freeze_time("2022-08-24-15:11:00")
     def get_limit():
-        return gd.get_limit(df, timeframe)
+        return gd.get_limit(df, ticker, timeframe)
 
     limit = get_limit()
     assert limit == expected
@@ -132,7 +135,11 @@ def test_get_data_get_data(mocker, df, ticker, timeframe, cryptocurrency, limit,
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     mocker.patch('data.get_data.GetBinanceData.get_limit', return_value=limit)
     mocker.patch('api.binance_api.Binance.get_crypto_currency', return_value=cryptocurrency)
+
+    tickers = ['BTCUSDT', 'ETHUSDT']
     gd = DataFactory.factory('Binance', **configs)
+    gd.fill_ticker_dict(tickers)
+
     res = gd.get_data(df, ticker, timeframe)
     assert res[0].equals(expected[0])
     assert res[1] == expected[1]
@@ -196,7 +203,11 @@ def test_add_indicator_data(mocker, dfs, df, ticker, timeframe, cryptocurrencies
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     mocker.patch('data.get_data.GetBinanceData.get_limit', return_value=200)
     mocker.patch('api.binance_api.Binance.get_crypto_currency', return_value=cryptocurrencies)
+
+    tickers = ['BTCUSDT', 'ETHUSDT']
     gd = DataFactory.factory('Binance', **configs)
+    gd.fill_ticker_dict(tickers)
+
     data = gd.get_data(df.loc[:500], ticker, timeframe)[0]
     dfs[ticker][timeframe]['data'] = gd.add_indicator_data(dfs, data, indicators, ticker, timeframe, configs)[1]
     assert dfs[ticker][timeframe]['data'].equals(expected[0])

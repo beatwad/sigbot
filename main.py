@@ -36,8 +36,15 @@ class MainClass:
         self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': []}}
         # Get API and ticker list for every exchange in list
         for ex in list(self.exchanges.keys()):
-            self.exchanges[ex]['API'] = DataFactory.factory(ex, **configs)
-            self.exchanges[ex]['tickers'] = self.exchanges[ex]['API'].get_tickers()
+            # get exchange API
+            exchange_api = DataFactory.factory(ex, **configs)
+            self.exchanges[ex]['API'] = exchange_api
+            # get ticker list
+            tickers = self.exchanges[ex]['API'].get_tickers()
+            self.exchanges[ex]['tickers'] = tickers
+            # fill ticker dict of exchange API with tickers to store current time
+            # for periodic updates of ticker information
+            exchange_api.fill_ticker_dict(tickers)
 
     def check_ticker(self, ticker: str) -> bool:
         # Check if ticker was already processesed before
@@ -156,6 +163,8 @@ class MainClass:
                             sig_points = self.get_plot(sig_points, ticker, timeframe, levels)
                             # Add list of exchanges on which this ticker is available and has good liquidity
                             sig_points = self.get_exchange_list(ticker, sig_points)
+                            if i > 1 and sig_points:
+                                print(sig_points)
                             # Send signal to the Telegram bot
                             telegram_send_queue.append(sig_points)
 

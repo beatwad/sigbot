@@ -1,4 +1,3 @@
-import re
 import pandas as pd
 from binance.client import Client
 from api.api_base import ApiBase
@@ -28,17 +27,6 @@ class Binance(ApiBase):
 
     def get_exchange_info(self):
         return self.client.get_exchange_info()
-
-    @staticmethod
-    def check_symbol(symbol):
-        """ Check if ticker is not pair with fiat currency or stablecoin """
-        fiat = ['EUR', 'CHF', 'GBP', 'JPY', 'CNY', 'RUB']
-        if re.match('.?USD', symbol) or re.match('.?UST', symbol):
-            return False
-        for f in fiat:
-            if symbol.startswith(f):
-                return False
-        return True
 
     def get_ticker_names(self) -> list:
         """ Get non-stable tickers from Binance exchange that are in pair with USDT or BUSD and have TRADING status """

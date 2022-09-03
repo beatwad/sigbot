@@ -1,8 +1,6 @@
-import numpy as np
 import pandas as pd
 from abc import abstractmethod
 
-import models.cryptocurrency
 from api.binance_api import Binance
 from datetime import datetime
 
@@ -50,28 +48,23 @@ class GetData:
                 self.ticker_dict[ticker][tf] = dt
 
     @staticmethod
-    def process_data(crypto_currency: models.cryptocurrency.CryptoCurrency, df: pd.DataFrame) -> pd.DataFrame:
+    def process_data(klines: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
         """ Update dataframe for current ticker or create new dataframe if it's first run """
-        # Create dataframe and fill it with data
-        tmp = pd.DataFrame()
-        tmp['time'] = np.asarray(crypto_currency.time)
-        tmp['open'] = np.asarray(crypto_currency.open_values)
-        tmp['high'] = np.asarray(crypto_currency.high_values)
-        tmp['low'] = np.asarray(crypto_currency.low_values)
-        tmp['close'] = np.asarray(crypto_currency.close_values)
-        tmp['volume'] = np.asarray(crypto_currency.volume_values)
-        tmp['time'] = pd.to_datetime(tmp['time'], unit='ms')
+        # convert numeric data to float type
+        klines[['open', 'high', 'low', 'close', 'volume']] = klines[['open', 'high', 'low',
+                                                                     'close', 'volume']].astype(float)
         # convert time to UTC+3
-        tmp['time'] = tmp['time'] + pd.to_timedelta(3, unit='h')
+        klines['time'] = pd.to_datetime(klines['time'], unit='ms')
+        klines['time'] = klines['time'] + pd.to_timedelta(3, unit='h')
         # If dataframe is empty - fill it with the new data
         if df.shape[0] == 0:
-            df = tmp
+            df = klines
         else:
             # Update dataframe with new candles if it's not empty
             latest_time = df['time'].iloc[-1]
-            tmp = tmp[tmp['time'] > latest_time]
-            df = pd.concat([df, tmp])
-            df = df.iloc[tmp.shape[0]:].reset_index(drop=True)
+            klines = klines[klines['time'] > latest_time]
+            df = pd.concat([df, klines])
+            df = df.iloc[klines.shape[0]:].reset_index(drop=True)
         return df
 
     @staticmethod
@@ -101,12 +94,10 @@ class GetData:
 class GetBinanceData(GetData):
     name = 'Binance'
     api = Binance()
-    key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
-    secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
 
     def __init__(self, **params):
         super(GetBinanceData, self).__init__(**params)
-        self.api.connect_to_api(self.key, self.secret)
+        # self.api.connect_to_api(self.key, self.secret)
 
     def get_limit(self, df: pd.DataFrame, ticker: str, timeframe: str) -> int:
         """ Get interval needed to download from exchange according to difference between current time and
@@ -125,18 +116,15 @@ class GetBinanceData(GetData):
         limit = self.get_limit(df, ticker, timeframe)
         # get data from exchange only when there is at least one interval to get
         if limit > 1:
-            crypto_currency = self.api.get_crypto_currency(ticker, timeframe, limit)
-            df = self.process_data(crypto_currency, df)
+            klines = self.api.get_klines(ticker, timeframe, limit)
+            df = self.process_data(klines, df)
             # update timestamp for current timeframe
             self.ticker_dict[ticker][timeframe] = datetime.now()
         return df, limit
 
     def get_tickers(self):
         """ Get list of available ticker names """
-        ticker_names = self.api.get_ticker_names()
-        df = self.api.get_ticker_volume(ticker_names)
-        df = df.sort_values('volume', ascending=False)
-        tickers = df.loc[df['volume'] >= self.min_volume, 'ticker'].to_list()
+        tickers = self.api.get_ticker_names(self.min_volume)
         return tickers
 
 

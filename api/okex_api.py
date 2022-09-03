@@ -5,7 +5,7 @@ from api.api_base import ApiBase
 
 class Binance(ApiBase):
     client = ""
-    URL = 'https://www.binance.com'
+    URL = 'https://www.okex.com'
 
     @staticmethod
     def delete_duplicate_symbols(symbols) -> list:
@@ -24,7 +24,7 @@ class Binance(ApiBase):
         return filtered_symbols
 
     def get_ticker_names(self, min_volume) -> list:
-        tickers = pd.DataFrame(requests.get(self.URL + '/api/v3/ticker/24hr').json())
+        tickers = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=SPOT').json())
         tickers = tickers[(tickers['symbol'].str.endswith('USDT')) | (tickers['symbol'].str.endswith('BUSD'))]
         tickers['volume'] = tickers['volume'].astype(float)
         tickers = tickers[tickers['volume'] >= min_volume]

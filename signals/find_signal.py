@@ -187,7 +187,7 @@ class FindSignal:
         self.indicator_list = configs['Indicator_list']
         self.patterns = configs['Patterns']
 
-    def prepare_dataframe(self, df):
+    def prepare_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """ Add all necessary indicator data to dataframe """
         for i in self.indicator_list:
             if i.startswith('STOCH'):

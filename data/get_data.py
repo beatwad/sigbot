@@ -1,9 +1,6 @@
 import pandas as pd
-from abc import abstractmethod
-
 from api.binance_api import Binance
 from api.okex_api import OKEX
-
 from datetime import datetime
 
 
@@ -30,18 +27,25 @@ class GetData:
         self.timeframe_div = self.params.get('timeframe_div', dict())
         # dict to store timestamp for every timeframe
         self.ticker_dict = dict()
+        self.api = None
 
-    @abstractmethod
-    def get_data(self, df, ticker, timeframe):
-        """ Get candle and volume data from exchange """
-        pass
+    def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str) -> (pd.DataFrame, int):
+        """ Get data from Binance exchange """
+        limit = self.get_limit(df, ticker, timeframe)
+        # get data from exchange only when there is at least one interval to get
+        if limit > 1:
+            klines = self.api.get_klines(ticker, timeframe, limit)
+            df = self.process_data(klines, df)
+            # update timestamp for current timeframe
+            self.ticker_dict[ticker][timeframe] = datetime.now()
+        return df, limit
 
-    @abstractmethod
-    def get_tickers(self):
+    def get_tickers(self) -> list:
         """ Get list of available ticker names """
-        pass
+        tickers = self.api.get_ticker_names(self.min_volume)
+        return tickers
 
-    def fill_ticker_dict(self, tickers):
+    def fill_ticker_dict(self, tickers: str) -> None:
         """ For every ticker set timestamp of the current time """
         dt = datetime.now()
         for ticker in tickers:
@@ -95,17 +99,6 @@ class GetData:
         dfs[ticker][timeframe]['levels'] = levels
         return dfs, df
 
-
-class GetBinanceData(GetData):
-    name = 'Binance'
-
-    def __init__(self, **params):
-        super(GetBinanceData, self).__init__(**params)
-        self.key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
-        self.secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
-        self.api = Binance(self.key, self.secret)
-        # self.api.connect_to_api(self.key, self.secret)
-
     def get_limit(self, df: pd.DataFrame, ticker: str, timeframe: str) -> int:
         """ Get interval needed to download from exchange according to difference between current time and
             time of previous download"""
@@ -118,21 +111,15 @@ class GetBinanceData(GetData):
             # if time passed more than one interval - get it
             return min(self.limit, limit)
 
-    def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str) -> (pd.DataFrame, int):
-        """ Get data from Binance exchange """
-        limit = self.get_limit(df, ticker, timeframe)
-        # get data from exchange only when there is at least one interval to get
-        if limit > 1:
-            klines = self.api.get_klines(ticker, timeframe, limit)
-            df = self.process_data(klines, df)
-            # update timestamp for current timeframe
-            self.ticker_dict[ticker][timeframe] = datetime.now()
-        return df, limit
 
-    def get_tickers(self):
-        """ Get list of available ticker names """
-        tickers = self.api.get_ticker_names(self.min_volume)
-        return tickers
+class GetBinanceData(GetData):
+    name = 'Binance'
+
+    def __init__(self, **params):
+        super(GetBinanceData, self).__init__(**params)
+        self.key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
+        self.secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
+        self.api = Binance(self.key, self.secret)
 
 
 class GetOKEXData(GetData):
@@ -141,31 +128,3 @@ class GetOKEXData(GetData):
     def __init__(self, **params):
         super(GetOKEXData, self).__init__(**params)
         self.api = OKEX()
-
-    def get_limit(self, df: pd.DataFrame, ticker: str, timeframe: str) -> int:
-        """ Get interval needed to download from exchange according to difference between current time and
-            time of previous download"""
-        if df.shape[0] == 0:
-            return self.limit
-        else:
-            # get time passed from previous download and select appropriate interval
-            time_diff_sec = (datetime.now() - self.ticker_dict[ticker][timeframe]).total_seconds()
-            limit = int(time_diff_sec / self.timeframe_div[timeframe]) + 1
-            # if time passed more than one interval - get it
-            return min(self.limit, limit)
-
-    def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str) -> (pd.DataFrame, int):
-        """ Get data from Binance exchange """
-        limit = self.get_limit(df, ticker, timeframe)
-        # get data from exchange only when there is at least one interval to get
-        if limit > 1:
-            klines = self.api.get_klines(ticker, timeframe, limit)
-            df = self.process_data(klines, df)
-            # update timestamp for current timeframe
-            self.ticker_dict[ticker][timeframe] = datetime.now()
-        return df, limit
-
-    def get_tickers(self):
-        """ Get list of available ticker names """
-        tickers = self.api.get_ticker_names(self.min_volume)
-        return tickers

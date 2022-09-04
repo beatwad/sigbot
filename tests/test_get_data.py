@@ -69,20 +69,23 @@ df = df_btc_5m[['time', 'open', 'high', 'low', 'close', 'volume']]
 df['time'] = df['time'] + pd.to_timedelta(3, unit='h')
 
 
-@pytest.mark.parametrize('df, index, expected',
+@pytest.mark.parametrize('df, index, limit, expected',
                          [
-                          (pd.DataFrame(), 0,
+                          (pd.DataFrame(), 0, 500,
                            df.loc[498:500].reset_index(drop=True)),
-                          (df.loc[:500], 0, df.loc[:500]),
-                          (df.loc[:500], 1, df.loc[2:502].reset_index(drop=True)),
-                          (df.loc[:500], 2, df.loc[100:600].reset_index(drop=True)),
-                          (df.loc[:500], 3, df.loc[100:600].reset_index(drop=True)),
+                          (df.loc[:500], 0, 500, df.loc[:500]),
+                          (df.loc[:500], 1, 500, df.loc[2:502].reset_index(drop=True)),
+                          (df.loc[:500], 1, 1000, df.loc[:502].reset_index(drop=True)),
+                          (df.loc[:500], 2, 500, df.loc[100:600].reset_index(drop=True)),
+                          (df.loc[:500], 3, 500, df.loc[100:600].reset_index(drop=True)),
+                          (df.loc[:500], 3, 1000, df.loc[:600].reset_index(drop=True)),
                           ], ids=repr)
-def test_process_data(mocker, df, index, expected):
+def test_process_data(mocker, df, index, limit, expected):
     tmp = cryptocurrencies[index].copy()
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     mocker.patch('api.binance_api.Binance.get_klines', return_value=tmp)
     gd = DataFactory.factory('Binance', **configs)
+    gd.limit = limit
     res = gd.process_data(tmp, df)
     assert res.equals(expected)
 
@@ -108,9 +111,9 @@ def test_get_data_get_data(mocker, df, ticker, timeframe, index, limit, expected
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     mocker.patch('data.get_data.GetBinanceData.get_limit', return_value=limit)
     mocker.patch('api.binance_api.Binance.get_klines', return_value=tmp)
-
     tickers = ['BTCUSDT', 'ETHUSDT']
     gd = DataFactory.factory('Binance', **configs)
+    gd.limit = 500
     gd.fill_ticker_dict(tickers)
 
     res = gd.get_data(df, ticker, timeframe)
@@ -180,9 +183,10 @@ def test_add_indicator_data(mocker, dfs, df, ticker, timeframe, index, expected)
 
     tickers = ['BTCUSDT', 'ETHUSDT']
     gd = DataFactory.factory('Binance', **configs)
+    gd.limit = 500
     gd.fill_ticker_dict(tickers)
 
     data = gd.get_data(df.loc[:500], ticker, timeframe)[0]
     dfs[ticker][timeframe]['data'] = gd.add_indicator_data(dfs, data, indicators, ticker, timeframe, configs)[1]
     assert dfs[ticker][timeframe]['data'].equals(expected[0])
-    # assert dfs[ticker][timeframe]['levels'] == expected[1]
+    assert dfs[ticker][timeframe]['levels'] == expected[1]

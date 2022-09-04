@@ -2,6 +2,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 import matplotlib.style as style
+import pandas as pd
 
 matplotlib.use('Agg')
 style.use('fivethirtyeight')
@@ -22,7 +23,8 @@ class Visualizer:
         # Max number of previous candles for which signal can be searched for
         self.max_prev_candle_limit = self.params.get('max_prev_candle_limit', 0)
 
-    def plot_indicator_parameters(self, point, index, indicator, axs, indicator_params):
+    def plot_indicator_parameters(self, point: list, index: int, indicator: str,
+                                  axs: plt.axis, indicator_params: dict) -> None:
         """ Plot parameters of indicator (like low or high boundary, etc.)"""
         point_type = point[1]
         indicator_param = indicator_params[index]
@@ -33,7 +35,7 @@ class Visualizer:
                 else:
                     axs[index + 1].axhline(y=indicator_param[1], color='r', linestyle='--', linewidth=1.5)
 
-    def plot_point(self, point, data, ax):
+    def plot_point(self, point: list, data: pd.DataFrame, ax: plt.axis) -> None:
         """ Plot trade point """
         point_type = point[1]
         if point_type == 'buy':
@@ -42,19 +44,19 @@ class Visualizer:
             ax.scatter(self.plot_width, data['close'].iloc[-1], s=50, color='blue')
 
     @staticmethod
-    def plot_levels(data, levels, axs):
+    def plot_levels(data: pd.DataFrame, levels: list, axs: plt.axis) -> None:
         """ Plot support and resistance levels"""
         for level in levels:
             if data['low'].min() <= level[0] <= data['high'].max():  # and level[1] == 3:
                 axs[0].axhline(y=level[0], color='b', linestyle='dotted', linewidth=1.5)
 
-    def save_plot(self, ticker, timeframe, data):
+    def save_plot(self, ticker: str, timeframe: str, data: pd.DataFrame) -> str:
         filename = f"{self.save_path}/{ticker}_{timeframe}_{data['time'].iloc[-1]}.png"
         plt.savefig(filename, bbox_inches='tight')
         return filename
 
     @staticmethod
-    def process_ticker(ticker):
+    def process_ticker(ticker: str) -> str:
         """ Bring ticker to more convenient view """
         if '-' in ticker:
             return ticker
@@ -64,7 +66,7 @@ class Visualizer:
         ticker = ticker[:-4] + '-' + ticker[-4:]
         return ticker
 
-    def create_plot(self, dfs, ticker, timeframe, point, levels):
+    def create_plot(self, dfs: pd.DataFrame, ticker: str, timeframe: str, point: list, levels: list) -> str:
         # get necessary info
         point_index = point[0]
         df = dfs[ticker][timeframe]['data']

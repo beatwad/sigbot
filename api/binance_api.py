@@ -1,11 +1,22 @@
-import requests
 import pandas as pd
 from api.api_base import ApiBase
+from binance.client import Client
 
 
 class Binance(ApiBase):
     client = ""
-    URL = 'https://www.binance.com'
+
+    def __init__(self, api_key="Key", api_secret="Secret"):
+        if api_key != "Key" and api_secret != "Secret":
+            self.connect_to_api(api_key, api_secret)
+        else:
+            self.api_key = api_key
+            self.api_secret = api_secret
+
+    def connect_to_api(self, api_key, api_secret):
+        self.api_key = api_key
+        self.api_secret = api_secret
+        self.client = Client(self.api_key, api_secret)
 
     @staticmethod
     def delete_duplicate_symbols(symbols) -> list:
@@ -24,10 +35,10 @@ class Binance(ApiBase):
         return filtered_symbols
 
     def get_ticker_names(self, min_volume) -> list:
-        tickers = pd.DataFrame(requests.get(self.URL + '/api/v3/ticker/24hr').json())
+        tickers = pd.DataFrame(self.client.get_ticker())
         tickers = tickers[(tickers['symbol'].str.endswith('USDT')) | (tickers['symbol'].str.endswith('BUSD'))]
-        tickers['volume'] = tickers['volume'].astype(float)
-        tickers = tickers[tickers['volume'] >= min_volume]
+        tickers['quoteVolume'] = tickers['quoteVolume'].astype(float)
+        tickers = tickers[tickers['quoteVolume'] >= min_volume]
 
         filtered_symbols = self.check_symbols(tickers['symbol'])
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)]
@@ -38,7 +49,6 @@ class Binance(ApiBase):
 
     def get_klines(self, symbol, interval, limit) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
-        params = {'symbol': symbol, 'interval': interval, 'limit': limit}
-        tickers = pd.DataFrame(requests.get(self.URL + '/api/v3/klines', params=params).json())
+        tickers = pd.DataFrame(self.client.get_klines(symbol=symbol, interval=interval, limit=limit))
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]

@@ -53,6 +53,17 @@ class Visualizer:
         plt.savefig(filename, bbox_inches='tight')
         return filename
 
+    @staticmethod
+    def process_ticker(ticker):
+        """ Bring ticker to more convenient view """
+        if '-' in ticker:
+            return ticker
+        if '/' in ticker:
+            ticker = ticker.replace('/', '-')
+            return ticker
+        ticker = ticker[:-4] + '-' + ticker[-4:]
+        return ticker
+
     def create_plot(self, dfs, ticker, timeframe, point, levels):
         # get necessary info
         point_index = point[0]
@@ -90,8 +101,9 @@ class Visualizer:
         axs[-1].set_xlabel(f"\n{data['time'].iloc[-1].date()}")
 
         # plot all subplots
+        title = self.process_ticker(ticker)
         mpf.plot(ohlc, type='candle', ax=axs[0], addplot=ap, warn_too_much_data=1001, style='yahoo',
-                 axtitle=f'{ticker}-{timeframe}', ylabel='')
+                 axtitle=f'{title}-{timeframe}', ylabel='')
 
         # plot point of trade
         self.plot_point(point, data, axs[0])

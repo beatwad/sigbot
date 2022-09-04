@@ -2,6 +2,8 @@ import pandas as pd
 from abc import abstractmethod
 
 from api.binance_api import Binance
+from api.okex_api import OKEX
+
 from datetime import datetime
 
 
@@ -47,8 +49,7 @@ class GetData:
             for tf in self.timeframe_div.keys():
                 self.ticker_dict[ticker][tf] = dt
 
-    @staticmethod
-    def process_data(klines: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
+    def process_data(self, klines: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
         """ Update dataframe for current ticker or create new dataframe if it's first run """
         # convert numeric data to float type
         klines[['open', 'high', 'low', 'close', 'volume']] = klines[['open', 'high', 'low',
@@ -64,7 +65,11 @@ class GetData:
             latest_time = df['time'].iloc[-1]
             klines = klines[klines['time'] > latest_time]
             df = pd.concat([df, klines])
-            df = df.iloc[klines.shape[0]:].reset_index(drop=True)
+            # if size of dataframe more than limit - short it
+            if df.shape[0] >= self.limit:
+                df = df.iloc[klines.shape[0]:].reset_index(drop=True)
+            else:
+                df = df.reset_index(drop=True)
         return df
 
     @staticmethod
@@ -93,10 +98,12 @@ class GetData:
 
 class GetBinanceData(GetData):
     name = 'Binance'
-    api = Binance()
 
     def __init__(self, **params):
         super(GetBinanceData, self).__init__(**params)
+        self.key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
+        self.secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
+        self.api = Binance(self.key, self.secret)
         # self.api.connect_to_api(self.key, self.secret)
 
     def get_limit(self, df: pd.DataFrame, ticker: str, timeframe: str) -> int:
@@ -129,6 +136,36 @@ class GetBinanceData(GetData):
 
 
 class GetOKEXData(GetData):
-    @abstractmethod
-    def get_data(self, *args, **kwargs):
-        pass
+    name = 'OKEX'
+
+    def __init__(self, **params):
+        super(GetOKEXData, self).__init__(**params)
+        self.api = OKEX()
+
+    def get_limit(self, df: pd.DataFrame, ticker: str, timeframe: str) -> int:
+        """ Get interval needed to download from exchange according to difference between current time and
+            time of previous download"""
+        if df.shape[0] == 0:
+            return self.limit
+        else:
+            # get time passed from previous download and select appropriate interval
+            time_diff_sec = (datetime.now() - self.ticker_dict[ticker][timeframe]).total_seconds()
+            limit = int(time_diff_sec / self.timeframe_div[timeframe]) + 1
+            # if time passed more than one interval - get it
+            return min(self.limit, limit)
+
+    def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str) -> (pd.DataFrame, int):
+        """ Get data from Binance exchange """
+        limit = self.get_limit(df, ticker, timeframe)
+        # get data from exchange only when there is at least one interval to get
+        if limit > 1:
+            klines = self.api.get_klines(ticker, timeframe, limit)
+            df = self.process_data(klines, df)
+            # update timestamp for current timeframe
+            self.ticker_dict[ticker][timeframe] = datetime.now()
+        return df, limit
+
+    def get_tickers(self):
+        """ Get list of available ticker names """
+        tickers = self.api.get_ticker_names(self.min_volume)
+        return tickers

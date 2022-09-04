@@ -36,7 +36,9 @@ work_timeframe = configs['Timeframes']['work_timeframe']
                           ('Binance', df_btc_5m, 'ETHUSDT', '4h', 7),
                           ('Binance', df_btc_5m, 'ETHUSDT', '1d', 5),
                           ], ids=repr)
-def test_get_limit(exchange, df, ticker, timeframe, expected):
+def test_get_limit(mocker, exchange, df, ticker, timeframe, expected):
+    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+
     tickers = ['BTCUSDT', 'ETHUSDT']
     gd = DataFactory.factory(exchange, **configs)
     gd.fill_ticker_dict(tickers)
@@ -78,6 +80,7 @@ df['time'] = df['time'] + pd.to_timedelta(3, unit='h')
                           ], ids=repr)
 def test_process_data(mocker, df, index, expected):
     tmp = cryptocurrencies[index].copy()
+    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     mocker.patch('api.binance_api.Binance.get_klines', return_value=tmp)
     gd = DataFactory.factory('Binance', **configs)
     res = gd.process_data(tmp, df)
@@ -102,6 +105,7 @@ def test_process_data(mocker, df, index, expected):
                           ], ids=repr)
 def test_get_data_get_data(mocker, df, ticker, timeframe, index, limit, expected):
     tmp = cryptocurrencies[index].copy()
+    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     mocker.patch('data.get_data.GetBinanceData.get_limit', return_value=limit)
     mocker.patch('api.binance_api.Binance.get_klines', return_value=tmp)
 
@@ -170,7 +174,7 @@ def test_add_indicator_data(mocker, dfs, df, ticker, timeframe, index, expected)
         if ind_factory:
             indicators.append(ind_factory)
 
-    # mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     mocker.patch('data.get_data.GetBinanceData.get_limit', return_value=200)
     mocker.patch('api.binance_api.Binance.get_klines', return_value=tmp)
 

@@ -33,7 +33,8 @@ class MainClass:
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframes = [self.higher_timeframe, self.work_timeframe]
         # Set list of available exchanges, cryptocurrencies and tickers
-        self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': []}}
+        self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': []},
+                          'OKEX': {'API': GetData(**configs), 'tickers': []}}
         # Get API and ticker list for every exchange in list
         for ex in list(self.exchanges.keys()):
             # get exchange API
@@ -48,7 +49,8 @@ class MainClass:
 
     def check_ticker(self, ticker: str) -> bool:
         # Check if ticker was already processesed before
-        if ticker not in self.processesed_tickers:
+        if ticker not in self.processesed_tickers and ticker.replace('-', '') not in self.processesed_tickers and \
+                ticker.replace('/', '') not in self.processesed_tickers:
             self.processesed_tickers.append(ticker)
             return True
         return False
@@ -133,6 +135,8 @@ class MainClass:
         for exchange, exchange_data in self.exchanges.items():
             exchange_api = exchange_data['API']
             tickers = exchange_data['tickers']
+            if exchange == 'OKEX':
+                print('')
             for ticker in tickers:
                 if not self.check_ticker(ticker):
                     continue

@@ -102,6 +102,9 @@ class SignalStat:
                     tmp['price_diff'] = (tmp['signal_price'] - tmp['result_price'])
                 tmp['pct_price_diff'] = tmp['price_diff'] / tmp['signal_price'] * 100
                 stat = pd.concat([stat, tmp], ignore_index=True)
+                # delete trades for the same tickers that are too close to each other
+                stat = self.delete_close_trades(stat)
+
                 if ttype == 'buy':
                     dfs['stat']['buy'] = stat
                 else:
@@ -137,3 +140,18 @@ class SignalStat:
         price_diff_mean = stat['price_diff'].mean()
         pct_price_diff_mean = stat['pct_price_diff'].mean()
         return price_diff_mean, pct_price_diff_mean, stat.shape[0]
+
+    @staticmethod
+    def delete_close_trades(df: pd.DataFrame) -> pd.DataFrame:
+        """ Find adjacent in time trades and for the same tickers and delete them """
+        df = df.sort_values(['ticker', 'time'])
+
+        df['time_diff'] = df['time'].shift(-1) - df['time']
+        df['ticker_shift'] = df['ticker'].shift(-1)
+        df['to_drop'] = (df['ticker'] == df['ticker_shift']) & (df['time_diff'] > pd.Timedelta(1, 'm')) & (
+                    df['time_diff'] < pd.Timedelta(30, 'm'))
+        df = df[df['to_drop'] == False]
+        df = df.drop(['time_diff', 'ticker_shift', 'to_drop'], axis=1)
+
+        return df
+

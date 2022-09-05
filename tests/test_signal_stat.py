@@ -70,3 +70,34 @@ def test_get_last_transaction(signal_points, expected):
     result = ss.write_stat(dfs, signal_points)
     assert result['stat']['buy'].equals(expected['buy'])
     assert result['stat']['sell'].equals(expected['sell'])
+
+
+buy_btc_close1 = buy_btc.iloc[:1]
+buy_btc_close1['time'] = pd.to_datetime('2022-08-21 3:40:00')
+
+buy_btc_close2 = buy_btc.iloc[:1]
+buy_btc_close2['time'] = pd.to_datetime('2022-08-21 3:50:00')
+
+sell_btc_close1 = sell_btc[2:]
+sell_btc_close1['time'] = pd.to_datetime('2022-08-23 11:55:00')
+
+buy_btc_exp = buy_btc.copy()
+buy_btc_exp.loc[0, 'time'] = pd.to_datetime('2022-08-21 3:50:00')
+
+sell_btc_exp = sell_btc.copy()
+sell_btc_exp.loc[2, 'time'] = pd.to_datetime('2022-08-23 11:55:00')
+
+
+@pytest.mark.parametrize('df, close_df, expected',
+                         [
+                          (buy_btc, pd.DataFrame(), buy_btc),
+                          (sell_btc, pd.DataFrame(), sell_btc),
+                          (buy_btc, buy_btc_close1, buy_btc),
+                          (buy_btc, buy_btc_close2, buy_btc_exp),
+                          (sell_btc, sell_btc_close1, sell_btc_exp)
+                         ], ids=repr)
+def test_delete_close_trades(df, close_df, expected):
+    df = pd.concat([df, close_df])
+    ss = SignalStat(**configs)
+    result = ss.delete_close_trades(df)
+    assert result.equals(expected)

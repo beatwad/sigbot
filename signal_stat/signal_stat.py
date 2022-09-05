@@ -152,6 +152,5 @@ class SignalStat:
                     df['time_diff'] < pd.Timedelta(30, 'm'))
         df = df[df['to_drop'] == False]
         df = df.drop(['time_diff', 'ticker_shift', 'to_drop'], axis=1)
-
         return df
 

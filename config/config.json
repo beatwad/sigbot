@@ -35,6 +35,6 @@
                                                   "SUP_RES": [],
                                                   "SUP_RES_Robust": []}}},
   "Log": {"params":  {"log_path":  "log/log.txt"}},
-  "Telegram":  {"params":  {"log_path":  "../log/telegram_log.txt",
-                            "chat_ids": {"binance_rsi_stoch": "-1001702067917"}}}
+  "Telegram":  {"params":  {"log_path":  "log/telegram_log.txt",
+                            "chat_ids": {"STOCH_RSI_SUP_RES": "-1001702067917"}}}
 }

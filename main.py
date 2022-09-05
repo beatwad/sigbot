@@ -10,6 +10,7 @@ from signals.find_signal import FindSignal
 from signal_stat.signal_stat import SignalStat
 from visualizer.visualizer import Visualizer
 from indicators.indicators import IndicatorFactory
+from telegram_api.telegram_api import TelegramBot
 
 from time import sleep
 
@@ -88,6 +89,9 @@ class MainClass:
             # fill ticker dict of exchange API with tickers to store current time
             # for periodic updates of ticker information
             exchange_api.fill_ticker_dict(tickers)
+        # Start Telegram bot
+        self.telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', **configs)
+        self.telegram_bot.start()
 
     def check_ticker(self, ticker: str) -> bool:
         # Check if ticker was already processesed before
@@ -150,7 +154,8 @@ class MainClass:
         """ Add list of exchanges on which this ticker can be traded """
         for sig_point in sig_points:
             for exchange, exchange_data in self.exchanges.items():
-                if ticker in exchange_data['tickers']:
+                if ticker in exchange_data['tickers'] or ticker.replace('-', '') in exchange_data['tickers'] or \
+                        ticker.replace('/', '') in exchange_data['tickers']:
                     sig_point[-1].append(exchange)
         return sig_points
 
@@ -173,7 +178,7 @@ class MainClass:
                 2 - index in dataframe
                 3 - type of signal (buy/sell)
                 4 - time when signal appeared
-                5 - list of signal patterns, by which signal was searched for
+                5 - signal pattern, by which signal was searched for
                 6 - path to file with candle/indicator plots of the signal
                 7 - list of exchanges where ticker with this signal can be found """
         self.processed_tickers = list()
@@ -209,8 +214,16 @@ class MainClass:
                             sig_points = self.add_plot(sig_points, levels)
                             # Add list of exchanges where this ticker is available and has a good liquidity
                             sig_points = self.get_exchange_list(ticker, sig_points)
-                            # Send signal to the Telegram bot
-                            telegram_send_queue.append(sig_points)
+                            print(sig_points)
+                            # Send signals to Telegram bot only if they are fresh (not earlier than 10-15 mins ago)
+                            fresh_sig_points = list()
+                            for point in sig_points:
+                                sig_img_path = point[6][0]
+                                if sig_img_path:
+                                    fresh_sig_points.append(point)
+                            if fresh_sig_points:
+                                self.telegram_bot.notification_list += fresh_sig_points
+                                self.telegram_bot.update_bot.set()
                             # If signals are found - log them
                             if sig_points and data_qty < 1000:
                                 sig_message = f'Find the signal points. Exchange is {exchange}, ticker is {ticker}, ' \
@@ -221,7 +234,7 @@ class MainClass:
 if __name__ == "__main__":
     # Counter
     i = 1
-    telegram_send_queue = list()
+
     main = MainClass(**configs)
 
     while True:
@@ -231,4 +244,4 @@ if __name__ == "__main__":
         dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
         print(f'Cycle is {i}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
         i += 1
-        sleep(300)
+        sleep(60)

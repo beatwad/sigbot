@@ -2,6 +2,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 import matplotlib.style as style
+import pandas as pd
 
 matplotlib.use('Agg')
 style.use('fivethirtyeight')
@@ -22,7 +23,8 @@ class Visualizer:
         # Max number of previous candles for which signal can be searched for
         self.max_prev_candle_limit = self.params.get('max_prev_candle_limit', 0)
 
-    def plot_indicator_parameters(self, point_type, index, indicator, axs, indicator_params):
+    def plot_indicator_parameters(self, point_type: str, index: int, indicator: str,
+                                  axs: plt.axis, indicator_params: list) -> None:
         """ Plot parameters of indicator (like low or high boundary, etc.)"""
         indicator_param = indicator_params[index]
         if indicator_param:
@@ -32,7 +34,7 @@ class Visualizer:
                 else:
                     axs[index + 1].axhline(y=indicator_param[1], color='r', linestyle='--', linewidth=1.5)
 
-    def plot_point(self, point_type, data, ax):
+    def plot_point(self, point_type: str, data: pd.DataFrame, ax: plt.axis) -> None:
         """ Plot trade point """
         if point_type == 'buy':
             ax.scatter(self.plot_width, data['close'].iloc[-1], s=50, color='blue')
@@ -40,7 +42,7 @@ class Visualizer:
             ax.scatter(self.plot_width, data['close'].iloc[-1], s=50, color='blue')
 
     @staticmethod
-    def plot_levels(data, levels, axs):
+    def plot_levels(data: pd.DataFrame, levels: list, axs: plt.axis) -> None:
         """ Plot support and resistance levels"""
         for level in levels:
             if data['low'].min() <= level[0] <= data['high'].max():  # and level[1] == 3:
@@ -51,7 +53,18 @@ class Visualizer:
         plt.savefig(filename, bbox_inches='tight')
         return filename
 
-    def create_plot(self, dfs, point, levels):
+    @staticmethod
+    def process_ticker(ticker: str) -> str:
+        """ Bring ticker to more convenient view """
+        if '-' in ticker:
+            return ticker
+        if '/' in ticker:
+            ticker = ticker.replace('/', '-')
+            return ticker
+        ticker = ticker[:-4] + '-' + ticker[-4:]
+        return ticker
+
+    def create_plot(self, dfs: pd.DataFrame, point: list, levels: list) -> str:
         # get necessary info
         ticker, timeframe, point_index, point_type, time, pattern, plot_path, exchange_list = point
         df = dfs[ticker][timeframe]['data']
@@ -89,8 +102,9 @@ class Visualizer:
         plt.xticks(rotation=30)
 
         # plot all subplots
+        title = self.process_ticker(ticker)
         mpf.plot(ohlc, type='candle', ax=axs[0], addplot=ap, warn_too_much_data=1001, style='yahoo',
-                 axtitle=f'{ticker}-{timeframe}', ylabel='')
+                 axtitle=f'{title}-{timeframe}', ylabel='')
 
         # plot point of trade
         self.plot_point(point_type, data, axs[0])

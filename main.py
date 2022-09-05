@@ -75,7 +75,8 @@ class MainClass:
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframes = [self.higher_timeframe, self.work_timeframe]
         # Set list of available exchanges, cryptocurrencies and tickers
-        self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': []}}
+        self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': []},
+                          'OKEX': {'API': GetData(**configs), 'tickers': []}}
         # Get API and ticker list for every exchange in list
         for ex in list(self.exchanges.keys()):
             # get exchange API
@@ -89,8 +90,9 @@ class MainClass:
             exchange_api.fill_ticker_dict(tickers)
 
     def check_ticker(self, ticker: str) -> bool:
-        # Check if ticker was already processed before
-        if ticker not in self.processed_tickers:
+        # Check if ticker was already processesed before
+        if ticker not in self.processed_tickers and ticker.replace('-', '') not in self.processed_tickers and \
+                ticker.replace('/', '') not in self.processed_tickers:
             self.processed_tickers.append(ticker)
             return True
         return False
@@ -183,7 +185,7 @@ class MainClass:
                     continue
                 # For every timeframe get the data and find the signal
                 for timeframe in self.timeframes:
-                    # print(f'Cycle number {i}, exchange {exchange}, ticker {ticker}, timeframe {timeframe}')
+                    print(f'Cycle number {i}, exchange {exchange}, ticker {ticker}, timeframe {timeframe}')
                     # if debug:
                     #     df = pd.read_pickle('tests/test_ETHUSDT_5m.pkl')
                     #     if i > 1:

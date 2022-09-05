@@ -1,7 +1,6 @@
 import pandas as pd
-from binance.client import Client
 from api.api_base import ApiBase
-from models.cryptocurrency import CryptoCurrency
+from binance.client import Client
 
 
 class Binance(ApiBase):
@@ -9,7 +8,7 @@ class Binance(ApiBase):
 
     def __init__(self, api_key="Key", api_secret="Secret"):
         if api_key != "Key" and api_secret != "Secret":
-            Binance().connect_to_api(api_key, api_secret)
+            self.connect_to_api(api_key, api_secret)
         else:
             self.api_key = api_key
             self.api_secret = api_secret
@@ -19,62 +18,37 @@ class Binance(ApiBase):
         self.api_secret = api_secret
         self.client = Client(self.api_key, api_secret)
 
-    def get_api_key(self):
-        print("Your Api Key: {}".format(self.api_key))
+    @staticmethod
+    def delete_duplicate_symbols(symbols) -> list:
+        """ If for pair with USDT exists pair with BUSD - delete it  """
+        filtered_symbols = list()
+        symbols = symbols.to_list()
 
-    def get_api_secret(self):
-        print("Your Api Secret: {}".format(self.api_secret))
+        for symbol in symbols:
+            if symbol.endswith('BUSD'):
+                prefix = symbol[:-4]
+                if prefix + 'USDT' not in symbols:
+                    filtered_symbols.append(symbol)
+            else:
+                filtered_symbols.append(symbol)
 
-    def get_exchange_info(self):
-        return self.client.get_exchange_info()
+        return filtered_symbols
 
-    def get_ticker_names(self) -> list:
-        """ Get non-stable tickers from Binance exchange that are in pair with USDT or BUSD and have TRADING status """
-        ticker_names = list()
-        exchange_info = self.client.get_exchange_info()
+    def get_ticker_names(self, min_volume) -> list:
+        tickers = pd.DataFrame(self.client.get_ticker())
+        tickers = tickers[(tickers['symbol'].str.endswith('USDT')) | (tickers['symbol'].str.endswith('BUSD'))]
+        tickers['quoteVolume'] = tickers['quoteVolume'].astype(float)
+        tickers = tickers[tickers['quoteVolume'] >= min_volume]
 
-        for s in exchange_info['symbols']:
-            symbol = s['symbol']
-            if s['status'] == 'TRADING' and symbol.endswith('USDT'):
-                    if self.check_symbol(symbol):
-                        ticker_names.append(s['symbol'])
+        filtered_symbols = self.check_symbols(tickers['symbol'])
+        tickers = tickers[tickers['symbol'].isin(filtered_symbols)]
+        filtered_symbols = self.delete_duplicate_symbols(tickers['symbol'])
+        tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
 
-        for s in exchange_info['symbols']:
-            symbol = s['symbol']
-            if s['status'] == 'TRADING' and symbol.endswith('BUSD'):
-                prefix = s['symbol'][:-4]
-                if prefix + 'USDT' not in ticker_names:
-                    if self.check_symbol(symbol):
-                        ticker_names.append(s['symbol'])
+        return tickers['symbol'].to_list()
 
-        return ticker_names
-
-    def get_ticker_volume(self, ticker_names: list) -> pd.DataFrame:
-        """ Get 24h volume for each ticker from ticker list, save to pd.Dataframe """
-        tickers = self.client.get_ticker()
-        ticker_vol_dict = dict()
-
-        for t in tickers:
-            symbol = t['symbol']
-            if symbol in ticker_names:
-                ticker_vol_dict[symbol] = t['quoteVolume']
-
-        data = {'ticker': list(ticker_vol_dict.keys()), 'volume': list(ticker_vol_dict.values())}
-        df = pd.DataFrame(data=data)
-        df['volume'] = df['volume'].astype(float)
-
-        return df
-
-    def get_crypto_currency(self, symbol, interval, limit) -> CryptoCurrency:
+    def get_klines(self, symbol, interval, limit) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
-        klines = self.client.get_klines(symbol=symbol, interval=interval, limit=limit)
-        crypto_currency = CryptoCurrency(symbol, interval, limit)
-        for kline in klines:
-            crypto_currency.time.append(float(kline[0]))
-            crypto_currency.open_values.append(float(kline[1]))
-            crypto_currency.high_values.append(float(kline[2]))
-            crypto_currency.low_values.append(float(kline[3]))
-            crypto_currency.close_values.append(float(kline[4]))
-            crypto_currency.volume_values.append(float(kline[5]))
-
-        return crypto_currency
+        tickers = pd.DataFrame(self.client.get_klines(symbol=symbol, interval=interval, limit=limit))
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, axis=1)
+        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]

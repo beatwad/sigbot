@@ -93,7 +93,7 @@ class SupRes(Indicator):
         return levels
 
     @staticmethod
-    def is_support(df: pd.DataFrame, i):
+    def is_support(df: pd.DataFrame, i: int) -> bool:
         """ Find support levels """
         support = df['low'][i] < df['low'][i-1] < df['low'][i-2] and \
                   df['low'][i] < df['low'][i+1] < df['low'][i+2]
@@ -102,7 +102,7 @@ class SupRes(Indicator):
         return support or support_roll
 
     @staticmethod
-    def is_resistance(df: pd.DataFrame, i):
+    def is_resistance(df: pd.DataFrame, i: int) -> bool:
         """ Find resistance levels """
         resistance = df['high'][i] > df['high'][i-1] > df['high'][i-2] and \
                      df['high'][i] > df['high'][i+1] > df['high'][i+2]
@@ -110,7 +110,7 @@ class SupRes(Indicator):
                           df['high_roll'][i] > df['high_roll'][i+1] > df['high_roll'][i+2] > df['high_roll'][i+3]
         return resistance or resistance_roll
 
-    def find_levels(self, df, level_proximity):
+    def find_levels(self, df: pd.DataFrame, level_proximity: float) -> list:
         """ Find levels and save their value and their importance """
         levels = list()
         df['high_roll'] = df['high'].rolling(3).mean()
@@ -135,7 +135,7 @@ class SupRes(Indicator):
         return sorted(levels, key=lambda x: x[0])
 
     @staticmethod
-    def add_higher_levels(levels, higher_levels, s):
+    def add_higher_levels(levels: list, higher_levels: list, s: list) -> list:
         """ Merge levels with the levels from higher timeframe. If layers from lower and higher timeframe are
             coincided - increase the importance value of lower timeframe """
         levels_to_add = list()

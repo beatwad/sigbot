@@ -5,7 +5,6 @@ from os import environ
 from freezegun import freeze_time
 from data.get_data import DataFactory
 from config.config import ConfigFactory
-from models.cryptocurrency import CryptoCurrency
 from indicators.indicators import IndicatorFactory
 
 
@@ -37,7 +36,9 @@ work_timeframe = configs['Timeframes']['work_timeframe']
                           ('Binance', df_btc_5m, 'ETHUSDT', '4h', 7),
                           ('Binance', df_btc_5m, 'ETHUSDT', '1d', 5),
                           ], ids=repr)
-def test_get_limit(exchange, df, ticker, timeframe, expected):
+def test_get_limit(mocker, exchange, df, ticker, timeframe, expected):
+    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+
     tickers = ['BTCUSDT', 'ETHUSDT']
     gd = DataFactory.factory(exchange, **configs)
     gd.fill_ticker_dict(tickers)
@@ -56,88 +57,63 @@ def test_get_limit(exchange, df, ticker, timeframe, expected):
 
 
 # test process_data method
+cryptocurrencies1 = df_btc_5m[['time', 'open', 'high', 'low', 'close', 'volume']].loc[498:500].reset_index(drop=True)
+cryptocurrencies2 = df_btc_5m[['time', 'open', 'high', 'low', 'close', 'volume']].loc[500:502].reset_index(drop=True)
+cryptocurrencies3 = df_btc_5m[['time', 'open', 'high', 'low', 'close', 'volume']].loc[500:600].reset_index(drop=True)
+cryptocurrencies4 = df_btc_5m[['time', 'open', 'high', 'low', 'close', 'volume']].loc[400:600].reset_index(drop=True)
+cryptocurrencies5 = df_eth_5m[['time', 'open', 'high', 'low', 'close', 'volume']].loc[400:600].reset_index(drop=True)
 
-cryptocurrencies = [CryptoCurrency('BTC', '5m', 2), CryptoCurrency('BTC', '5m', 2),
-                    CryptoCurrency('BTC', '5m', 100), CryptoCurrency('BTC', '5m', 200),
-                    CryptoCurrency('ETH', '5m', 200)]
-
-cryptocurrencies[0].time = df_btc_5m['time'].loc[498:500].tolist()
-cryptocurrencies[0].open_values = df_btc_5m['open'].loc[498:500].tolist()
-cryptocurrencies[0].high_values = df_btc_5m['high'].loc[498:500].tolist()
-cryptocurrencies[0].low_values = df_btc_5m['low'].loc[498:500].tolist()
-cryptocurrencies[0].close_values = df_btc_5m['close'].loc[498:500].tolist()
-cryptocurrencies[0].volume_values = df_btc_5m['volume'].loc[498:500].tolist()
-
-cryptocurrencies[1].time = df_btc_5m['time'].loc[500:502].tolist()
-cryptocurrencies[1].open_values = df_btc_5m['open'].loc[500:502].tolist()
-cryptocurrencies[1].high_values = df_btc_5m['high'].loc[500:502].tolist()
-cryptocurrencies[1].low_values = df_btc_5m['low'].loc[500:502].tolist()
-cryptocurrencies[1].close_values = df_btc_5m['close'].loc[500:502].tolist()
-cryptocurrencies[1].volume_values = df_btc_5m['volume'].loc[500:502].tolist()
-
-cryptocurrencies[2].time = df_btc_5m['time'].loc[500:600].tolist()
-cryptocurrencies[2].open_values = df_btc_5m['open'].loc[500:600].tolist()
-cryptocurrencies[2].high_values = df_btc_5m['high'].loc[500:600].tolist()
-cryptocurrencies[2].low_values = df_btc_5m['low'].loc[500:600].tolist()
-cryptocurrencies[2].close_values = df_btc_5m['close'].loc[500:600].tolist()
-cryptocurrencies[2].volume_values = df_btc_5m['volume'].loc[500:600].tolist()
-
-cryptocurrencies[3].time = df_btc_5m['time'].loc[400:600].tolist()
-cryptocurrencies[3].open_values = df_btc_5m['open'].loc[400:600].tolist()
-cryptocurrencies[3].high_values = df_btc_5m['high'].loc[400:600].tolist()
-cryptocurrencies[3].low_values = df_btc_5m['low'].loc[400:600].tolist()
-cryptocurrencies[3].close_values = df_btc_5m['close'].loc[400:600].tolist()
-cryptocurrencies[3].volume_values = df_btc_5m['volume'].loc[400:600].tolist()
-
-cryptocurrencies[4].time = df_eth_5m['time'].loc[400:600].tolist()
-cryptocurrencies[4].open_values = df_eth_5m['open'].loc[400:600].tolist()
-cryptocurrencies[4].high_values = df_eth_5m['high'].loc[400:600].tolist()
-cryptocurrencies[4].low_values = df_eth_5m['low'].loc[400:600].tolist()
-cryptocurrencies[4].close_values = df_eth_5m['close'].loc[400:600].tolist()
-cryptocurrencies[4].volume_values = df_eth_5m['volume'].loc[400:600].tolist()
+cryptocurrencies = [cryptocurrencies1, cryptocurrencies2, cryptocurrencies3, cryptocurrencies4, cryptocurrencies5]
 
 df = df_btc_5m[['time', 'open', 'high', 'low', 'close', 'volume']]
 df['time'] = df['time'] + pd.to_timedelta(3, unit='h')
 
 
-@pytest.mark.parametrize('df, cryptocurrency, expected',
+@pytest.mark.parametrize('df, index, limit, expected',
                          [
-                          (pd.DataFrame(), cryptocurrencies[0],
+                          (pd.DataFrame(), 0, 500,
                            df.loc[498:500].reset_index(drop=True)),
-                          (df.loc[:500], cryptocurrencies[0], df.loc[:500]),
-                          (df.loc[:500], cryptocurrencies[1], df.loc[2:502].reset_index(drop=True)),
-                          (df.loc[:500], cryptocurrencies[2], df.loc[100:600].reset_index(drop=True)),
-                          (df.loc[:500], cryptocurrencies[3], df.loc[100:600].reset_index(drop=True)),
+                          (df.loc[:500], 0, 500, df.loc[:500]),
+                          (df.loc[:500], 1, 500, df.loc[2:502].reset_index(drop=True)),
+                          (df.loc[:500], 1, 1000, df.loc[:502].reset_index(drop=True)),
+                          (df.loc[:500], 2, 500, df.loc[100:600].reset_index(drop=True)),
+                          (df.loc[:500], 3, 500, df.loc[100:600].reset_index(drop=True)),
+                          (df.loc[:500], 3, 1000, df.loc[:600].reset_index(drop=True)),
                           ], ids=repr)
-def test_process_data(mocker, df, cryptocurrency, expected):
-    mocker.patch('api.binance_api.Binance.get_crypto_currency', return_value=cryptocurrency)
+def test_process_data(mocker, df, index, limit, expected):
+    tmp = cryptocurrencies[index].copy()
+    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+    mocker.patch('api.binance_api.Binance.get_klines', return_value=tmp)
     gd = DataFactory.factory('Binance', **configs)
-    assert gd.process_data(cryptocurrency, df).equals(expected)
+    gd.limit = limit
+    res = gd.process_data(tmp, df)
+    assert res.equals(expected)
 
 
 # test get_data method
 
 
-@pytest.mark.parametrize('df, ticker, timeframe, cryptocurrency, limit, expected',
+@pytest.mark.parametrize('df, ticker, timeframe, index, limit, expected',
                          [
-                          (pd.DataFrame(), 'BTCUSDT', '5m', cryptocurrencies[0], 1000,
+                          (pd.DataFrame(), 'BTCUSDT', '5m', 0, 1000,
                            (df.loc[498:500].reset_index(drop=True), 1000)),
-                          (df.loc[:500], 'BTCUSDT', '5m', cryptocurrencies[0], 0, (df.loc[:500], 0)),
-                          (df.loc[:500], 'BTCUSDT', '5m', cryptocurrencies[0], 1, (df.loc[:500], 1)),
-                          (df.loc[:500], 'BTCUSDT', '5m', cryptocurrencies[1], 2,
+                          (df.loc[:500], 'BTCUSDT', '5m', 0, 0, (df.loc[:500], 0)),
+                          (df.loc[:500], 'BTCUSDT', '5m', 0, 1, (df.loc[:500], 1)),
+                          (df.loc[:500], 'BTCUSDT', '5m', 1, 2,
                            (df.loc[2:502].reset_index(drop=True), 2)),
-                          (df.loc[:500], 'BTCUSDT', '5m', cryptocurrencies[2], 100,
+                          (df.loc[:500], 'BTCUSDT', '5m', 2, 100,
                            (df.loc[100:600].reset_index(drop=True), 100)),
-                          (df.loc[:500], 'BTCUSDT', '5m', cryptocurrencies[3], 200,
+                          (df.loc[:500], 'BTCUSDT', '5m', 3, 200,
                            (df.loc[100:600].reset_index(drop=True), 200)),
                           ], ids=repr)
-def test_get_data_get_data(mocker, df, ticker, timeframe, cryptocurrency, limit, expected):
+def test_get_data_get_data(mocker, df, ticker, timeframe, index, limit, expected):
+    tmp = cryptocurrencies[index].copy()
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     mocker.patch('data.get_data.GetBinanceData.get_limit', return_value=limit)
-    mocker.patch('api.binance_api.Binance.get_crypto_currency', return_value=cryptocurrency)
-
+    mocker.patch('api.binance_api.Binance.get_klines', return_value=tmp)
     tickers = ['BTCUSDT', 'ETHUSDT']
     gd = DataFactory.factory('Binance', **configs)
+    gd.limit = 500
     gd.fill_ticker_dict(tickers)
 
     res = gd.get_data(df, ticker, timeframe)
@@ -180,15 +156,16 @@ df_inds = [df_ind1, df_ind2, df_ind3, df_ind4]
 levels = [level1, level2, level3, level4, level5]
 
 
-@pytest.mark.parametrize('dfs, df, ticker, timeframe, cryptocurrencies, expected',
+@pytest.mark.parametrize('dfs, df, ticker, timeframe, index, expected',
                          [
-                          (dfss, df_eth_5, 'ETHUSDT', '5m', cryptocurrencies[4], (df_inds[1], levels[4])),
-                          (dfss, df_eth_1, 'ETHUSDT', '1h', cryptocurrencies[4], (df_inds[0], levels[0])),
-                          (dfss, df_eth_5, 'ETHUSDT', '5m', cryptocurrencies[4], (df_inds[1], levels[1])),
-                          (dfss, df_btc_1, 'BTCUSDT', '1h', cryptocurrencies[3], (df_inds[2], levels[2])),
-                          (dfss, df_btc_5, 'BTCUSDT', '5m', cryptocurrencies[3], (df_inds[3], levels[3])),
+                          (dfss, df_eth_5, 'ETHUSDT', '5m', 4, (df_inds[1], levels[4])),
+                          (dfss, df_eth_1, 'ETHUSDT', '1h', 4, (df_inds[0], levels[0])),
+                          (dfss, df_eth_5, 'ETHUSDT', '5m', 4, (df_inds[1], levels[1])),
+                          (dfss, df_btc_1, 'BTCUSDT', '1h', 3, (df_inds[2], levels[2])),
+                          (dfss, df_btc_5, 'BTCUSDT', '5m', 3, (df_inds[3], levels[3])),
                           ], ids=repr)
-def test_add_indicator_data(mocker, dfs, df, ticker, timeframe, cryptocurrencies, expected):
+def test_add_indicator_data(mocker, dfs, df, ticker, timeframe, index, expected):
+    tmp = cryptocurrencies[index].copy()
     indicators = list()
     if timeframe == work_timeframe:
         indicator_list = configs['Indicator_list']
@@ -202,10 +179,11 @@ def test_add_indicator_data(mocker, dfs, df, ticker, timeframe, cryptocurrencies
 
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     mocker.patch('data.get_data.GetBinanceData.get_limit', return_value=200)
-    mocker.patch('api.binance_api.Binance.get_crypto_currency', return_value=cryptocurrencies)
+    mocker.patch('api.binance_api.Binance.get_klines', return_value=tmp)
 
     tickers = ['BTCUSDT', 'ETHUSDT']
     gd = DataFactory.factory('Binance', **configs)
+    gd.limit = 500
     gd.fill_ticker_dict(tickers)
 
     data = gd.get_data(df.loc[:500], ticker, timeframe)[0]

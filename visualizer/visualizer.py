@@ -66,7 +66,7 @@ class Visualizer:
 
     def create_plot(self, dfs: pd.DataFrame, point: list, levels: list) -> str:
         # get necessary info
-        ticker, timeframe, point_index, point_type, time, pattern, plot_path, exchange_list = point
+        ticker, timeframe, point_index, point_type, time, pattern, plot_path, exchange_list, ts, tt = point
         df = dfs[ticker][timeframe]['data']
         data = df.loc[point_index - self.plot_width:point_index]
         ohlc = data[['time', 'open', 'high', 'low', 'close', 'volume']]

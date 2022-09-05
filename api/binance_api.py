@@ -31,11 +31,12 @@ class Binance(ApiBase):
                     filtered_symbols.append(symbol)
             else:
                 filtered_symbols.append(symbol)
-
         return filtered_symbols
 
-    def get_ticker_names(self, min_volume) -> list:
+    def get_ticker_names(self, min_volume) -> (list, list):
         tickers = pd.DataFrame(self.client.get_ticker())
+        all_tickers = tickers['symbol'].to_list()
+
         tickers = tickers[(tickers['symbol'].str.endswith('USDT')) | (tickers['symbol'].str.endswith('BUSD'))]
         tickers['quoteVolume'] = tickers['quoteVolume'].astype(float)
         tickers = tickers[tickers['quoteVolume'] >= min_volume]
@@ -45,7 +46,7 @@ class Binance(ApiBase):
         filtered_symbols = self.delete_duplicate_symbols(tickers['symbol'])
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
 
-        return tickers['symbol'].to_list()
+        return tickers['symbol'].to_list(), all_tickers
 
     def get_klines(self, symbol, interval, limit) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """

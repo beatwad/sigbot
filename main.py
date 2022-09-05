@@ -76,19 +76,22 @@ class MainClass:
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframes = [self.higher_timeframe, self.work_timeframe]
         # Set list of available exchanges, cryptocurrencies and tickers
-        self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': []},
-                          'OKEX': {'API': GetData(**configs), 'tickers': []}}
+        self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                          'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
         # Get API and ticker list for every exchange in list
         for ex in list(self.exchanges.keys()):
             # get exchange API
             exchange_api = DataFactory.factory(ex, **configs)
             self.exchanges[ex]['API'] = exchange_api
             # get ticker list
-            tickers = self.exchanges[ex]['API'].get_tickers()
+            tickers, all_tickers = self.exchanges[ex]['API'].get_tickers()
             self.exchanges[ex]['tickers'] = tickers
+            self.exchanges[ex]['all_tickers'] = all_tickers
             # fill ticker dict of exchange API with tickers to store current time
             # for periodic updates of ticker information
             exchange_api.fill_ticker_dict(tickers)
+        # Create statistics class
+        self.stat = SignalStat(**configs)
         # Start Telegram bot
         self.telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', **configs)
         self.telegram_bot.start()
@@ -132,31 +135,38 @@ class MainClass:
         sig_points = fs.find_signal(df, ticker, timeframe, levels, data_qty)
         return sig_points, levels
 
-    def get_statistics(self, sig_points: list) -> None:
+    def add_statistics(self, sig_points: list) -> None:
         """ Calculate statistics and write it to the database """
-        ss = SignalStat(**configs)
-        self.database = ss.write_stat(self.database, sig_points)
-        # Calculate statistics
-        # print(ss.calculate_total_stat(database, 'buy'))
-        # print(ss.calculate_total_stat(database, 'sell'))
-        # print(ss.calculate_ticker_stat(database, 'buy', ticker, timeframe))
-        # print(ss.calculate_ticker_stat(database, 'sell', ticker, timeframe))
+        self.database = self.stat.write_stat(self.database, sig_points)
+
+    def calc_statistics(self, sig_points: list) -> list:
+        """ Calculate statistics and write it for every signal """
+        for sig_point in sig_points:
+            ticker = sig_point[0]
+            timeframe = sig_point[1]
+            sig_type = sig_point[3]
+            pattern = sig_point[5]
+            total_stat = self.stat.calculate_total_stat(self.database, sig_type, pattern)
+            ticker_stat = self.stat.calculate_ticker_stat(self.database, sig_type, ticker, timeframe, pattern)
+            sig_point[8].append(total_stat)
+            sig_point[9].append(ticker_stat)
+        return sig_points
 
     def add_plot(self, sig_points: list, levels: list) -> list:
         """ Generate signal plot, save it to file and add this filepath to the signal point data """
         v = Visualizer(**configs)
         for sig_point in sig_points:
             filename = v.create_plot(self.database, sig_point, levels)
-            sig_point[-2].append(filename)
+            sig_point[6].append(filename)
         return sig_points
 
     def get_exchange_list(self, ticker: str, sig_points: list) -> list:
         """ Add list of exchanges on which this ticker can be traded """
         for sig_point in sig_points:
             for exchange, exchange_data in self.exchanges.items():
-                if ticker in exchange_data['tickers'] or ticker.replace('-', '') in exchange_data['tickers'] or \
-                        ticker.replace('/', '') in exchange_data['tickers']:
-                    sig_point[-1].append(exchange)
+                if ticker in exchange_data['all_tickers'] or ticker.replace('-', '') in exchange_data['all_tickers'] \
+                        or ticker.replace('/', '') in exchange_data['all_tickers']:
+                    sig_point[7].append(exchange)
         return sig_points
 
     @staticmethod
@@ -180,7 +190,9 @@ class MainClass:
                 4 - time when signal appeared
                 5 - signal pattern, by which signal was searched for
                 6 - path to file with candle/indicator plots of the signal
-                7 - list of exchanges where ticker with this signal can be found """
+                7 - list of exchanges where ticker with this signal can be found
+                8 - statistics for the current pattern
+                9 - statistics for the current pattern, ticker and timeframe """
         self.processed_tickers = list()
         for exchange, exchange_data in self.exchanges.items():
             exchange_api = exchange_data['API']
@@ -209,11 +221,13 @@ class MainClass:
                             # Get the signals
                             sig_points, levels = self.get_signals(df, ticker, timeframe, data_qty)
                             # Get the statistics
-                            self.get_statistics(sig_points)
+                            self.add_statistics(sig_points)
                             # For every signal create its plot and add path to it
                             sig_points = self.add_plot(sig_points, levels)
                             # Add list of exchanges where this ticker is available and has a good liquidity
                             sig_points = self.get_exchange_list(ticker, sig_points)
+                            # Add pattern and ticker statistics
+                            sig_points = self.calc_statistics(sig_points)
                             print(sig_points)
                             # Send signals to Telegram bot only if they are fresh (not earlier than 10-15 mins ago)
                             fresh_sig_points = list()
@@ -234,7 +248,6 @@ class MainClass:
 if __name__ == "__main__":
     # Counter
     i = 1
-
     main = MainClass(**configs)
 
     while True:

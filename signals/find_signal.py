@@ -255,9 +255,11 @@ class FindSignal:
                 else:
                     if "SUP_RES" in [p[0] for p in pattern]:
                         if sup_res.check_levels(df, index, levels, level_proximity, True):
-                            point = (ticker, timeframe, index, 'buy', time, [(p[0], p[3]) for p in pattern], [], [])
+                            point = (ticker, timeframe, index, 'buy', time, [(p[0], p[3]) for p in pattern],
+                                     [], [], [], [])
                     else:
-                        point = (ticker, timeframe, index, 'buy', time, [(p[0], p[3]) for p in pattern], [], [])
+                        point = (ticker, timeframe, index, 'buy', time, [(p[0], p[3]) for p in pattern],
+                                 [], [], [], [])
 
                 for p in pattern:
                     if (p[1], p[2]) != (True, 'sell') and (p[1], p[2]) != (True, ''):
@@ -265,9 +267,11 @@ class FindSignal:
                 else:
                     if "SUP_RES" in [p[0] for p in pattern]:
                         if sup_res.check_levels(df, index, levels, level_proximity, False):
-                            point = (ticker, timeframe, index, 'sell', time, [(p[0], p[3]) for p in pattern], [], [])
+                            point = (ticker, timeframe, index, 'sell', time, [(p[0], p[3]) for p in pattern],
+                                     [], [], [], [])
                     else:
-                        point = (ticker, timeframe, index, 'sell', time, [(p[0], p[3]) for p in pattern], [], [])
+                        point = (ticker, timeframe, index, 'sell', time, [(p[0], p[3]) for p in pattern],
+                                 [], [], [], [])
                 if point and index not in index_list:
                     index_list.append(index)
                     points.append(point)
@@ -275,7 +279,7 @@ class FindSignal:
         self.first = False
 
         return points
-    #
+
     # def check_close_points(self, points):
     #     """ Sort points by index and check if indexes of some of them too close to each other.
     #         If it's true - delete point with smaller index """

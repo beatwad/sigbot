@@ -17,7 +17,7 @@ class SignalStat:
         """ Calculate signal statistics for every signal point for current ticker on current timeframe.
             Statistics for buy and sell trades is written separately """
         for point in signal_points:
-            ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list = point
+            ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
             df = dfs[ticker][timeframe]['data']
             # array of prices after signal
             high_price_points = np.zeros(self.stat_range)
@@ -122,21 +122,23 @@ class SignalStat:
         return dfs
 
     @staticmethod
-    def calculate_total_stat(dfs: dict, ttype) -> tuple:
+    def calculate_total_stat(dfs: dict, ttype: str, pattern: str) -> tuple:
         """ Calculate statistics for all found signals for all tickers on all timeframes """
         stat = dfs['stat'][ttype]
+        stat = stat[(stat['pattern'].astype(str) == str(pattern))]
         if stat.shape[0] == 0:
-            return ()
+            return None, None
         pct_price_diff_mean = stat['pct_price_diff'].mean()
         return pct_price_diff_mean, stat.shape[0]
 
     @staticmethod
-    def calculate_ticker_stat(dfs: dict, ttype, ticker: str, timeframe: str) -> tuple:
+    def calculate_ticker_stat(dfs: dict, ttype, ticker: str, timeframe: str, pattern: str) -> tuple:
         """ Calculate statistics for signals for current ticker on current timeframe """
         stat = dfs['stat'][ttype]
-        stat = stat[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe)]
+        stat = stat[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe) &
+                    (stat['pattern'].astype(str) == str(pattern))]
         if stat.shape[0] == 0:
-            return ()
+            return None, None, None
         price_diff_mean = stat['price_diff'].mean()
         pct_price_diff_mean = stat['pct_price_diff'].mean()
         return price_diff_mean, pct_price_diff_mean, stat.shape[0]
@@ -153,4 +155,3 @@ class SignalStat:
         df = df[df['to_drop'] == False]
         df = df.drop(['time_diff', 'ticker_shift', 'to_drop'], axis=1)
         return df
-

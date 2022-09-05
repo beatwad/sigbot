@@ -22,15 +22,16 @@ class OKEX(ApiBase):
 
         return filtered_symbols
 
-    def get_ticker_names(self, min_volume) -> list:
+    def get_ticker_names(self, min_volume) -> (list, list):
         """ Get tickers from spot, futures and swap OKEX exchanges and get tickers with big enough 24h volume """
         tickers_spot = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=SPOT').json()['data'])
         tickers_future = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=FUTURES').json()['data'])
         tickers_swap = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=SWAP').json()['data'])
 
         tickers = pd.concat([tickers_spot, tickers_future, tickers_swap])
+        tickers['symbol'] = tickers['instId'].str.replace('-', '')
+        all_tickers = tickers['symbol'].to_list()
 
-        # tickers['instId'] = tickers['instId'].str.replace('-', '')
         tickers = tickers[(tickers['instId'].str.endswith('USDT')) | (tickers['instId'].str.endswith('USDC'))]
         tickers['volCcy24h'] = tickers['volCcy24h'].astype(float)
         tickers = tickers[tickers['volCcy24h'] >= min_volume]
@@ -41,7 +42,7 @@ class OKEX(ApiBase):
         tickers = tickers[tickers['instId'].isin(filtered_symbols)].reset_index(drop=True)
         tickers = tickers.drop_duplicates(subset=['instId'])
 
-        return tickers['instId'].to_list()
+        return tickers['instId'].to_list(), all_tickers
 
     def get_klines(self, symbol, interval, limit=300) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """

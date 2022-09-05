@@ -1,4 +1,3 @@
-import sys
 import time
 import logging
 import functools
@@ -95,10 +94,32 @@ class TelegramBot(Thread):
         ticker = ticker[:-4] + '-' + ticker[-4:]
         return ticker
 
+    @staticmethod
+    def get_stat(stat, shape):
+        """ Get statistics by ticker and total statistics """
+        if shape is None:
+            return None
+        elif shape >= 5:
+            return stat
+        else:
+            return None
+
+    @staticmethod
+    def get_ticker_stat(stat1, stat2, shape):
+        """ Get statistics by ticker and total statistics """
+        if shape is None:
+            return None, None
+        elif shape >= 5:
+            return stat1, stat2
+        else:
+            return None, None
+
+    # def load_stat(self):
+
     def send_notification(self) -> None:
         """ Add notification to notification list and send its items to chat """
         while self.notification_list:
-            # get pattern
+            # Get info from signal
             _message = self.notification_list.pop(0)
             ticker = self.process_ticker(_message[0])
             timeframe = _message[1]
@@ -109,21 +130,43 @@ class TelegramBot(Thread):
             sig_pattern = '_'.join(sig_pattern)
             sig_img_path = _message[6][0]
             sig_exchanges = _message[7]
+            pct_total_stat, shape = _message[8][0]
+            pct_total_stat = self.get_stat(pct_total_stat, shape)
+            ticker_stat, pct_ticker_stat, shape = _message[9][0]
+            ticker_stat, pct_ticker_stat = self.get_ticker_stat(ticker_stat, pct_ticker_stat, shape)
+            if sig_type == 'sell':
+                if pct_total_stat is not None:
+                    pct_total_stat *= -1
+                if ticker_stat is not None:
+                    ticker_stat *= 1
+                    pct_ticker_stat *= 1
             chat_id = self.chat_ids[sig_pattern]
-            text = f'Новый сигнал\n '
+            # Form text message
+            text = f'Новый сигнал\n'
             if sig_type == 'buy':
-                text += '• Покупка \n '
+                text += ' • Покупка \n'
             else:
-                text += '• Продажа \n '
-            text += f'• {ticker} \n '
-            text += f'• Таймфрейм {timeframe} \n '
-            text += f'Продается на биржах: \n'
+                text += ' • Продажа \n'
+            text += f' • {ticker} \n'
+            text += f' • Таймфрейм {timeframe} \n'
+            text += 'Cредняя прибыль по сигналу:\n'
+            if pct_total_stat is not None:
+                text += f' {round(pct_total_stat, 3)}%\n'
+            else:
+                text += '???\n'
+            text += 'Средняя прибыль по тикеру:\n'
+            if ticker_stat is not None:
+                text += f' {round(ticker_stat, 3)}%\n'
+                text += f' {round(pct_ticker_stat, 3)}$\n'
+            else:
+                text += '???\n'
+            text += 'Продается на биржах: \n'
             for exchange in sig_exchanges:
-                text += f'• {exchange} \n '
-            # logger.info(text)
+                text += f' • {exchange}\n'
+            # Send message + signal plot
             if sig_img_path:
                 self.send_photo(chat_id, sig_img_path, text)
-            # self.send_message(chat_id, text)
+
             time.sleep(5)
 
     def send_message(self, chat_id, text):
@@ -142,6 +185,3 @@ if __name__ == '__main__':
                                            '../visualizer/images/ZBC-USDT_5m_2022-09-05 09:50:00.png',
                                            ["Binance", "OKEX"]])
     telegram_bot.update_bot.set()
-
-
-

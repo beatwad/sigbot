@@ -13,6 +13,7 @@ class SignalStat:
         self.stat_range = self.params.get('stat_range', 12)
         self.test = self.params.get('test', False)
         self.stat_day_limit = self.params.get('stat_day_limit', 7)
+        self.prev_sig_minutes_limit = self.params.get('prev_sig_minutes_limit', 30)
 
     def write_stat(self, dfs: dict, signal_points: list) -> dict:
         """ Calculate signal statistics for every signal point for current ticker on current timeframe.
@@ -146,7 +147,7 @@ class SignalStat:
         return stat
 
     def calculate_total_stat(self, dfs: dict, ttype: str, pattern: str) -> tuple:
-        """ Calculate statistics for all found signals for all tickers on all timeframes """
+        """ Calculate signal statistics for all found signals and all tickers  """
         stat = dfs['stat'][ttype]
         stat = self.cut_stat_df(stat)
         stat = stat[(stat['pattern'].astype(str) == str(pattern))]
@@ -156,7 +157,7 @@ class SignalStat:
         return pct_price_diff_mean, stat.shape[0]
 
     def calculate_ticker_stat(self, dfs: dict, ttype, ticker: str, timeframe: str, pattern: str) -> tuple:
-        """ Calculate statistics for signals for current ticker on current timeframe """
+        """ Calculate signal statistics for current ticker and current timeframe """
         stat = dfs['stat'][ttype]
         stat = self.cut_stat_df(stat)
         stat = stat[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe) &
@@ -167,15 +168,13 @@ class SignalStat:
         pct_price_diff_mean = stat['pct_price_diff'].mean()
         return price_diff_mean, pct_price_diff_mean, stat.shape[0]
 
-    @staticmethod
-    def delete_close_trades(df: pd.DataFrame) -> pd.DataFrame:
-        """ Find adjacent in time trades and for the same tickers and delete them """
+    def delete_close_trades(self, df: pd.DataFrame) -> pd.DataFrame:
+        """ Find adjacent in time trades for the same tickers and delete them """
         df = df.sort_values(['ticker', 'time'])
-
         df['time_diff'] = df['time'].shift(-1) - df['time']
         df['ticker_shift'] = df['ticker'].shift(-1)
         df['to_drop'] = (df['ticker'] == df['ticker_shift']) & (df['time_diff'] > pd.Timedelta(1, 'm')) & \
-                        (df['time_diff'] < pd.Timedelta(30, 'm'))
+                        (df['time_diff'] < pd.Timedelta(self.prev_sig_minutes_limit, 'm'))
         df = df[df['to_drop'] == False]
         df = df.drop(['time_diff', 'ticker_shift', 'to_drop'], axis=1)
         return df

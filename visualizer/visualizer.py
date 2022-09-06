@@ -70,9 +70,6 @@ class Visualizer:
         df = dfs[ticker][timeframe]['data']
         data = df.loc[point_index - self.plot_width:point_index]
         ohlc = data[['time', 'open', 'high', 'low', 'close', 'volume']]
-        # if too much time has passed after signal was found - skip it
-        if point_index < df.shape[0] - self.max_prev_candle_limit:
-            return ''
         # get indicator list
         indicator_list = [p[0] for p in pattern if p[0] not in self.level_indicators]
         indicator_params = [p[1] for p in pattern if p not in self.level_indicators]

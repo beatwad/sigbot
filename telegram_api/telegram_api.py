@@ -2,6 +2,8 @@ import time
 import logging
 import functools
 from os import environ
+
+import pandas as pd
 from telegram.ext import Updater
 from config.config import ConfigFactory
 
@@ -70,10 +72,13 @@ class TelegramBot(Thread):
         # bot parameters
         self.params = params[self.type]['params']
         self.chat_ids = self.params['chat_ids']
+        self.prev_sig_minutes_limit = self.params.get('prev_sig_minutes_limit', 30)
         self.updater = Updater(token=token, use_context=True)
         self.dispatcher = self.updater.dispatcher
         # list of notifications
         self.notification_list = list()
+        # dataframe for storing of notification history
+        self.notification_df = pd.DataFrame(columns=['time', 'sig_type', 'ticker', 'timeframe'])
 
     @exception
     def run(self) -> None:
@@ -114,7 +119,25 @@ class TelegramBot(Thread):
         else:
             return None, None
 
-    # def load_stat(self):
+    def check_previous_notifications(self, time: pd.Timestamp, sig_type: str, ticker: str, timeframe: str) -> bool:
+        """ Check if previous notifications wasn't send short time before """
+        tmp = self.notification_df[(self.notification_df['sig_type'] == sig_type) &
+                                   (self.notification_df['ticker'] == ticker) &
+                                   (self.notification_df['timeframe'] == timeframe)]
+        if tmp.shape[0] > 0:
+            latest_time = tmp['time'].max()
+            if time - latest_time < pd.Timedelta(self.prev_sig_minutes_limit, "m"):
+                return False
+        return True
+
+    def add_to_notification_history(self, time: pd.Timestamp, sig_type: str, ticker: str, timeframe: str) -> None:
+        """ Add new notification to notification history """
+        tmp = pd.DataFrame()
+        tmp['time'] = [time]
+        tmp['sig_type'] = [sig_type]
+        tmp['ticker'] = [ticker]
+        tmp['timeframe'] = [timeframe]
+        self.notification_df = pd.concat([tmp, self.notification_df])
 
     def send_notification(self) -> None:
         """ Add notification to notification list and send its items to chat """
@@ -125,7 +148,7 @@ class TelegramBot(Thread):
             timeframe = _message[1]
             df_index = _message[2]
             sig_type = _message[3]
-            sig_time = _message[4]
+            time = _message[4]
             sig_pattern = [p[0] for p in _message[5]]
             sig_pattern = '_'.join(sig_pattern)
             sig_img_path = _message[6][0]
@@ -140,34 +163,35 @@ class TelegramBot(Thread):
                 if ticker_stat is not None:
                     ticker_stat *= 1
                     pct_ticker_stat *= 1
-            chat_id = self.chat_ids[sig_pattern]
-            # Form text message
-            text = f'Новый сигнал\n'
-            if sig_type == 'buy':
-                text += ' • Покупка \n'
-            else:
-                text += ' • Продажа \n'
-            text += f' • {ticker} \n'
-            text += f' • Таймфрейм {timeframe} \n'
-            text += 'Cредняя прибыль по сигналу:\n'
-            if pct_total_stat is not None:
-                text += f' {round(pct_total_stat, 3)}%\n'
-            else:
-                text += '???\n'
-            text += 'Средняя прибыль по тикеру:\n'
-            if ticker_stat is not None:
-                text += f' {round(ticker_stat, 3)}%\n'
-                text += f' {round(pct_ticker_stat, 3)}$\n'
-            else:
-                text += '???\n'
-            text += 'Продается на биржах: \n'
-            for exchange in sig_exchanges:
-                text += f' • {exchange}\n'
-            # Send message + signal plot
-            if sig_img_path:
-                self.send_photo(chat_id, sig_img_path, text)
-
-            time.sleep(5)
+            if self.check_previous_notifications(time, sig_type, ticker, timeframe):
+                chat_id = self.chat_ids[sig_pattern]
+                # Form text message
+                text = f'Новый сигнал\n'
+                if sig_type == 'buy':
+                    text += ' • Покупка \n'
+                else:
+                    text += ' • Продажа \n'
+                text += f' • {ticker} \n'
+                text += f' • Таймфрейм {timeframe} \n'
+                text += 'Cредняя прибыль по сигналу:\n'
+                if pct_total_stat is not None:
+                    text += f' {round(pct_total_stat, 3)}%\n'
+                else:
+                    text += '???\n'
+                text += 'Средняя прибыль по тикеру:\n'
+                if ticker_stat is not None:
+                    text += f' {round(ticker_stat, 3)}%\n'
+                    text += f' {round(pct_ticker_stat, 3)}$\n'
+                else:
+                    text += '???\n'
+                text += 'Продается на биржах: \n'
+                for exchange in sig_exchanges:
+                    text += f' • {exchange}\n'
+                # Send message + signal plot
+                if sig_img_path:
+                    self.send_photo(chat_id, sig_img_path, text)
+                time.sleep(5)
+            self.add_to_notification_history(time, sig_type, ticker, timeframe)
 
     def send_message(self, chat_id, text):
         self.updater.bot.send_message(chat_id=chat_id, text=text)

@@ -81,6 +81,7 @@ class MainClass:
         # Set list of available exchanges, cryptocurrencies and tickers
         self.exchanges = {#'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
+        self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
         for ex in list(self.exchanges.keys()):
             # get exchange API
@@ -135,6 +136,16 @@ class MainClass:
         levels = self.database[ticker][timeframe]['levels']
         sig_points = fs.find_signal(df, ticker, timeframe, levels, data_qty)
         return sig_points, levels
+
+    def filter_sig_points(self, sig_points: list, df: pd.DataFrame) -> list:
+        """ Remove signals that were sent too long time ago (more than 15 minutes) """
+        filtered_points = list()
+        for point in sig_points:
+            ticker, timeframe, point_index = point[0], point[1], point[2]
+            # if too much time has passed after signal was found - skip it
+            if point_index >= df.shape[0] - self.max_prev_candle_limit:
+                filtered_points.append(point)
+        return filtered_points
 
     def add_statistics(self, sig_points: list) -> None:
         """ Calculate statistics and write it to the database """
@@ -222,6 +233,8 @@ class MainClass:
                         if timeframe == self.work_timeframe:
                             # Get the signals
                             sig_points, levels = self.get_signals(df, ticker, timeframe, data_qty)
+                            # Filter too old signals
+                            sig_points = self.filter_sig_points(sig_points, df)
                             # Get the statistics
                             self.add_statistics(sig_points)
                             # For every signal create its plot and add path to it

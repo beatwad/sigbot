@@ -66,7 +66,7 @@ class GetData:
             df = klines
         else:
             # Update dataframe with new candles if it's not empty
-            latest_time = df['time'].iloc[-1]
+            latest_time = df['time'].max()
             klines = klines[klines['time'] > latest_time]
             df = pd.concat([df, klines])
             # if size of dataframe more than limit - short it

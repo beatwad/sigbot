@@ -12,6 +12,7 @@ class SignalStat:
         self.stop_loss_multiplier = self.params.get('stop_loss_multiplier', 2)
         self.stat_range = self.params.get('stat_range', 12)
         self.test = self.params.get('test', False)
+        self.stat_day_limit = self.params.get('stat_day_limit', 7)
 
     def write_stat(self, dfs: dict, signal_points: list) -> dict:
         """ Calculate signal statistics for every signal point for current ticker on current timeframe.
@@ -104,37 +105,60 @@ class SignalStat:
                 stat = pd.concat([stat, tmp], ignore_index=True)
                 # delete trades for the same tickers that are too close to each other
                 stat = self.delete_close_trades(stat)
-
+                # updata database with new stat data
                 if ttype == 'buy':
                     dfs['stat']['buy'] = stat
                 else:
                     dfs['stat']['sell'] = stat
-        # Save statistics to the disk
+        # Save trade statistics
+        dfs = self.save_statistics(dfs)
+        return dfs
+
+    def save_statistics(self, dfs: dict) -> dict:
+        """ Save statistics to the disk """
         if not self.test:
             try:
-                open('signal_stat/buy_stat.pkl', 'w').close()
-                open('signal_stat/sell_stat.pkl', 'w').close()
+                open('signal_stat/buy_stat.pkl', 'r').close()
+                open('signal_stat/sell_stat.pkl', 'r').close()
             except FileNotFoundError:
-                pass
+                open('signal_stat/buy_stat.pkl', 'w+').close()
+                open('signal_stat/sell_stat.pkl', 'w+').close()
             # Write statistics to the dataframe dict
             dfs['stat']['buy'].to_pickle('signal_stat/buy_stat.pkl')
             dfs['stat']['sell'].to_pickle('signal_stat/sell_stat.pkl')
         return dfs
 
     @staticmethod
-    def calculate_total_stat(dfs: dict, ttype: str, pattern: str) -> tuple:
+    def load_statistics() -> (pd.DataFrame, pd.DataFrame):
+        """ Load statistics from the disk """
+        try:
+            buy_stat = pd.read_pickle('signal_stat/buy_stat.pkl')
+            sell_stat = pd.read_pickle('signal_stat/sell_stat.pkl')
+        except FileNotFoundError:
+            buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe'])
+            sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe'])
+        return buy_stat, sell_stat
+
+    def cut_stat_df(self, stat):
+        """ Cut statistics and get only data earlier than 'stat_day_limit' days ago """
+        latest_time = stat['time'].max()
+        stat = stat[latest_time - stat['time'] >= pd.Timedelta(self.stat_day_limit, "d")]
+        return stat
+
+    def calculate_total_stat(self, dfs: dict, ttype: str, pattern: str) -> tuple:
         """ Calculate statistics for all found signals for all tickers on all timeframes """
         stat = dfs['stat'][ttype]
+        stat = self.cut_stat_df(stat)
         stat = stat[(stat['pattern'].astype(str) == str(pattern))]
         if stat.shape[0] == 0:
             return None, None
         pct_price_diff_mean = stat['pct_price_diff'].mean()
         return pct_price_diff_mean, stat.shape[0]
 
-    @staticmethod
-    def calculate_ticker_stat(dfs: dict, ttype, ticker: str, timeframe: str, pattern: str) -> tuple:
+    def calculate_ticker_stat(self, dfs: dict, ttype, ticker: str, timeframe: str, pattern: str) -> tuple:
         """ Calculate statistics for signals for current ticker on current timeframe """
         stat = dfs['stat'][ttype]
+        stat = self.cut_stat_df(stat)
         stat = stat[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe) &
                     (stat['pattern'].astype(str) == str(pattern))]
         if stat.shape[0] == 0:
@@ -150,8 +174,8 @@ class SignalStat:
 
         df['time_diff'] = df['time'].shift(-1) - df['time']
         df['ticker_shift'] = df['ticker'].shift(-1)
-        df['to_drop'] = (df['ticker'] == df['ticker_shift']) & (df['time_diff'] > pd.Timedelta(1, 'm')) & (
-                    df['time_diff'] < pd.Timedelta(30, 'm'))
+        df['to_drop'] = (df['ticker'] == df['ticker_shift']) & (df['time_diff'] > pd.Timedelta(1, 'm')) & \
+                        (df['time_diff'] < pd.Timedelta(30, 'm'))
         df = df[df['to_drop'] == False]
         df = df.drop(['time_diff', 'ticker_shift', 'to_drop'], axis=1)
         return df

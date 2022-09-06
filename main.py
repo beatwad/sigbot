@@ -65,8 +65,11 @@ def exception(function):
 class MainClass:
     """ Class for running main program cycle """
     # Set dataframe dict
-    database = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),
-                         'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe'])}}
+    # Create statistics class
+    stat = SignalStat(**configs)
+    buy_stat, sell_stat = stat.load_statistics()
+    database = {'stat': {'buy': buy_stat,
+                         'sell': sell_stat}}
     # List that is used to avoid processing of ticker that was already processed before
     processed_tickers = list()
 
@@ -76,7 +79,7 @@ class MainClass:
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframes = [self.higher_timeframe, self.work_timeframe]
         # Set list of available exchanges, cryptocurrencies and tickers
-        self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+        self.exchanges = {#'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
         # Get API and ticker list for every exchange in list
         for ex in list(self.exchanges.keys()):
@@ -90,8 +93,6 @@ class MainClass:
             # fill ticker dict of exchange API with tickers to store current time
             # for periodic updates of ticker information
             exchange_api.fill_ticker_dict(tickers)
-        # Create statistics class
-        self.stat = SignalStat(**configs)
         # Start Telegram bot
         self.telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', **configs)
         self.telegram_bot.start()
@@ -146,6 +147,7 @@ class MainClass:
             timeframe = sig_point[1]
             sig_type = sig_point[3]
             pattern = sig_point[5]
+
             total_stat = self.stat.calculate_total_stat(self.database, sig_type, pattern)
             ticker_stat = self.stat.calculate_ticker_stat(self.database, sig_type, ticker, timeframe, pattern)
             sig_point[8].append(total_stat)

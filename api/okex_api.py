@@ -51,7 +51,7 @@ class OKEX(ApiBase):
         params = {'instId': symbol, 'bar': interval, 'limit': limit}
         tickers = pd.DataFrame(requests.get(self.URL + '/api/v5/market/candles', params=params).json()['data'])
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
-
+        tickers = tickers.sort_values('time', ignore_index=True)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
 
 

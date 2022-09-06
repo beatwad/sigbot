@@ -19,13 +19,13 @@
                         "MACD" :  {"params": {}},
                         "SUP_RES" :  {"params": {"proximity_multiplier":  0.5}},
                         "SUP_RES_Robust" :  {"params": {"proximity_multiplier":  0.5}}},
-  "Signal_params": {"params":  {"max_prev_candle_limit": 3}},
+  "Signal_params": {"params":  {"max_prev_candle_limit": 100}},
   "SignalStat":  {"params": {"take_profit_multiplier":  2, "stop_loss_multiplier":  2,
-                  "test":  0, "stat_day_limit":  7, "prev_sig_minutes_limit":  30}},
+                  "test":  0, "stat_day_limit":  7, "prev_sig_minutes_limit":  25}},
   "Indicator_list": ["STOCH", "RSI", "SUP_RES"],
   "Patterns":  [["STOCH", "RSI", "SUP_RES"]],
   "Timeframes":  {"work_timeframe":  "5m", "higher_timeframe":  "1h", "stat_range":  12},
-  "Visualizer": {"params":  {"plot_width": 20,
+  "Visualizer": {"params":  {"plot_width": 30,
                              "image_path": "visualizer/images",
                              "level_indicators": ["SUP_RES", "SUP_RES_Robust"],
                              "boundary_indicators": ["STOCH", "RSI"],
@@ -37,5 +37,5 @@
   "Log": {"params":  {"log_path":  "log/log.txt"}},
   "Telegram":  {"params":  {"log_path":  "log/telegram_log.txt",
                             "chat_ids": {"STOCH_RSI_SUP_RES": "-1001702067917"},
-                            "prev_sig_minutes_limit":  30}}
+                            "prev_sig_minutes_limit":  25}}
 }

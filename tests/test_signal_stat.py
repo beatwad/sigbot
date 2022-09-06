@@ -61,7 +61,7 @@ expected_write_stat = [{'buy': buy_btc, 'sell': sell_btc}, {'buy': buy_eth, 'sel
                           (points_btc, expected_write_stat[0]),
                           (points_eth, expected_write_stat[1])
                           ], ids=repr)
-def test_get_last_transaction(signal_points, expected):
+def test_write_stat(signal_points, expected):
     ss = SignalStat(**configs)
     dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),
                     'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe'])},
@@ -70,6 +70,55 @@ def test_get_last_transaction(signal_points, expected):
     result = ss.write_stat(dfs, signal_points)
     assert result['stat']['buy'].equals(expected['buy'])
     assert result['stat']['sell'].equals(expected['sell'])
+
+
+total_buy = pd.concat([buy_btc, buy_eth])
+total_sell = pd.concat([sell_btc, sell_eth])
+total_buy['pattern'] = '[(STOCH, (15, 85)), (RSI, (25, 75))]'
+total_buy['result_price'].iloc[3] -= 30
+total_buy['price_diff'].iloc[3] = -16.38
+total_buy['pct_price_diff'].iloc[3] = -0.0104
+total_sell['pattern'] = '[(STOCH, (15, 85)), (RSI, (25, 75))]'
+
+
+@pytest.mark.parametrize('ttype, pattern, expected',
+                         [
+                          ('buy', '[(STOCH, (15, 85)), (RSI, (25, 75)), (SUP_RES, ())]', (None, None, None)),
+                          ('buy', '[(STOCH, (15, 85)), (RSI, (25, 75))]', (80.0, 0.5078980660529774, 5)),
+                          ('sell', '[(STOCH, (15, 85)), (RSI, (25, 75))]', (50.0, 0.25224439585284736, 6))
+                          ], ids=repr)
+def test_calculate_total_stat(ttype, pattern, expected):
+    ss = SignalStat(**configs)
+    dfs = {'stat': {'buy': total_buy,
+                    'sell': total_sell}}
+    result = ss.calculate_total_stat(dfs, ttype, pattern)
+    assert result == expected
+
+
+total_stat = pd.concat([total_buy, total_sell])
+total_stat['price_diff'] = total_stat['result_price'] - total_stat['signal_price']
+total_stat['pct_price_diff'] = (total_stat['result_price'] - total_stat['signal_price'])/total_stat['signal_price']*100
+
+
+@pytest.mark.parametrize('ttype, ticker, timeframe, pattern, expected',
+                         [
+                          ('buy', 'BTCUSDT', '5m', '[(STOCH, (15, 85)), (RSI, (25, 75)), (SUP_RES, ())]',
+                           (None, None, None, None)),
+                          ('buy', 'BTCUSDT', '5m', '[(STOCH, (15, 85)), (RSI, (25, 75))]',
+                           (60.0, 37.4580000000009, 0.1787213822520839, 5)),
+                          ('sell', 'BTCUSDT', '5m', '[(STOCH, (15, 85)), (RSI, (25, 75))]',
+                           (40.0, 37.4580000000009, 0.1787213822520839, 5)),
+                          ('buy', 'ETHUSDT', '5m', '[(STOCH, (15, 85)), (RSI, (25, 75))]',
+                           (66.66666666666666, 5.726666666666726, 0.3561355189197408, 6)),
+                          ('sell', 'ETHUSDT', '5m', '[(STOCH, (15, 85)), (RSI, (25, 75))]',
+                           (33.33333333333333, 5.726666666666726, 0.3561355189197408, 6))
+                          ], ids=repr)
+def test_calculate_ticker_stat(ttype, ticker, timeframe, pattern, expected):
+    ss = SignalStat(**configs)
+    dfs = {'stat': {'buy': total_stat,
+                    'sell': total_stat}}
+    result = ss.calculate_ticker_stat(dfs, ttype, ticker, timeframe, pattern)
+    assert result == expected
 
 
 buy_btc_close1 = buy_btc.iloc[:1]

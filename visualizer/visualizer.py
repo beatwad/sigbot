@@ -112,4 +112,7 @@ class Visualizer:
         # save plot to file
         filename = self.save_plot(ticker, timeframe, data)
 
+        # close figure
+        plt.close()
+
         return filename

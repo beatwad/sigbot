@@ -13,8 +13,7 @@ class ApiBase(metaclass=ABCMeta):
                 continue
             for f in fiat:
                 if symbol.startswith(f):
-                    continue
-            filtered_symbols.append(symbol)
+                    break
+            else:
+                filtered_symbols.append(symbol)
         return filtered_symbols
-
-

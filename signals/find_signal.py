@@ -183,7 +183,6 @@ class FindSignal:
     def __init__(self, configs):
         self.first = True
         self.configs = configs
-        self.time_proximity = configs['Signal_params']['params']['Time_proximity']
         self.indicator_list = configs['Indicator_list']
         self.patterns = configs['Patterns']
 
@@ -279,15 +278,3 @@ class FindSignal:
         self.first = False
 
         return points
-
-    # def check_close_points(self, points):
-    #     """ Sort points by index and check if indexes of some of them too close to each other.
-    #         If it's true - delete point with smaller index """
-    #     i = 0
-    #     points.sort(key=lambda x: x[0])
-    #     while i < len(points)-1:
-    #         if (points[i+1][2] - points[i][2]).total_seconds() < self.time_proximity:
-    #             points.pop(i)
-    #         else:
-    #             i += 1
-    #     return points

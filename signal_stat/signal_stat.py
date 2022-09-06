@@ -98,12 +98,10 @@ class SignalStat:
                     (stat['timeframe'] == timeframe)].shape[0] == 0:
                 tmp['signal_price'] = [signal_price]
                 tmp['result_price'] = [result_price]
-                if ttype == 'buy':
-                    tmp['price_diff'] = (tmp['result_price'] - tmp['signal_price'])
-                else:
-                    tmp['price_diff'] = (tmp['signal_price'] - tmp['result_price'])
+                tmp['price_diff'] = (tmp['result_price'] - tmp['signal_price'])
                 tmp['pct_price_diff'] = tmp['price_diff'] / tmp['signal_price'] * 100
                 stat = pd.concat([stat, tmp], ignore_index=True)
+                stat['pattern'] = stat['pattern'].astype(str)
                 # delete trades for the same tickers that are too close to each other
                 stat = self.delete_close_trades(stat)
                 # updata database with new stat data
@@ -143,37 +141,48 @@ class SignalStat:
     def cut_stat_df(self, stat):
         """ Cut statistics and get only data earlier than 'stat_day_limit' days ago """
         latest_time = stat['time'].max()
-        stat = stat[latest_time - stat['time'] >= pd.Timedelta(self.stat_day_limit, "d")]
+        stat = stat[latest_time - stat['time'] < pd.Timedelta(self.stat_day_limit, "d")]
         return stat
 
     def calculate_total_stat(self, dfs: dict, ttype: str, pattern: str) -> tuple:
         """ Calculate signal statistics for all found signals and all tickers  """
         stat = dfs['stat'][ttype]
         stat = self.cut_stat_df(stat)
-        stat = stat[(stat['pattern'].astype(str) == str(pattern))]
+        stat = stat[(stat['pattern'].astype(str) == pattern)]
         if stat.shape[0] == 0:
-            return None, None
+            return None, None, None
+        # calculate percent of right prognosis
+        if ttype == 'buy':
+            pct_price_right_prognosis = (stat[stat['price_diff'] > 0].shape[0] / stat.shape[0]) * 100
+        else:
+            pct_price_right_prognosis = (stat[stat['price_diff'] < 0].shape[0] / stat.shape[0]) * 100
+        # calculate mean percent price difference after the signal
         pct_price_diff_mean = stat['pct_price_diff'].mean()
-        return pct_price_diff_mean, stat.shape[0]
+        return pct_price_right_prognosis, pct_price_diff_mean, stat.shape[0]
 
     def calculate_ticker_stat(self, dfs: dict, ttype, ticker: str, timeframe: str, pattern: str) -> tuple:
         """ Calculate signal statistics for current ticker and current timeframe """
         stat = dfs['stat'][ttype]
         stat = self.cut_stat_df(stat)
-        stat = stat[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe) &
-                    (stat['pattern'].astype(str) == str(pattern))]
+        stat = stat[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern)]
         if stat.shape[0] == 0:
-            return None, None, None
+            return None, None, None, None
+        # calculate percent of right prognosis
+        if ttype == 'buy':
+            pct_price_right_prognosis = (stat[stat['price_diff'] > 0].shape[0] / stat.shape[0]) * 100
+        else:
+            pct_price_right_prognosis = (stat[stat['price_diff'] < 0].shape[0] / stat.shape[0]) * 100
+        # calculate mean absolute and mean percent price difference after the signal
         price_diff_mean = stat['price_diff'].mean()
         pct_price_diff_mean = stat['pct_price_diff'].mean()
-        return price_diff_mean, pct_price_diff_mean, stat.shape[0]
+        return pct_price_right_prognosis, price_diff_mean, pct_price_diff_mean, stat.shape[0]
 
     def delete_close_trades(self, df: pd.DataFrame) -> pd.DataFrame:
         """ Find adjacent in time trades for the same tickers and delete them """
         df = df.sort_values(['ticker', 'time'])
         df['time_diff'] = df['time'].shift(-1) - df['time']
         df['ticker_shift'] = df['ticker'].shift(-1)
-        df['to_drop'] = (df['ticker'] == df['ticker_shift']) & (df['time_diff'] > pd.Timedelta(1, 'm')) & \
+        df['to_drop'] = (df['ticker'] == df['ticker_shift']) & (df['time_diff'] >= pd.Timedelta(0, 'm')) & \
                         (df['time_diff'] < pd.Timedelta(self.prev_sig_minutes_limit, 'm'))
         df = df[df['to_drop'] == False]
         df = df.drop(['time_diff', 'ticker_shift', 'to_drop'], axis=1)

@@ -30,6 +30,10 @@ def create_logger():
     logger.setLevel(logging.INFO)
     # create the logging file handler
     log_path = configs['Log']['params']['log_path']
+    # try:
+    #     open(log_path, 'r')
+    # except FileNotFoundError:
+    #     open(log_path, 'w+')
     fh = logging.FileHandler(log_path)
     fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     formatter = logging.Formatter(fmt)
@@ -79,7 +83,7 @@ class MainClass:
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframes = [self.higher_timeframe, self.work_timeframe]
         # Set list of available exchanges, cryptocurrencies and tickers
-        self.exchanges = {#'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+        self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
@@ -157,7 +161,7 @@ class MainClass:
             ticker = sig_point[0]
             timeframe = sig_point[1]
             sig_type = sig_point[3]
-            pattern = sig_point[5]
+            pattern = str(sig_point[5])
 
             total_stat = self.stat.calculate_total_stat(self.database, sig_type, pattern)
             ticker_stat = self.stat.calculate_ticker_stat(self.database, sig_type, ticker, timeframe, pattern)
@@ -216,13 +220,6 @@ class MainClass:
                 # For every timeframe get the data and find the signal
                 for timeframe in self.timeframes:
                     print(f'Cycle number {i}, exchange {exchange}, ticker {ticker}, timeframe {timeframe}')
-                    # if debug:
-                    #     df = pd.read_pickle('tests/test_ETHUSDT_5m.pkl')
-                    #     if i > 1:
-                    #         data_qty = 2
-                    #     else:
-                    #         data_qty = 1000
-                    # else:
                     df, data_qty = self.get_data(exchange_api, ticker, timeframe)
                     # If we get new data - create indicator list from search signal patterns list, if it has
                     # the new data and data is not from higher timeframe, else get only levels
@@ -233,28 +230,21 @@ class MainClass:
                         if timeframe == self.work_timeframe:
                             # Get the signals
                             sig_points, levels = self.get_signals(df, ticker, timeframe, data_qty)
-                            # Filter too old signals
-                            sig_points = self.filter_sig_points(sig_points, df)
-                            # Get the statistics
+                            # Add the signals to statistics
                             self.add_statistics(sig_points)
-                            # For every signal create its plot and add path to it
-                            sig_points = self.add_plot(sig_points, levels)
-                            # Add list of exchanges where this ticker is available and has a good liquidity
-                            sig_points = self.get_exchange_list(ticker, sig_points)
-                            # Add pattern and ticker statistics
-                            sig_points = self.calc_statistics(sig_points)
-                            print(sig_points)
-                            # Send signals to Telegram bot only if they are fresh (not earlier than 10-15 mins ago)
-                            fresh_sig_points = list()
-                            for point in sig_points:
-                                sig_img_path = point[6][0]
-                                if sig_img_path:
-                                    fresh_sig_points.append(point)
-                            if fresh_sig_points:
-                                self.telegram_bot.notification_list += fresh_sig_points
+                            # Get signals only if they are fresh (not earlier than 10-15 mins ago)
+                            sig_points = self.filter_sig_points(sig_points, df)
+                            if sig_points:
+                                # For every signal create its plot and add path to it
+                                sig_points = self.add_plot(sig_points, levels)
+                                # Add list of exchanges where this ticker is available and has a good liquidity
+                                sig_points = self.get_exchange_list(ticker, sig_points)
+                                # Add pattern and ticker statistics
+                                sig_points = self.calc_statistics(sig_points)
+                                print(sig_points)
+                                self.telegram_bot.notification_list += sig_points
                                 self.telegram_bot.update_bot.set()
-                            # If signals are found - log them
-                            if sig_points and data_qty < 1000:
+                                # Log the signals
                                 sig_message = f'Find the signal points. Exchange is {exchange}, ticker is {ticker}, ' \
                                               f'timeframe is {timeframe}, time is {sig_points[0][4]}'
                                 logger.info(sig_message)

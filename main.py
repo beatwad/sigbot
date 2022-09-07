@@ -1,5 +1,7 @@
 import logging
 import functools
+import sys
+
 import pandas as pd
 from datetime import datetime
 from os import environ
@@ -258,10 +260,14 @@ if __name__ == "__main__":
     main = MainClass(**configs)
 
     while True:
-        dt1 = datetime.now()
-        main.main_cycle()
-        dt2 = datetime.now()
-        dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
-        print(f'Cycle is {i}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
-        i += 1
-        sleep(60)
+        try:
+            dt1 = datetime.now()
+            main.main_cycle()
+            dt2 = datetime.now()
+            dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
+            print(f'Cycle is {i}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
+            i += 1
+            sleep(60)
+        except (KeyboardInterrupt, SystemExit):
+            main.telegram_bot.stopped.set()
+            sys.exit()

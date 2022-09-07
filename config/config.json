@@ -19,7 +19,7 @@
                         "MACD" :  {"params": {}},
                         "SUP_RES" :  {"params": {"proximity_multiplier":  0.5}},
                         "SUP_RES_Robust" :  {"params": {"proximity_multiplier":  0.5}}},
-  "Signal_params": {"params":  {"max_prev_candle_limit": 25}},
+  "Signal_params": {"params":  {"max_prev_candle_limit": 3}},
   "SignalStat":  {"params": {"take_profit_multiplier":  2, "stop_loss_multiplier":  2,
                   "test":  0, "stat_day_limit":  7, "prev_sig_minutes_limit":  25}},
   "Indicator_list": ["STOCH", "RSI", "SUP_RES"],

@@ -1,3 +1,4 @@
+import sys
 import time
 import logging
 import functools
@@ -93,9 +94,10 @@ class TelegramBot(Thread):
         # on non command i.e. message - echo the message on Telegram
         if __name__ == '__main__':
             self.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, self.get_chat_id))
-        self.updater.start_polling()
+            self.updater.start_polling()
 
         while not self.stopped.wait(1):
+            print('test')
             if self.update_bot.is_set():
                 self.update_bot.clear()
                 self.send_notification()

@@ -169,9 +169,8 @@ class MainClass:
             pattern = str(sig_point[5])
 
             total_stat = self.stat.calculate_total_stat(self.database, sig_type, pattern)
-            ticker_stat = self.stat.calculate_ticker_stat(self.database, sig_type, ticker, timeframe, pattern)
+            # ticker_stat = self.stat.calculate_ticker_stat(self.database, sig_type, ticker, timeframe, pattern)
             sig_point[8].append(total_stat)
-            sig_point[9].append(ticker_stat)
         return sig_points
 
     def add_plot(self, sig_points: list, levels: list) -> list:
@@ -213,8 +212,7 @@ class MainClass:
                 5 - signal pattern, by which signal was searched for
                 6 - path to file with candle/indicator plots of the signal
                 7 - list of exchanges where ticker with this signal can be found
-                8 - statistics for the current pattern
-                9 - statistics for the current pattern, ticker and timeframe """
+                8 - statistics for the current pattern """
         self.processed_tickers = list()
         for exchange, exchange_data in self.exchanges.items():
             exchange_api = exchange_data['API']

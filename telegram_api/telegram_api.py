@@ -118,20 +118,6 @@ class TelegramBot(Thread):
         ticker = ticker[:-4] + '-' + ticker[-4:]
         return ticker
 
-    @staticmethod
-    def get_stat(stat1, stat2, shape):
-        """ Get statistics by ticker and total statistics """
-        if shape is None or shape < 5:
-            return None, None
-        return stat1, stat2
-
-    @staticmethod
-    def get_ticker_stat(stat1, stat2, stat3, shape):
-        """ Get statistics by ticker and total statistics """
-        if shape is None or shape < 5:
-            return None, None, None
-        return stat1, stat2, stat3
-
     def check_previous_notifications(self, sig_time: pd.Timestamp, sig_type: str, ticker: str,
                                      timeframe: str, pattern: str) -> bool:
         """ Check if previous notifications wasn't send short time before """
@@ -176,11 +162,7 @@ class TelegramBot(Thread):
             # get list of available exchanges
             sig_exchanges = _message[7]
             # get total and ticker statistics
-            pct_total_right_prognosis, pct_total_stat, shape = _message[8][0]
-            pct_total_right_prognosis, pct_total_stat = self.get_stat(pct_total_right_prognosis, pct_total_stat, shape)
-            pct_ticker_right_prognosis, ticker_stat, pct_ticker_stat, shape = _message[9][0]
-            pct_ticker_right_prognosis, ticker_stat, pct_ticker_stat = \
-                self.get_ticker_stat(pct_ticker_right_prognosis, ticker_stat, pct_ticker_stat, shape)
+            result_statistics = _message[8]
             # form message
             if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
                 chat_id = self.chat_ids[sig_pattern]
@@ -191,28 +173,12 @@ class TelegramBot(Thread):
                 else:
                     text += ' • Продажа \n'
                 text += f' • {ticker} \n'
-                text += f' • Таймфрейм {timeframe} \n'
-                text += 'Процент правильных прогнозов по сигналу:\n'
-                if pct_total_right_prognosis is not None:
-                    text += f' {round(pct_total_right_prognosis, 3)}%\n'
-                else:
-                    text += '???\n'
-                text += 'Cреднее движение по сигналу:\n'
-                if pct_total_stat is not None:
-                    text += f' {round(pct_total_stat, 3)}%\n'
-                else:
-                    text += '???\n'
-                text += 'Процент правильных прогнозов по тикеру:\n'
-                if pct_ticker_right_prognosis is not None:
-                    text += f' {round(pct_ticker_right_prognosis, 3)}%\n'
-                else:
-                    text += '???\n'
-                text += 'Среднее движение по тикеру:\n'
-                if ticker_stat is not None:
-                    text += f' {round(ticker_stat, 3)}%\n'
-                    text += f' {round(pct_ticker_stat, 3)}$\n'
-                else:
-                    text += '???\n'
+                text += 'Точность сигнала:\n'
+                for i, t in enumerate(range(15, 105, 15)):
+                    text += f' • через {t} минут: {result_statistics[0][i][0]}%\n'
+                text += 'Cреднее движение:\n'
+                for i, t in enumerate(range(15, 105, 15)):
+                    text += f' • через {t} минут: {result_statistics[0][i][1]}%\n'
                 text += 'Продается на биржах: \n'
                 for exchange in sig_exchanges:
                     text += f' • {exchange}\n'
@@ -223,6 +189,7 @@ class TelegramBot(Thread):
                     self.send_photo(chat_id, sig_img_path, text)
                 time.sleep(1)
             self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
+        self.delete_images()
 
     def send_message(self, chat_id, text):
         self.updater.bot.send_message(chat_id=chat_id, text=text)
@@ -233,8 +200,9 @@ class TelegramBot(Thread):
         self.images_to_delete.add(img_path)
 
     def delete_images(self):
-        """ Remove image after we send it, because we don't need it anymore """
-        for img_path in self.images_to_delete:
+        """ Remove images after we send them, because we don't need them anymore """
+        while self.images_to_delete:
+            img_path = self.images_to_delete.pop()
             remove(img_path)
 
 

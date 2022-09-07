@@ -63,8 +63,8 @@ expected_write_stat = [{'buy': buy_btc, 'sell': sell_btc}, {'buy': buy_eth, 'sel
                           ], ids=repr)
 def test_write_stat(signal_points, expected):
     ss = SignalStat(**configs)
-    dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),
-                    'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe'])},
+    dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern']),
+                    'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])},
            'BTCUSDT': {'5m': {'data': df_btc, 'levels': []}},
            'ETHUSDT': {'5m': {'data': df_eth, 'levels': []}}}
     result = ss.write_stat(dfs, signal_points)

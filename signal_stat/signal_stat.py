@@ -13,10 +13,10 @@ class SignalStat:
         self.stat_range = self.params.get('stat_range', 12)
         self.test = self.params.get('test', False)
         self.stat_day_limit = self.params.get('stat_day_limit', 7)
-        self.prev_sig_minutes_limit = self.params.get('prev_sig_minutes_limit', 30)
+        self.prev_sig_limit = self.params.get('prev_sig_limit', 1500)
 
     def write_stat(self, dfs: dict, signal_points: list) -> dict:
-        """ Calculate signal statistics for every signal point for current ticker on current timeframe.
+        """ Write signal statistics for every signal point for current ticker on current timeframe.
             Statistics for buy and sell trades is written separately """
         for point in signal_points:
             ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
@@ -27,6 +27,8 @@ class SignalStat:
             signal_price = df['close'].iloc[index]
             # Try to get information about price movement after signal, if can't - continue
             index_error = False
+            # Convert pattern to string
+            pattern = str(pattern)
             for i in range(self.stat_range):
                 try:
                     high_price = df['high'].iloc[index + i]
@@ -95,13 +97,13 @@ class SignalStat:
             else:
                 stat = dfs.get('stat').get('sell')
             if stat[(stat['time'] == time) & (stat['ticker'] == ticker) &
-                    (stat['timeframe'] == timeframe)].shape[0] == 0:
+                    (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern)].shape[0] == 0:
                 tmp['signal_price'] = [signal_price]
                 tmp['result_price'] = [result_price]
                 tmp['price_diff'] = (tmp['result_price'] - tmp['signal_price'])
                 tmp['pct_price_diff'] = tmp['price_diff'] / tmp['signal_price'] * 100
                 stat = pd.concat([stat, tmp], ignore_index=True)
-                stat['pattern'] = stat['pattern'].astype(str)
+                # stat['pattern'] = stat['pattern'].astype(str)
                 # delete trades for the same tickers that are too close to each other
                 stat = self.delete_close_trades(stat)
                 # updata database with new stat data
@@ -183,7 +185,7 @@ class SignalStat:
         df['time_diff'] = df['time'].shift(-1) - df['time']
         df['ticker_shift'] = df['ticker'].shift(-1)
         df['to_drop'] = (df['ticker'] == df['ticker_shift']) & (df['time_diff'] >= pd.Timedelta(0, 'm')) & \
-                        (df['time_diff'] < pd.Timedelta(self.prev_sig_minutes_limit, 'm'))
+                        (df['time_diff'] < pd.Timedelta(self.prev_sig_limit, 's'))
         df = df[df['to_drop'] == False]
         df = df.drop(['time_diff', 'ticker_shift', 'to_drop'], axis=1)
         return df

@@ -32,10 +32,6 @@ def create_logger():
     logger.setLevel(logging.INFO)
     # create the logging file handler
     log_path = configs['Log']['params']['log_path']
-    # try:
-    #     open(log_path, 'r')
-    # except FileNotFoundError:
-    #     open(log_path, 'w+')
     fh = logging.FileHandler(log_path)
     fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     formatter = logging.Formatter(fmt)
@@ -80,6 +76,8 @@ class MainClass:
     processed_tickers = list()
 
     def __init__(self, **configs):
+        # Flag of first candles read from exchanges
+        self.first = True
         # Get list of working and higher timeframes
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
@@ -103,6 +101,8 @@ class MainClass:
         # Start Telegram bot
         self.telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', **configs)
         self.telegram_bot.start()
+        # Set candle range in which signal stat update can happen
+        self.stat_update_range = configs['SignalStat']['params']['stat_range'] * 2
 
     def check_ticker(self, ticker: str) -> bool:
         # Check if ticker was already processesed before
@@ -117,6 +117,9 @@ class MainClass:
         df = self.database.get(ticker, dict()).get(timeframe, dict()).get('data', pd.DataFrame())
         # Write data to the dataframe
         df, data_qty = exchange_api.get_data(df, ticker, timeframe)
+        # If enough time has passed - update statistics
+        if data_qty > 1 and self.first is False and timeframe == self.work_timeframe:
+            data_qty = self.stat_update_range
         return df, data_qty
 
     def get_indicators(self, df: pd.DataFrame, ticker: str, timeframe: str, exchange_api) -> pd.DataFrame:
@@ -252,6 +255,7 @@ class MainClass:
                                 logger.info(sig_message)
                                 # Save dataframe for further analysis
                         self.save_dataframe(df, ticker, timeframe)
+        self.first = False
 
 
 if __name__ == "__main__":

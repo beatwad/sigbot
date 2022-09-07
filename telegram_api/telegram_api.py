@@ -1,4 +1,3 @@
-import sys
 import time
 import logging
 import functools
@@ -76,7 +75,7 @@ class TelegramBot(Thread):
         # bot parameters
         self.params = params[self.type]['params']
         self.chat_ids = self.params['chat_ids']
-        self.prev_sig_minutes_limit = self.params.get('prev_sig_minutes_limit', 30)
+        self.prev_sig_limit = self.params.get('prev_sig_limit', 1500)
         self.updater = Updater(token=token, use_context=True)
         self.dispatcher = self.updater.dispatcher
         # list of notifications
@@ -97,7 +96,6 @@ class TelegramBot(Thread):
             self.updater.start_polling()
 
         while not self.stopped.wait(1):
-            print('test')
             if self.update_bot.is_set():
                 self.update_bot.clear()
                 self.send_notification()
@@ -145,7 +143,7 @@ class TelegramBot(Thread):
                                    ]
         if tmp.shape[0] > 0:
             latest_time = tmp['time'].max()
-            if sig_time - latest_time < pd.Timedelta(self.prev_sig_minutes_limit, "m"):
+            if sig_time - latest_time < pd.Timedelta(self.prev_sig_limit, "s"):
                 return False
         return True
 

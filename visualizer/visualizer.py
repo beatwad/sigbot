@@ -107,7 +107,7 @@ class Visualizer:
         self.plot_point(point_type, data, axs[0])
 
         # plot levels
-        self.plot_levels(data, levels, axs)
+        # self.plot_levels(data, levels, axs)
 
         # save plot to file
         filename = self.save_plot(ticker, timeframe, data)

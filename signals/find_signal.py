@@ -271,7 +271,7 @@ class FindSignal:
                     else:
                         point = (ticker, timeframe, index, 'sell', time, [(p[0], p[3]) for p in pattern],
                                  [], [], [], [])
-                if point and index not in index_list:
+                if point:  # and index not in index_list:
                     index_list.append(index)
                     points.append(point)
 

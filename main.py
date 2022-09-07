@@ -186,14 +186,14 @@ class MainClass:
                     sig_point[7].append(exchange)
         return sig_points
 
-    @staticmethod
-    def save_dataframe(df: pd.DataFrame, ticker: str, timeframe: str) -> None:
-        """ Save dataframe to the disk """
-        try:
-            open(f'{ticker}_{timeframe}.pkl', 'w').close()
-        except FileNotFoundError:
-            pass
-        df.to_pickle(f'{ticker}_{timeframe}.pkl')
+    def save_dataframe(self, df: pd.DataFrame, ticker: str, timeframe: str) -> None:
+        if timeframe == self.work_timeframe:
+            """ Save dataframe to the disk """
+            try:
+                open(f'data/{ticker}_{timeframe}.pkl', 'w').close()
+            except FileNotFoundError:
+                pass
+            df.to_pickle(f'data/{ticker}_{timeframe}.pkl')
 
     @exception
     def main_cycle(self) -> None:
@@ -248,6 +248,8 @@ class MainClass:
                                 sig_message = f'Find the signal points. Exchange is {exchange}, ticker is {ticker}, ' \
                                               f'timeframe is {timeframe}, time is {sig_points[0][4]}'
                                 logger.info(sig_message)
+                                # Save dataframe for further analysis
+                        self.save_dataframe(df, ticker, timeframe)
 
 
 if __name__ == "__main__":

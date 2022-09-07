@@ -5,11 +5,13 @@ from os import remove
 from os import environ
 
 import pandas as pd
-from telegram.ext import Updater
 from config.config import ConfigFactory
 
 from threading import Thread
 from threading import Event
+
+from telegram import Update
+from telegram.ext import Updater, CallbackContext, MessageHandler, Filters
 
 
 # Set environment variable
@@ -79,15 +81,31 @@ class TelegramBot(Thread):
         # list of notifications
         self.notification_list = list()
         # dataframe for storing of notification history
-        self.notification_df = pd.DataFrame(columns=['time', 'sig_type', 'ticker', 'timeframe'])
+        self.notification_df = pd.DataFrame(columns=['time', 'sig_type', 'ticker', 'timeframe', 'pattern'])
+        # set of images to delete
+        self.images_to_delete = set()
 
     @exception
     def run(self) -> None:
         """ Until stopped event is set - run bot's thread and update it every second """
+        # on different commands - answer in Telegram
+        # self.dispatcher.add_handler(CommandHandler('chat_id', self.get_chat_id))
+        # on non command i.e. message - echo the message on Telegram
+        if __name__ == '__main__':
+            self.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, self.get_chat_id))
+        self.updater.start_polling()
+
         while not self.stopped.wait(1):
             if self.update_bot.is_set():
                 self.update_bot.clear()
                 self.send_notification()
+
+    def get_chat_id(self, update: Update, context: CallbackContext) -> None:
+        """Send a message when the command /start is issued."""
+        # update.message.reply_text(update.message.text)
+        chat_id = update.effective_chat['id']
+        text = f'ID данного чата: {chat_id}'
+        self.send_message(chat_id=chat_id, text=text)
 
     @staticmethod
     def process_ticker(ticker: str) -> str:
@@ -114,24 +132,30 @@ class TelegramBot(Thread):
             return None, None, None
         return stat1, stat2, stat3
 
-    def check_previous_notifications(self, sig_time: pd.Timestamp, sig_type: str, ticker: str, timeframe: str) -> bool:
+    def check_previous_notifications(self, sig_time: pd.Timestamp, sig_type: str, ticker: str,
+                                     timeframe: str, pattern: str) -> bool:
         """ Check if previous notifications wasn't send short time before """
-        tmp = self.notification_df[(self.notification_df['sig_type'] == sig_type) &
-                                   (self.notification_df['ticker'] == ticker) &
-                                   (self.notification_df['timeframe'] == timeframe)]
+        tmp = self.notification_df[
+                                    (self.notification_df['sig_type'] == sig_type) &
+                                    (self.notification_df['ticker'] == ticker) &
+                                    (self.notification_df['timeframe'] == timeframe) &
+                                    (self.notification_df['pattern'] == pattern)
+                                   ]
         if tmp.shape[0] > 0:
             latest_time = tmp['time'].max()
             if sig_time - latest_time < pd.Timedelta(self.prev_sig_minutes_limit, "m"):
                 return False
         return True
 
-    def add_to_notification_history(self, sig_time: pd.Timestamp, sig_type: str, ticker: str, timeframe: str) -> None:
+    def add_to_notification_history(self, sig_time: pd.Timestamp, sig_type: str, ticker: str,
+                                    timeframe: str, pattern: str) -> None:
         """ Add new notification to notification history """
         tmp = pd.DataFrame()
         tmp['time'] = [sig_time]
         tmp['sig_type'] = [sig_type]
         tmp['ticker'] = [ticker]
         tmp['timeframe'] = [timeframe]
+        tmp['pattern'] = [pattern]
         self.notification_df = pd.concat([tmp, self.notification_df])
 
     def send_notification(self) -> None:
@@ -158,7 +182,7 @@ class TelegramBot(Thread):
             pct_ticker_right_prognosis, ticker_stat, pct_ticker_stat = \
                 self.get_ticker_stat(pct_ticker_right_prognosis, ticker_stat, pct_ticker_stat, shape)
             # form message
-            if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe):
+            if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
                 chat_id = self.chat_ids[sig_pattern]
                 # Form text message
                 text = f'Новый сигнал\n'
@@ -198,12 +222,27 @@ class TelegramBot(Thread):
                 if sig_img_path:
                     self.send_photo(chat_id, sig_img_path, text)
                 time.sleep(1)
-            self.add_to_notification_history(sig_time, sig_type, ticker, timeframe)
+            self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
 
     def send_message(self, chat_id, text):
         self.updater.bot.send_message(chat_id=chat_id, text=text)
 
     def send_photo(self, chat_id, img_path, text):
         self.updater.bot.send_photo(chat_id=chat_id, photo=open(img_path, 'rb'), caption=text)
-        # remove image after we send it, because we don't need it anymore
-        remove(img_path)
+        # add image to set of images which we are going to delete
+        self.images_to_delete.add(img_path)
+
+    def delete_images(self):
+        """ Remove image after we send it, because we don't need it anymore """
+        for img_path in self.images_to_delete:
+            remove(img_path)
+
+
+if __name__ == '__main__':
+    # Set environment variable
+    environ["ENV"] = "development"
+    # Get configs
+    configs = ConfigFactory.factory(environ).configs
+
+    telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', **configs)
+    telegram_bot.start()

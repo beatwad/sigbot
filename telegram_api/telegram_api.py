@@ -161,8 +161,8 @@ class TelegramBot(Thread):
             sig_img_path = _message[6][0]
             # get list of available exchanges
             sig_exchanges = _message[7]
-            # get total and ticker statistics
-            result_statistics = _message[8]
+            # # get total and ticker statistics
+            # result_statistics = _message[8]
             # form message
             if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
                 chat_id = self.chat_ids[sig_pattern]
@@ -173,12 +173,6 @@ class TelegramBot(Thread):
                 else:
                     text += ' • Продажа \n'
                 text += f' • {ticker} \n'
-                text += 'Точность сигнала:\n'
-                for i, t in enumerate(range(15, 105, 15)):
-                    text += f' • через {t} минут: {result_statistics[0][i][0]}%\n'
-                text += 'Cреднее движение:\n'
-                for i, t in enumerate(range(15, 105, 15)):
-                    text += f' • через {t} минут: {result_statistics[0][i][1]}%\n'
                 text += 'Продается на биржах: \n'
                 for exchange in sig_exchanges:
                     text += f' • {exchange}\n'

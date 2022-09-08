@@ -24,43 +24,35 @@ class SignalStat:
             signal_price = df['close'].iloc[index]
             # Try to get information about price movement after signal, if can't - continue
             try:
-                _ = df['high'].iloc[index + int(3 * self.stat_range / 2)]
+                _ = df['high'].iloc[index + int(self.stat_range)]
             except IndexError:
                 continue
             # Get statistics, process it and write into the database
-            result_prices = self.get_result_price_after_period(df, index, ttype, signal_price)
+            result_prices = self.get_result_price_after_period(df, index, ttype)
             dfs = self.process_statistics(dfs, point, signal_price, result_prices)
 
         # Save trade statistics on disk
         dfs = self.save_statistics(dfs)
         return dfs
 
-    def get_result_price_after_period(self, df, index, ttype, signal_price):
+    def get_result_price_after_period(self, df: pd.DataFrame, index: int, ttype: str) -> list:
         """ Get result prices after 15/30/45/60/75/90 minutes """
-        if ttype == 'buy':
-            result_price_15 = df['high'].iloc[index + int(self.stat_range / 4)]
-            result_price_30 = df['high'].iloc[index + int(self.stat_range / 2)]
-            result_price_45 = df['high'].iloc[index + int(3 * self.stat_range / 4)]
-            result_price_60 = df['high'].iloc[index + self.stat_range]
-            result_price_75 = df['high'].iloc[index + int(5 * self.stat_range / 4)]
-            result_price_90 = df['high'].iloc[index + int(3 * self.stat_range / 2)]
-        else:
-            result_price_15 = df['low'].iloc[index + int(self.stat_range / 4)]
-            result_price_30 = df['low'].iloc[index + int(self.stat_range / 2)]
-            result_price_45 = df['low'].iloc[index + int(3 * self.stat_range / 4)]
-            result_price_60 = df['low'].iloc[index + self.stat_range]
-            result_price_75 = df['low'].iloc[index + int(5 * self.stat_range / 4)]
-            result_price_90 = df['low'].iloc[index + int(3 * self.stat_range / 2)]
-        return result_price_15, result_price_30, result_price_45, result_price_60, result_price_75, result_price_90
+        result_prices = list()
+        for t in range(1, self.stat_range + 1):
+            if ttype == 'buy':
+                result_prices.append(df['high'].iloc[index + t])
+            else:
+                result_prices.append(df['low'].iloc[index + t])
+        return result_prices
 
-    def process_statistics(self, dfs: dict, point: list, signal_price: float, result_prices: tuple):
+    def process_statistics(self, dfs: dict, point: list, signal_price: float, result_prices: list) -> dict:
         """ Calculate statistics and write it to the stat dataframe if it's not presented in it """
         ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
         df = dfs[ticker][timeframe]['data']
         tmp = pd.DataFrame()
         time = df['time'].iloc[index]
         tmp['time'] = [time]
-        tmp['ticker'] = [ticker]
+        tmp['ticker'] = [ticker.replace('-', '').replace('/', '')]
         tmp['timeframe'] = [timeframe]
         # Convert pattern to string
         pattern = str(pattern)
@@ -74,13 +66,11 @@ class SignalStat:
                 (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern)].shape[0] == 0:
             tmp['signal_price'] = [signal_price]
             # write statistics after certain period of time
-            for i, t in enumerate(range(15, 105, 15)):
-                tmp[f'result_price_{t}'] = [result_prices[i]]
-                tmp[f'price_diff_{t}'] = (tmp[f'result_price_{t}'] - tmp['signal_price'])
-                tmp[f'pct_price_diff_{t}'] = tmp[f'price_diff_{t}'] / tmp['signal_price'] * 100
-                stat = pd.concat([stat, tmp], ignore_index=True)
-            # delete trades for the same tickers that are too close to each other
-            stat = self.delete_close_trades(stat)
+            for t, v in enumerate(result_prices):
+                tmp[f'result_price_{t+1}'] = [v]
+                tmp[f'price_diff_{t+1}'] = tmp[f'result_price_{t+1}'] - tmp['signal_price']
+                tmp[f'pct_price_diff_{t+1}'] = tmp[f'price_diff_{t+1}'] / tmp['signal_price'] * 100
+            stat = pd.concat([stat, tmp], ignore_index=True)
             # updata database with new stat data
             if ttype == 'buy':
                 dfs['stat']['buy'] = stat
@@ -179,20 +169,16 @@ class SignalStat:
         stat = self.cut_stat_df(stat)
         stat = stat[(stat['pattern'].astype(str) == pattern)]
         if stat.shape[0] == 0:
-            return [None for _ in range(15, 105, 15)]
+            return [None for _ in range(1, self.stat_range + 1)]
         result_statistics = list()
         # calculate percent of right prognosis
-        if ttype == 'buy':
-            for t in range(15, 105, 15):
+        for t in range(1, self.stat_range + 1):
+            if ttype == 'buy':
                 pct_price_right_prognosis = round(stat[stat[f'price_diff_{t}'] > 0].shape[0] / stat.shape[0] * 100, 2)
-                pct_price_diff_mean = round(stat[f'pct_price_diff_{t}'].mean(), 2)
-                result_statistics.append((pct_price_right_prognosis, pct_price_diff_mean))
-        else:
-            for t in range(15, 105, 15):
+            else:
                 pct_price_right_prognosis = round(stat[stat[f'price_diff_{t}'] < 0].shape[0] / stat.shape[0] * 100, 2)
-                pct_price_diff_mean = round(stat[f'pct_price_diff_{t}'].mean(), 2)
-                result_statistics.append((pct_price_right_prognosis, pct_price_diff_mean))
-
+            pct_price_diff_mean = round(stat[f'pct_price_diff_{t}'].median(), 2)
+            result_statistics.append((pct_price_right_prognosis, pct_price_diff_mean))
         return result_statistics
 
     def calculate_ticker_stat(self, dfs: dict, ttype, ticker: str, timeframe: str, pattern: str) -> tuple:

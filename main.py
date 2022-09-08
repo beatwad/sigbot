@@ -66,7 +66,6 @@ def exception(function):
 
 class MainClass:
     """ Class for running main program cycle """
-    # Set dataframe dict
     # Create statistics class
     stat = SignalStat(**configs)
     buy_stat, sell_stat = stat.load_statistics()
@@ -162,15 +161,16 @@ class MainClass:
     def calc_statistics(self, sig_points: list) -> list:
         """ Calculate statistics and write it for every signal """
         for sig_point in sig_points:
-            ticker = sig_point[0]
-            timeframe = sig_point[1]
             sig_type = sig_point[3]
             pattern = str(sig_point[5])
-
-            total_stat = self.stat.calculate_total_stat(self.database, sig_type, pattern)
-            # ticker_stat = self.stat.calculate_ticker_stat(self.database, sig_type, ticker, timeframe, pattern)
-            sig_point[8].append(total_stat)
+            result_statistics = self.stat.calculate_total_stat(self.database, sig_type, pattern)
+            sig_point[8].append(result_statistics)
         return sig_points
+
+    def clean_statistics(self) -> None:
+        # delete trades for the same tickers that are too close to each other
+        self.database['stat']['buy'] = self.stat.delete_close_trades(self.database['stat']['buy'])
+        self.database['stat']['sell'] = self.stat.delete_close_trades(self.database['stat']['sell'])
 
     def add_plot(self, sig_points: list, levels: list) -> list:
         """ Generate signal plot, save it to file and add this filepath to the signal point data """
@@ -237,12 +237,14 @@ class MainClass:
                             # Get signals only if they are fresh (not earlier than 10-15 mins ago)
                             sig_points = self.filter_sig_points(sig_points, df)
                             if sig_points:
-                                # For every signal create its plot and add path to it
-                                sig_points = self.add_plot(sig_points, levels)
+                                # Clean statistics dataframes from close signal points
+                                self.clean_statistics()
                                 # Add list of exchanges where this ticker is available and has a good liquidity
                                 sig_points = self.get_exchange_list(ticker, sig_points)
                                 # Add pattern and ticker statistics
                                 sig_points = self.calc_statistics(sig_points)
+                                # For every signal create its plot and add path to it
+                                sig_points = self.add_plot(sig_points, levels)
                                 print(sig_points)
                                 self.telegram_bot.notification_list += sig_points
                                 self.telegram_bot.update_bot.set()
@@ -250,8 +252,9 @@ class MainClass:
                                 sig_message = f'Find the signal points. Exchange is {exchange}, ticker is {ticker}, ' \
                                               f'timeframe is {timeframe}, time is {sig_points[0][4]}'
                                 logger.info(sig_message)
-                                # Save dataframe for further analysis
-                        self.save_dataframe(df, ticker, timeframe)
+                        # Save dataframe for further analysis
+                        # self.save_dataframe(df, ticker, timeframe)
+
         self.first = False
 
 

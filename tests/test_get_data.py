@@ -157,7 +157,6 @@ levels = [level1, level2, level3, level4]
 
 @pytest.mark.parametrize('df, ticker, timeframe, expected',
                          [
-
                           (df_eth_1, 'ETHUSDT', '1h', (df_inds[0].loc[:499], levels[0])),
                           (df_eth_5, 'ETHUSDT', '5m', (df_inds[1].loc[:499], levels[1])),
                           (df_btc_1, 'BTCUSDT', '1h', (df_inds[2].loc[:499], levels[2])),

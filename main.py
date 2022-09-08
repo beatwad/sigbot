@@ -106,9 +106,8 @@ class MainClass:
 
     def check_ticker(self, ticker: str) -> bool:
         # Check if ticker was already processesed before
-        if ticker not in self.processed_tickers and ticker.replace('-', '') not in self.processed_tickers and \
-                ticker.replace('/', '') not in self.processed_tickers:
-            self.processed_tickers.append(ticker)
+        if ticker[:-4] not in self.processed_tickers:
+            self.processed_tickers.append(ticker[:-4])
             return True
         return False
 

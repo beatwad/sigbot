@@ -34,7 +34,7 @@ class GetData:
         limit = self.get_limit(df, ticker, timeframe)
         # get data from exchange only when there is at least one interval to get
         if limit > 1:
-            klines = self.api.get_klines(ticker, timeframe, limit)
+            klines = self.api.get_klines(ticker, timeframe, limit + 2)
             df = self.process_data(klines, df)
             # update timestamp for current timeframe
             self.ticker_dict[ticker][timeframe] = datetime.now()
@@ -53,6 +53,11 @@ class GetData:
             for tf in self.timeframe_div.keys():
                 self.ticker_dict[ticker][tf] = dt
 
+    @staticmethod
+    def add_utc_3(df):
+        df['time'] = df['time'] + pd.to_timedelta(3, unit='h')
+        return df
+
     def process_data(self, klines: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
         """ Update dataframe for current ticker or create new dataframe if it's first run """
         # convert numeric data to float type
@@ -60,7 +65,7 @@ class GetData:
                                                                      'close', 'volume']].astype(float)
         # convert time to UTC+3
         klines['time'] = pd.to_datetime(klines['time'], unit='ms')
-        klines['time'] = klines['time'] + pd.to_timedelta(3, unit='h')
+        klines = self.add_utc_3(klines)
         # If dataframe is empty - fill it with the new data
         if df.shape[0] == 0:
             df = klines
@@ -104,7 +109,7 @@ class GetData:
         else:
             # get time passed from previous download and select appropriate interval
             time_diff_sec = (datetime.now() - self.ticker_dict[ticker][timeframe]).total_seconds()
-            limit = int(time_diff_sec/self.timeframe_div[timeframe]) + 3
+            limit = int(time_diff_sec/self.timeframe_div[timeframe]) + 1
             # if time passed more than one interval - get it
             return min(self.limit, limit)
 

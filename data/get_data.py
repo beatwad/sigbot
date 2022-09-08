@@ -66,14 +66,11 @@ class GetData:
             df = klines
         else:
             # Update dataframe with new candles if it's not empty
-            latest_time = df['time'].max()
-            klines = klines[klines['time'] > latest_time]
+            earliest_time = klines['time'].min()
+            df = df[df['time'] < earliest_time]
             df = pd.concat([df, klines])
             # if size of dataframe more than limit - short it
-            if df.shape[0] >= self.limit:
-                df = df.iloc[klines.shape[0]:].reset_index(drop=True)
-            else:
-                df = df.reset_index(drop=True)
+            df = df.iloc[max(df.shape[0]-self.limit, 0):].reset_index(drop=True)
         return df
 
     @staticmethod
@@ -107,7 +104,7 @@ class GetData:
         else:
             # get time passed from previous download and select appropriate interval
             time_diff_sec = (datetime.now() - self.ticker_dict[ticker][timeframe]).total_seconds()
-            limit = int(time_diff_sec/self.timeframe_div[timeframe]) + 1
+            limit = int(time_diff_sec/self.timeframe_div[timeframe]) + 3
             # if time passed more than one interval - get it
             return min(self.limit, limit)
 

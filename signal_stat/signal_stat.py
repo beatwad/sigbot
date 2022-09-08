@@ -9,7 +9,7 @@ class SignalStat:
         self.params = params[self.type]['params']
         self.take_profit_multiplier = self.params.get('take_profit_multiplier', 2)
         self.stop_loss_multiplier = self.params.get('stop_loss_multiplier', 2)
-        self.stat_range = self.params.get('stat_range', 12)
+        self.stat_range = self.params.get('stat_range', 24)
         self.test = self.params.get('test', False)
         self.stat_day_limit = self.params.get('stat_day_limit', 7)
         self.prev_sig_limit = self.params.get('prev_sig_limit', 1500)
@@ -27,6 +27,9 @@ class SignalStat:
                 _ = df['high'].iloc[index + int(self.stat_range)]
             except IndexError:
                 continue
+            # If index of point was found too early - we shouldn't use it
+            if index < 50:
+                continue
             # Get statistics, process it and write into the database
             result_prices = self.get_result_price_after_period(df, index, ttype)
             dfs = self.process_statistics(dfs, point, signal_price, result_prices)
@@ -36,7 +39,7 @@ class SignalStat:
         return dfs
 
     def get_result_price_after_period(self, df: pd.DataFrame, index: int, ttype: str) -> list:
-        """ Get result prices after 15/30/45/60/75/90 minutes """
+        """ Get result prices after every 5 minutes """
         result_prices = list()
         for t in range(1, self.stat_range + 1):
             if ttype == 'buy':
@@ -45,14 +48,16 @@ class SignalStat:
                 result_prices.append(df['low'].iloc[index + t])
         return result_prices
 
-    def process_statistics(self, dfs: dict, point: list, signal_price: float, result_prices: list) -> dict:
+    @staticmethod
+    def process_statistics(dfs: dict, point: list, signal_price: float, result_prices: list) -> dict:
         """ Calculate statistics and write it to the stat dataframe if it's not presented in it """
         ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
         df = dfs[ticker][timeframe]['data']
+        ticker = ticker.replace('-', '').replace('/', '')
         tmp = pd.DataFrame()
         time = df['time'].iloc[index]
         tmp['time'] = [time]
-        tmp['ticker'] = [ticker.replace('-', '').replace('/', '')]
+        tmp['ticker'] = [ticker]
         tmp['timeframe'] = [timeframe]
         # Convert pattern to string
         pattern = str(pattern)
@@ -70,6 +75,7 @@ class SignalStat:
                 tmp[f'result_price_{t+1}'] = [v]
                 tmp[f'price_diff_{t+1}'] = tmp[f'result_price_{t+1}'] - tmp['signal_price']
                 tmp[f'pct_price_diff_{t+1}'] = tmp[f'price_diff_{t+1}'] / tmp['signal_price'] * 100
+                tmp = tmp.drop(f'result_price_{t+1}', axis=1)
             stat = pd.concat([stat, tmp], ignore_index=True)
             # updata database with new stat data
             if ttype == 'buy':
@@ -178,7 +184,8 @@ class SignalStat:
             else:
                 pct_price_right_prognosis = round(stat[stat[f'price_diff_{t}'] < 0].shape[0] / stat.shape[0] * 100, 2)
             pct_price_diff_mean = round(stat[f'pct_price_diff_{t}'].median(), 2)
-            result_statistics.append((pct_price_right_prognosis, pct_price_diff_mean))
+            pct_price_diff_std = round(stat[f'pct_price_diff_{t}'].std(), 2)
+            result_statistics.append((pct_price_right_prognosis, pct_price_diff_mean, pct_price_diff_std))
         return result_statistics
 
     def calculate_ticker_stat(self, dfs: dict, ttype, ticker: str, timeframe: str, pattern: str) -> tuple:
@@ -207,7 +214,7 @@ class SignalStat:
             tmp = df[df['pattern'] == pattern].copy()
             tmp['time_diff'] = tmp['time'].shift(-1) - tmp['time']
             tmp['ticker_shift'] = tmp['ticker'].shift(-1)
-            drop_index = tmp[(tmp['ticker'] == tmp['ticker_shift']) & (tmp['time_diff'] >= pd.Timedelta(0, 's')) & \
+            drop_index = tmp[(tmp['ticker'] == tmp['ticker_shift']) & (tmp['time_diff'] >= pd.Timedelta(0, 's')) &
                              (tmp['time_diff'] < pd.Timedelta(self.prev_sig_limit, 's'))].index
             df.loc[drop_index, 'to_drop'] = True
         df = df[df['to_drop'] == False]

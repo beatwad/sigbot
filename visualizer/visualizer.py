@@ -122,6 +122,9 @@ class Visualizer:
         # Plot signal statistics
         pct_right_prognosis = [s[0] for s in statistics[0]]
         pct_price_diff_mean = [s[1] for s in statistics[0]]
+        pct_price_diff_std = [s[2] for s in statistics[0]]
+        pct_price_diff_mean_plus_std = [a + b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
+        pct_price_diff_mean_minus_std = [a - b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
 
         # make subplots
         axs2 = subfigs[1].subplots(2, 1, sharex=True)
@@ -130,6 +133,8 @@ class Visualizer:
         axs2[0].plot(pct_right_prognosis, linewidth=2, color='green')
         axs2[0].yaxis.set_label_position("right")
         axs2[0].yaxis.tick_right()
+        axs2[1].plot(pct_price_diff_mean_plus_std, linewidth=1.5, linestyle='--')
+        axs2[1].plot(pct_price_diff_mean_minus_std, linewidth=1.5, linestyle='--')
         axs2[1].plot(pct_price_diff_mean, linewidth=2)
         axs2[1].yaxis.set_label_position("right")
         axs2[1].yaxis.tick_right()
@@ -139,7 +144,8 @@ class Visualizer:
             title = 'СTATИСТИКА СИГНАЛА НА ПОКУПКУ'
         else:
             title = 'СTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
-        axs2[0].set_title(f'{title}\n\nВероятность правильного\nдвижения цены после сигнала', fontsize=15)
+        axs2[0].set_title(f'{title}\n\nВероятность правильного\nдвижения цены после сигнала\n'
+                          f'(в среднем - {round(sum(pct_right_prognosis)/len(pct_right_prognosis), 2)})%', fontsize=15)
         axs2[1].set_title('Средняя разница между текущей ценой актива\nи его ценой во время сигнала', fontsize=15)
 
         # set x-ticks

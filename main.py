@@ -253,7 +253,7 @@ class MainClass:
                                               f'timeframe is {timeframe}, time is {sig_points[0][4]}'
                                 logger.info(sig_message)
                         # Save dataframe for further analysis
-                        # self.save_dataframe(df, ticker, timeframe)
+                        self.save_dataframe(df, ticker, timeframe)
 
         self.first = False
 

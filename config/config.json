@@ -19,9 +19,9 @@
                         "MACD" :  {"params": {}},
                         "SUP_RES" :  {"params": {"proximity_multiplier":  0.5}},
                         "SUP_RES_Robust" :  {"params": {"proximity_multiplier":  0.5}}},
-  "Signal_params": {"params":  {"max_prev_candle_limit": 3}},
+  "Signal_params": {"params":  {"max_prev_candle_limit": 300}},
   "SignalStat":  {"params": {"take_profit_multiplier":  2, "stop_loss_multiplier":  2,
-                             "test":  0, "stat_day_limit":  7, "prev_sig_limit":  2400,
+                             "test":  0, "stat_day_limit":  4, "prev_sig_limit":  2400,
                              "stat_update_period":  3600, "stat_range":  24}},
   "Indicator_list": ["STOCH", "RSI", "SUP_RES"],
   "Patterns":  [["STOCH", "RSI"]],
@@ -41,5 +41,6 @@
                                          "STOCH_RSI": "-1001463253403",
                                          "STOCH_RSI_SUP_RES": "-1001702067917"
                                         },
-                            "prev_sig_minutes_limit":  25}}
+                            "prev_sig_minutes_limit":  25,
+                            "max_notifications_in_row":  3}}
 }

@@ -51,11 +51,10 @@ class SignalStat:
     @staticmethod
     def process_statistics(dfs: dict, point: list, signal_price: float, result_prices: list) -> dict:
         """ Calculate statistics and write it to the stat dataframe if it's not presented in it """
+        # get data
         ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
-        df = dfs[ticker][timeframe]['data']
         ticker = ticker.replace('-', '').replace('/', '')
         tmp = pd.DataFrame()
-        time = df['time'].iloc[index]
         tmp['time'] = [time]
         tmp['ticker'] = [ticker]
         tmp['timeframe'] = [timeframe]
@@ -208,12 +207,12 @@ class SignalStat:
     def delete_close_trades(self, df: pd.DataFrame) -> pd.DataFrame:
         """ Find adjacent in time trades for the same tickers and delete them """
         patterns = df['pattern'].unique().tolist()
-        df = df.sort_values(['ticker', 'time'])
+        df = df.sort_values(['ticker', 'time'], ignore_index=True)
         df['to_drop'] = False
         for pattern in patterns:
             tmp = df[df['pattern'] == pattern].copy()
-            tmp['time_diff'] = tmp['time'].shift(-1) - tmp['time']
-            tmp['ticker_shift'] = tmp['ticker'].shift(-1)
+            tmp['time_diff'] = tmp['time'] - tmp['time'].shift(1)
+            tmp['ticker_shift'] = tmp['ticker'].shift(1)
             drop_index = tmp[(tmp['ticker'] == tmp['ticker_shift']) & (tmp['time_diff'] >= pd.Timedelta(0, 's')) &
                              (tmp['time_diff'] < pd.Timedelta(self.prev_sig_limit, 's'))].index
             df.loc[drop_index, 'to_drop'] = True

@@ -21,7 +21,7 @@
                         "SUP_RES_Robust" :  {"params": {"proximity_multiplier":  0.5}}},
   "Signal_params": {"params":  {"max_prev_candle_limit": 500}},
   "SignalStat":  {"params": {"take_profit_multiplier":  2, "stop_loss_multiplier":  2,
-                  "test":  1, "stat_day_limit":  7, "prev_sig_minutes_limit":  25}},
+                  "test":  1, "stat_day_limit":  7, "prev_sig_limit":  2400}},
   "Indicator_list": ["STOCH", "RSI", "SUP_RES"],
   "Patterns":  [["STOCH", "RSI", "SUP_RES"], ["STOCH", "RSI"]],
   "Timeframes":  {"work_timeframe":  "5m", "higher_timeframe":  "1h", "stat_range":  12},

@@ -76,6 +76,7 @@ class TelegramBot(Thread):
         self.params = params[self.type]['params']
         self.chat_ids = self.params['chat_ids']
         self.prev_sig_limit = self.params.get('prev_sig_limit', 1500)
+        self.max_notifications_in_row = self.params.get('self.max_notifications_in_row', 3)
         self.updater = Updater(token=token, use_context=True)
         self.dispatcher = self.updater.dispatcher
         # list of notifications
@@ -98,7 +99,7 @@ class TelegramBot(Thread):
         while not self.stopped.wait(1):
             if self.update_bot.is_set():
                 self.update_bot.clear()
-                self.send_notification()
+                self.check_notifications()
 
     def get_chat_id(self, update: Update, context: CallbackContext) -> None:
         """Send a message when the command /start is issued."""
@@ -144,47 +145,99 @@ class TelegramBot(Thread):
         tmp['pattern'] = [pattern]
         self.notification_df = pd.concat([tmp, self.notification_df])
 
-    def send_notification(self) -> None:
-        """ Add notification to notification list and send its items to chat """
-        while self.notification_list:
-            # Get info from signal
-            _message = self.notification_list.pop(0)
-            ticker = self.process_ticker(_message[0])
-            timeframe = _message[1]
-            df_index = _message[2]
-            sig_type = _message[3]
-            sig_time = _message[4]
-            # get patterns
-            sig_pattern = [p[0] for p in _message[5]]
-            sig_pattern = '_'.join(sig_pattern)
-            # get path to image
-            sig_img_path = _message[6][0]
-            # get list of available exchanges
-            sig_exchanges = _message[7]
-            # # get total and ticker statistics
-            # result_statistics = _message[8]
-            # form message
-            if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
-                chat_id = self.chat_ids[sig_pattern]
-                # Form text message
-                text = f'Новый сигнал\n'
-                if sig_type == 'buy':
-                    text += ' • Покупка \n'
-                else:
-                    text += ' • Продажа \n'
-                text += f' • {ticker} \n'
-                text += 'Продается на биржах: \n'
-                for exchange in sig_exchanges:
-                    text += f' • {exchange}\n'
-                text += 'Ссылка на TradingView: \n'
-                text += f"https://ru.tradingview.com/symbols/{ticker.replace('-', '')}"
-                # Send message + signal plot
-                if sig_img_path:
-                    self.send_photo(chat_id, sig_img_path, text)
-                time.sleep(1)
-            self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
-        self.delete_images()
+    def check_notifications(self):
+        """ Check if we can send each notification separately or there are too many of them,
+            so we have to send list of them in one message """
+        n_len = len(self.notification_list)
+        print(n_len)
+        message_dict = dict()
+        # to each pattern corresponds its own chat, so we have to check length of notification list for each pattern
+        for pattern in self.chat_ids.keys():
+            message_dict[pattern] = list()
+        for i in range(n_len):
+            message = self.notification_list[i]
+            sig_pattern = '_'.join([p[0] for p in message[5]])
+            message_dict[sig_pattern].append([i, message])
+        for pattern in self.chat_ids.keys():
+            # send too long notification list with one message
+            if len(message_dict[pattern]) > self.max_notifications_in_row:
+                self.send_notifications_in_list(message_dict[pattern], pattern)
+            else:
+                # send each message from short notification list separately
+                for i, message in message_dict[pattern]:
+                    self.send_notification(message)
+        # clear all sent notifications
+        self.notification_list[:n_len] = []
 
+    def send_notifications_in_list(self, message_list: list, pattern: str) -> None:
+        """ Send list notifications at once """
+        chat_id = self.chat_ids[pattern]
+        # Form text message
+        text = f'Новые сигналы:\n'
+        for _message in message_list:
+            i, message = _message
+            # Get info from signal
+            ticker = self.process_ticker(message[0])
+            timeframe = message[1]
+            sig_type = message[2]
+            sig_time = message[4]
+            # get path to image
+            sig_img_path = message[6][0]
+            # add path to image to deletion list
+            self.images_to_delete.add(sig_img_path)
+            # get patterns
+            sig_pattern = [p[0] for p in message[5]]
+            sig_pattern = '_'.join(sig_pattern)
+            # add ticker info to notification list
+            if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
+                text += f' • {ticker}: '
+                if sig_type == 'buy':
+                    text += 'Покупка \n'
+                else:
+                    text += 'Продажа \n'
+            self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
+        self.send_message(chat_id, text)
+        self.delete_images()
+    
+    def send_notification(self, message) -> None:
+        """ Send notification separately """
+        # Get info from signal
+        ticker = self.process_ticker(message[0])
+        timeframe = message[1]
+        df_index = message[2]
+        sig_type = message[3]
+        sig_time = message[4]
+        # get patterns
+        sig_pattern = [p[0] for p in message[5]]
+        sig_pattern = '_'.join(sig_pattern)
+        # get path to image
+        sig_img_path = message[6][0]
+        # get list of available exchanges
+        sig_exchanges = message[7]
+        # # get total and ticker statistics
+        # result_statistics = message[8]
+        # form message
+        if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
+            chat_id = self.chat_ids[sig_pattern]
+            # Form text message
+            text = f'Новый сигнал\n'
+            if sig_type == 'buy':
+                text += ' • Покупка \n'
+            else:
+                text += ' • Продажа \n'
+            text += f' • {ticker} \n'
+            text += 'Продается на биржах: \n'
+            for exchange in sig_exchanges:
+                text += f' • {exchange}\n'
+            text += 'Ссылка на TradingView: \n'
+            text += f"https://ru.tradingview.com/symbols/{ticker.replace('-', '')}"
+            # Send message + signal plot
+            if sig_img_path:
+                self.send_photo(chat_id, sig_img_path, text)
+            time.sleep(5)
+        self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
+        self.delete_images()
+    
     def send_message(self, chat_id, text):
         self.updater.bot.send_message(chat_id=chat_id, text=text)
 

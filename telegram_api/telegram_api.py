@@ -152,7 +152,6 @@ class TelegramBot(Thread):
         """ Check if we can send each notification separately or there are too many of them,
             so we have to send list of them in one message """
         n_len = len(self.notification_list)
-        print(n_len)
         message_dict = dict()
         # to each pattern corresponds its own chat, so we have to check length of notification list for each pattern
         for pattern in self.chat_ids.keys():
@@ -186,7 +185,7 @@ class TelegramBot(Thread):
             sig_time = message[4]
             # get path to image
             sig_img_path = message[6][0]
-            # add path to image to deletion list
+            # add image to set of images which we are going to delete
             self.images_to_delete.add(sig_img_path)
             # get patterns
             sig_pattern = [p[0] for p in message[5]]
@@ -234,7 +233,9 @@ class TelegramBot(Thread):
                 text += f' • {exchange}\n'
             text += 'Ссылка на TradingView: \n'
             text += f"https://ru.tradingview.com/symbols/{ticker.replace('-', '')}"
-            # Send message + signal plot
+            # add image to set of images which we are going to delete
+            self.images_to_delete.add(sig_img_path)
+            # Send message + image
             if sig_img_path:
                 self.send_photo(chat_id, sig_img_path, text)
             time.sleep(5)
@@ -246,14 +247,15 @@ class TelegramBot(Thread):
 
     def send_photo(self, chat_id, img_path, text):
         self.updater.bot.send_photo(chat_id=chat_id, photo=open(img_path, 'rb'), caption=text)
-        # add image to set of images which we are going to delete
-        self.images_to_delete.add(img_path)
 
     def delete_images(self):
         """ Remove images after we send them, because we don't need them anymore """
         while self.images_to_delete:
             img_path = self.images_to_delete.pop()
-            remove(img_path)
+            try:
+                remove(img_path)
+            except FileNotFoundError:
+                pass
 
 
 if __name__ == '__main__':

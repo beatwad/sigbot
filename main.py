@@ -4,6 +4,8 @@ import sys
 
 import pandas as pd
 from datetime import datetime
+import glob
+from os import remove
 from os import environ
 from data.get_data import GetData
 from data.get_data import DataFactory
@@ -246,7 +248,7 @@ class MainClass:
                                 sig_points = self.calc_statistics(sig_points)
                                 # For every signal create its plot and add path to it
                                 sig_points = self.add_plot(sig_points, levels)
-                                print(sig_points)
+                                print([[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
                                 self.telegram_bot.notification_list += sig_points
                                 self.telegram_bot.update_bot.set()
                                 # Log the signals
@@ -274,5 +276,11 @@ if __name__ == "__main__":
             i += 1
             sleep(60)
         except (KeyboardInterrupt, SystemExit):
+            # on interruption or exit stop Telegram module thread
             main.telegram_bot.stopped.set()
+            # delete everything in image directory on exit
+            files = glob.glob('visualizer/images/*')
+            for f in files:
+                remove(f)
+            # exit program
             sys.exit()

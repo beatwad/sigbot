@@ -105,6 +105,7 @@ class MainClass:
 
     def check_ticker(self, ticker: str) -> bool:
         # Check if ticker was already processesed before
+        ticker = ticker.replace('-', '').replace('/', '')
         if ticker[:-4] not in self.processed_tickers:
             self.processed_tickers.append(ticker[:-4])
             return True
@@ -253,7 +254,7 @@ class MainClass:
                                               f'timeframe is {timeframe}, time is {sig_points[0][4]}'
                                 logger.info(sig_message)
                         # Save dataframe for further analysis
-                        self.save_dataframe(df, ticker, timeframe)
+                        # self.save_dataframe(df, ticker, timeframe)
 
         self.first = False
 

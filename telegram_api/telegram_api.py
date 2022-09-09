@@ -3,8 +3,8 @@ import logging
 import functools
 from os import remove
 from os import environ
-
 import pandas as pd
+
 from config.config import ConfigFactory
 
 from threading import Thread
@@ -24,17 +24,20 @@ def create_logger():
     """
     Creates a logging object and returns it
     """
-    logger = logging.getLogger("example_logger")
-    logger.setLevel(logging.INFO)
-    # create the logging file handler
-    log_path = configs['Telegram']['params']['log_path']
-    fh = logging.FileHandler(log_path)
-    fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    formatter = logging.Formatter(fmt)
-    fh.setFormatter(formatter)
-    # add handler to logger object
-    logger.addHandler(fh)
-    return logger
+    try:
+        logger = logging.getLogger("example_logger")
+        logger.setLevel(logging.INFO)
+        # create the logging file handler
+        log_path = configs['Telegram']['params']['log_path']
+        fh = logging.FileHandler(log_path)
+        fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        formatter = logging.Formatter(fmt)
+        fh.setFormatter(formatter)
+        # add handler to logger object
+        logger.addHandler(fh)
+        return logger
+    except FileNotFoundError:
+        return None
 
 
 # create logger
@@ -119,6 +122,17 @@ class TelegramBot(Thread):
         ticker = ticker[:-4] + '-' + ticker[-4:]
         return ticker
 
+    def add_to_notification_history(self, sig_time: pd.Timestamp, sig_type: str, ticker: str,
+                                    timeframe: str, pattern: str) -> None:
+        """ Add new notification to notification history """
+        tmp = pd.DataFrame()
+        tmp['time'] = [sig_time]
+        tmp['sig_type'] = [sig_type]
+        tmp['ticker'] = [ticker]
+        tmp['timeframe'] = [timeframe]
+        tmp['pattern'] = [pattern]
+        self.notification_df = pd.concat([tmp, self.notification_df])
+
     def check_previous_notifications(self, sig_time: pd.Timestamp, sig_type: str, ticker: str,
                                      timeframe: str, pattern: str) -> bool:
         """ Check if previous notifications wasn't send short time before """
@@ -133,17 +147,6 @@ class TelegramBot(Thread):
             if sig_time - latest_time < pd.Timedelta(self.prev_sig_limit, "s"):
                 return False
         return True
-
-    def add_to_notification_history(self, sig_time: pd.Timestamp, sig_type: str, ticker: str,
-                                    timeframe: str, pattern: str) -> None:
-        """ Add new notification to notification history """
-        tmp = pd.DataFrame()
-        tmp['time'] = [sig_time]
-        tmp['sig_type'] = [sig_type]
-        tmp['ticker'] = [ticker]
-        tmp['timeframe'] = [timeframe]
-        tmp['pattern'] = [pattern]
-        self.notification_df = pd.concat([tmp, self.notification_df])
 
     def check_notifications(self):
         """ Check if we can send each notification separately or there are too many of them,

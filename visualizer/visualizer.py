@@ -69,7 +69,7 @@ class Visualizer:
         if '/' in ticker:
             ticker = ticker.replace('/', '-')
             return ticker
-        ticker = ticker[:-4] + '-' + ticker[-4:]
+        ticker = ticker[:-4] + '/' + ticker[-4:]
         return ticker
 
     def create_plot(self, dfs, point, levels):
@@ -85,7 +85,7 @@ class Visualizer:
 
         # Plot signal
         # make subfigs
-        fig = plt.figure(constrained_layout=True, figsize=(6, 3 * (plot_num + 1)))
+        fig = plt.figure(constrained_layout=True, figsize=(2 * (plot_num + 1), 3 * (plot_num + 1)))
         subfigs = fig.subfigures(2, 1, wspace=0.07, height_ratios=[3, 2])
 
         # make subplots
@@ -108,6 +108,8 @@ class Visualizer:
             axs1[index + 1].yaxis.tick_right()
             # plot grid
             axs1[index + 1].grid(which='both', linestyle='--', linewidth=0.3)
+            # set title
+            axs1[index + 1].set_title(indicator, fontsize=16)
 
         axs1[0].grid(which='both', linestyle='--', linewidth=0.3)
 
@@ -117,7 +119,12 @@ class Visualizer:
 
         # plot all subplots
         mpf.plot(ohlc, type='candle', ax=axs1[0], addplot=ap, warn_too_much_data=1001, style='yahoo',
-                 axtitle=f'{ticker}-{timeframe}', ylabel='')
+                 ylabel='', returnfig=True)
+
+        # set titles
+        axs1[0].set_title(f'{self.process_ticker(ticker)}-{timeframe}', fontsize=16)
+        for index, indicator in enumerate(indicator_list):
+            axs1[index + 1].set_title(indicator, fontsize=16)
 
         # plot point of trade
         self.plot_point(point_type, data, axs1[0])

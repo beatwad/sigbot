@@ -4,9 +4,11 @@ import matplotlib
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 import matplotlib.style as style
+from matplotlib import rcParams
 
 matplotlib.use('Agg')
-style.use('fivethirtyeight')
+style.use('dark_background')
+rcParams['font.family'] = 'cursive'
 
 
 class Visualizer:
@@ -104,6 +106,10 @@ class Visualizer:
             # plot y-labels from right side
             axs1[index + 1].yaxis.set_label_position("right")
             axs1[index + 1].yaxis.tick_right()
+            # plot grid
+            axs1[index + 1].grid(which='both', linestyle='--', linewidth=0.3)
+
+        axs1[0].grid(which='both', linestyle='--', linewidth=0.3)
 
         # set x-labels
         axs1[-1].set_xlabel(f"{data['time'].iloc[-1].date()}\n", fontsize=14)
@@ -138,6 +144,9 @@ class Visualizer:
         axs2[1].plot(pct_price_diff_mean, linewidth=2)
         axs2[1].yaxis.set_label_position("right")
         axs2[1].yaxis.tick_right()
+        # plot grid
+        axs2[0].grid(which='both', linestyle='--', linewidth=0.3)
+        axs2[1].grid(which='both', linestyle='--', linewidth=0.3)
 
         # set title
         if point_type == 'buy':

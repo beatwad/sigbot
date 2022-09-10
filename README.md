@@ -19,3 +19,5 @@ Works with Binance API
 * pytest-mock `3.8.2`
 * freezegun `1.2.2`
 * python-telegram-bot `13.13`
+* proplot `0.9.5`
+* sudo apt install msttcorefonts -qq

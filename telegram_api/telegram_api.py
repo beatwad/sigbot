@@ -222,12 +222,11 @@ class TelegramBot(Thread):
         if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
             chat_id = self.chat_ids[sig_pattern]
             # Form text message
-            text = f'Новый сигнал\n'
+            text = f'{ticker} \n'
             if sig_type == 'buy':
-                text += ' • Покупка \n'
+                text += 'Покупка \n'
             else:
-                text += ' • Продажа \n'
-            text += f' • {ticker} \n'
+                text += 'Продажа \n'
             text += 'Продается на биржах: \n'
             for exchange in sig_exchanges:
                 text += f' • {exchange}\n'

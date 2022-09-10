@@ -3,16 +3,22 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 import mplfinance as mpf
-import matplotlib.style as style
 from matplotlib import rcParams
 
 matplotlib.use('Agg')
-style.use('dark_background')
-rcParams['font.family'] = 'cursive'
+# style.use('dark_background')
+rcParams['font.family'] = 'Nimbus Sans'
 
 
 class Visualizer:
     type = 'Visualizer'
+    ticker_color = 'white'
+    border_color = 'white'
+    background_color = '#010113'
+    stat_color_1 = '#0ED6F1'
+    stat_std_color_1 = '#19E729'
+    stat_std_color_2 = '#E73B19'
+    stat_color_2 = '#EE4B1A'
 
     def __init__(self, **params):
         self.params = params[self.type]['params']
@@ -56,11 +62,6 @@ class Visualizer:
         plt.savefig(filename, bbox_inches='tight')
         return filename
 
-    def save_stat_plot(self, ticker, timeframe):
-        filename = f"{self.image_path}/{ticker}_{timeframe}_statistics.png"
-        plt.savefig(filename, bbox_inches='tight')
-        return filename
-
     @staticmethod
     def process_ticker(ticker: str) -> str:
         """ Bring ticker to more convenient view """
@@ -85,11 +86,14 @@ class Visualizer:
 
         # Plot signal
         # make subfigs
-        fig = plt.figure(constrained_layout=True, figsize=(2 * (plot_num + 1), 3 * (plot_num + 1)))
-        subfigs = fig.subfigures(2, 1, wspace=0.07, height_ratios=[3, 2])
+        fig = plt.figure(constrained_layout=True, figsize=(1.7 * (plot_num + 1), 3 * (plot_num + 1)))
+        fig.patch.set_facecolor(self.background_color)
+        subfigs = fig.subfigures(2, 1, wspace=0, height_ratios=[3, 2.5])
 
         # make subplots
         axs1 = subfigs[0].subplots(plot_num, 1, sharex=True)
+        subfigs[0].patch.set_facecolor(self.background_color)
+        subfigs[1].patch.set_facecolor(self.background_color)
         ap = list()
 
         # plot candles
@@ -109,12 +113,33 @@ class Visualizer:
             # plot grid
             axs1[index + 1].grid(which='both', linestyle='--', linewidth=0.3)
             # set title
-            axs1[index + 1].set_title(indicator, fontsize=16)
+            axs1[index + 1].set_title(indicator, fontsize=14, color=self.ticker_color)
+            # set ticker color
+            axs1[index + 1].tick_params(axis='x', colors=self.ticker_color)
+            axs1[index + 1].tick_params(axis='y', colors=self.ticker_color)
+            # set background color
+            axs1[index + 1].patch.set_facecolor(self.background_color)
+            # set border color
+            axs1[index + 1].spines['bottom'].set_color(self.border_color)
+            axs1[index + 1].spines['top'].set_color(self.border_color)
+            axs1[index + 1].spines['right'].set_color(self.border_color)
+            axs1[index + 1].spines['left'].set_color(self.border_color)
 
+        # plot candles
         axs1[0].grid(which='both', linestyle='--', linewidth=0.3)
+        # set ticker color
+        axs1[0].tick_params(axis='x', colors=self.ticker_color)
+        axs1[0].tick_params(axis='y', colors=self.ticker_color)
+        # set background color
+        axs1[0].patch.set_facecolor(self.background_color)
+        # set border color
+        axs1[0].spines['bottom'].set_color(self.border_color)
+        axs1[0].spines['top'].set_color(self.border_color)
+        axs1[0].spines['right'].set_color(self.border_color)
+        axs1[0].spines['left'].set_color(self.border_color)
 
         # set x-labels
-        axs1[-1].set_xlabel(f"{data['time'].iloc[-1].date()}\n", fontsize=14)
+        # axs1[-1].set_xlabel(f"\n{data['time'].iloc[-1].date()}\n", fontsize=14)
         plt.xticks(rotation=30)
 
         # plot all subplots
@@ -122,9 +147,10 @@ class Visualizer:
                  ylabel='', returnfig=True)
 
         # set titles
-        axs1[0].set_title(f'{self.process_ticker(ticker)}-{timeframe}', fontsize=16)
+        axs1[0].set_title(f'{self.process_ticker(ticker)} - {timeframe} - '
+                          f'{data["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14, color=self.ticker_color)
         for index, indicator in enumerate(indicator_list):
-            axs1[index + 1].set_title(indicator, fontsize=16)
+            axs1[index + 1].set_title(indicator, fontsize=14, color=self.ticker_color)
 
         # plot point of trade
         self.plot_point(point_type, data, axs1[0])
@@ -143,12 +169,12 @@ class Visualizer:
         axs2 = subfigs[1].subplots(2, 1, sharex=True)
 
         # make plots
-        axs2[0].plot(pct_right_prognosis, linewidth=2, color='green')
+        axs2[0].plot(pct_right_prognosis, linewidth=2, color=self.stat_color_1)
         axs2[0].yaxis.set_label_position("right")
         axs2[0].yaxis.tick_right()
-        axs2[1].plot(pct_price_diff_mean_plus_std, linewidth=1.5, linestyle='--')
-        axs2[1].plot(pct_price_diff_mean_minus_std, linewidth=1.5, linestyle='--')
-        axs2[1].plot(pct_price_diff_mean, linewidth=2)
+        axs2[1].plot(pct_price_diff_mean_plus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_1)
+        axs2[1].plot(pct_price_diff_mean_minus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_2)
+        axs2[1].plot(pct_price_diff_mean, linewidth=2, color=self.stat_color_2)
         axs2[1].yaxis.set_label_position("right")
         axs2[1].yaxis.tick_right()
         # plot grid
@@ -157,26 +183,51 @@ class Visualizer:
 
         # set title
         if point_type == 'buy':
-            title = 'СTATИСТИКА СИГНАЛА НА ПОКУПКУ'
+            title = '\nСTATИСТИКА СИГНАЛА НА ПОКУПКУ'
         else:
-            title = 'СTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
-        axs2[0].set_title(f'{title}\n\nВероятность правильного\nдвижения цены после сигнала\n'
-                          f'(в среднем - {round(sum(pct_right_prognosis)/len(pct_right_prognosis), 2)})%', fontsize=15)
-        axs2[1].set_title('Средняя разница между текущей ценой актива\nи его ценой во время сигнала', fontsize=15)
+            title = '\nСTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
+        axs2[0].set_title(f'{title}\n\nВероятность правильного движения цены после сигнала\n'
+                          f'(в среднем - {round(sum(pct_right_prognosis)/len(pct_right_prognosis), 2)}%)',
+                          fontsize=13, color=self.ticker_color)
+        axs2[1].set_title('Средняя разница между текущей ценой актива\nи его ценой во время сигнала', fontsize=13,
+                          color=self.ticker_color)
 
         # set x-ticks
         xticklabels = ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '120']
+        # set ticker color
+        axs2[0].tick_params(axis='x', colors=self.ticker_color)
+        axs2[0].tick_params(axis='y', colors=self.ticker_color)
+        # set background color
+        axs2[0].patch.set_facecolor(self.background_color)
+        # set border color
+        axs2[0].spines['bottom'].set_color(self.border_color)
+        axs2[0].spines['top'].set_color(self.border_color)
+        axs2[0].spines['right'].set_color(self.border_color)
+        axs2[0].spines['left'].set_color(self.border_color)
 
         axs2[1].set_xticks(np.arange(1, 25, 2))
         axs2[1].set_xticklabels(xticklabels)
         plt.xticks(rotation=30)
 
         # set x-labels
-        axs2[1].set_xlabel(f"Время после сигнала, в минутах", fontsize=14)
+        axs2[1].set_xlabel(f"время после сигнала, в минутах", fontsize=12, color=self.ticker_color)
 
         # set y-labels
-        axs2[0].set_ylabel("Вероятность, %", fontsize=10.5)
-        axs2[1].set_ylabel("Разница цен %", fontsize=10.5)
+        axs2[0].set_ylabel("вероятность, %", fontsize=9.5, color=self.ticker_color)
+        axs2[1].set_ylabel("разница цен %", fontsize=9.5, color=self.ticker_color)
+
+        # set ticker color
+        axs2[1].tick_params(axis='x', colors=self.ticker_color)
+        axs2[1].tick_params(axis='y', colors=self.ticker_color)
+
+        # set background color
+        axs2[1].patch.set_facecolor(self.background_color)
+
+        # set border color
+        axs2[1].spines['bottom'].set_color(self.border_color)
+        axs2[1].spines['top'].set_color(self.border_color)
+        axs2[1].spines['right'].set_color(self.border_color)
+        axs2[1].spines['left'].set_color(self.border_color)
 
         # save plot to file
         filename = self.save_plot(ticker, timeframe, data)
@@ -185,3 +236,16 @@ class Visualizer:
         plt.close()
 
         return filename
+
+
+if __name__ == '__main__':
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import mplfinance as mpf
+    import matplotlib.style as style
+    from matplotlib import rcParams
+
+    matplotlib.use('Agg')
+    style.use('dark_background')
+    rcParams['font.family'] = 'URW Gothic'
+    print(set([f.name for f in matplotlib.font_manager.fontManager.ttflist]))

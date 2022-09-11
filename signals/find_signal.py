@@ -17,6 +17,8 @@ class SignalFactory(object):
             return SupResSignal(**params)
         elif indicator == 'SUP_RES_Robust':
             return SupResSignalRobust(**params)
+        elif indicator == 'PriceChange':
+            return PriceChangeSignal(**params)
 
 
 class SignalBase:
@@ -126,6 +128,32 @@ class RSISignal(SignalBase):
         return False, '', ()
 
 
+class PriceChangeSignal(SignalBase):
+    type = 'Indicator_signal'
+    name = 'PriceChange'
+
+    def __init__(self, **params):
+        super(PriceChangeSignal, self).__init__(params)
+
+    def find_signal(self, df: pd.DataFrame, index: int, *args) -> (bool, str, tuple):
+        """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
+            slowk and slowd lines have crossed and their direction is down/up """
+        # Find price change signal
+        if self.lower_bound(df['close_price_change'], index, df['q_low_lag_1'].loc[index]):
+            return True, 'buy', 1
+        elif self.lower_bound(df['close_price_change'], index, df['q_low_lag_2'].loc[index]):
+            return True, 'buy', 2
+        elif self.lower_bound(df['close_price_change'], index, df['q_low_lag_3'].loc[index]):
+            return True, 'buy', 3
+        elif self.higher_bound(df['close_price_change'], index, df['q_high_lag_1'].loc[index]):
+            return True, 'sell', 1
+        elif self.higher_bound(df['close_price_change'], index, df['q_high_lag_2'].loc[index]):
+            return True, 'buy', 2
+        elif self.higher_bound(df['close_price_change'], index, df['q_high_lag_3'].loc[index]):
+            return True, 'buy', 3
+        return False, '', ()
+
+
 class MACDSignal(SignalBase):
     type = 'Indicator_signal'
     name = 'MACD'
@@ -173,7 +201,8 @@ class SupResSignalRobust(SupResSignal):
         for level in levels:
             if buy and abs(df.loc[index, 'low'] - level[0]) < level_proximity and df.loc[index, 'low'] >= level[0]:
                 return True
-            if not buy and abs(df.loc[index, 'high'] - level[0]) < level_proximity and df.loc[index, 'high'] <= level[0]:
+            if not buy and abs(df.loc[index, 'high'] -
+                               level[0]) < level_proximity and df.loc[index, 'high'] <= level[0]:
                 return True
         return False
 

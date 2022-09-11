@@ -6,6 +6,7 @@ from os import environ
 import pandas as pd
 
 from config.config import ConfigFactory
+from visualizer.visualizer import Visualizer
 
 from threading import Thread
 from threading import Event
@@ -75,6 +76,10 @@ class TelegramBot(Thread):
         self.stopped = Event()
         # event for updating bot thread
         self.update_bot = Event()
+        # ticker database
+        self.database = None
+        # visualizer class
+        self.visualizer = Visualizer(**configs)
         # bot parameters
         self.params = params[self.type]['params']
         self.chat_ids = self.params['chat_ids']
@@ -133,6 +138,13 @@ class TelegramBot(Thread):
         tmp['pattern'] = [pattern]
         self.notification_df = pd.concat([tmp, self.notification_df])
 
+    def add_plot(self, message: list) -> str:
+        """ Generate signal plot, save it to file and add this filepath to the signal point data """
+        sig_img_path = self.visualizer.create_plot(self.database, message, levels=[])
+        # add image to set of images which we are going to delete
+        self.images_to_delete.add(sig_img_path)
+        return sig_img_path
+
     def check_previous_notifications(self, sig_time: pd.Timestamp, sig_type: str, ticker: str,
                                      timeframe: str, pattern: str) -> bool:
         """ Check if previous notifications wasn't send short time before """
@@ -183,10 +195,6 @@ class TelegramBot(Thread):
             timeframe = message[1]
             sig_type = message[2]
             sig_time = message[4]
-            # get path to image
-            sig_img_path = message[6][0]
-            # add image to set of images which we are going to delete
-            self.images_to_delete.add(sig_img_path)
             # get patterns
             sig_pattern = [p[0] for p in message[5]]
             sig_pattern = '_'.join(sig_pattern)
@@ -213,7 +221,7 @@ class TelegramBot(Thread):
         sig_pattern = [p[0] for p in message[5]]
         sig_pattern = '_'.join(sig_pattern)
         # get path to image
-        sig_img_path = message[6][0]
+        sig_img_path = self.add_plot(message)
         # get list of available exchanges
         sig_exchanges = message[7]
         # # get total and ticker statistics
@@ -232,12 +240,10 @@ class TelegramBot(Thread):
                 text += f' • {exchange}\n'
             text += 'Ссылка на TradingView: \n'
             text += f"https://ru.tradingview.com/symbols/{ticker.replace('-', '')}"
-            # add image to set of images which we are going to delete
-            self.images_to_delete.add(sig_img_path)
             # Send message + image
             if sig_img_path:
                 self.send_photo(chat_id, sig_img_path, text)
-            time.sleep(5)
+            time.sleep(1)
         self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.delete_images()
     

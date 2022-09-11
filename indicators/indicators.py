@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import talib as ta
 from abc import abstractmethod
+from collections import Counter
 
 
 class IndicatorFactory(object):
@@ -16,6 +17,8 @@ class IndicatorFactory(object):
             return MACD(params)
         elif indicator.startswith('SUP_RES'):
             return SupRes(params)
+        elif indicator.startswith('PriceChange'):
+            return PriceChange(params)
 
 
 class Indicator:
@@ -159,3 +162,47 @@ class SupRes(Indicator):
             if distinct_level:
                 levels_to_add.append(h_level)
         return levels + levels_to_add
+
+
+class PriceChange(Indicator):
+    """ Find big changes of price in both directions """
+    name = 'PriceChange'
+
+    def __init__(self, params):
+        super(PriceChange, self).__init__(params)
+        self.low_price_quantile = self.params.get('low_price_quantile', 5)
+        self.high_price_quantile = self.params.get('high_price_quantile', 95)
+        self.round_decimals = self.params.get('decimals', 4)
+        self.close_prices_lag_1 = Counter()
+        self.close_prices_lag_2 = Counter()
+        self.close_prices_lag_3 = Counter()
+
+    def get_price_change(self, df: pd.DataFrame, lag: int) -> list:
+        close_prices = (df['close'] - df['close'].shift(1)) / df['close'].shift(lag) * 100
+        df['close_price_change'] = np.round(close_prices.values, 4)
+        return df['close_price_change'].values
+
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str) -> pd.DataFrame:
+        # get frequency counter
+        close_prices_lag_1 = self.get_price_change(df, lag=1)
+        close_prices_lag_2 = self.get_price_change(df, lag=2)
+        close_prices_lag_3 = self.get_price_change(df, lag=3)
+        self.close_prices_lag_1 += Counter(close_prices_lag_1)
+        self.close_prices_lag_2 += Counter(close_prices_lag_2)
+        self.close_prices_lag_3 += Counter(close_prices_lag_3)
+        # get lag 1 quantiles and save to dataframe
+        q_lag_1 = pd.Series(data=self.close_prices_lag_1.keys(), index=self.close_prices_lag_1.values())
+        q_low_lag_1 = q_lag_1.sort_index().quantile(self.low_price_quantile / 100)
+        q_high_lag_1 = q_lag_1.sort_index().quantile(self.high_price_quantile / 100)
+        df[['q_low_lag_1', 'q_high_lag_1']] = q_low_lag_1, q_high_lag_1
+        # get lag 2 quantiles and save to dataframe
+        q_lag_2 = pd.Series(data=self.close_prices_lag_2.keys(), index=self.close_prices_lag_2.values())
+        q_low_lag_2 = q_lag_2.sort_index().quantile(self.low_price_quantile / 100)
+        q_high_lag_2 = q_lag_2.sort_index().quantile(self.high_price_quantile / 100)
+        df[['q_low_lag_2', 'q_high_lag_2']] = q_low_lag_2, q_high_lag_2
+        # get lag 3 quantiles and save to dataframe
+        q_lag_3 = pd.Series(data=self.close_prices_lag_3.keys(), index=self.close_prices_lag_3.values())
+        q_low_lag_3 = q_lag_3.sort_index().quantile(self.low_price_quantile / 100)
+        q_high_lag_3 = q_lag_3.sort_index().quantile(self.high_price_quantile / 100)
+        df[['q_low_lag_3', 'q_high_lag_3']] = q_low_lag_3, q_high_lag_3
+        return df

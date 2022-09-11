@@ -12,7 +12,6 @@ from data.get_data import DataFactory
 from config.config import ConfigFactory
 from signals.find_signal import FindSignal
 from signal_stat.signal_stat import SignalStat
-from visualizer.visualizer import Visualizer
 from indicators.indicators import IndicatorFactory
 from telegram_api.telegram_api import TelegramBot
 
@@ -83,6 +82,8 @@ class MainClass:
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframes = [self.higher_timeframe, self.work_timeframe]
+        # Create indicators
+        self.higher_tf_indicators, self.work_tf_indicators = self.create_indicators()
         # Set list of available exchanges, cryptocurrencies and tickers
         self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
@@ -123,18 +124,25 @@ class MainClass:
             data_qty = self.stat_update_range
         return df, data_qty
 
-    def get_indicators(self, df: pd.DataFrame, ticker: str, timeframe: str, exchange_api) -> pd.DataFrame:
-        """ Create indicator list from search signal patterns list, if it has the new data and
-            data is not from higher timeframe, else get only levels """
-        indicators = list()
-        if timeframe == self.work_timeframe:
-            indicator_list = configs['Indicator_list']
-        else:
-            indicator_list = ['SUP_RES']
+    @staticmethod
+    def create_indicators() -> (list, list):
+        """ Create indicators list for higher and working timeframe """
+        higher_tf_indicators = [IndicatorFactory.factory('SUP_RES', configs)]
+        work_tf_indicators = list()
+        indicator_list = configs['Indicator_list']
         for indicator in indicator_list:
             ind_factory = IndicatorFactory.factory(indicator, configs)
             if ind_factory:
-                indicators.append(ind_factory)
+                work_tf_indicators.append(ind_factory)
+        return higher_tf_indicators, work_tf_indicators
+
+    def get_indicators(self, df: pd.DataFrame, ticker: str, timeframe: str, exchange_api) -> pd.DataFrame:
+        """ Create indicator list from search signal patterns list, if it has the new data and
+            data is not from higher timeframe, else get only levels """
+        if timeframe == self.work_timeframe:
+            indicators = self.work_tf_indicators
+        else:
+            indicators = self.higher_tf_indicators
         # Write indicators to the dataframe, update dataframe dict
         self.database, df = exchange_api.add_indicator_data(self.database, df, indicators, ticker, timeframe,
                                                             configs)
@@ -174,14 +182,6 @@ class MainClass:
         # delete trades for the same tickers that are too close to each other
         self.database['stat']['buy'] = self.stat.delete_close_trades(self.database['stat']['buy'])
         self.database['stat']['sell'] = self.stat.delete_close_trades(self.database['stat']['sell'])
-
-    def add_plot(self, sig_points: list, levels: list) -> list:
-        """ Generate signal plot, save it to file and add this filepath to the signal point data """
-        v = Visualizer(**configs)
-        for sig_point in sig_points:
-            filename = v.create_plot(self.database, sig_point, levels)
-            sig_point[6].append(filename)
-        return sig_points
 
     def get_exchange_list(self, ticker: str, sig_points: list) -> list:
         """ Add list of exchanges on which this ticker can be traded """
@@ -243,12 +243,12 @@ class MainClass:
                                 # Clean statistics dataframes from close signal points
                                 self.clean_statistics()
                                 # Add list of exchanges where this ticker is available and has a good liquidity
-                                sig_points = self.get_exchange_list(ticker, sig_points)
+                                sig_points = self.get_exchange_list(ticker, sig_points[:1])
                                 # Add pattern and ticker statistics
                                 sig_points = self.calc_statistics(sig_points)
-                                # For every signal create its plot and add path to it
-                                sig_points = self.add_plot(sig_points, levels)
+                                # Send Telegram notification
                                 print([[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
+                                self.telegram_bot.database = self.database
                                 self.telegram_bot.notification_list += sig_points
                                 self.telegram_bot.update_bot.set()
                                 # Log the signals

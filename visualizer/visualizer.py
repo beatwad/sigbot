@@ -43,12 +43,18 @@ class Visualizer:
                 else:
                     axs[index + 1].axhline(y=indicator_param[1], color='r', linestyle='--', linewidth=1.5)
 
-    def plot_point(self, point_type: str, data: pd.DataFrame, ax: plt.axis) -> None:
+    def plot_point(self, point_type: str, data: pd.DataFrame, ax: plt.axis, index=0) -> None:
         """ Plot trade point """
-        if point_type == 'buy':
-            ax.scatter(self.plot_width, data['close'].iloc[-1], s=50, color='blue')
+        if index > 0:
+            color = 'blue'
+        elif point_type == 'buy':
+            color = 'green'
         else:
-            ax.scatter(self.plot_width, data['close'].iloc[-1], s=50, color='blue')
+            color = 'red'
+        if point_type == 'buy':
+            ax.scatter(self.plot_width-index, data['close'].iloc[-1-index], s=50, color=color)
+        else:
+            ax.scatter(self.plot_width-index, data['close'].iloc[-1-index], s=50, color=color)
 
     @staticmethod
     def plot_levels(data: pd.DataFrame, levels: list, axs: plt.axis) -> None:
@@ -100,6 +106,8 @@ class Visualizer:
         ohlc = ohlc.set_index('time')
 
         for index, indicator in enumerate(indicator_list):
+            if indicator == 'PriceChange':
+                self.plot_point(point_type, data, axs1[0], indicator_params[index])
             # plot indicator
             indicator_columns = self.indicator_dict[indicator]
             for i_c in indicator_columns:
@@ -241,7 +249,6 @@ class Visualizer:
 if __name__ == '__main__':
     import matplotlib
     import matplotlib.pyplot as plt
-    import mplfinance as mpf
     import matplotlib.style as style
     from matplotlib import rcParams
 

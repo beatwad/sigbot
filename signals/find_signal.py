@@ -139,18 +139,18 @@ class PriceChangeSignal(SignalBase):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """
         # Find price change signal
-        if self.lower_bound(df['close_price_change'], index, df['q_low_lag_1'].loc[index]):
+        if self.lower_bound(df['close_price_change_lag_1'], index, df['q_low_lag_1'].loc[index]):
             return True, 'buy', 1
-        elif self.lower_bound(df['close_price_change'], index, df['q_low_lag_2'].loc[index]):
+        elif self.lower_bound(df['close_price_change_lag_2'], index, df['q_low_lag_2'].loc[index]):
             return True, 'buy', 2
-        elif self.lower_bound(df['close_price_change'], index, df['q_low_lag_3'].loc[index]):
+        elif self.lower_bound(df['close_price_change_lag_3'], index, df['q_low_lag_3'].loc[index]):
             return True, 'buy', 3
-        elif self.higher_bound(df['close_price_change'], index, df['q_high_lag_1'].loc[index]):
+        elif self.higher_bound(df['close_price_change_lag_1'], index, df['q_high_lag_1'].loc[index]):
             return True, 'sell', 1
-        elif self.higher_bound(df['close_price_change'], index, df['q_high_lag_2'].loc[index]):
-            return True, 'buy', 2
-        elif self.higher_bound(df['close_price_change'], index, df['q_high_lag_3'].loc[index]):
-            return True, 'buy', 3
+        elif self.higher_bound(df['close_price_change_lag_2'], index, df['q_high_lag_2'].loc[index]):
+            return True, 'sell', 2
+        elif self.higher_bound(df['close_price_change_lag_3'], index, df['q_high_lag_3'].loc[index]):
+            return True, 'sell', 3
         return False, '', ()
 
 

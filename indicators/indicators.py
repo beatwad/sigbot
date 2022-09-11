@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import pandas as pd
 import talib as ta
@@ -179,36 +180,61 @@ class PriceChange(Indicator):
         self.low_price_quantile = self.params.get('low_price_quantile', 5)
         self.high_price_quantile = self.params.get('high_price_quantile', 95)
         self.round_decimals = self.params.get('decimals', 4)
-        self.close_prices_lag_1 = Counter()
-        self.close_prices_lag_2 = Counter()
-        self.close_prices_lag_3 = Counter()
+        self.stat_file_path = self.params.get('stat_file_path')
+        self.price_stat = {'lag1': Counter(),
+                           'lag2': Counter(),
+                           'lag3': Counter()}
+        # self.get_price_stat()
 
-    def get_price_change(self, df: pd.DataFrame, lag: int) -> list:
-        close_prices = (df['close'] - df['close'].shift(1)) / df['close'].shift(lag) * 100
-        df['close_price_change'] = np.round(close_prices.values, 4)
-        return df['close_price_change'].values
+    def get_price_stat(self) -> None:
+        """ Load price statistics from file """
+        try:
+            with open(self.stat_file_path, 'r') as f:
+                self.price_stat = json.load(f)
+        except FileNotFoundError:
+            pass
+        else:
+            for key in self.price_stat.keys():
+                del self.price_stat[key]['NaN']
+                self.price_stat[key] = {float(k): int(v) for k, v in self.price_stat[key].items()}
+                self.price_stat[key] = Counter(self.price_stat[key])
+
+    def save_price_stat(self) -> None:
+        """ Save price statistics to file """
+        with open(self.stat_file_path, 'w+') as f:
+            json.dump(self.price_stat, f)
+
+    @staticmethod
+    def get_price_change(df: pd.DataFrame, lag: int) -> list:
+        """ Get difference between current price and previous price """
+        close_prices = (df['close'] - df['close'].shift(lag)) / df['close'].shift(lag) * 100
+        df[f'close_price_change_lag_{lag}'] = np.round(close_prices.values, 4)
+        return df[f'close_price_change_lag_{lag}'].values
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str) -> pd.DataFrame:
+        """ Measure degree of ticker price change """
         # get frequency counter
         close_prices_lag_1 = self.get_price_change(df, lag=1)
         close_prices_lag_2 = self.get_price_change(df, lag=2)
         close_prices_lag_3 = self.get_price_change(df, lag=3)
-        self.close_prices_lag_1 += Counter(close_prices_lag_1)
-        self.close_prices_lag_2 += Counter(close_prices_lag_2)
-        self.close_prices_lag_3 += Counter(close_prices_lag_3)
+        self.price_stat['lag1'] += Counter(close_prices_lag_1)
+        self.price_stat['lag2'] += Counter(close_prices_lag_2)
+        self.price_stat['lag3'] += Counter(close_prices_lag_3)
         # get lag 1 quantiles and save to dataframe
-        q_lag_1 = pd.Series(data=self.close_prices_lag_1.keys(), index=self.close_prices_lag_1.values())
+        q_lag_1 = pd.Series(data=self.price_stat['lag1'].keys(), index=self.price_stat['lag1'].values())
         q_low_lag_1 = q_lag_1.sort_index().quantile(self.low_price_quantile / 100)
         q_high_lag_1 = q_lag_1.sort_index().quantile(self.high_price_quantile / 100)
         df[['q_low_lag_1', 'q_high_lag_1']] = q_low_lag_1, q_high_lag_1
         # get lag 2 quantiles and save to dataframe
-        q_lag_2 = pd.Series(data=self.close_prices_lag_2.keys(), index=self.close_prices_lag_2.values())
+        q_lag_2 = pd.Series(data=self.price_stat['lag2'].keys(), index=self.price_stat['lag2'].values())
         q_low_lag_2 = q_lag_2.sort_index().quantile(self.low_price_quantile / 100)
         q_high_lag_2 = q_lag_2.sort_index().quantile(self.high_price_quantile / 100)
         df[['q_low_lag_2', 'q_high_lag_2']] = q_low_lag_2, q_high_lag_2
         # get lag 3 quantiles and save to dataframe
-        q_lag_3 = pd.Series(data=self.close_prices_lag_3.keys(), index=self.close_prices_lag_3.values())
+        q_lag_3 = pd.Series(data=self.price_stat['lag3'].keys(), index=self.price_stat['lag3'].values())
         q_low_lag_3 = q_lag_3.sort_index().quantile(self.low_price_quantile / 100)
         q_high_lag_3 = q_lag_3.sort_index().quantile(self.high_price_quantile / 100)
         df[['q_low_lag_3', 'q_high_lag_3']] = q_low_lag_3, q_high_lag_3
+        # save price statistics to file
+        # self.save_price_stat()
         return df

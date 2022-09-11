@@ -80,7 +80,7 @@ class GetData:
 
     @staticmethod
     def add_indicator_data(dfs: dict, df: pd.DataFrame, indicators: list, ticker: str, timeframe: str,
-                           configs: dict) -> (dict, pd.DataFrame):
+                           data_qty: int, configs: dict) -> (dict, pd.DataFrame):
         """ Add indicator data to cryptocurrency dataframe """
         levels = list()
         for indicator in indicators:
@@ -89,9 +89,9 @@ class GetData:
                 merge = timeframe == configs['Timeframes']['work_timeframe']
                 higher_timeframe = configs['Timeframes']['higher_timeframe']
                 higher_levels = dfs.get(ticker, dict()).get(higher_timeframe, dict()).get('levels', list())
-                levels = indicator.get_indicator(df, ticker, timeframe, higher_levels, merge)
+                levels = indicator.get_indicator(df, ticker, timeframe, data_qty, higher_levels, merge)
             else:
-                df = indicator.get_indicator(df, ticker, timeframe)
+                df = indicator.get_indicator(df, ticker, timeframe, data_qty)
         # Update dataframe dict
         if ticker not in dfs:
             dfs[ticker] = dict()

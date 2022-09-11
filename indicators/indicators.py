@@ -43,7 +43,7 @@ class RSI(Indicator):
     def __init__(self, params: dict):
         super(RSI, self).__init__(params)
 
-    def get_indicator(self, df, ticker: str, timeframe: str) -> pd.DataFrame:
+    def get_indicator(self, df, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
         # if mean close price value is too small, RSI indicator can become zero,
         # so we should increase it to at least 1e-4
         if df['close'].mean() < 1e-4:
@@ -62,7 +62,7 @@ class STOCH(Indicator):
     def __init__(self, params):
         super(STOCH, self).__init__(params)
 
-    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str) -> pd.DataFrame:
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
         slowk, slowd = ta.STOCH(df['high'], df['low'],
                                 df['close'], **self.params)
         df['stoch_slowk'] = slowk
@@ -77,7 +77,7 @@ class MACD(Indicator):
     def __init__(self, params):
         super(MACD, self).__init__(params)
 
-    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str) -> pd.DataFrame:
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
         macd, macdsignal, macdhist = ta.MACD(df['close'], **self.params)
         df['macd'] = macd
         df['macdsignal'] = macdsignal
@@ -94,7 +94,8 @@ class SupRes(Indicator):
         self.alpha = self.params.get('alpha', 0.7)
         self.merge_level_multiplier = self.params.get('merge_level_multiplier', 1)
 
-    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, higher_levels, merge=False) -> list:
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, higher_levels,
+                      merge=False) -> list:
         # level proximity measure * multiplier (from configs)
         level_proximity = np.mean(df['high'] - df['low']) * self.merge_level_multiplier
         levels = self.find_levels(df, level_proximity)
@@ -205,18 +206,18 @@ class PriceChange(Indicator):
             json.dump(self.price_stat, f)
 
     @staticmethod
-    def get_price_change(df: pd.DataFrame, lag: int) -> list:
+    def get_price_change(df: pd.DataFrame, data_qty: int, lag: int) -> list:
         """ Get difference between current price and previous price """
         close_prices = (df['close'] - df['close'].shift(lag)) / df['close'].shift(lag) * 100
         df[f'close_price_change_lag_{lag}'] = np.round(close_prices.values, 4)
-        return df[f'close_price_change_lag_{lag}'].values
+        return df[f'close_price_change_lag_{lag}'][max(df.shape[0] - data_qty + 1, 0):].values
 
-    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str) -> pd.DataFrame:
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
         """ Measure degree of ticker price change """
         # get frequency counter
-        close_prices_lag_1 = self.get_price_change(df, lag=1)
-        close_prices_lag_2 = self.get_price_change(df, lag=2)
-        close_prices_lag_3 = self.get_price_change(df, lag=3)
+        close_prices_lag_1 = self.get_price_change(df, data_qty, lag=1)
+        close_prices_lag_2 = self.get_price_change(df, data_qty, lag=2)
+        close_prices_lag_3 = self.get_price_change(df, data_qty, lag=3)
         self.price_stat['lag1'] += Counter(close_prices_lag_1)
         self.price_stat['lag2'] += Counter(close_prices_lag_2)
         self.price_stat['lag3'] += Counter(close_prices_lag_3)

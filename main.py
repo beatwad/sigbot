@@ -121,9 +121,6 @@ class MainClass:
         df = self.database.get(ticker, dict()).get(timeframe, dict()).get('data', pd.DataFrame())
         # Write data to the dataframe
         df, data_qty = exchange_api.get_data(df, ticker, timeframe)
-        # If enough time has passed - update statistics
-        if data_qty > 1 and self.first is False and timeframe == self.work_timeframe:
-            data_qty = self.stat_update_range
         return df, data_qty
 
     @staticmethod
@@ -138,7 +135,8 @@ class MainClass:
                 work_tf_indicators.append(ind_factory)
         return higher_tf_indicators, work_tf_indicators
 
-    def get_indicators(self, df: pd.DataFrame, ticker: str, timeframe: str, exchange_api) -> pd.DataFrame:
+    def get_indicators(self, df: pd.DataFrame, ticker: str, timeframe: str,
+                       exchange_api, data_qty: int) -> (pd.DataFrame, int):
         """ Create indicator list from search signal patterns list, if it has the new data and
             data is not from higher timeframe, else get only levels """
         if timeframe == self.work_timeframe:
@@ -147,8 +145,11 @@ class MainClass:
             indicators = self.higher_tf_indicators
         # Write indicators to the dataframe, update dataframe dict
         self.database, df = exchange_api.add_indicator_data(self.database, df, indicators, ticker, timeframe,
-                                                            configs)
-        return df
+                                                            data_qty, configs)
+        # If enough time has passed - update statistics
+        if data_qty > 1 and self.first is False and timeframe == self.work_timeframe:
+            data_qty = self.stat_update_range
+        return df, data_qty
 
     def get_signals(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> (list, list):
         """ Try to find the signals and if succeed - return them and support/resistance levels """
@@ -230,8 +231,8 @@ class MainClass:
                     # If we get new data - create indicator list from search signal patterns list, if it has
                     # the new data and data is not from higher timeframe, else get only levels
                     if data_qty > 1:
-                        # Get indicators
-                        df = self.get_indicators(df, ticker, timeframe, exchange_api)
+                        # Get indicators and quantity of data
+                        df, data_qty = self.get_indicators(df, ticker, timeframe, exchange_api, data_qty)
                         # If current timeframe is working timeframe
                         if timeframe == self.work_timeframe:
                             # Get the signals

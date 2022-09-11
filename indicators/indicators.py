@@ -43,7 +43,13 @@ class RSI(Indicator):
         super(RSI, self).__init__(params)
 
     def get_indicator(self, df, ticker: str, timeframe: str) -> pd.DataFrame:
-        rsi = ta.RSI(df['close'], **self.params)
+        # if mean close price value is too small, RSI indicator can become zero,
+        # so we should increase it to at least 1e-4
+        if df['close'].mean() < 1e-4:
+            multiplier = int(1e-4/df['close'].mean()) + 1
+            rsi = ta.RSI(df['close'] * multiplier, **self.params)
+        else:
+            rsi = ta.RSI(df['close'], **self.params)
         df['rsi'] = rsi
         return df
 

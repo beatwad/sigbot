@@ -88,6 +88,8 @@ class MainClass:
         self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
+        # Create find signal class
+        self.find_signal = FindSignal(configs)
         # Get API and ticker list for every exchange in list
         for ex in list(self.exchanges.keys()):
             # get exchange API
@@ -150,9 +152,8 @@ class MainClass:
 
     def get_signals(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> (list, list):
         """ Try to find the signals and if succeed - return them and support/resistance levels """
-        fs = FindSignal(configs)
         levels = self.database[ticker][timeframe]['levels']
-        sig_points = fs.find_signal(df, ticker, timeframe, levels, data_qty)
+        sig_points = self.find_signal.find_signal(df, ticker, timeframe, levels, data_qty)
         return sig_points, levels
 
     def filter_sig_points(self, sig_points: list, df: pd.DataFrame) -> list:
@@ -256,7 +257,7 @@ class MainClass:
                                               f'timeframe is {timeframe}, time is {sig_points[0][4]}'
                                 logger.info(sig_message)
                         # Save dataframe for further analysis
-                        # self.save_dataframe(df, ticker, timeframe)
+                        self.save_dataframe(df, ticker, timeframe)
 
         self.first = False
 

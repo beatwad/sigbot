@@ -158,10 +158,17 @@ class MainClass:
         return sig_points, levels
 
     def filter_sig_points(self, sig_points: list, df: pd.DataFrame) -> list:
-        """ Remove signals that were sent too long time ago (more than 15 minutes) """
+        """ Remove signals that were sent too long time ago (more than 15 minutes)
+            or if earlier signal is already exists in the signal list """
         filtered_points = list()
+        signal_combination = list()
         for point in sig_points:
-            ticker, timeframe, point_index = point[0], point[1], point[2]
+            ticker, timeframe, point_index, pattern = point[0], point[1], point[2], point[5]
+            # if earlier signal is already exists in the signal list - don't add one more
+            if (ticker, timeframe, point_index, pattern) in signal_combination:
+                continue
+            else:
+                signal_combination.append((ticker, timeframe, point_index, pattern))
             # if too much time has passed after signal was found - skip it
             if point_index >= df.shape[0] - self.max_prev_candle_limit:
                 filtered_points.append(point)
@@ -245,7 +252,7 @@ class MainClass:
                                 # Clean statistics dataframes from close signal points
                                 self.clean_statistics()
                                 # Add list of exchanges where this ticker is available and has a good liquidity
-                                sig_points = self.get_exchange_list(ticker, sig_points[:1])
+                                sig_points = self.get_exchange_list(ticker, sig_points)
                                 # Add pattern and ticker statistics
                                 sig_points = self.calc_statistics(sig_points)
                                 # Send Telegram notification

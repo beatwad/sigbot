@@ -212,6 +212,7 @@ class FindSignal:
     def __init__(self, configs):
         self.configs = configs
         self.indicator_list = configs['Indicator_list']
+        self.indicator_signals = self.prepare_indicator_signals()
         self.patterns = configs['Patterns']
 
     def prepare_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -247,13 +248,12 @@ class FindSignal:
         index_list = list()
 
         df = self.prepare_dataframe(df)
-        indicator_signals = self.prepare_indicator_signals()
         # Support and Resistance indicator
         sup_res = None
         # Level proximity measure * multiplier (from configs)
         level_proximity = None
 
-        for indicator_signal in indicator_signals:
+        for indicator_signal in self.indicator_signals:
             if indicator_signal.name == 'SUP_RES':
                 sup_res = indicator_signal
                 level_proximity = np.mean(df['high'] - df['low']) * sup_res.proximity_multiplier
@@ -263,7 +263,7 @@ class FindSignal:
             time = df.loc[index, 'time']
             sig_patterns = [p.copy() for p in self.patterns]
             # Check if current signal is found and add '1' to all patterns where it was added
-            for indicator_signal in indicator_signals:
+            for indicator_signal in self.indicator_signals:
                 fs = indicator_signal.find_signal(df, index, levels)
                 if fs[0] is True:
                     for pattern in sig_patterns:

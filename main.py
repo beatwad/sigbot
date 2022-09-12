@@ -276,7 +276,7 @@ class MainClass:
                                 sig_points = self.calc_statistics(sig_points)
                                 # Send Telegram notification
                                 print([[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
-                                if not self.first:
+                                if self.first:
                                     self.telegram_bot.database = self.database
                                     self.telegram_bot.notification_list += sig_points
                                     self.telegram_bot.update_bot.set()

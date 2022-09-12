@@ -243,7 +243,7 @@ class TelegramBot(Thread):
             # Send message + image
             if sig_img_path:
                 self.send_photo(chat_id, sig_img_path, text)
-            time.sleep(10)
+            time.sleep(1)
         self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.delete_images()
     

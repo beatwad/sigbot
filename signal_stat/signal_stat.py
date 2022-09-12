@@ -35,7 +35,8 @@ class SignalStat:
             dfs = self.process_statistics(dfs, point, signal_price, result_prices)
 
         # Save trade statistics on disk
-        dfs = self.save_statistics(dfs)
+        if signal_points:
+            dfs = self.save_statistics(dfs)
         return dfs
 
     def get_result_price_after_period(self, df: pd.DataFrame, index: int, ttype: str) -> list:
@@ -144,22 +145,22 @@ class SignalStat:
         """ Save statistics to the disk """
         if not self.test:
             try:
-                open('signal_stat/buy_stat.csv', 'r').close()
-                open('signal_stat/sell_stat.csv', 'r').close()
+                open('signal_stat/buy_stat.pkl', 'r').close()
+                open('signal_stat/sell_stat.pkl', 'r').close()
             except FileNotFoundError:
-                open('signal_stat/buy_stat.csv', 'w+').close()
-                open('signal_stat/sell_stat.csv', 'w+').close()
+                open('signal_stat/buy_stat.pkl', 'w+').close()
+                open('signal_stat/sell_stat.pkl', 'w+').close()
             # Write statistics to the dataframe dict
-            dfs['stat']['buy'].to_csv('signal_stat/buy_stat.csv', index=False)
-            dfs['stat']['sell'].to_csv('signal_stat/sell_stat.csv', index=False)
+            dfs['stat']['buy'].to_pickle('signal_stat/buy_stat.pkl')
+            dfs['stat']['sell'].to_pickle('signal_stat/sell_stat.pkl')
         return dfs
 
     @staticmethod
     def load_statistics() -> (pd.DataFrame, pd.DataFrame):
         """ Load statistics from the disk """
         try:
-            buy_stat = pd.read_csv('signal_stat/buy_stat.csv')
-            sell_stat = pd.read_csv('signal_stat/sell_stat.csv')
+            buy_stat = pd.read_pickle('signal_stat/buy_stat.pkl')
+            sell_stat = pd.read_pickle('signal_stat/sell_stat.pkl')
         except (FileNotFoundError, EOFError):
             buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
             sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])

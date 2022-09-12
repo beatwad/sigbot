@@ -23,7 +23,7 @@
                         "SUP_RES" :  {"params": {"proximity_multiplier":  0.5}},
                         "SUP_RES_Robust" :  {"params": {"proximity_multiplier":  0.5}},
                         "PriceChange" :  {"params": {}}},
-  "Signal_params": {"params":  {"max_prev_candle_limit": 200}},
+  "Signal_params": {"params":  {"max_prev_candle_limit": 2}},
   "SignalStat":  {"params": {"take_profit_multiplier":  2, "stop_loss_multiplier":  2,
                              "test":  0, "stat_day_limit":  4, "prev_sig_limit":  2400,
                              "stat_update_period":  3600, "stat_range":  24}},

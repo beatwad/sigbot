@@ -29,8 +29,8 @@ def create_logger():
     """
     Creates a logging object and returns it
     """
-    logger = logging.getLogger("example_logger")
-    logger.setLevel(logging.INFO)
+    _logger = logging.getLogger("example_logger")
+    _logger.setLevel(logging.INFO)
     # create the logging file handler
     log_path = configs['Log']['params']['log_path']
     fh = logging.FileHandler(log_path)
@@ -38,8 +38,8 @@ def create_logger():
     formatter = logging.Formatter(fmt)
     fh.setFormatter(formatter)
     # add handler to logger object
-    logger.addHandler(fh)
-    return logger
+    _logger.addHandler(fh)
+    return _logger
 
 
 # create logger
@@ -69,6 +69,8 @@ class MainClass:
     """ Class for running main program cycle """
     # Create statistics class
     stat = SignalStat(**configs)
+    # Create find signal class
+    find_signal = FindSignal(configs)
     buy_stat, sell_stat = stat.load_statistics()
     database = {'stat': {'buy': buy_stat,
                          'sell': sell_stat}}
@@ -88,8 +90,6 @@ class MainClass:
         self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
-        # Create find signal class
-        self.find_signal = FindSignal(configs)
         # Get API and ticker list for every exchange in list
         for ex in list(self.exchanges.keys()):
             # get exchange API
@@ -157,7 +157,8 @@ class MainClass:
         sig_points = self.find_signal.find_signal(df, ticker, timeframe, levels, data_qty)
         return sig_points, levels
 
-    def filter_sig_points(self, sig_points: list) -> list:
+    @staticmethod
+    def filter_sig_points(sig_points: list) -> list:
         """ Remove signals if earlier signal is already exists in the signal list """
         filtered_points = list()
         signal_combination = list()
@@ -276,7 +277,7 @@ class MainClass:
                                 sig_points = self.calc_statistics(sig_points)
                                 # Send Telegram notification
                                 print([[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
-                                if self.first:
+                                if not self.first:
                                     self.telegram_bot.database = self.database
                                     self.telegram_bot.notification_list += sig_points
                                     self.telegram_bot.update_bot.set()

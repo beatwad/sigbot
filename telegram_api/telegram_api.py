@@ -1,6 +1,4 @@
 import time
-import logging
-import functools
 from os import remove
 from os import environ
 import pandas as pd
@@ -19,50 +17,6 @@ from telegram.ext import Updater, CallbackContext, MessageHandler, Filters
 environ["ENV"] = "development"
 # Get configs
 configs = ConfigFactory.factory(environ).configs
-
-
-def create_logger():
-    """
-    Creates a logging object and returns it
-    """
-    try:
-        logger = logging.getLogger("example_logger")
-        logger.setLevel(logging.INFO)
-        # create the logging file handler
-        log_path = configs['Telegram']['params']['log_path']
-        fh = logging.FileHandler(log_path)
-        fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        formatter = logging.Formatter(fmt)
-        fh.setFormatter(formatter)
-        # add handler to logger object
-        logger.addHandler(fh)
-        return logger
-    except FileNotFoundError:
-        return None
-
-
-# create logger
-logger = create_logger()
-
-
-def exception(function):
-    """
-    A decorator that wraps the passed in function and logs
-    exceptions should one occur
-    """
-    @functools.wraps(function)
-    def wrapper(*args, **kwargs):
-        logger = create_logger()
-        try:
-            return function(*args, **kwargs)
-        except:
-            # log the exception
-            err = "There was an exception in  "
-            err += function.__name__
-            logger.exception(err)
-            # re-raise the exception
-            raise
-    return wrapper
 
 
 class TelegramBot(Thread):
@@ -94,7 +48,6 @@ class TelegramBot(Thread):
         # set of images to delete
         self.images_to_delete = set()
 
-    @exception
     def run(self) -> None:
         """ Until stopped event is set - run bot's thread and update it every second """
         # on different commands - answer in Telegram

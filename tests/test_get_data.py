@@ -187,6 +187,8 @@ def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
     gd.fill_ticker_dict(tickers)
 
     data = gd.get_data(df.loc[:499], ticker, timeframe)[0]
-    dfs[ticker][timeframe]['data'] = gd.add_indicator_data(dfs, data, indicators, ticker, timeframe, configs)[1]
+    data_qty = 20
+    dfs[ticker][timeframe]['data'] = gd.add_indicator_data(dfs, data, indicators, ticker, timeframe,
+                                                           data_qty, configs)[1]
     assert dfs[ticker][timeframe]['data'].equals(expected[0])
     assert dfs[ticker][timeframe]['levels'] == expected[1]

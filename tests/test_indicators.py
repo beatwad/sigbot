@@ -32,7 +32,8 @@ df_eth_1d = pd.read_pickle('test_ETHUSDT_1d.pkl')
                           ], ids=repr)
 def test_rsi(df, timeframe, ticker, expected):
     indicator = IndicatorFactory.factory('RSI', configs)
-    df = indicator.get_indicator(df, ticker, timeframe)
+    data_qty = 20
+    df = indicator.get_indicator(df, ticker, timeframe, data_qty)
     assert round(df.loc[223, 'rsi'], 2) == expected[0]
     assert round(df.loc[500, 'rsi'], 2) == expected[1]
     assert round(df.loc[998, 'rsi'], 2) == expected[2]
@@ -51,7 +52,8 @@ def test_rsi(df, timeframe, ticker, expected):
                           ], ids=repr)
 def test_stoch(df, timeframe, ticker, expected):
     indicator = IndicatorFactory.factory('STOCH', configs)
-    df = indicator.get_indicator(df, ticker, timeframe)
+    data_qty = 20
+    df = indicator.get_indicator(df, ticker, timeframe, data_qty)
     assert round(df.loc[500, 'stoch_slowk'], 2) == expected[0][0]
     assert round(df.loc[500, 'stoch_slowd'], 2) == expected[0][1]
     assert round(df.loc[998, 'stoch_slowk'], 2) == expected[1][0]
@@ -142,5 +144,6 @@ def test_add_higher_levels(levels, higher_levels, s, expected):
                           ], ids=repr)
 def test_sup_res_find_levels(df, timeframe, ticker, higher_levels, merge, expected):
     indicator = IndicatorFactory.factory('SUP_RES', configs)
-    res = indicator.get_indicator(df, ticker, timeframe, higher_levels, merge)
+    data_qty = 20
+    res = indicator.get_indicator(df, ticker, timeframe, data_qty, higher_levels, merge)
     assert res == expected

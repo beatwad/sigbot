@@ -30,6 +30,9 @@ def create_test_data():
     # Create exchange API
     exchange_api = DataFactory.factory('Binance', **configs)
 
+    # Set data quantity
+    data_qty = 20
+
     # Higher timeframe from which we take levels
     work_timeframe = configs['Timeframes']['work_timeframe']
 
@@ -47,7 +50,7 @@ def create_test_data():
                     indicators.append(ind_factory)
             # Write indicators to dataframe, update dataframe dict
             dfs, df = exchange_api.add_indicator_data(dfs, dfs[ticker][timeframe]['data'], indicators, ticker,
-                                                      timeframe, configs)
+                                                      timeframe, data_qty, configs)
 
     return dfs, df
 

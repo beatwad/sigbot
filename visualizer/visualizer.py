@@ -63,8 +63,8 @@ class Visualizer:
             if data['low'].min() <= level[0] <= data['high'].max():  # and level[1] == 3:
                 axs[0].axhline(y=level[0], color='b', linestyle='dotted', linewidth=1.5)
 
-    def save_plot(self, ticker, timeframe, data):
-        filename = f"{self.image_path}/{ticker}_{timeframe}_{data['time'].iloc[-1]}.png"
+    def save_plot(self, ticker, timeframe, pattern, data):
+        filename = f"{self.image_path}/{ticker}_{timeframe}_{pattern}_{data['time'].iloc[-1]}.png"
         plt.savefig(filename, bbox_inches='tight')
         return filename
 
@@ -238,7 +238,7 @@ class Visualizer:
         axs2[1].spines['left'].set_color(self.border_color)
 
         # save plot to file
-        filename = self.save_plot(ticker, timeframe, data)
+        filename = self.save_plot(ticker, timeframe, pattern, data)
 
         # close figure
         plt.close()

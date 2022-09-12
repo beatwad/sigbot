@@ -210,7 +210,6 @@ class SupResSignalRobust(SupResSignal):
 class FindSignal:
     """ Class for searching of the indicator combination """
     def __init__(self, configs):
-        self.first = True
         self.configs = configs
         self.indicator_list = configs['Indicator_list']
         self.patterns = configs['Patterns']
@@ -239,7 +238,8 @@ class FindSignal:
             indicator_signals.append(SignalFactory.factory(indicator, self.configs))
         return indicator_signals
 
-    def find_signal(self, df: pd.DataFrame, ticker: str, timeframe: str, levels: list, data_qty: int) -> list:
+    def find_signal(self, df: pd.DataFrame, ticker: str, timeframe: str, levels: list,
+                    data_qty: int) -> list:
         """ Search for the signals through the dataframe, if found - add its index and trade type to the list.
             If dataset was updated - don't search through the whole dataset, only through updated part.
         """
@@ -259,12 +259,9 @@ class FindSignal:
                 level_proximity = np.mean(df['high'] - df['low']) * sup_res.proximity_multiplier
                 break
 
-        for index in range(max(df.shape[0]-data_qty, 2), df.shape[0]):
+        for index in range(max(df.shape[0] - data_qty, 2), df.shape[0]):
             time = df.loc[index, 'time']
             sig_patterns = [p.copy() for p in self.patterns]
-            # If we update our signal data, it's not necessary to check it all
-            if index < df.shape[0]-10 and not self.first:
-                continue
             # Check if current signal is found and add '1' to all patterns where it was added
             for indicator_signal in indicator_signals:
                 fs = indicator_signal.find_signal(df, index, levels)
@@ -283,11 +280,11 @@ class FindSignal:
                 else:
                     if "SUP_RES" in [p[0] for p in pattern]:
                         if sup_res.check_levels(df, index, levels, level_proximity, True):
-                            point = (ticker, timeframe, index, 'buy', time, [(p[0], p[3]) for p in pattern],
-                                     [], [], [], [])
+                            point = [ticker, timeframe, index, 'buy', time, [(p[0], p[3]) for p in pattern],
+                                     [], [], [], []]
                     else:
-                        point = (ticker, timeframe, index, 'buy', time, [(p[0], p[3]) for p in pattern],
-                                 [], [], [], [])
+                        point = [ticker, timeframe, index, 'buy', time, [(p[0], p[3]) for p in pattern],
+                                 [], [], [], []]
 
                 for p in pattern:
                     if (p[1], p[2]) != (True, 'sell') and (p[1], p[2]) != (True, ''):
@@ -295,15 +292,13 @@ class FindSignal:
                 else:
                     if "SUP_RES" in [p[0] for p in pattern]:
                         if sup_res.check_levels(df, index, levels, level_proximity, False):
-                            point = (ticker, timeframe, index, 'sell', time, [(p[0], p[3]) for p in pattern],
-                                     [], [], [], [])
+                            point = [ticker, timeframe, index, 'sell', time, [(p[0], p[3]) for p in pattern],
+                                     [], [], [], []]
                     else:
-                        point = (ticker, timeframe, index, 'sell', time, [(p[0], p[3]) for p in pattern],
-                                 [], [], [], [])
+                        point = [ticker, timeframe, index, 'sell', time, [(p[0], p[3]) for p in pattern],
+                                 [], [], [], []]
                 if point:  # and index not in index_list:
                     index_list.append(index)
                     points.append(point)
-
-        self.first = False
 
         return points

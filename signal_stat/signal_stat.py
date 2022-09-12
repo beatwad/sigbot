@@ -172,7 +172,7 @@ class SignalStat:
         """ Calculate signal statistics for all found signals and all tickers  """
         stat = dfs['stat'][ttype]
         stat = self.cut_stat_df(stat)
-        stat = stat[(stat['pattern'].astype(str) == pattern)]
+        stat = stat[(stat['pattern'] == pattern)]
         if stat.shape[0] == 0:
             return [None for _ in range(1, self.stat_range + 1)]
         result_statistics = list()

@@ -157,18 +157,36 @@ class MainClass:
         sig_points = self.find_signal.find_signal(df, ticker, timeframe, levels, data_qty)
         return sig_points, levels
 
-    def filter_sig_points(self, sig_points: list, df: pd.DataFrame) -> list:
-        """ Remove signals that were sent too long time ago (more than 15 minutes)
-            or if earlier signal is already exists in the signal list """
+    def filter_sig_points(self, sig_points: list) -> list:
+        """ Remove signals if earlier signal is already exists in the signal list """
         filtered_points = list()
         signal_combination = list()
         for point in sig_points:
-            ticker, timeframe, point_index, pattern = point[0], point[1], point[2], str(point[5][0])
+            ticker, timeframe, point_index, pattern = point[0], point[1], point[2], point[5]
+            # pattern is PriceChange - we need only its name without settings
+            if str(pattern[0][0]).startswith('PriceChange'):
+                pattern = str(pattern[0][0])
+            else:
+                pattern = str(pattern)
+            point[5] = pattern
+
             # if earlier signal is already exists in the signal list - don't add one more
-            if (ticker, timeframe, point_index, pattern) in signal_combination:
+            if (ticker, timeframe, point_index-1, pattern) in signal_combination or \
+                    (ticker, timeframe, point_index-2, pattern) in signal_combination or \
+                    (ticker, timeframe, point_index-3, pattern) in signal_combination or \
+                    (ticker, timeframe, point_index-4, pattern) in signal_combination or \
+                    (ticker, timeframe, point_index-5, pattern) in signal_combination:
                 continue
             else:
                 signal_combination.append((ticker, timeframe, point_index, pattern))
+                filtered_points.append(point)
+        return filtered_points
+
+    def filter_early_sig_points(self, sig_points: list, df: pd.DataFrame) -> list:
+        """ Remove signals that were sent too long time ago (more than 10-15 minutes) """
+        filtered_points = list()
+        for point in sig_points:
+            point_index = point[2]
             # if too much time has passed after signal was found - skip it
             if point_index >= df.shape[0] - self.max_prev_candle_limit:
                 filtered_points.append(point)
@@ -182,7 +200,7 @@ class MainClass:
         """ Calculate statistics and write it for every signal """
         for sig_point in sig_points:
             sig_type = sig_point[3]
-            pattern = str(sig_point[5])
+            pattern = sig_point[5]
             result_statistics = self.stat.calculate_total_stat(self.database, sig_type, pattern)
             sig_point[8].append(result_statistics)
         return sig_points
@@ -244,10 +262,12 @@ class MainClass:
                         if timeframe == self.work_timeframe:
                             # Get the signals
                             sig_points, levels = self.get_signals(df, ticker, timeframe, data_qty)
+                            # Filter repeating signals
+                            sig_points = self.filter_sig_points(sig_points)
                             # Add the signals to statistics
                             self.add_statistics(sig_points)
-                            # Get signals only if they are fresh (not earlier than 10-15 mins ago)
-                            sig_points = self.filter_sig_points(sig_points, df)
+                            # Get signals only if they are fresh (not earlier than 10-15 min ago)
+                            sig_points = self.filter_early_sig_points(sig_points, df)
                             if sig_points:
                                 # Clean statistics dataframes from close signal points
                                 self.clean_statistics()
@@ -262,8 +282,8 @@ class MainClass:
                                     self.telegram_bot.notification_list += sig_points
                                     self.telegram_bot.update_bot.set()
                                     # Log the signals
-                                    sig_message = f'Find the signal points. Exchange is {exchange}, ticker is {ticker},' \
-                                                  f' timeframe is {timeframe}, time is {sig_points[0][4]}'
+                                    sig_message = f'Find the signal points. Exchange is {exchange}, ticker is ' \
+                                                  f'{ticker}, timeframe is {timeframe}, time is {sig_points[0][4]}'
                                     logger.info(sig_message)
                         # Save dataframe for further analysis
                         self.save_dataframe(df, ticker, timeframe)

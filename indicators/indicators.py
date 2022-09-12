@@ -223,18 +223,18 @@ class PriceChange(Indicator):
         self.price_stat['lag3'] += Counter(close_prices_lag_3)
         # get lag 1 quantiles and save to dataframe
         q_lag_1 = pd.Series(data=self.price_stat['lag1'].keys(), index=self.price_stat['lag1'].values())
-        q_low_lag_1 = q_lag_1.sort_index().quantile(self.low_price_quantile / 100)
-        q_high_lag_1 = q_lag_1.sort_index().quantile(self.high_price_quantile / 100)
+        q_low_lag_1 = q_lag_1.sort_index().quantile(self.low_price_quantile / 1000)
+        q_high_lag_1 = q_lag_1.sort_index().quantile(self.high_price_quantile / 1000)
         df[['q_low_lag_1', 'q_high_lag_1']] = q_low_lag_1, q_high_lag_1
         # get lag 2 quantiles and save to dataframe
         q_lag_2 = pd.Series(data=self.price_stat['lag2'].keys(), index=self.price_stat['lag2'].values())
-        q_low_lag_2 = q_lag_2.sort_index().quantile(self.low_price_quantile / 100)
-        q_high_lag_2 = q_lag_2.sort_index().quantile(self.high_price_quantile / 100)
+        q_low_lag_2 = q_lag_2.sort_index().quantile(self.low_price_quantile / 1000)
+        q_high_lag_2 = q_lag_2.sort_index().quantile(self.high_price_quantile / 1000)
         df[['q_low_lag_2', 'q_high_lag_2']] = q_low_lag_2, q_high_lag_2
         # get lag 3 quantiles and save to dataframe
         q_lag_3 = pd.Series(data=self.price_stat['lag3'].keys(), index=self.price_stat['lag3'].values())
-        q_low_lag_3 = q_lag_3.sort_index().quantile(self.low_price_quantile / 100)
-        q_high_lag_3 = q_lag_3.sort_index().quantile(self.high_price_quantile / 100)
+        q_low_lag_3 = q_lag_3.sort_index().quantile(self.low_price_quantile / 1000)
+        q_high_lag_3 = q_lag_3.sort_index().quantile(self.high_price_quantile / 1000)
         df[['q_low_lag_3', 'q_high_lag_3']] = q_low_lag_3, q_high_lag_3
         # save price statistics to file
         # self.save_price_stat()

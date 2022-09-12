@@ -31,6 +31,8 @@ class Visualizer:
         self.boundary_indicators = self.params.get('boundary_indicators', list())
         # Max number of previous candles for which signal can be searched for
         self.max_prev_candle_limit = self.params.get('max_prev_candle_limit', 0)
+        # dict for storing previous statistics values
+        self.prev_stat_dict = dict()
 
     def plot_indicator_parameters(self, point_type: str, index: int, indicator: str,
                                   axs: plt.axis, indicator_params: list) -> None:
@@ -78,6 +80,14 @@ class Visualizer:
             return ticker
         ticker = ticker[:-4] + '/' + ticker[-4:]
         return ticker
+
+    @staticmethod
+    def statistics_change(prev_mean_right_prognosis, mean_right_prognosis):
+        if prev_mean_right_prognosis > mean_right_prognosis:
+            return f'= уменьшилась на {round(prev_mean_right_prognosis - mean_right_prognosis, 2)}%'
+        if prev_mean_right_prognosis < mean_right_prognosis:
+            return f'= выросла на {round(mean_right_prognosis - prev_mean_right_prognosis, 2)}%'
+        return '= без изменений'
 
     def create_plot(self, dfs, point, levels):
         # get necessary info
@@ -173,6 +183,21 @@ class Visualizer:
         pct_price_diff_mean_plus_std = [a + b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
         pct_price_diff_mean_minus_std = [a - b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
 
+        # get previous percent of right prognosis and save current percent to statistics dictionary
+        mean_right_prognosis = round(sum(pct_right_prognosis)/len(pct_right_prognosis), 2)
+        if str(pattern[0][0]).startswith('PriceChange'):
+            key = str(pattern[0][0])
+        else:
+            key = str(pattern)
+        if key in self.prev_stat_dict:
+            prev_mean_right_prognosis = self.prev_stat_dict[key]
+        else:
+            prev_mean_right_prognosis = mean_right_prognosis
+        self.prev_stat_dict[key] = mean_right_prognosis
+
+        # get change of statistics
+        stat_change = self.statistics_change(prev_mean_right_prognosis, mean_right_prognosis)
+
         # make subplots
         axs2 = subfigs[1].subplots(2, 1, sharex=True)
 
@@ -195,7 +220,7 @@ class Visualizer:
         else:
             title = '\nСTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
         axs2[0].set_title(f'{title}\n\nВероятность правильного движения цены после сигнала\n'
-                          f'(в среднем - {round(sum(pct_right_prognosis)/len(pct_right_prognosis), 2)}%)',
+                          f'(в среднем - {mean_right_prognosis}% {stat_change})',
                           fontsize=13, color=self.ticker_color)
         axs2[1].set_title('Средняя разница между текущей ценой актива\nи его ценой во время сигнала', fontsize=13,
                           color=self.ticker_color)

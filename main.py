@@ -168,7 +168,6 @@ class MainClass:
                 pattern = str(pattern[0][0])
             else:
                 pattern = str(pattern)
-            point[5] = pattern
 
             # if earlier signal is already exists in the signal list - don't add one more
             if (ticker, timeframe, point_index-1, pattern) in signal_combination or \

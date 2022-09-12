@@ -163,7 +163,7 @@ class MainClass:
         filtered_points = list()
         signal_combination = list()
         for point in sig_points:
-            ticker, timeframe, point_index, pattern = point[0], point[1], point[2], point[5]
+            ticker, timeframe, point_index, pattern = point[0], point[1], point[2], str(point[5][0])
             # if earlier signal is already exists in the signal list - don't add one more
             if (ticker, timeframe, point_index, pattern) in signal_combination:
                 continue
@@ -257,13 +257,14 @@ class MainClass:
                                 sig_points = self.calc_statistics(sig_points)
                                 # Send Telegram notification
                                 print([[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
-                                self.telegram_bot.database = self.database
-                                self.telegram_bot.notification_list += sig_points
-                                self.telegram_bot.update_bot.set()
-                                # Log the signals
-                                sig_message = f'Find the signal points. Exchange is {exchange}, ticker is {ticker}, ' \
-                                              f'timeframe is {timeframe}, time is {sig_points[0][4]}'
-                                logger.info(sig_message)
+                                if not self.first:
+                                    self.telegram_bot.database = self.database
+                                    self.telegram_bot.notification_list += sig_points
+                                    self.telegram_bot.update_bot.set()
+                                    # Log the signals
+                                    sig_message = f'Find the signal points. Exchange is {exchange}, ticker is {ticker},' \
+                                                  f' timeframe is {timeframe}, time is {sig_points[0][4]}'
+                                    logger.info(sig_message)
                         # Save dataframe for further analysis
                         self.save_dataframe(df, ticker, timeframe)
 

@@ -3,7 +3,7 @@ from api.api_base import ApiBase
 from binance.client import Client
 
 
-class Binance(ApiBase):
+class BinanceFutures(ApiBase):
     client = ""
 
     def __init__(self, api_key="Key", api_secret="Secret"):
@@ -34,7 +34,7 @@ class Binance(ApiBase):
         return filtered_symbols
 
     def get_ticker_names(self, min_volume) -> (list, list):
-        tickers = pd.DataFrame(self.client.get_ticker())
+        tickers = pd.DataFrame(self.client.futures_ticker())
         all_tickers = tickers['symbol'].to_list()
 
         tickers = tickers[(tickers['symbol'].str.endswith('USDT')) | (tickers['symbol'].str.endswith('BUSD'))]
@@ -50,7 +50,7 @@ class Binance(ApiBase):
 
     def get_klines(self, symbol, interval, limit) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
-        tickers = pd.DataFrame(self.client.get_klines(symbol=symbol, interval=interval, limit=limit))
+        tickers = pd.DataFrame(self.client.futures_klines(symbol=symbol, interval=interval, limit=limit))
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
 
@@ -58,10 +58,12 @@ class Binance(ApiBase):
 if __name__ == '__main__':
     key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
     secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
-    binance_api = Binance(key, secret)
-    tickers = binance_api.client.get_ticker()
-    t_list = list()
-    for t in tickers:
-        t_list.append(t['symbol'])
-    exchange_info = binance_api.client.futures_exchange_info()
-    print('1000SHIBUSDT' in t_list)
+    binance_api = BinanceFutures(key, secret)
+    tickers = binance_api.get_ticker_names(1e6)
+    k_lines = binance_api.get_klines('BTCUSDT', '5m', 1000)
+    print(len(tickers[0]))
+    # t_list = list()
+    # for t in tickers:
+    #     t_list.append(t['symbol'])
+    # exchange_info = binance_api.client.futures_exchange_info()
+    # print('1000SHIBUSDT' in t_list)

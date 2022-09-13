@@ -1,6 +1,8 @@
 import pandas as pd
 from api.binance_api import Binance
+from api.binance_futures_api import BinanceFutures
 from api.okex_api import OKEX
+from api.okex_swap_api import OKEXSwap
 from datetime import datetime
 
 
@@ -9,8 +11,12 @@ class DataFactory(object):
     def factory(exchange, **params):
         if exchange == 'Binance':
             return GetBinanceData(**params)
+        elif exchange == 'BinanceFutures':
+            return GetBinanceFuturesData(**params)
         elif exchange == 'OKEX':
             return GetOKEXData(**params)
+        elif exchange == 'OKEXSwap':
+            return GetOKEXSwapData(**params)
 
 
 class GetData:
@@ -124,9 +130,27 @@ class GetBinanceData(GetData):
         self.api = Binance(self.key, self.secret)
 
 
+class GetBinanceFuturesData(GetData):
+    name = 'BinanceFutures'
+
+    def __init__(self, **params):
+        super(GetBinanceFuturesData, self).__init__(**params)
+        self.key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
+        self.secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
+        self.api = BinanceFutures(self.key, self.secret)
+
+
 class GetOKEXData(GetData):
     name = 'OKEX'
 
     def __init__(self, **params):
         super(GetOKEXData, self).__init__(**params)
         self.api = OKEX()
+
+
+class GetOKEXSwapData(GetData):
+    name = 'OKEX'
+
+    def __init__(self, **params):
+        super(GetOKEXSwapData, self).__init__(**params)
+        self.api = OKEXSwap()

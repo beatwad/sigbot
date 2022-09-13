@@ -192,7 +192,7 @@ class TelegramBot(Thread):
             for exchange in sig_exchanges:
                 text += f' • {exchange}\n'
             text += 'Ссылка на TradingView: \n'
-            text += f"https://ru.tradingview.com/symbols/{ticker.replace('-', '')}"
+            text += f"https://ru.tradingview.com/symbols/{ticker.replace('-', '').replace('SWAP', '')}"
             # Send message + image
             if sig_img_path:
                 self.send_photo(chat_id, sig_img_path, text)

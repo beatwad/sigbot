@@ -8,7 +8,7 @@ class ApiBase(metaclass=ABCMeta):
         """ Check if ticker is not pair with fiat currency or stablecoin """
         filtered_symbols = list()
         for symbol in symbols:
-            fiat = ['EUR', 'CHF', 'GBP', 'JPY', 'CNY', 'RUB']
+            fiat = ['EUR', 'CHF', 'GBP', 'JPY', 'CNY', 'RUB', 'AUD']
             if re.match('.?USD', symbol) or re.match('.?UST', symbol):
                 continue
             for f in fiat:

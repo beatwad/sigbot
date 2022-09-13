@@ -54,7 +54,7 @@ class SignalStat:
         """ Calculate statistics and write it to the stat dataframe if it's not presented in it """
         # get data
         ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
-        ticker = ticker.replace('-', '').replace('/', '')
+        ticker = ticker.replace('-', '').replace('/', '').replace('SWAP', '')
         tmp = pd.DataFrame()
         tmp['time'] = [time]
         tmp['ticker'] = [ticker]

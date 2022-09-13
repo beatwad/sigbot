@@ -83,12 +83,15 @@ class MainClass:
         # Get list of working and higher timeframes
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
+        self.futures_exchanges = configs['Exchanges']['futures_exchanges']
         self.timeframes = [self.higher_timeframe, self.work_timeframe]
         # Create indicators
         self.higher_tf_indicators, self.work_tf_indicators = self.create_indicators()
         # Set list of available exchanges, cryptocurrencies and tickers
         self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
+                          'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                          'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                          'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
         for ex in list(self.exchanges.keys()):
@@ -110,7 +113,7 @@ class MainClass:
 
     def check_ticker(self, ticker: str) -> bool:
         # Check if ticker was already processesed before
-        ticker = ticker.replace('-', '').replace('/', '')
+        ticker = ticker.replace('-', '').replace('/', '').replace('SWAP', '')
         if ticker[:-4] not in self.processed_tickers:
             self.processed_tickers.append(ticker[:-4])
             return True
@@ -214,6 +217,7 @@ class MainClass:
         """ Add list of exchanges on which this ticker can be traded """
         for sig_point in sig_points:
             for exchange, exchange_data in self.exchanges.items():
+                ticker = ticker.replace('SWAP', '')
                 if ticker in exchange_data['all_tickers'] or ticker.replace('-', '') in exchange_data['all_tickers'] \
                         or ticker.replace('/', '') in exchange_data['all_tickers']:
                     sig_point[7].append(exchange)
@@ -286,7 +290,7 @@ class MainClass:
                                                   f'{ticker}, timeframe is {timeframe}, time is {sig_points[0][4]}'
                                     logger.info(sig_message)
                         # Save dataframe for further analysis
-                        self.save_dataframe(df, ticker, timeframe)
+                        # self.save_dataframe(df, ticker, timeframe)
 
         self.first = False
 

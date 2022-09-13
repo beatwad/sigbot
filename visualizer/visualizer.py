@@ -83,10 +83,12 @@ class Visualizer:
 
     @staticmethod
     def statistics_change(prev_mean_right_prognosis, mean_right_prognosis):
-        if prev_mean_right_prognosis > mean_right_prognosis:
-            return f'= уменьшилась на {round(prev_mean_right_prognosis - mean_right_prognosis, 2)}%'
-        if prev_mean_right_prognosis < mean_right_prognosis:
-            return f'= выросла на {round(mean_right_prognosis - prev_mean_right_prognosis, 2)}%'
+        """ Measure statistics difference between previous signal and current signal """
+        stat_diff = round(mean_right_prognosis - prev_mean_right_prognosis, 2)
+        if stat_diff < 0:
+            return f'= уменьшилась на {abs(stat_diff)}%'
+        if stat_diff > 0:
+            return f'= выросла на {stat_diff}%'
         return '= без изменений'
 
     def create_plot(self, dfs, point, levels):
@@ -189,11 +191,14 @@ class Visualizer:
             key = str(pattern[0][0])
         else:
             key = str(pattern)
-        if key in self.prev_stat_dict:
-            prev_mean_right_prognosis = self.prev_stat_dict[key]
+        # check if pattern and trade type are in statistics dictionary
+        if key in self.prev_stat_dict and self.prev_stat_dict[key] and point_type in self.prev_stat_dict[key]:
+            prev_mean_right_prognosis = self.prev_stat_dict[key][point_type]
         else:
             prev_mean_right_prognosis = mean_right_prognosis
-        self.prev_stat_dict[key] = mean_right_prognosis
+            self.prev_stat_dict[key] = dict()
+
+        self.prev_stat_dict[key][point_type] = mean_right_prognosis
 
         # get change of statistics
         stat_change = self.statistics_change(prev_mean_right_prognosis, mean_right_prognosis)

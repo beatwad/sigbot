@@ -11,7 +11,7 @@ class SignalStat:
         self.stop_loss_multiplier = self.params.get('stop_loss_multiplier', 2)
         self.stat_range = self.params.get('stat_range', 24)
         self.test = self.params.get('test', False)
-        self.stat_day_limit = self.params.get('stat_day_limit', 7)
+        self.stat_hour_limit = self.params.get('stat_hour_limit', 72)
         self.prev_sig_limit = self.params.get('prev_sig_limit', 1500)
 
     def write_stat(self, dfs: dict, signal_points: list) -> dict:
@@ -167,9 +167,9 @@ class SignalStat:
         return buy_stat, sell_stat
 
     def cut_stat_df(self, stat):
-        """ Cut statistics and get only data earlier than 'stat_day_limit' days ago """
+        """ Cut statistics and get only data earlier than 'stat_hour_limit' days ago """
         latest_time = stat['time'].max()
-        stat = stat[latest_time - stat['time'] < pd.Timedelta(self.stat_day_limit, "d")]
+        stat = stat[latest_time - stat['time'] < pd.Timedelta(self.stat_hour_limit, "h")]
         return stat
 
     def calculate_total_stat(self, dfs: dict, ttype: str, pattern: str) -> list:

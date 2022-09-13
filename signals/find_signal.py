@@ -135,6 +135,16 @@ class PriceChangeSignal(SignalBase):
     def __init__(self, **params):
         super(PriceChangeSignal, self).__init__(params)
 
+    def lower_bound(self, indicator: pd.Series, i: int, low_bound: float) -> bool:
+        if indicator.loc[i] < low_bound:
+            return True
+        return False
+
+    def higher_bound(self, indicator: pd.Series, i: int, high_bound: float) -> bool:
+        if indicator.loc[i] > high_bound:
+            return True
+        return False
+
     def find_signal(self, df: pd.DataFrame, index: int, *args) -> (bool, str, tuple):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """

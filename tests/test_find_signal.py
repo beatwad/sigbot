@@ -188,6 +188,40 @@ def test_find_stoch_signal(mocker, timeframe, ticker, index, expected):
     assert stoch_sig.find_signal(dfs[ticker][timeframe]['data'], index) == expected
 
 
+@pytest.mark.parametrize('ticker, timeframe, index, expected',
+                         [
+                          ('BTCUSDT', '5m', 2, (False, '', ())),
+                          ('BTCUSDT', '5m', 242, (True, 'buy', 1)),
+                          ('BTCUSDT', '5m', 459, (True, 'sell', 1)),
+                          ('BTCUSDT', '5m', 25, (True, 'buy', 1)),
+                          ('ETHUSDT', '5m', 2, (True, 'sell', 1)),
+                          ('ETHUSDT', '5m', 3, (True, 'buy', 1)),
+                          ('ETHUSDT', '5m', 82, (True, 'sell', 3)),
+                          ('ETHUSDT', '5m', 128, (True, 'sell', 2)),
+                          ('ETHUSDT', '5m', 143, (True, 'buy', 2)),
+                          ('ETHUSDT', '5m', 146, (False, '', ())),
+                          ('ETHUSDT', '5m', 203, (False, '', ())),
+                          ], ids=repr)
+def test_find_price_change_signal(mocker, timeframe, ticker, index, expected):
+    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+    dfs, df = create_test_data()
+    price_change_sig = SignalFactory().factory('PriceChange', configs)
+    # if ticker == 'BTCUSDT' and index == 447:
+    #     dfs[ticker][timeframe]['data'].loc[index, 'stoch_diff'] *= -1
+    #     dfs[ticker][timeframe]['data'].loc[index-1, 'stoch_slowk'] += 3
+    #     dfs[ticker][timeframe]['data'].loc[index-1, 'stoch_slowd'] += 3
+    #     dfs[ticker][timeframe]['data'].loc[index, 'stoch_slowk_dir'] *= -1
+    #     dfs[ticker][timeframe]['data'].loc[index, 'stoch_slowd_dir'] *= -1
+    # elif ticker == 'ETHUSDT' and index == 146:
+    #     dfs[ticker][timeframe]['data'].loc[index-1, 'stoch_slowd'] -= 1
+    #     dfs[ticker][timeframe]['data'].loc[index-1, 'stoch_slowk_dir'] *= -1
+    #     dfs[ticker][timeframe]['data'].loc[index, 'stoch_slowk_dir'] *= -1
+    #     dfs[ticker][timeframe]['data'].loc[index, 'stoch_slowd_dir'] *= -1
+    #     dfs[ticker][timeframe]['data'].loc[index, 'stoch_diff'] *= -1
+    res = price_change_sig.find_signal(dfs[ticker][timeframe]['data'], index)
+    assert price_change_sig.find_signal(dfs[ticker][timeframe]['data'], index) == expected
+
+
 @pytest.mark.parametrize('ticker, timeframe, index, buy, expected',
                          [
                           ('BTCUSDT', '5m', 71, True, False),
@@ -233,39 +267,39 @@ def test_check_levels_robust(mocker, timeframe, ticker, index, buy, expected):
     assert sup_res_sig.check_levels(df, index, levels, level_proximity, buy) == expected
 
 
-points1 = [('BTCUSDT', '5m', 91, 'sell', datetime(2022, 8, 21, 11, 20),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []),
-           ('BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
-                             [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []),
-           ('BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], [])]
-points2 = [('BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []),
-           ('BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], [])]
-points3 = [('ETHUSDT', '5m', 83, 'sell', datetime(2022, 8, 21, 11, 20),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []),
-           ('ETHUSDT', '5m', 370, 'buy', datetime(2022, 8, 22, 11, 15),
-            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], [], [], []),
-           ('ETHUSDT', '5m', 370, 'buy', datetime(2022, 8, 22, 11, 15),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []),
-           ('ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
-            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], [], [], []),
-           ('ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []),
-           ('ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
-            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], [], [], []),
-           ('ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], [])
+points1 = [['BTCUSDT', '5m', 91, 'sell', datetime(2022, 8, 21, 11, 20),
+            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
+           ['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
+                             [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
+           ['BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
+            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []]]
+points2 = [['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
+            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
+           ['BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
+            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []]]
+points3 = [['ETHUSDT', '5m', 83, 'sell', datetime(2022, 8, 21, 11, 20),
+            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
+           ['ETHUSDT', '5m', 370, 'buy', datetime(2022, 8, 22, 11, 15),
+            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], [], [], []],
+           ['ETHUSDT', '5m', 370, 'buy', datetime(2022, 8, 22, 11, 15),
+            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
+           ['ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
+            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], [], [], []],
+           ['ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
+            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
+           ['ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
+            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], [], [], []],
+           ['ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
+            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []]
            ]
-points4 = [('ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
-            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], [], [], []),
-           ('ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []),
-           ('ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
-            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], [], [], []),
-           ('ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []),
+points4 = [['ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
+            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], [], [], []],
+           ['ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
+            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
+           ['ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
+            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES', ())], [], [], [], []],
+           ['ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
+            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
            ]
 expected = [points1, points2, points3, points4]
 

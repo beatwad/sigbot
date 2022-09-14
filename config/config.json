@@ -214,7 +214,18 @@
   "Patterns": [
     [
       "STOCH",
+      "RSI"
+    ],
+    [
+      "STOCH",
       "RSI",
+      "LinearReg"
+    ],
+    [
+      "PriceChange"
+    ],
+    [
+      "PriceChange",
       "LinearReg"
     ]
   ],
@@ -259,10 +270,10 @@
       "log_path": "log/telegram_log.txt",
       "chat_ids": {
         "STOCH_RSI": "-1001463253403",
-        "STOCH_RSI_LinearReg": "-1001691421580",
+        "STOCH_RSI_LinearReg": "-1001688789758",
         "STOCH_RSI_SUP_RES": "-1001702067917",
         "PriceChange": "-1001700504878",
-        "PriceChange_LinearReg": "-1001700504878"
+        "PriceChange_LinearReg": "-1001691421580"
       },
       "prev_sig_minutes_limit": 25,
       "max_notifications_in_row": 3

@@ -38,7 +38,10 @@ class SignalBase:
     @staticmethod
     def lower_bound(indicator: pd.Series, i: int, low_bound: float) -> bool:
         """ Returns True if at least two of three last points of indicator are lower than low_bound param """
-        res = [indicator.loc[i] < low_bound, indicator.loc[i-1] < low_bound, indicator.loc[i-2] < low_bound]
+        try:
+            res = [indicator.loc[i] < low_bound, indicator.loc[i-1] < low_bound, indicator.loc[i-2] < low_bound]
+        except KeyError:
+            return False
         if sum(res) >= 2:
             return True
         return False
@@ -46,7 +49,10 @@ class SignalBase:
     @staticmethod
     def higher_bound(indicator: pd.Series, i: int, high_bound: float) -> bool:
         """ Returns True if at least two of three last points of indicator are higher than high_bound param """
-        res = [indicator.loc[i] > high_bound, indicator.loc[i-1] > high_bound, indicator.loc[i-2] > high_bound]
+        try:
+            res = [indicator.loc[i] > high_bound, indicator.loc[i-1] > high_bound, indicator.loc[i-2] > high_bound]
+        except KeyError:
+            return False
         if sum(res) >= 2:
             return True
         return False
@@ -54,15 +60,21 @@ class SignalBase:
     @staticmethod
     def lower_bound_robust(indicator: pd.Series, i: int, low_bound: float) -> bool:
         """ Returns True if indicator is lower than low bound """
-        if indicator.loc[i] < low_bound:
-            return True
+        try:
+            if indicator.loc[i] < low_bound:
+                return True
+        except KeyError:
+            return False
         return False
 
     @staticmethod
     def higher_bound_robust(indicator: pd.Series, i: int, high_bound: float) -> bool:
         """ Returns True if indicator is higher than high bound """
-        if indicator.loc[i] > high_bound:
-            return True
+        try:
+            if indicator.loc[i] > high_bound:
+                return True
+        except KeyError:
+            return False
         return False
 
     @staticmethod
@@ -158,6 +170,7 @@ class LinearRegSignal(SignalBase):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """
         # Find LinearReg signal
+
         if self.lower_bound_robust(df['linear_reg_angle'], index, self.low_bound):
             return True, 'sell', ()
         if self.higher_bound_robust(df['linear_reg_angle'], index, self.high_bound):

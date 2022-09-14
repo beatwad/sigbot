@@ -97,18 +97,30 @@ class Visualizer:
 
     def create_plot(self, dfs, point, levels):
         # get necessary info
-        ticker, timeframe, point_index, point_type, time, pattern, plot_path, exchange_list, statistics, y = point
+        ticker, timeframe, point_index, point_type, sig_time, pattern, plot_path, exchange_list, statistics, y = point
         df_working = dfs[ticker][self.working_timeframe]['data']
         df_working = df_working.loc[point_index - self.plot_width:point_index]
         ohlc = df_working[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
         # get indicator list
         indicator_list = [p[0] for p in pattern if p[0] not in self.level_indicators]
         indicator_params = [p[1] for p in pattern if p not in self.level_indicators]
-        plot_num = len(indicator_list) + 1
+
+        # check if PriceChange indicator is in indicator list to make a special plot
+        if 'PriceChange' in indicator_list:
+            plot_num = len(indicator_list)
+            indicator_list.remove('PriceChange')
+            has_price_change_flag = True
+            candles_height = 1.5
+            plot_height_mult = 2.5
+        else:
+            plot_num = len(indicator_list) + 1
+            has_price_change_flag = False
+            candles_height = 3
+            plot_height_mult = 1.7
 
         # Plot signals
         # make subfigs
-        fig = plt.figure(constrained_layout=True, figsize=(1.7 * (plot_num + 1), 3 * (plot_num + 1)))
+        fig = plt.figure(constrained_layout=True, figsize=(plot_height_mult * (plot_num + 1), 3 * (plot_num + 1)))
         fig.patch.set_facecolor(self.background_color)
         # If linear regression is in indicator list - remove it from list and plot one more plot with higher timeframe
         # candles and linear regression indicator
@@ -116,21 +128,26 @@ class Visualizer:
             indicator_list.remove('LinearReg')
             plot_num -= 1
             subfigs_num = 3
-            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[3, 1.5, 2.5])
+            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height, 1.5, 2.5])
             # plot higher timeframe with linear regression
             subfigs[1].patch.set_facecolor(self.background_color)
             axs_higher = subfigs[1].subplots(1, 1, sharex=True)
             df_higher = dfs[ticker][self.higher_timeframe]['data']
-            df_higher = df_higher.loc[df_higher.shape[0] - self.plot_width:].reset_index(drop=True)
+            # get corresponding to signal_time index of dataframe with higher timeframe candles
+            oh_index = df_higher[(df_higher['time'].dt.year == sig_time.year) &
+                                 (df_higher['time'].dt.month == sig_time.month) &
+                                 (df_higher['time'].dt.day == sig_time.day) &
+                                 (df_higher['time'].dt.hour == sig_time.hour)].index[0]
+            df_higher = df_higher.loc[oh_index - self.plot_width:oh_index + 1].reset_index(drop=True)
             ohlc_higher = df_higher[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
             # plot candles
             mpf.plot(ohlc_higher, type='candle', ax=axs_higher, warn_too_much_data=1001, style='yahoo',
                      ylabel='', returnfig=True)
             # plot linear regression indicator
             if point_type == 'buy':
-                axs_higher.plot(df_higher['linear_reg'], linewidth=2, color='red')
-            else:
                 axs_higher.plot(df_higher['linear_reg'], linewidth=2, color='green')
+            else:
+                axs_higher.plot(df_higher['linear_reg'], linewidth=2, color='red')
             # plot grid
             axs_higher.grid(which='both', linestyle='--', linewidth=0.3)
             # set ticker color
@@ -148,17 +165,22 @@ class Visualizer:
                                  color=self.ticker_color)
         else:
             subfigs_num = 2
-            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[3, 2.5])
+            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height, 2.5])
 
         # make subplots
         axs1 = subfigs[0].subplots(plot_num, 1, sharex=True)
+
+        try:
+            axs1_0 = axs1[0]
+        except TypeError:
+            axs1_0 = axs1
         subfigs[0].patch.set_facecolor(self.background_color)
         subfigs[-1].patch.set_facecolor(self.background_color)
         ap = list()
 
         # plot candles
         for index, indicator in enumerate(indicator_list):
-            if indicator == 'PriceChange':
+            if has_price_change_flag:
                 self.plot_point(point_type, df_working, axs1[0], indicator_params[index])
             # plot indicator
             indicator_columns = self.indicator_dict[indicator]
@@ -186,35 +208,35 @@ class Visualizer:
             axs1[index + 1].spines['left'].set_color(self.border_color)
 
         # plot candles
-        axs1[0].grid(which='both', linestyle='--', linewidth=0.3)
+        axs1_0.grid(which='both', linestyle='--', linewidth=0.3)
         # set ticker color
-        axs1[0].tick_params(axis='x', colors=self.ticker_color)
-        axs1[0].tick_params(axis='y', colors=self.ticker_color)
+        axs1_0.tick_params(axis='x', colors=self.ticker_color)
+        axs1_0.tick_params(axis='y', colors=self.ticker_color)
         # set background color
-        axs1[0].patch.set_facecolor(self.background_color)
+        axs1_0.patch.set_facecolor(self.background_color)
         # set border color
-        axs1[0].spines['bottom'].set_color(self.border_color)
-        axs1[0].spines['top'].set_color(self.border_color)
-        axs1[0].spines['right'].set_color(self.border_color)
-        axs1[0].spines['left'].set_color(self.border_color)
+        axs1_0.spines['bottom'].set_color(self.border_color)
+        axs1_0.spines['top'].set_color(self.border_color)
+        axs1_0.spines['right'].set_color(self.border_color)
+        axs1_0.spines['left'].set_color(self.border_color)
 
         # set x-labels
         # axs1[-1].set_xlabel(f"\n{data['time'].iloc[-1].date()}\n", fontsize=14)
         plt.xticks(rotation=30)
 
         # plot all subplots
-        mpf.plot(ohlc, type='candle', ax=axs1[0], addplot=ap, warn_too_much_data=1001, style='yahoo',
+        mpf.plot(ohlc, type='candle', ax=axs1_0, addplot=ap, warn_too_much_data=1001, style='yahoo',
                  ylabel='', returnfig=True)
 
         # plot titles
-        axs1[0].set_title(f'{self.process_ticker(ticker)} - {timeframe} - '
-                          f'{df_working["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
-                          color=self.ticker_color)
+        axs1_0.set_title(f'{self.process_ticker(ticker)} - {timeframe} - '
+                         f'{df_working["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
+                         color=self.ticker_color)
         for index, indicator in enumerate(indicator_list):
             axs1[index + 1].set_title(indicator, fontsize=14, color=self.ticker_color)
 
         # plot point of trade
-        self.plot_point(point_type, df_working, axs1[0])
+        self.plot_point(point_type, df_working, axs1_0)
 
         # plot levels
         # self.plot_levels(data, levels, axs1)

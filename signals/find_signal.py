@@ -151,14 +151,17 @@ class LinearRegSignal(SignalBase):
 
     def __init__(self, **params):
         super(LinearRegSignal, self).__init__(params)
-        self.low_bound = self.params.get('low_bound', 25)
+        self.low_bound = self.params.get('low_bound', -0.1)
+        self.high_bound = self.params.get('high_bound', 0.1)
 
     def find_signal(self, df: pd.DataFrame, index: int, *args) -> (bool, str, tuple):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """
         # Find LinearReg signal
         if self.lower_bound_robust(df['linear_reg_angle'], index, self.low_bound):
-            return True, '', ()
+            return True, 'sell', ()
+        if self.higher_bound_robust(df['linear_reg_angle'], index, self.high_bound):
+            return True, 'buy', ()
         return False, '', ()
 
 

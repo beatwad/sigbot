@@ -21,6 +21,10 @@ class Visualizer:
     stat_color_2 = '#EE4B1A'
 
     def __init__(self, **params):
+        # Get working and higher timeframes
+        self.working_timeframe = params['Timeframes']['work_timeframe']
+        self.higher_timeframe = params['Timeframes']['higher_timeframe']
+        # Get Visualizer parameters
         self.params = params[self.type]['params']
         # Path to save plot files
         self.image_path = self.params['image_path']
@@ -94,36 +98,72 @@ class Visualizer:
     def create_plot(self, dfs, point, levels):
         # get necessary info
         ticker, timeframe, point_index, point_type, time, pattern, plot_path, exchange_list, statistics, y = point
-        df = dfs[ticker][timeframe]['data']
-        data = df.loc[point_index - self.plot_width:point_index]
-        ohlc = data[['time', 'open', 'high', 'low', 'close', 'volume']]
+        df_working = dfs[ticker][self.working_timeframe]['data']
+        df_working = df_working.loc[point_index - self.plot_width:point_index]
+        ohlc = df_working[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
         # get indicator list
         indicator_list = [p[0] for p in pattern if p[0] not in self.level_indicators]
         indicator_params = [p[1] for p in pattern if p not in self.level_indicators]
         plot_num = len(indicator_list) + 1
 
-        # Plot signal
+        # Plot signals
         # make subfigs
         fig = plt.figure(constrained_layout=True, figsize=(1.7 * (plot_num + 1), 3 * (plot_num + 1)))
         fig.patch.set_facecolor(self.background_color)
-        subfigs = fig.subfigures(2, 1, wspace=0, height_ratios=[3, 2.5])
+        # If linear regression is in indicator list - remove it from list and plot one more plot with higher timeframe
+        # candles and linear regression indicator
+        if 'LinearReg' in indicator_list:
+            indicator_list.remove('LinearReg')
+            plot_num -= 1
+            subfigs_num = 3
+            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[3, 1.5, 2.5])
+            # plot higher timeframe with linear regression
+            subfigs[1].patch.set_facecolor(self.background_color)
+            axs_higher = subfigs[1].subplots(1, 1, sharex=True)
+            df_higher = dfs[ticker][self.higher_timeframe]['data']
+            df_higher = df_higher.loc[df_higher.shape[0] - self.plot_width:].reset_index(drop=True)
+            ohlc_higher = df_higher[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
+            # plot candles
+            mpf.plot(ohlc_higher, type='candle', ax=axs_higher, warn_too_much_data=1001, style='yahoo',
+                     ylabel='', returnfig=True)
+            # plot linear regression indicator
+            if point_type == 'buy':
+                axs_higher.plot(df_higher['linear_reg'], linewidth=2, color='red')
+            else:
+                axs_higher.plot(df_higher['linear_reg'], linewidth=2, color='green')
+            # plot grid
+            axs_higher.grid(which='both', linestyle='--', linewidth=0.3)
+            # set ticker color
+            axs_higher.tick_params(axis='x', colors=self.ticker_color)
+            axs_higher.tick_params(axis='y', colors=self.ticker_color)
+            # set background color
+            axs_higher.patch.set_facecolor(self.background_color)
+            # set border color
+            axs_higher.spines['bottom'].set_color(self.border_color)
+            axs_higher.spines['top'].set_color(self.border_color)
+            axs_higher.spines['right'].set_color(self.border_color)
+            axs_higher.spines['left'].set_color(self.border_color)
+            # plot title
+            axs_higher.set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Тренд', fontsize=14,
+                                 color=self.ticker_color)
+        else:
+            subfigs_num = 2
+            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[3, 2.5])
 
         # make subplots
         axs1 = subfigs[0].subplots(plot_num, 1, sharex=True)
         subfigs[0].patch.set_facecolor(self.background_color)
-        subfigs[1].patch.set_facecolor(self.background_color)
+        subfigs[-1].patch.set_facecolor(self.background_color)
         ap = list()
 
         # plot candles
-        ohlc = ohlc.set_index('time')
-
         for index, indicator in enumerate(indicator_list):
             if indicator == 'PriceChange':
-                self.plot_point(point_type, data, axs1[0], indicator_params[index])
+                self.plot_point(point_type, df_working, axs1[0], indicator_params[index])
             # plot indicator
             indicator_columns = self.indicator_dict[indicator]
             for i_c in indicator_columns:
-                m = mpf.make_addplot(data[i_c], panel=index + 1, title=indicator, ax=axs1[index + 1], width=2)
+                m = mpf.make_addplot(df_working[i_c], panel=index + 1, title=indicator, ax=axs1[index + 1], width=2)
                 ap.append(m)
             # plot indicator parameters
             self.plot_indicator_parameters(point_type, index, indicator, axs1, indicator_params)
@@ -166,14 +206,15 @@ class Visualizer:
         mpf.plot(ohlc, type='candle', ax=axs1[0], addplot=ap, warn_too_much_data=1001, style='yahoo',
                  ylabel='', returnfig=True)
 
-        # set titles
+        # plot titles
         axs1[0].set_title(f'{self.process_ticker(ticker)} - {timeframe} - '
-                          f'{data["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14, color=self.ticker_color)
+                          f'{df_working["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
+                          color=self.ticker_color)
         for index, indicator in enumerate(indicator_list):
             axs1[index + 1].set_title(indicator, fontsize=14, color=self.ticker_color)
 
         # plot point of trade
-        self.plot_point(point_type, data, axs1[0])
+        self.plot_point(point_type, df_working, axs1[0])
 
         # plot levels
         # self.plot_levels(data, levels, axs1)
@@ -204,7 +245,7 @@ class Visualizer:
         stat_change = self.statistics_change(prev_mean_right_prognosis, mean_right_prognosis)
 
         # make subplots
-        axs2 = subfigs[1].subplots(2, 1, sharex=True)
+        axs2 = subfigs[-1].subplots(2, 1, sharex=True)
 
         # make plots
         axs2[0].plot(pct_right_prognosis, linewidth=2, color=self.stat_color_1)
@@ -268,7 +309,7 @@ class Visualizer:
         axs2[1].spines['left'].set_color(self.border_color)
 
         # save plot to file
-        filename = self.save_plot(ticker, timeframe, pattern, data)
+        filename = self.save_plot(ticker, timeframe, pattern, df_working)
 
         # close figure
         plt.close()

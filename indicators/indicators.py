@@ -70,6 +70,21 @@ class STOCH(Indicator):
         return df
 
 
+class LinearReg(Indicator):
+    """ Indicator of linear regression and its angle indicators, default settings: timeperiod: 14 """
+    name = 'STOCH'
+
+    def __init__(self, params):
+        super(LinearReg, self).__init__(params)
+
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
+        linear_reg = ta.LINEARREG(df['close'], **self.params)
+        linear_reg_angle = ta.LINEARREG_ANGLE(df['close'], **self.params)
+        df['linear_reg'] = linear_reg
+        df['linear_reg_angle'] = linear_reg_angle
+        return df
+
+
 class MACD(Indicator):
     """ MACD indicator, default settings: fastperiod: 12, slowperiod: 26, signalperiod: 9 """
     name = 'MACD'

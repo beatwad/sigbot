@@ -101,6 +101,11 @@
         "slowd_period": 3
       }
     },
+    "LinearReg": {
+      "params": {
+        "timeperiod": 14
+      }
+    },
     "MACD": {
       "params": {
         "fastperiod": 12,

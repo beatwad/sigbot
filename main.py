@@ -129,14 +129,21 @@ class MainClass:
     @staticmethod
     def create_indicators() -> (list, list):
         """ Create indicators list for higher and working timeframe """
-        higher_tf_indicators = [IndicatorFactory.factory('SUP_RES', configs)]
-        work_tf_indicators = list()
+        higher_tf_indicators = list()
+        working_tf_indicators = list()
+        higher_tf_indicator_list = configs['Higher_TF_indicator_list']
         indicator_list = configs['Indicator_list']
+        # get indicators for higher timeframe
+        for indicator in higher_tf_indicator_list:
+            ind_factory = IndicatorFactory.factory(indicator, configs)
+            if ind_factory:
+                higher_tf_indicators.append(ind_factory)
+        # get indicators for working timeframe
         for indicator in indicator_list:
             ind_factory = IndicatorFactory.factory(indicator, configs)
             if ind_factory:
-                work_tf_indicators.append(ind_factory)
-        return higher_tf_indicators, work_tf_indicators
+                working_tf_indicators.append(ind_factory)
+        return higher_tf_indicators, working_tf_indicators
 
     def get_indicators(self, df: pd.DataFrame, ticker: str, timeframe: str,
                        exchange_api, data_qty: int) -> (pd.DataFrame, int):
@@ -154,11 +161,10 @@ class MainClass:
             data_qty = self.stat_update_range
         return df, data_qty
 
-    def get_signals(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> (list, list):
+    def get_signals(self, ticker: str, timeframe: str, data_qty: int) -> list:
         """ Try to find the signals and if succeed - return them and support/resistance levels """
-        levels = self.database[ticker][timeframe]['levels']
-        sig_points = self.find_signal.find_signal(df, ticker, timeframe, levels, data_qty)
-        return sig_points, levels
+        sig_points = self.find_signal.find_signal(self.database, ticker, timeframe, data_qty)
+        return sig_points
 
     @staticmethod
     def filter_sig_points(sig_points: list) -> list:
@@ -265,7 +271,7 @@ class MainClass:
                         # If current timeframe is working timeframe
                         if timeframe == self.work_timeframe:
                             # Get the signals
-                            sig_points, levels = self.get_signals(df, ticker, timeframe, data_qty)
+                            sig_points = self.get_signals(ticker, timeframe, data_qty)
                             # Filter repeating signals
                             sig_points = self.filter_sig_points(sig_points)
                             # Add the signals to statistics

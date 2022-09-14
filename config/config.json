@@ -7,7 +7,22 @@
   },
   "Data": {
     "Basic": {
-      "params": {}
+      "params": {
+        "timeframe_div": {
+          "1m": 60,
+          "3m": 180,
+          "5m": 300,
+          "15m": 900,
+          "30m": 1800,
+          "1h": 3600,
+          "2h": 7200,
+          "3h": 10800,
+          "4h": 14400,
+          "1d": 86400,
+          "4d": 345600,
+          "1w": 604800
+        }
+      }
     },
     "Binance": {
       "params": {
@@ -161,6 +176,11 @@
     },
     "PriceChange": {
       "params": {}
+    },
+    "LinearReg": {
+      "params": {
+         "low_bound": -0.1
+      }
     }
   },
   "Signal_params": {
@@ -183,7 +203,12 @@
     "STOCH",
     "RSI",
     "SUP_RES",
-    "PriceChange"
+    "PriceChange",
+    "LinearReg"
+  ],
+  "Higher_TF_indicator_list": [
+    "SUP_RES",
+    "LinearReg"
   ],
   "Patterns": [
     [
@@ -191,7 +216,16 @@
       "RSI"
     ],
     [
+      "STOCH",
+      "RSI",
+      "LinearReg"
+    ],
+    [
       "PriceChange"
+    ],
+    [
+      "PriceChange",
+      "LinearReg"
     ]
   ],
   "Timeframes": {

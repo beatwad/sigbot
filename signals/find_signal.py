@@ -19,6 +19,8 @@ class SignalFactory(object):
             return SupResSignalRobust(**params)
         elif indicator == 'PriceChange':
             return PriceChangeSignal(**params)
+        elif indicator == 'LinearReg':
+            return LinearRegSignal(**params)
 
 
 class SignalBase:
@@ -46,6 +48,20 @@ class SignalBase:
         """ Returns True if at least two of three last points of indicator are higher than high_bound param """
         res = [indicator.loc[i] > high_bound, indicator.loc[i-1] > high_bound, indicator.loc[i-2] > high_bound]
         if sum(res) >= 2:
+            return True
+        return False
+
+    @staticmethod
+    def lower_bound_robust(indicator: pd.Series, i: int, low_bound: float) -> bool:
+        """ Returns True if indicator is lower than low bound """
+        if indicator.loc[i] < low_bound:
+            return True
+        return False
+
+    @staticmethod
+    def higher_bound_robust(indicator: pd.Series, i: int, high_bound: float) -> bool:
+        """ Returns True if indicator is higher than high bound """
+        if indicator.loc[i] > high_bound:
             return True
         return False
 
@@ -128,6 +144,24 @@ class RSISignal(SignalBase):
         return False, '', ()
 
 
+class LinearRegSignal(SignalBase):
+    """ Check if RSI is in overbuy/oversell zone """
+    type = 'Indicator_signal'
+    name = "LinearReg"
+
+    def __init__(self, **params):
+        super(LinearRegSignal, self).__init__(params)
+        self.low_bound = self.params.get('low_bound', 25)
+
+    def find_signal(self, df: pd.DataFrame, index: int, *args) -> (bool, str, tuple):
+        """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
+            slowk and slowd lines have crossed and their direction is down/up """
+        # Find LinearReg signal
+        if self.lower_bound_robust(df['linear_reg_angle'], index, self.low_bound):
+            return True, '', ()
+        return False, '', ()
+
+
 class PriceChangeSignal(SignalBase):
     type = 'Indicator_signal'
     name = 'PriceChange'
@@ -135,31 +169,21 @@ class PriceChangeSignal(SignalBase):
     def __init__(self, **params):
         super(PriceChangeSignal, self).__init__(params)
 
-    def lower_bound(self, indicator: pd.Series, i: int, low_bound: float) -> bool:
-        if indicator.loc[i] < low_bound:
-            return True
-        return False
-
-    def higher_bound(self, indicator: pd.Series, i: int, high_bound: float) -> bool:
-        if indicator.loc[i] > high_bound:
-            return True
-        return False
-
     def find_signal(self, df: pd.DataFrame, index: int, *args) -> (bool, str, tuple):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """
         # Find price change signal
-        if self.lower_bound(df['close_price_change_lag_1'], index, df['q_low_lag_1'].loc[index]):
+        if self.lower_bound_robust(df['close_price_change_lag_1'], index, df['q_low_lag_1'].loc[index]):
             return True, 'buy', 1
-        elif self.lower_bound(df['close_price_change_lag_2'], index, df['q_low_lag_2'].loc[index]):
+        elif self.lower_bound_robust(df['close_price_change_lag_2'], index, df['q_low_lag_2'].loc[index]):
             return True, 'buy', 2
-        elif self.lower_bound(df['close_price_change_lag_3'], index, df['q_low_lag_3'].loc[index]):
+        elif self.lower_bound_robust(df['close_price_change_lag_3'], index, df['q_low_lag_3'].loc[index]):
             return True, 'buy', 3
-        elif self.higher_bound(df['close_price_change_lag_1'], index, df['q_high_lag_1'].loc[index]):
+        elif self.higher_bound_robust(df['close_price_change_lag_1'], index, df['q_high_lag_1'].loc[index]):
             return True, 'sell', 1
-        elif self.higher_bound(df['close_price_change_lag_2'], index, df['q_high_lag_2'].loc[index]):
+        elif self.higher_bound_robust(df['close_price_change_lag_2'], index, df['q_high_lag_2'].loc[index]):
             return True, 'sell', 2
-        elif self.higher_bound(df['close_price_change_lag_3'], index, df['q_high_lag_3'].loc[index]):
+        elif self.higher_bound_robust(df['close_price_change_lag_3'], index, df['q_high_lag_3'].loc[index]):
             return True, 'sell', 3
         return False, '', ()
 
@@ -224,6 +248,9 @@ class FindSignal:
         self.indicator_list = configs['Indicator_list']
         self.indicator_signals = self.prepare_indicator_signals()
         self.patterns = configs['Patterns']
+        self.work_timeframe = configs['Timeframes']['work_timeframe']
+        self.higher_timeframe = configs['Timeframes']['higher_timeframe']
+        self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
 
     def prepare_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """ Add all necessary indicator data to dataframe """
@@ -249,15 +276,18 @@ class FindSignal:
             indicator_signals.append(SignalFactory.factory(indicator, self.configs))
         return indicator_signals
 
-    def find_signal(self, df: pd.DataFrame, ticker: str, timeframe: str, levels: list,
-                    data_qty: int) -> list:
+    def find_signal(self, dfs: dict, ticker: str, timeframe: str, data_qty: int) -> list:
         """ Search for the signals through the dataframe, if found - add its index and trade type to the list.
             If dataset was updated - don't search through the whole dataset, only through updated part.
         """
         points = list()
         index_list = list()
 
-        df = self.prepare_dataframe(df)
+        df_work = dfs[ticker][self.work_timeframe]['data']
+        levels = dfs[ticker][self.work_timeframe]['levels']
+        df_higher = dfs[ticker][self.higher_timeframe]['data']
+
+        df_work = self.prepare_dataframe(df_work)
         # Support and Resistance indicator
         sup_res = None
         # Level proximity measure * multiplier (from configs)
@@ -266,15 +296,22 @@ class FindSignal:
         for indicator_signal in self.indicator_signals:
             if indicator_signal.name == 'SUP_RES':
                 sup_res = indicator_signal
-                level_proximity = np.mean(df['high'] - df['low']) * sup_res.proximity_multiplier
+                level_proximity = np.mean(df_work['high'] - df_work['low']) * sup_res.proximity_multiplier
                 break
 
-        for index in range(max(df.shape[0] - data_qty, 2), df.shape[0]):
-            time = df.loc[index, 'time']
+        for index in range(max(df_work.shape[0] - data_qty, 2), df_work.shape[0]):
+            time = df_work.loc[index, 'time']
             sig_patterns = [p.copy() for p in self.patterns]
             # Check if current signal is found and add '1' to all patterns where it was added
             for indicator_signal in self.indicator_signals:
-                fs = indicator_signal.find_signal(df, index, levels)
+                # if indicator is linear regression - find its angle from dataframe from higher timeframe
+                if indicator_signal.name == "LinearReg":
+                    timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] /
+                                          self.timeframe_div[self.work_timeframe])
+                    higher_index = df_higher.shape[0] - int((df_higher.shape[0] - index - 1)/timeframe_ratio) - 1
+                    fs = indicator_signal.find_signal(df_higher, higher_index, levels)
+                else:
+                    fs = indicator_signal.find_signal(df_work, index, levels)
                 if fs[0] is True:
                     for pattern in sig_patterns:
                         if indicator_signal.name in pattern:
@@ -289,7 +326,7 @@ class FindSignal:
                         break
                 else:
                     if "SUP_RES" in [p[0] for p in pattern]:
-                        if sup_res.check_levels(df, index, levels, level_proximity, True):
+                        if sup_res.check_levels(df_work, index, levels, level_proximity, True):
                             point = [ticker, timeframe, index, 'buy', time, [(p[0], p[3]) for p in pattern],
                                      [], [], [], []]
                     else:
@@ -301,7 +338,7 @@ class FindSignal:
                         break
                 else:
                     if "SUP_RES" in [p[0] for p in pattern]:
-                        if sup_res.check_levels(df, index, levels, level_proximity, False):
+                        if sup_res.check_levels(df_work, index, levels, level_proximity, False):
                             point = [ticker, timeframe, index, 'sell', time, [(p[0], p[3]) for p in pattern],
                                      [], [], [], []]
                     else:

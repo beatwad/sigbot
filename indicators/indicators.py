@@ -20,6 +20,8 @@ class IndicatorFactory(object):
             return SupRes(params)
         elif indicator.startswith('PriceChange'):
             return PriceChange(params)
+        elif indicator.startswith('LinearReg'):
+            return LinearReg(params)
 
 
 class Indicator:
@@ -72,7 +74,7 @@ class STOCH(Indicator):
 
 class LinearReg(Indicator):
     """ Indicator of linear regression and its angle indicators, default settings: timeperiod: 14 """
-    name = 'STOCH'
+    name = 'LinearReg'
 
     def __init__(self, params):
         super(LinearReg, self).__init__(params)

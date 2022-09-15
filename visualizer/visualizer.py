@@ -108,11 +108,15 @@ class Visualizer:
         # check if PriceChange indicator is in indicator list to make a special plot
         if 'PriceChange' in indicator_list:
             plot_num = len(indicator_list)
+            point_index = indicator_list.index('PriceChange')
+            price_index = indicator_params[point_index]
+            del indicator_params[point_index]
             indicator_list.remove('PriceChange')
             has_price_change_flag = True
             candles_height = 1.5
             plot_height_mult = 2.5
         else:
+            price_index = 0
             plot_num = len(indicator_list) + 1
             has_price_change_flag = False
             candles_height = 3
@@ -138,7 +142,7 @@ class Visualizer:
                                  (df_higher['time'].dt.month == sig_time.month) &
                                  (df_higher['time'].dt.day == sig_time.day) &
                                  (df_higher['time'].dt.hour == sig_time.hour)].index[0]
-            df_higher = df_higher.loc[oh_index - self.plot_width:oh_index + 1].reset_index(drop=True)
+            df_higher = df_higher.loc[max(oh_index - self.plot_width * 2, 0):oh_index + 1].reset_index(drop=True)
             ohlc_higher = df_higher[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
             # plot candles
             mpf.plot(ohlc_higher, type='candle', ax=axs_higher, warn_too_much_data=1001, style='yahoo',
@@ -162,7 +166,7 @@ class Visualizer:
             axs_higher.spines['left'].set_color(self.border_color)
             # plot title
             axs_higher.set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Тренд', fontsize=14,
-                                 color=self.ticker_color)
+                                    color=self.ticker_color)
         else:
             subfigs_num = 2
             subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height, 2.5])
@@ -180,8 +184,6 @@ class Visualizer:
 
         # plot candles
         for index, indicator in enumerate(indicator_list):
-            if has_price_change_flag:
-                self.plot_point(point_type, df_working, axs1[0], indicator_params[index])
             # plot indicator
             indicator_columns = self.indicator_dict[indicator]
             for i_c in indicator_columns:
@@ -237,6 +239,9 @@ class Visualizer:
 
         # plot point of trade
         self.plot_point(point_type, df_working, axs1_0)
+        # plot
+        if has_price_change_flag:
+            self.plot_point(point_type, df_working, axs1_0, price_index)
 
         # plot levels
         # self.plot_levels(data, levels, axs1)

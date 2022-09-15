@@ -1,4 +1,7 @@
 import time
+import functools
+import logging
+from time import sleep
 from os import remove
 from os import environ
 import pandas as pd
@@ -9,6 +12,7 @@ from visualizer.visualizer import Visualizer
 from threading import Thread
 from threading import Event
 
+import telegram
 from telegram import Update
 from telegram.ext import Updater, CallbackContext, MessageHandler, Filters
 
@@ -17,6 +21,46 @@ from telegram.ext import Updater, CallbackContext, MessageHandler, Filters
 environ["ENV"] = "development"
 # Get configs
 configs = ConfigFactory.factory(environ).configs
+
+
+def create_logger():
+    """
+    Creates a logging object and returns it
+    """
+    _logger = logging.getLogger("example_logger")
+    _logger.setLevel(logging.INFO)
+    # create the logging file handler
+    log_path = configs['Telegram']['params']['log_path']
+    fh = logging.FileHandler(log_path)
+    fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    formatter = logging.Formatter(fmt)
+    fh.setFormatter(formatter)
+    # add handler to logger object
+    _logger.addHandler(fh)
+    return _logger
+
+
+# create logger
+logger = create_logger()
+
+
+def exception(function):
+    """
+    A decorator that wraps the passed in function and logs
+    exceptions should one occur
+    """
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except:
+            # log the exception
+            err = "There was an exception in  "
+            err += function.__name__
+            logger.exception(err)
+            # re-raise the exception
+            raise
+    return wrapper
 
 
 class TelegramBot(Thread):
@@ -113,6 +157,7 @@ class TelegramBot(Thread):
                 return False
         return True
 
+    @exception
     def check_notifications(self):
         """ Check if we can send each notification separately or there are too many of them,
             so we have to send list of them in one message """
@@ -196,15 +241,23 @@ class TelegramBot(Thread):
             # Send message + image
             if sig_img_path:
                 self.send_photo(chat_id, sig_img_path, text)
-            time.sleep(0)
+            time.sleep(1)
         self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.delete_images()
     
     def send_message(self, chat_id, text):
-        self.updater.bot.send_message(chat_id=chat_id, text=text)
+        try:
+            self.updater.bot.send_message(chat_id=chat_id, text=text)
+        except (telegram.error.RetryAfter, telegram.error.NetworkError):
+            sleep(30)
+            self.updater.bot.send_message(chat_id=chat_id, text=text)
 
     def send_photo(self, chat_id, img_path, text):
-        self.updater.bot.send_photo(chat_id=chat_id, photo=open(img_path, 'rb'), caption=text)
+        try:
+            self.updater.bot.send_photo(chat_id=chat_id, photo=open(img_path, 'rb'), caption=text)
+        except (telegram.error.RetryAfter, telegram.error.NetworkError):
+            sleep(30)
+            self.updater.bot.send_photo(chat_id=chat_id, photo=open(img_path, 'rb'), caption=text)
 
     def delete_images(self):
         """ Remove images after we send them, because we don't need them anymore """

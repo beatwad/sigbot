@@ -299,9 +299,12 @@ class FindSignal:
         points = list()
         index_list = list()
 
-        df_work = dfs[ticker][self.work_timeframe]['data']
-        levels = dfs[ticker][self.work_timeframe]['levels']
-        df_higher = dfs[ticker][self.higher_timeframe]['data']
+        try:
+            df_work = dfs[ticker][self.work_timeframe]['data']
+            levels = dfs[ticker][self.work_timeframe]['levels']
+            df_higher = dfs[ticker][self.higher_timeframe]['data']
+        except KeyError:
+            return points
 
         df_work = self.prepare_dataframe(df_work)
         # Support and Resistance indicator

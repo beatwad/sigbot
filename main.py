@@ -175,7 +175,7 @@ class MainClass:
             ticker, timeframe, point_index, pattern = point[0], point[1], point[2], point[5]
             # pattern is PriceChange - we need only its name without settings
             if str(pattern[0][0]).startswith('PriceChange'):
-                pattern = str(pattern[0][0])
+                pattern = str([pattern[0][0]] + pattern[1:])
             else:
                 pattern = str(pattern)
 

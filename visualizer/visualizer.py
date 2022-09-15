@@ -250,8 +250,8 @@ class Visualizer:
 
         # get previous percent of right prognosis and save current percent to statistics dictionary
         mean_right_prognosis = round(sum(pct_right_prognosis)/len(pct_right_prognosis), 2)
-        if str(pattern[0][0]).startswith('PriceChange'):
-            key = str(pattern[0][0])
+        if 'PriceChange' in str(pattern[0][0]):
+            key = str([pattern[0][0]] + pattern[1:])
         else:
             key = str(pattern)
         # check if pattern and trade type are in statistics dictionary

@@ -1,3 +1,4 @@
+import requests
 import pandas as pd
 from api.binance_api import Binance
 from api.binance_futures_api import BinanceFutures
@@ -40,7 +41,10 @@ class GetData:
         limit = self.get_limit(df, ticker, timeframe)
         # get data from exchange only when there is at least one interval to get
         if limit > 1:
-            klines = self.api.get_klines(ticker, timeframe, limit + 2)
+            try:
+                klines = self.api.get_klines(ticker, timeframe, limit + 2)
+            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+                return df, 0
             df = self.process_data(klines, df)
             # update timestamp for current timeframe
             self.ticker_dict[ticker][timeframe] = datetime.now()
@@ -68,7 +72,7 @@ class GetData:
         """ Update dataframe for current ticker or create new dataframe if it's first run """
         # convert numeric data to float type
         klines[['open', 'high', 'low', 'close', 'volume']] = klines[['open', 'high', 'low',
-                                                                     'close', 'volume']].astype(float)
+                                                                     'close', 'volume']].astype(float).copy()
         # convert time to UTC+3
         klines['time'] = pd.to_datetime(klines['time'], unit='ms')
         klines = self.add_utc_3(klines)

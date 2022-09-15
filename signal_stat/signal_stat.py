@@ -61,7 +61,7 @@ class SignalStat:
         tmp['timeframe'] = [timeframe]
         # if pattern is PriceChange - we need only its name without settings
         if str(pattern[0][0]).startswith('PriceChange'):
-            pattern = str(pattern[0][0])
+            pattern = str([pattern[0][0]] + pattern[1:])
         else:
             pattern = str(pattern)
         tmp['pattern'] = [pattern]
@@ -172,19 +172,19 @@ class SignalStat:
         stat = stat[latest_time - stat['time'] < pd.Timedelta(self.stat_hour_limit, "h")]
         return stat
 
-    def calculate_total_stat(self, dfs: dict, ttype: str, pattern: str) -> list:
+    def calculate_total_stat(self, dfs: dict, ttype: str, pattern: list) -> list:
         """ Calculate signal statistics for all found signals and all tickers  """
         stat = dfs['stat'][ttype]
         stat = self.cut_stat_df(stat)
         # if pattern is PriceChange - we need only its name without settings
         if str(pattern[0][0]).startswith('PriceChange'):
-            pattern = str(pattern[0][0])
+            pattern = str([pattern[0][0]] + pattern[1:])
         else:
             pattern = str(pattern)
         # get statistics by pattern
         stat = stat[(stat['pattern'] == pattern)]
         if stat.shape[0] == 0:
-            return [None for _ in range(1, self.stat_range + 1)]
+            return [(0, 0, 0) for _ in range(1, self.stat_range + 1)]
         result_statistics = list()
         # calculate percent of right prognosis
         for t in range(1, self.stat_range + 1):

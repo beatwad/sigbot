@@ -1,7 +1,28 @@
 {
+  "Exchanges": {
+    "futures_exchanges": [
+      "BinanceFutures",
+      "OKEXSwap"
+      ]
+  },
   "Data": {
     "Basic": {
-      "params": {}
+      "params": {
+        "timeframe_div": {
+          "1m": 60,
+          "3m": 180,
+          "5m": 300,
+          "15m": 900,
+          "30m": 1800,
+          "1h": 3600,
+          "2h": 7200,
+          "3h": 10800,
+          "4h": 14400,
+          "1d": 86400,
+          "4d": 345600,
+          "1w": 604800
+        }
+      }
     },
     "Binance": {
       "params": {
@@ -41,6 +62,45 @@
         },
         "min_volume": 1e6
       }
+    },
+    "BinanceFutures": {
+      "params": {
+        "limit": 1000,
+        "timeframe_div": {
+          "1m": 60,
+          "3m": 180,
+          "5m": 300,
+          "15m": 900,
+          "30m": 1800,
+          "1h": 3600,
+          "2h": 7200,
+          "3h": 10800,
+          "4h": 14400,
+          "1d": 86400,
+          "4d": 345600,
+          "1w": 604800
+        },
+        "min_volume": 1e6
+      }
+    },
+    "OKEXFutures": {
+      "params": {
+        "limit": 1000,
+        "timeframe_div": {
+          "1m": 60,
+          "3m": 180,
+          "5m": 300,
+          "15m": 900,
+          "30m": 1800,
+          "1h": 3600,
+          "2h": 7200,
+          "4h": 14400,
+          "1d": 86400,
+          "3d": 259200,
+          "1w": 604800
+        },
+        "min_volume": 1e6
+      }
     }
   },
   "Indicator": {
@@ -54,6 +114,11 @@
         "fastk_period": 14,
         "slowk_period": 3,
         "slowd_period": 3
+      }
+    },
+    "LinearReg": {
+      "params": {
+        "timeperiod": 36
       }
     },
     "MACD": {
@@ -77,8 +142,8 @@
     "PriceChange": {
       "params": {
         "round_decimals": 4,
-        "low_price_quantile": 5,
-        "high_price_quantile": 995,
+        "low_price_quantile": 10,
+        "high_price_quantile": 990,
         "stat_file_path": "signal_stat/price_stat.json"
       }
     }
@@ -111,6 +176,12 @@
     },
     "PriceChange": {
       "params": {}
+    },
+    "LinearReg": {
+      "params": {
+         "low_bound": -0.1,
+         "high_bound": 0.1
+      }
     }
   },
   "Signal_params": {
@@ -123,7 +194,12 @@
       "take_profit_multiplier": 2,
       "stop_loss_multiplier": 2,
       "test": 1,
-      "stat_hour_limit": 72,
+      "stat_hour_limit": {
+        "['PriceChange']" :  72,
+        "['PriceChange', ('LinearReg', ())]" :  72,
+        "[('STOCH', (15, 85)), ('RSI', (25, 75))]" :  72,
+        "[('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())]" :  72
+      },
       "prev_sig_limit": 2400,
       "stat_update_period": 3600,
       "stat_range": 24
@@ -133,17 +209,29 @@
     "STOCH",
     "RSI",
     "SUP_RES",
-    "PriceChange"
+    "PriceChange",
+    "LinearReg"
+  ],
+  "Higher_TF_indicator_list": [
+    "SUP_RES",
+    "LinearReg"
   ],
   "Patterns": [
     [
       "STOCH",
-      "RSI",
-      "SUP_RES"
+      "RSI"
     ],
     [
       "STOCH",
-      "RSI"
+      "RSI",
+      "LinearReg"
+    ],
+    [
+      "PriceChange"
+    ],
+    [
+      "PriceChange",
+      "LinearReg"
     ]
   ],
   "Timeframes": {
@@ -187,8 +275,10 @@
       "log_path": "log/telegram_log.txt",
       "chat_ids": {
         "STOCH_RSI": "-1001463253403",
+        "STOCH_RSI_LinearReg": "-1001688789758",
         "STOCH_RSI_SUP_RES": "-1001702067917",
-        "PriceChange": "-1001700504878"
+        "PriceChange": "-1001700504878",
+        "PriceChange_LinearReg": "-1001691421580"
       },
       "prev_sig_minutes_limit": 25,
       "max_notifications_in_row": 3

@@ -194,7 +194,12 @@
       "take_profit_multiplier": 2,
       "stop_loss_multiplier": 2,
       "test": 0,
-      "stat_hour_limit": 36,
+      "stat_hour_limit": {
+        "['PriceChange']" :  24,
+        "['PriceChange', ('LinearReg', ())]" :  48,
+        "[('STOCH', (15, 85)), ('RSI', (25, 75))]" :  36,
+        "[('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())]" :  168
+      },
       "prev_sig_limit": 2400,
       "stat_update_period": 3600,
       "stat_range": 24

@@ -295,8 +295,8 @@ class Visualizer:
         axs2[0].set_title(f'{title}\n\nВероятность правильного движения цены после сигнала\n'
                           f'(в среднем - {mean_right_prognosis}% {stat_change})',
                           fontsize=13, color=self.ticker_color)
-        axs2[1].set_title('Средняя разница между текущей ценой актива\nи его ценой во время сигнала', fontsize=13,
-                          color=self.ticker_color)
+        axs2[1].set_title('Средняя разница между текущей ценой актива\nи его ценой во время сигнала + '
+                          'среднее отклонение цены', fontsize=13, color=self.ticker_color)
 
         # set x-ticks
         xticklabels = ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '120']

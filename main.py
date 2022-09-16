@@ -3,6 +3,8 @@ import glob
 import logging
 import functools
 import threading
+from threading import Thread
+from threading import Event
 import pandas as pd
 from os import remove
 from os import environ
@@ -23,6 +25,8 @@ debug = False
 environ["ENV"] = "development"
 # Get configs
 configs = ConfigFactory.factory(environ).configs
+# variable for thread locking
+global_lock = threading.Lock()
 
 
 def create_logger():
@@ -69,6 +73,29 @@ def exception(function):
     return wrapper
 
 
+def thread_lock(function):
+    """ Threading lock decorator """
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        # wait until global lock released
+        while global_lock.locked():
+            continue
+        # acquire lock
+        global_lock.acquire()
+        # execute function code
+        f = function(*args, **kwargs)
+        # after all operations are done - release the lock
+        global_lock.release()
+        return f
+    return wrapper
+
+
+@thread_lock
+def t_print(*args):
+    """ Thread safe print """
+    print(*args)
+
+
 class MainClass:
     """ Class for running main program cycle """
     # Create statistics class
@@ -79,7 +106,7 @@ class MainClass:
     database = {'stat': {'buy': buy_stat,
                          'sell': sell_stat}}
     # List that is used to avoid processing of ticker that was already processed before
-    processed_tickers = list()
+    used_tickers = list()
 
     def __init__(self, **configs):
         # Flag of first candles read from exchanges
@@ -93,8 +120,8 @@ class MainClass:
         self.higher_tf_indicators, self.work_tf_indicators = self.create_indicators()
         # Set list of available exchanges, cryptocurrencies and tickers
         self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                          'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
@@ -104,24 +131,33 @@ class MainClass:
             self.exchanges[ex]['API'] = exchange_api
             # get ticker list
             tickers, all_tickers = self.exchanges[ex]['API'].get_tickers()
+            # check if ticker wasn't used by previous exchange
+            tickers = self.filter_used_tickers(tickers)
             self.exchanges[ex]['tickers'] = tickers
             self.exchanges[ex]['all_tickers'] = all_tickers
             # fill ticker dict of exchange API with tickers to store current time
             # for periodic updates of ticker information
             exchange_api.fill_ticker_dict(tickers)
         # Start Telegram bot
-        self.telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', **configs)
+        self.telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', database=self.database,
+                                        **configs)
         self.telegram_bot.start()
         # Set candle range in which signal stat update can happen
         self.stat_update_range = configs['SignalStat']['params']['stat_range'] * 2
+        # Lists for storing exchange monitor threads (Spot and Futures)
+        self.spot_ex_monitor_list = list()
+        self.fut_ex_monitor_list = list()
 
-    def check_ticker(self, ticker: str) -> bool:
-        # Check if ticker was already processesed before
-        ticker = ticker.replace('-', '').replace('/', '').replace('SWAP', '')
-        if ticker[:-4] not in self.processed_tickers:
-            self.processed_tickers.append(ticker[:-4])
-            return True
-        return False
+    def filter_used_tickers(self, tickers: list) -> list:
+        """ Check if ticker was already used by previous exchange """ 
+        not_used_tickers = list()
+        for ticker in tickers:
+            orig_ticker = ticker
+            ticker = ticker.replace('-', '').replace('/', '').replace('SWAP', '')[:-4]
+            if ticker not in self.used_tickers:
+                self.used_tickers.append(ticker)
+                not_used_tickers.append(orig_ticker)
+        return not_used_tickers
 
     def get_data(self, exchange_api, ticker: str, timeframe: str) -> (pd.DataFrame, int, bool):
         """ Check if new data appeared. If it is - return dataframe with the new data and amount of data """
@@ -150,7 +186,7 @@ class MainClass:
         return higher_tf_indicators, working_tf_indicators
 
     def get_indicators(self, df: pd.DataFrame, ticker: str, timeframe: str,
-                       exchange_api, data_qty: int) -> (pd.DataFrame, int):
+                       exchange_api, data_qty: int) -> (dict, pd.DataFrame, int):
         """ Create indicator list from search signal patterns list, if it has the new data and
             data is not from higher timeframe, else get only levels """
         if timeframe == self.work_timeframe:
@@ -158,12 +194,12 @@ class MainClass:
         else:
             indicators = self.higher_tf_indicators
         # Write indicators to the dataframe, update dataframe dict
-        self.database, df = exchange_api.add_indicator_data(self.database, df, indicators, ticker, timeframe,
-                                                            data_qty, configs)
+        database, df = exchange_api.add_indicator_data(self.database, df, indicators, ticker, timeframe, data_qty,
+                                                       configs)
         # If enough time has passed - update statistics
         if data_qty > 1 and self.first is False and timeframe == self.work_timeframe:
             data_qty = self.stat_update_range
-        return df, data_qty
+        return database, df, data_qty
 
     def get_signals(self, ticker: str, timeframe: str, data_qty: int) -> list:
         """ Try to find the signals and if succeed - return them and support/resistance levels """
@@ -205,9 +241,10 @@ class MainClass:
                 filtered_points.append(point)
         return filtered_points
 
-    def add_statistics(self, sig_points: list) -> None:
+    def add_statistics(self, sig_points: list) -> dict:
         """ Calculate statistics and write it to the database """
-        self.database = self.stat.write_stat(self.database, sig_points)
+        database = self.stat.write_stat(self.database, sig_points)
+        return database
 
     def calc_statistics(self, sig_points: list) -> list:
         """ Calculate statistics and write it for every signal """
@@ -242,8 +279,75 @@ class MainClass:
                 pass
             df.to_pickle(f'data/{ticker}_{timeframe}.pkl')
 
+    def create_exchange_monitors(self) -> (list, list):
+        """ Create list of instances for ticker monitoring for every exchange """
+        spot_ex_monitor_list = list()
+        fut_ex_monitor_list = list()
+        for exchange, exchange_data in self.exchanges.items():
+            monitor = MonitorExchange(self, exchange, exchange_data)
+            if exchange.endswith('Futures') or exchange.endswith('Swap'):
+                fut_ex_monitor_list.append(monitor)
+            else:
+                spot_ex_monitor_list.append(monitor)
+        return spot_ex_monitor_list, fut_ex_monitor_list
+
     @exception
-    def main_cycle(self) -> None:
+    def main_cycle(self):
+        # create  exchange monitors
+        self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
+        # start all spot exchange monitors
+        for monitor in self.spot_ex_monitor_list:
+            monitor.start()
+        # wait until spot monitor finish its work
+        for monitor in self.spot_ex_monitor_list:
+            monitor.join()
+        # start all futures exchange monitors
+        for monitor in self.fut_ex_monitor_list:
+            monitor.start()
+        # wait until futures monitor finish its work
+        for monitor in self.fut_ex_monitor_list:
+            monitor.join()
+        # flag of the first cycle
+        self.first = False
+
+    def stop_monitors(self):
+        for monitor in self.spot_ex_monitor_list:
+            monitor.stopped.set()
+        for monitor in self.fut_ex_monitor_list:
+            monitor.stopped.set()
+
+
+class MonitorExchange(Thread):
+    # constructor
+    def __init__(self, main_class, exchange, exchange_data):
+        # initialize separate thread the Telegram bot, so it can work independently
+        Thread.__init__(self)
+        # instance of main class
+        self.main = main_class
+        # event for stopping bot thread
+        self.stopped = Event()
+        # exchange name
+        self.exchange = exchange
+        # exchange data
+        self.exchange_data = exchange_data
+
+
+    @thread_lock
+    def get_indicators(self, df, ticker, timeframe, exchange_api, data_qty):
+        # Get indicators and quantity of data
+        self.main.database, df, data_qty = self.main.get_indicators(df, ticker, timeframe, exchange_api, data_qty)
+        return df, data_qty
+
+    @thread_lock
+    def add_statistics(self, sig_points):
+        self.main.database = self.main.add_statistics(sig_points)
+
+    @thread_lock
+    def clean_statistics(self):
+        self.main.clean_statistics()
+
+    @exception
+    def run(self) -> None:
         """ For every exchange, ticker, timeframe and indicator patterns in the database find the latest signals and
             send them to the Telegram module
             Signal point's structure:
@@ -256,53 +360,50 @@ class MainClass:
                 6 - path to file with candle/indicator plots of the signal
                 7 - list of exchanges where ticker with this signal can be found
                 8 - statistics for the current pattern """
-        self.processed_tickers = list()
-        for exchange, exchange_data in self.exchanges.items():
-            exchange_api = exchange_data['API']
-            tickers = exchange_data['tickers']
-            for ticker in tickers:
-                if not self.check_ticker(ticker):
-                    continue
-                # For every timeframe get the data and find the signal
-                for timeframe in self.timeframes:
-                    print(f'Cycle number {i}, exchange {exchange}, ticker {ticker}, timeframe {timeframe}')
-                    df, data_qty = self.get_data(exchange_api, ticker, timeframe)
-                    # If we get new data - create indicator list from search signal patterns list, if it has
-                    # the new data and data is not from higher timeframe, else get only levels
-                    if data_qty > 1:
-                        # Get indicators and quantity of data
-                        df, data_qty = self.get_indicators(df, ticker, timeframe, exchange_api, data_qty)
-                        # If current timeframe is working timeframe
-                        if timeframe == self.work_timeframe:
-                            # Get the signals
-                            sig_points = self.get_signals(ticker, timeframe, data_qty)
-                            # Filter repeating signals
-                            sig_points = self.filter_sig_points(sig_points)
-                            # Add the signals to statistics
-                            self.add_statistics(sig_points)
-                            # Get signals only if they are fresh (not earlier than 10-15 min ago)
-                            sig_points = self.filter_early_sig_points(sig_points, df)
-                            if sig_points:
-                                # Clean statistics dataframes from close signal points
-                                self.clean_statistics()
-                                # Add list of exchanges where this ticker is available and has a good liquidity
-                                sig_points = self.get_exchange_list(ticker, sig_points)
-                                # Add pattern and ticker statistics
-                                sig_points = self.calc_statistics(sig_points)
-                                # Send Telegram notification
-                                print([[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
-                                if not self.first:
-                                    self.telegram_bot.database = self.database
-                                    self.telegram_bot.notification_list += sig_points
-                                    self.telegram_bot.update_bot.set()
-                                    # Log the signals
-                                    sig_message = f'Find the signal points. Exchange is {exchange}, ticker is ' \
-                                                  f'{ticker}, timeframe is {timeframe}, time is {sig_points[0][4]}'
-                                    logger.info(sig_message)
-                        # Save dataframe for further analysis
-                        # self.save_dataframe(df, ticker, timeframe)
-
-        self.first = False
+        exchange_api = self.exchange_data['API']
+        tickers = self.exchange_data['tickers']
+        for ticker in tickers:
+            # stop thread if stop flag is set
+            if self.stopped.is_set():
+                break
+            # For every timeframe get the data and find the signal
+            for timeframe in self.main.timeframes:
+                df, data_qty = self.main.get_data(exchange_api, ticker, timeframe)
+                if timeframe == self.main.work_timeframe:
+                    t_print(f'Cycle number {i}, exchange {self.exchange}, ticker {ticker}')
+                # If we get new data - create indicator list from search signal patterns list, if it has
+                # the new data and data is not from higher timeframe, else get only levels
+                if data_qty > 1:
+                    # Get indicators and quantity of data  #
+                    df, data_qty = self.get_indicators(df, ticker, timeframe, exchange_api, data_qty)
+                    # If current timeframe is working timeframe
+                    if timeframe == self.main.work_timeframe:
+                        # Get the signals
+                        sig_points = self.main.get_signals(ticker, timeframe, data_qty)
+                        # Filter repeating signals
+                        sig_points = self.main.filter_sig_points(sig_points)
+                        # Add the signals to statistics
+                        self.add_statistics(sig_points)
+                        # Get signals only if they are fresh (not earlier than 10-15 min ago)
+                        sig_points = self.main.filter_early_sig_points(sig_points, df)
+                        if sig_points:
+                            # Clean statistics dataframes from close signal points
+                            self.clean_statistics()
+                            # Add list of exchanges where this ticker is available and has a good liquidity
+                            sig_points = self.main.get_exchange_list(ticker, sig_points)
+                            # Add pattern and ticker statistics
+                            sig_points = self.main.calc_statistics(sig_points)
+                            # Send Telegram notification
+                            t_print(self.exchange, [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
+                            if not self.main.first:
+                                self.main.telegram_bot.notification_list += sig_points
+                                self.main.telegram_bot.update_bot.set()
+                                # Log the signals
+                                sig_message = f'Find the signal points. Exchange is {self.exchange}, ticker is ' \
+                                              f'{ticker}, timeframe is {timeframe}, time is {sig_points[0][4]}'
+                                logger.info(sig_message)
+                    # Save dataframe for further analysis
+                    # self.save_dataframe(df, ticker, timeframe)
 
 
 if __name__ == "__main__":
@@ -320,6 +421,8 @@ if __name__ == "__main__":
             i += 1
             sleep(60)
         except (KeyboardInterrupt, SystemExit):
+            # stop all exchange monitors
+            main.stop_monitors()
             # on interruption or exit stop Telegram module thread
             main.telegram_bot.stopped.set()
             # delete everything in image directory on exit

@@ -71,7 +71,7 @@ class TelegramBot(Thread):
     type = 'Telegram'
 
     # constructor
-    def __init__(self, token,  **params):
+    def __init__(self, token,  database, **params):
         # initialize separate thread the Telegram bot, so it can work independently
         Thread.__init__(self)
         # event for stopping bot thread
@@ -79,7 +79,7 @@ class TelegramBot(Thread):
         # event for updating bot thread
         self.update_bot = Event()
         # ticker database
-        self.database = None
+        self.database = database
         # visualizer class
         self.visualizer = Visualizer(**configs)
         # bot parameters

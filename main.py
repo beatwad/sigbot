@@ -1,12 +1,12 @@
+import sys
+import glob
 import logging
 import functools
-import sys
-
+import threading
 import pandas as pd
-from datetime import datetime
-import glob
 from os import remove
 from os import environ
+from datetime import datetime
 from data.get_data import GetData
 from data.get_data import DataFactory
 from config.config import ConfigFactory
@@ -55,9 +55,13 @@ def exception(function):
     def wrapper(*args, **kwargs):
         try:
             return function(*args, **kwargs)
+        except KeyboardInterrupt:
+            err = "KeyboardInterrupt"
+            logger.info(err)
+            raise
         except:
             # log the exception
-            err = "There was an exception in  "
+            err = f"{threading.current_thread().name} : There was an exception in  "
             err += function.__name__
             logger.exception(err)
             # re-raise the exception

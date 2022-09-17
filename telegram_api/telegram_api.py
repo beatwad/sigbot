@@ -53,6 +53,7 @@ class TelegramBot(Thread):
         # set of images to delete
         self.images_to_delete = set()
 
+    @exception
     def run(self) -> None:
         """ Until stopped event is set - run bot's thread and update it every second """
         # on different commands - answer in Telegram
@@ -118,7 +119,6 @@ class TelegramBot(Thread):
                 return False
         return True
 
-    # @exception
     def check_notifications(self):
         """ Check if we can send each notification separately or there are too many of them,
             so we have to send list of them in one message """
@@ -167,8 +167,7 @@ class TelegramBot(Thread):
             self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.send_message(chat_id, text)
         self.delete_images()
-    
-    @exception
+
     def send_notification(self, message) -> None:
         """ Send notification separately """
         # Get info from signal

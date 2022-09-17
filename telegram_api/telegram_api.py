@@ -1,6 +1,6 @@
 import time
-# import functools
-# import logging
+from log.log import exception
+# from log.log import logger
 from time import sleep
 from os import remove
 from os import environ
@@ -22,49 +22,6 @@ from telegram.ext import Updater, CallbackContext, MessageHandler, Filters
 environ["ENV"] = "development"
 # Get configs
 configs = ConfigFactory.factory(environ).configs
-
-
-# def create_logger():
-#     """
-#     Creates a logging object and returns it
-#     """
-#     _logger = logging.getLogger("example_logger")
-#     _logger.setLevel(logging.INFO)
-#     # create the logging file handler
-#     log_path = configs['Telegram']['params']['log_path']
-#     fh = logging.FileHandler(log_path)
-#     fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-#     formatter = logging.Formatter(fmt)
-#     fh.setFormatter(formatter)
-#     # add handler to logger object
-#     _logger.addHandler(fh)
-#     return _logger
-#
-#
-# # create logger
-# logger = create_logger()
-#
-#
-# def exception(function):
-#     """
-#     A decorator that wraps the passed in function and logs
-#     exceptions should one occur
-#     """
-#     @functools.wraps(function)
-#     def wrapper(*args, **kwargs):
-#         try:
-#             return function(*args, **kwargs)
-#         except KeyboardInterrupt:
-#             err = "KeyboardInterrupt"
-#             logger.exception(err)
-#         except:
-#             # log the exception
-#             err = f"{threading.current_thread().name} : There was an exception in  "
-#             err += function.__name__
-#             logger.exception(err)
-#             # re-raise the exception
-#             raise
-#     return wrapper
 
 
 class TelegramBot(Thread):
@@ -211,6 +168,7 @@ class TelegramBot(Thread):
         self.send_message(chat_id, text)
         self.delete_images()
     
+    @exception
     def send_notification(self, message) -> None:
         """ Send notification separately """
         # Get info from signal

@@ -1,6 +1,5 @@
 import sys
 import glob
-import logging
 import functools
 import threading
 from threading import Thread
@@ -16,6 +15,8 @@ from signals.find_signal import FindSignal
 from signal_stat.signal_stat import SignalStat
 from indicators.indicators import IndicatorFactory
 from telegram_api.telegram_api import TelegramBot
+from log.log import exception
+from log.log import logger
 
 from time import sleep
 
@@ -27,50 +28,6 @@ environ["ENV"] = "development"
 configs = ConfigFactory.factory(environ).configs
 # variable for thread locking
 global_lock = threading.Lock()
-
-
-def create_logger():
-    """
-    Creates a logging object and returns it
-    """
-    _logger = logging.getLogger("example_logger")
-    _logger.setLevel(logging.INFO)
-    # create the logging file handler
-    log_path = configs['Log']['params']['log_path']
-    fh = logging.FileHandler(log_path)
-    fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    formatter = logging.Formatter(fmt)
-    fh.setFormatter(formatter)
-    # add handler to logger object
-    _logger.addHandler(fh)
-    return _logger
-
-
-# create logger
-logger = create_logger()
-
-
-def exception(function):
-    """
-    A decorator that wraps the passed in function and logs
-    exceptions should one occur
-    """
-    @functools.wraps(function)
-    def wrapper(*args, **kwargs):
-        try:
-            return function(*args, **kwargs)
-        except KeyboardInterrupt:
-            err = "KeyboardInterrupt"
-            logger.info(err)
-            raise
-        except:
-            # log the exception
-            err = f"{threading.current_thread().name} : There was an exception in  "
-            err += function.__name__
-            logger.exception(err)
-            # re-raise the exception
-            raise
-    return wrapper
 
 
 def thread_lock(function):
@@ -125,19 +82,7 @@ class MainClass:
                           'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
-        for ex in list(self.exchanges.keys()):
-            # get exchange API
-            exchange_api = DataFactory.factory(ex, **configs)
-            self.exchanges[ex]['API'] = exchange_api
-            # get ticker list
-            tickers, all_tickers = self.exchanges[ex]['API'].get_tickers()
-            # check if ticker wasn't used by previous exchange
-            tickers = self.filter_used_tickers(tickers)
-            self.exchanges[ex]['tickers'] = tickers
-            self.exchanges[ex]['all_tickers'] = all_tickers
-            # fill ticker dict of exchange API with tickers to store current time
-            # for periodic updates of ticker information
-            exchange_api.fill_ticker_dict(tickers)
+        self.get_api_and_tickers()
         # Start Telegram bot
         self.telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', database=self.database,
                                         **configs)
@@ -148,16 +93,65 @@ class MainClass:
         self.spot_ex_monitor_list = list()
         self.fut_ex_monitor_list = list()
 
-    def filter_used_tickers(self, tickers: list) -> list:
-        """ Check if ticker was already used by previous exchange """ 
+    def get_api_and_tickers(self) -> None:
+        """ Get API and ticker list for every exchange in list """
+        exchange_list = list(self.exchanges.keys())
+        for i, ex in enumerate(exchange_list):
+            # get exchange API
+            exchange_api = DataFactory.factory(ex, **configs)
+            self.exchanges[ex]['API'] = exchange_api
+            # get ticker list
+            tickers, all_tickers = self.exchanges[ex]['API'].get_tickers()
+            # check if ticker wasn't used by previous exchange
+            if i > 0:
+                prev_tickers = self.exchanges[exchange_list[i-1]]['tickers']
+                tickers, prev_tickers = self.filter_used_tickers(tickers, prev_tickers)
+                self.exchanges[exchange_list[i - 1]]['tickers'] = prev_tickers
+            else:
+                prev_tickers = list()
+                tickers, prev_tickers = self.filter_used_tickers(tickers, prev_tickers)
+
+            self.exchanges[ex]['tickers'] = tickers
+            self.exchanges[ex]['all_tickers'] = all_tickers
+            # fill ticker dict of exchange API with tickers to store current time
+            # for periodic updates of ticker information
+            exchange_api.fill_ticker_dict(tickers)
+
+    def filter_used_tickers(self, tickers: list, prev_tickers: list) -> (list, list):
+        """ Check if ticker was already used by previous exchange and balance number of tickers in currnet
+            and previous exchanges if current exchange also has these tickers and their number is lesser
+            than number of tickers in previous exchange """
+        # create list of cleaned tickers from previous exchange
         not_used_tickers = list()
+        prev_cleaned_tickers = [t.replace('-', '').replace('/', '').replace('SWAP', '')[:-4] for t in prev_tickers]
+        prev_tickers_len = len(prev_tickers)
+        prev_tickers_indexes = list()
         for ticker in tickers:
             orig_ticker = ticker
             ticker = ticker.replace('-', '').replace('/', '').replace('SWAP', '')[:-4]
+            # if tickers is not used - add it to current exchange list
             if ticker not in self.used_tickers:
                 self.used_tickers.append(ticker)
                 not_used_tickers.append(orig_ticker)
-        return not_used_tickers
+            # if tickers is used by previous exchange, but number of tickers in previous exchange is significantly
+            # bigger than number of tickers in current exchange - add it to current exchange list
+            # and remove from previous exchange list
+            elif ticker in prev_cleaned_tickers and len(not_used_tickers) < prev_tickers_len - 50:
+                prev_tickers_len -= 1
+                idx = prev_cleaned_tickers.index(ticker)
+                prev_tickers_indexes.append(idx)
+                not_used_tickers.append(orig_ticker)
+        prev_tickers = self.clean_prev_excahnge_tickers(prev_tickers, prev_tickers_indexes)
+        return not_used_tickers, prev_tickers
+
+    @staticmethod
+    def clean_prev_excahnge_tickers(prev_tickers: list, prev_tickers_indexes: list) -> list:
+        """ Delete tickers from previous to balance load on to exchanges """
+        cleaned_prev_tickers = list()
+        for idx, ticker in enumerate(prev_tickers):
+            if idx not in prev_tickers_indexes:
+                cleaned_prev_tickers.append(ticker)
+        return cleaned_prev_tickers
 
     def get_data(self, exchange_api, ticker: str, timeframe: str) -> (pd.DataFrame, int, bool):
         """ Check if new data appeared. If it is - return dataframe with the new data and amount of data """
@@ -395,7 +389,7 @@ class MonitorExchange(Thread):
                             sig_points = self.main.calc_statistics(sig_points)
                             # Send Telegram notification
                             t_print(self.exchange, [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
-                            if not self.main.first:
+                            if self.main.first:
                                 self.main.telegram_bot.notification_list += sig_points
                                 self.main.telegram_bot.update_bot.set()
                                 # Log the signals

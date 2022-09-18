@@ -138,14 +138,15 @@ class Visualizer:
             axs_higher = subfigs[1].subplots(1, 1, sharex=True)
             df_higher = dfs[ticker][self.higher_timeframe]['data']
             # get corresponding to signal_time index of dataframe with higher timeframe candles
-            try:
-                oh_index = df_higher[(df_higher['time'].dt.year == sig_time.year) &
-                                     (df_higher['time'].dt.month == sig_time.month) &
-                                     (df_higher['time'].dt.day == sig_time.day) &
-                                     (df_higher['time'].dt.hour == sig_time.hour)].index[0]
-            except IndexError:
-                oh_index = df_higher.idxmax()
-            df_higher = df_higher.loc[max(oh_index - self.plot_width * 2, 0):oh_index + 1].reset_index(drop=True)
+            # try:
+            #     oh_index = df_higher[(df_higher['time'].dt.year == sig_time.year) &
+            #                          (df_higher['time'].dt.month == sig_time.month) &
+            #                          (df_higher['time'].dt.day == sig_time.day) &
+            #                          (df_higher['time'].dt.hour == sig_time.hour)].index[0]
+            # except IndexError:
+            #     oh_index = df_higher.index.max()
+            # df_higher = df_higher.loc[max(oh_index - self.plot_width * 2, 0):oh_index + 1].reset_index(drop=True)
+            df_higher = df_higher.loc[max(df_higher.shape[0] - self.plot_width * 2, 0):].reset_index(drop=True)
             ohlc_higher = df_higher[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
             # plot candles
             mpf.plot(ohlc_higher, type='candle', ax=axs_higher, warn_too_much_data=1001, style='yahoo',

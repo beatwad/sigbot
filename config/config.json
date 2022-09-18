@@ -118,7 +118,7 @@
     },
     "LinearReg": {
       "params": {
-        "timeperiod": 36
+        "timeperiod": 24
       }
     },
     "MACD": {

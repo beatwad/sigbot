@@ -55,6 +55,7 @@ def t_print(*args):
 
 class MainClass:
     """ Class for running main program cycle """
+
     @exception
     def __init__(self, **configs):
         # Create statistics class
@@ -65,8 +66,6 @@ class MainClass:
         self.database = {'stat': {'buy': buy_stat, 'sell': sell_stat}}
         # List that is used to avoid processing of ticker that was already processed before
         self.used_tickers = list()
-        # Flag of first candles read from exchanges
-        self.first = True
         # Get list of working and higher timeframes
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
@@ -190,7 +189,7 @@ class MainClass:
         database, df = exchange_api.add_indicator_data(self.database, df, indicators, ticker, timeframe, data_qty,
                                                        configs)
         # If enough time has passed - update statistics
-        if data_qty > 1 and self.first is False and timeframe == self.work_timeframe:
+        if data_qty > 1 and cycle_number > 1 and timeframe == self.work_timeframe:
             data_qty = self.stat_update_range
         return database, df, data_qty
 
@@ -300,8 +299,6 @@ class MainClass:
         # wait until futures monitor finish its work
         for monitor in self.fut_ex_monitor_list:
             monitor.join()
-        # flag of the first cycle
-        self.first = False
 
     def stop_monitors(self):
         for monitor in self.spot_ex_monitor_list:
@@ -323,7 +320,6 @@ class MonitorExchange(Thread):
         self.exchange = exchange
         # exchange data
         self.exchange_data = exchange_data
-
 
     @thread_lock
     def get_indicators(self, df, ticker, timeframe, exchange_api, data_qty):
@@ -363,7 +359,7 @@ class MonitorExchange(Thread):
             for timeframe in self.main.timeframes:
                 df, data_qty = self.main.get_data(exchange_api, ticker, timeframe)
                 if timeframe == self.main.work_timeframe:
-                    t_print(f'Cycle number {i}, exchange {self.exchange}, ticker {ticker}')
+                    t_print(f'Cycle number {cycle_number}, exchange {self.exchange}, ticker {ticker}')
                 # If we get new data - create indicator list from search signal patterns list, if it has
                 # the new data and data is not from higher timeframe, else get only levels
                 if data_qty > 1:
@@ -388,7 +384,7 @@ class MonitorExchange(Thread):
                             sig_points = self.main.calc_statistics(sig_points)
                             # Send Telegram notification
                             t_print(self.exchange, [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
-                            if not self.main.first:
+                            if cycle_number > 1:
                                 self.main.telegram_bot.notification_list += sig_points
                                 self.main.telegram_bot.update_bot.set()
                                 # Log the signals
@@ -401,7 +397,8 @@ class MonitorExchange(Thread):
 
 if __name__ == "__main__":
     # Counter
-    i = 1
+    cycle_number = 1
+    main = None
 
     while True:
         try:
@@ -410,8 +407,8 @@ if __name__ == "__main__":
             main.main_cycle()
             dt2 = datetime.now()
             dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
-            print(f'Cycle is {i}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
-            i += 1
+            print(f'Cycle is {cycle_number}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
+            cycle_number += 1
             sleep(30)
         except (KeyboardInterrupt, SystemExit):
             # stop all exchange monitors

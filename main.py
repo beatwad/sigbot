@@ -55,17 +55,16 @@ def t_print(*args):
 
 class MainClass:
     """ Class for running main program cycle """
-    # Create statistics class
-    stat = SignalStat(**configs)
-    # Create find signal class
-    find_signal = FindSignal(configs)
-    buy_stat, sell_stat = stat.load_statistics()
-    database = {'stat': {'buy': buy_stat,
-                         'sell': sell_stat}}
-    # List that is used to avoid processing of ticker that was already processed before
-    used_tickers = list()
-
+    @exception
     def __init__(self, **configs):
+        # Create statistics class
+        self.stat = SignalStat(**configs)
+        # Create find signal class
+        self.find_signal = FindSignal(configs)
+        buy_stat, sell_stat = self.stat.load_statistics()
+        self.database = {'stat': {'buy': buy_stat, 'sell': sell_stat}}
+        # List that is used to avoid processing of ticker that was already processed before
+        self.used_tickers = list()
         # Flag of first candles read from exchanges
         self.first = True
         # Get list of working and higher timeframes
@@ -403,17 +402,17 @@ class MonitorExchange(Thread):
 if __name__ == "__main__":
     # Counter
     i = 1
-    main = MainClass(**configs)
 
     while True:
         try:
+            main = MainClass(**configs)
             dt1 = datetime.now()
             main.main_cycle()
             dt2 = datetime.now()
             dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
             print(f'Cycle is {i}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
             i += 1
-            sleep(60)
+            sleep(30)
         except (KeyboardInterrupt, SystemExit):
             # stop all exchange monitors
             main.stop_monitors()

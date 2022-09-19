@@ -5,6 +5,7 @@ from api.binance_futures_api import BinanceFutures
 from api.okex_api import OKEX
 from api.okex_swap_api import OKEXSwap
 from datetime import datetime
+from json.decoder import JSONDecodeError
 
 
 class DataFactory(object):
@@ -43,7 +44,7 @@ class GetData:
         if limit > 1:
             try:
                 klines = self.api.get_klines(ticker, timeframe, limit + 2)
-            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout, JSONDecodeError):
                 return df, 0
             df = self.process_data(klines, df)
             # update timestamp for current timeframe

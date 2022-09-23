@@ -1,4 +1,4 @@
-import time
+import sys
 import pytest
 from os import environ
 
@@ -6,7 +6,7 @@ import pandas as pd
 from config.config import ConfigFactory
 from telegram_api.telegram_api import TelegramBot
 
-
+sys.path.insert(0, '..')
 # Set environment variable
 environ["ENV"] = "test"
 # Get configs
@@ -22,7 +22,7 @@ points_btc = [('BTCUSDT', '5m', 0, 'buy', pd.to_datetime('2022-08-21 3:45:00'),
                [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []
                ),
               ('BTCUSDT', '5m', 513, 'buy', pd.to_datetime('2022-08-22 22:30:00'),
-               [('STOCH', (15, 85)), ('RSI', (10, 90)), ('SUP_RES_Robust', ())], [], [], [], []
+               [('STOCH', (15, 85)), ('RSI', (10, 90)), ('LinearReg', ())], [], [], [], []
                ),
               ('BTCUSDT', '5m', 576, 'sell', pd.to_datetime('2022-08-23 03:45:00'),
                [('STOCH', (20, 70)), ('RSI', (25, 75))], [], [], [], []
@@ -59,10 +59,10 @@ points_eth = [('ETHUSDT', '5m', 45, 'sell', pd.to_datetime('2022-08-21 09:00:00'
                [('STOCH', (15, 85)), ('RSI', (35, 80))], [], [], [], []
                ),
               ('ETHUSDT', '5m', 985, 'sell', pd.to_datetime('2022-08-24 12:00:00'),
-               [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES_Robust', ())], [], [], [], []
+               [('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())], [], [], [], []
                ),
               ('ETHUSDT', '5m', 990, 'buy', pd.to_datetime('2022-08-24 12:25:00'),
-               [('STOCH', (15, 85)), ('RSI', (25, 75)), ('SUP_RES_Robust', ())], [], [], [], []
+               [('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())], [], [], [], []
                )
               ]
 
@@ -78,7 +78,7 @@ buy_eth_df = pd.read_pickle('test_ETHUSDT_5m_telegram_notifications.pkl')
 def test_add_to_notification_history(mocker, signal_points, expected):
     mocker.patch('telegram.ext.updater.Updater.__init__', return_value=None)
     mocker.patch('telegram.ext.updater.Updater.__getattribute__', return_value=None)
-    tb = TelegramBot('', **configs)
+    tb = TelegramBot('', database={}, **configs)
     for point in points_btc:
         ticker = point[0]
         timeframe = point[1]
@@ -109,7 +109,7 @@ point4 = ('ETHUSDT', '5m', 45, 'sell', pd.to_datetime('2022-08-21 09:00:00'),
 def test_check_previous_notifications(mocker, notification_df, points, point, expected):
     mocker.patch('telegram.ext.updater.Updater.__init__', return_value=None)
     mocker.patch('telegram.ext.updater.Updater.__getattribute__', return_value=None)
-    tb = TelegramBot('', **configs)
+    tb = TelegramBot('', database={}, **configs)
     for p in points:
         ticker = p[0]
         timeframe = p[1]
@@ -124,3 +124,22 @@ def test_check_previous_notifications(mocker, notification_df, points, point, ex
     pattern = str(point[5])
     assert tb.check_previous_notifications(sig_time, sig_type, ticker, timeframe, pattern) == expected
 
+
+@pytest.mark.parametrize('notification_df, points, point, expected',
+                         [
+                          (buy_btc_df, points_btc, point1, True),
+                          (buy_btc_df, points_btc, point2, False),
+                          (buy_eth_df, points_eth, point3, True),
+                          (buy_eth_df, points_eth, point4, False)
+                          ], ids=repr)
+def test_check_notifications(mocker, notification_df, points, point, expected):
+    mocker.patch('telegram.ext.updater.Updater.__init__', return_value=None)
+    mocker.patch('telegram.ext.updater.Updater.__getattribute__', return_value=None)
+    mocker.patch('telegram_api.telegram_api.TelegramBot.add_to_notification_history', return_value=None)
+    mocker.patch('telegram_api.telegram_api.TelegramBot.send_notification', return_value=None)
+    mocker.patch('telegram_api.telegram_api.TelegramBot.send_message', return_value=None)
+    tb = TelegramBot('', database={}, **configs)
+    for p in points:
+        tb.notification_list.append(p)
+    tb.check_notifications()
+    assert tb.notification_list == []

@@ -398,11 +398,10 @@ class MonitorExchange(Thread):
 if __name__ == "__main__":
     # Counter
     cycle_number = 1
-    main = None
+    main = MainClass(**configs)
 
     while True:
         try:
-            main = MainClass(**configs)
             dt1 = datetime.now()
             main.main_cycle()
             dt2 = datetime.now()

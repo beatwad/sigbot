@@ -4,6 +4,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 from matplotlib import rcParams
+from log.log import logger
 
 matplotlib.use('Agg')
 # style.use('dark_background')
@@ -88,6 +89,8 @@ class Visualizer:
     @staticmethod
     def statistics_change(prev_mean_right_prognosis, mean_right_prognosis):
         """ Measure statistics difference between previous signal and current signal """
+        if prev_mean_right_prognosis is None:
+            return '= без изменений'
         stat_diff = round(mean_right_prognosis - prev_mean_right_prognosis, 2)
         if stat_diff < 0:
             return f'= уменьшилась на {abs(stat_diff)}%'
@@ -235,7 +238,12 @@ class Visualizer:
                  ylabel='', returnfig=True)
 
         # plot titles
-        axs1_0.set_title(f'{self.process_ticker(ticker)} - {timeframe} - '
+        price = df_working["close"].iloc[-1]
+        if price > 1:
+            price = round(price, 3)
+        else:
+            price = round(price, 6)
+        axs1_0.set_title(f'{self.process_ticker(ticker)} - {timeframe} - {price} $ - '
                          f'{df_working["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
                          color=self.ticker_color)
         for index, indicator in enumerate(indicator_list):
@@ -263,12 +271,16 @@ class Visualizer:
             key = str([pattern[0][0]] + pattern[1:])
         else:
             key = str(pattern)
+
         # check if pattern and trade type are in statistics dictionary
-        if key in self.prev_stat_dict and self.prev_stat_dict[key] and point_type in self.prev_stat_dict[key]:
+        message = f'{self.prev_stat_dict}, {mean_right_prognosis}, {key}, {point_type}, {ticker}'
+        logger.info(message)
+
+        if key in self.prev_stat_dict:
             prev_mean_right_prognosis = self.prev_stat_dict[key][point_type]
         else:
             prev_mean_right_prognosis = mean_right_prognosis
-            self.prev_stat_dict[key] = dict()
+            self.prev_stat_dict[key] = {'sell': None, 'buy': None}
 
         self.prev_stat_dict[key][point_type] = mean_right_prognosis
 

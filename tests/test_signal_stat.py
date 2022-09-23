@@ -91,8 +91,8 @@ def test_write_stat(signal_points, expected):
 
 total_buy = pd.concat([buy_btc, buy_eth])
 total_sell = pd.concat([sell_btc, sell_eth])
-total_buy['pattern'] = '[(STOCH, (15, 85)), (RSI, (25, 75))]'
-total_sell['pattern'] = '[(STOCH, (15, 85)), (RSI, (25, 75))]'
+total_buy['pattern'] = "[('STOCH', (15, 85)), ('RSI', (25, 75))]"
+total_sell['pattern'] = "[('STOCH', (15, 85)), ('RSI', (25, 75))]"
 expected1 = [(100.0, 0.1, 0.32), (75.0, 0.15, 0.27), (75.0, 0.28, 0.29), (100.0, 0.22, 0.12), (100.0, 0.37, 0.34),
              (100.0, 0.56, 0.22), (100.0, 0.46, 0.3), (100.0, 0.36, 0.3), (75.0, 0.45, 0.48), (75.0, 0.48, 0.56),
              (100.0, 0.48, 0.76), (75.0, 0.56, 0.92), (75.0, 0.35, 0.95), (75.0, 0.29, 0.88), (50.0, 0.22, 0.78),
@@ -107,9 +107,10 @@ expected2 = [(100.0, -0.15, 0.09), (60.0, -0.12, 0.17), (40.0, 0.01, 0.18), (60.
 
 @pytest.mark.parametrize('ttype, pattern, expected',
                          [
-                          # ('buy', '[(STOCH, (15, 85)), (RSI, (25, 75)), (SUP_RES, ())]', [None for _ in range(24)]),
-                          # ('buy', '[(STOCH, (15, 85)), (RSI, (25, 75))]', expected1),
-                          ('sell', '[(STOCH, (15, 85)), (RSI, (25, 75))]', expected2)
+                          ('buy', "[('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())]",
+                           [(0, 0, 0) for _ in range(24)]),
+                          ('buy', "[('STOCH', (15, 85)), ('RSI', (25, 75))]", expected1),
+                          ('sell', "[('STOCH', (15, 85)), ('RSI', (25, 75))]", expected2)
                           ], ids=repr)
 def test_calculate_total_stat(ttype, pattern, expected):
     ss = SignalStat(**configs)

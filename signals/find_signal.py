@@ -170,7 +170,6 @@ class LinearRegSignal(SignalBase):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
             slowk and slowd lines have crossed and their direction is down/up """
         # Find LinearReg signal
-
         if self.lower_bound_robust(df['linear_reg_angle'], index, self.low_bound):
             return True, 'sell', ()
         if self.higher_bound_robust(df['linear_reg_angle'], index, self.high_bound):
@@ -325,8 +324,10 @@ class FindSignal:
             for indicator_signal in self.indicator_signals:
                 # if indicator is linear regression - find its angle from dataframe from higher timeframe
                 if indicator_signal.name == "LinearReg":
+                    # get time ratio between higher timeframe and working timeframe
                     timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] /
                                           self.timeframe_div[self.work_timeframe])
+                    # transform working timeframe index to higher timeframe index according to timeframe_ratio
                     higher_index = df_higher.shape[0] - int((df_higher.shape[0] - index - 1)/timeframe_ratio) - 1
                     fs = indicator_signal.find_signal(df_higher, higher_index, levels)
                 else:

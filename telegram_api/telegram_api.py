@@ -1,6 +1,5 @@
 import time
 from log.log import exception
-# from log.log import logger
 from time import sleep
 from os import remove
 from os import environ
@@ -124,7 +123,7 @@ class TelegramBot(Thread):
             so we have to send list of them in one message """
         n_len = len(self.notification_list)
         message_dict = dict()
-        # to each pattern corresponds its own chat, so we have to check length of notification list for each pattern
+        # each pattern corresponds to its own chat, so we have to check the length of notification list for each pattern
         for pattern in self.chat_ids.keys():
             message_dict[pattern] = list()
         for i in range(n_len):
@@ -132,7 +131,7 @@ class TelegramBot(Thread):
             sig_pattern = '_'.join([p[0] for p in message[5]])
             message_dict[sig_pattern].append([i, message])
         for pattern in self.chat_ids.keys():
-            # send too long notification list with one message
+            # send too long notification list in one message
             if len(message_dict[pattern]) > self.max_notifications_in_row:
                 self.send_notifications_in_list(message_dict[pattern], pattern)
             else:

@@ -179,8 +179,8 @@
     },
     "LinearReg": {
       "params": {
-         "low_bound": -0.1,
-         "high_bound": 0.1
+         "low_bound": 0,
+         "high_bound": 0
       }
     }
   },

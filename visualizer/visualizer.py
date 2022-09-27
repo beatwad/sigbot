@@ -4,7 +4,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 from matplotlib import rcParams
-from log.log import logger
 
 matplotlib.use('Agg')
 # style.use('dark_background')
@@ -87,11 +86,32 @@ class Visualizer:
         return ticker
 
     @staticmethod
-    def statistics_change(prev_mean_right_prognosis, mean_right_prognosis):
+    def get_statistics_dict_key(pattern: list) -> str:
+        """ Get previous percent of right forecast and save current percent to statistics dictionary """
+        if 'PriceChange' in str(pattern[0][0]):
+            key = str([pattern[0][0]] + pattern[1:])
+        else:
+            key = str(pattern)
+        return key
+    
+    def get_prev_mean_pct_right_forecast(self, key: str, point_type: str, mean_pct_right_forecast: float) -> float:
+        """ Get previous mean percent of right forecasts and
+            fill the statistic dict by current value of percent of right forecasts """
+        if key in self.prev_stat_dict:
+            prev_mean_pct_right_forecast = self.prev_stat_dict[key][point_type]
+        else:
+            prev_mean_pct_right_forecast = mean_pct_right_forecast
+            self.prev_stat_dict[key] = {'sell': None, 'buy': None}
+
+        self.prev_stat_dict[key][point_type] = mean_pct_right_forecast
+        return prev_mean_pct_right_forecast
+
+    @staticmethod
+    def statistics_change(prev_mean_pct_right_forecast, mean_pct_right_forecast):
         """ Measure statistics difference between previous signal and current signal """
-        if prev_mean_right_prognosis is None:
+        if prev_mean_pct_right_forecast is None:
             return '= без изменений'
-        stat_diff = round(mean_right_prognosis - prev_mean_right_prognosis, 2)
+        stat_diff = round(mean_pct_right_forecast - prev_mean_pct_right_forecast, 2)
         if stat_diff < 0:
             return f'= уменьшилась на {abs(stat_diff)}%'
         if stat_diff > 0:
@@ -259,39 +279,30 @@ class Visualizer:
         # self.plot_levels(data, levels, axs1)
 
         # Plot signal statistics
-        pct_right_prognosis = [s[0] for s in statistics[0]]
+        pct_right_forecast = [s[0] for s in statistics[0]]
         pct_price_diff_mean = [s[1] for s in statistics[0]]
         pct_price_diff_std = [s[2] for s in statistics[0]]
         pct_price_diff_mean_plus_std = [a + b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
         pct_price_diff_mean_minus_std = [a - b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
 
-        # get previous percent of right prognosis and save current percent to statistics dictionary
-        mean_right_prognosis = round(sum(pct_right_prognosis)/len(pct_right_prognosis), 2)
-        if 'PriceChange' in str(pattern[0][0]):
-            key = str([pattern[0][0]] + pattern[1:])
-        else:
-            key = str(pattern)
+        # get previous percent of right forecast and save current percent to statistics dictionary
+        mean_pct_right_forecast = round(sum(pct_right_forecast)/len(pct_right_forecast), 2)
+        
+        # get key for statistics dict
+        key = self.get_statistics_dict_key(pattern)
 
+        # get previous mean percent of right forecasts and
         # check if pattern and trade type are in statistics dictionary
-        message = f'{self.prev_stat_dict}, {mean_right_prognosis}, {key}, {point_type}, {ticker}'
-        logger.info(message)
-
-        if key in self.prev_stat_dict:
-            prev_mean_right_prognosis = self.prev_stat_dict[key][point_type]
-        else:
-            prev_mean_right_prognosis = mean_right_prognosis
-            self.prev_stat_dict[key] = {'sell': None, 'buy': None}
-
-        self.prev_stat_dict[key][point_type] = mean_right_prognosis
+        prev_mean_pct_right_forecast = self.get_prev_mean_pct_right_forecast(key, point_type, mean_pct_right_forecast)
 
         # get change of statistics
-        stat_change = self.statistics_change(prev_mean_right_prognosis, mean_right_prognosis)
+        stat_change = self.statistics_change(prev_mean_pct_right_forecast, mean_pct_right_forecast)
 
         # make subplots
         axs2 = subfigs[-1].subplots(2, 1, sharex=True)
 
         # make plots
-        axs2[0].plot(pct_right_prognosis, linewidth=2, color=self.stat_color_1)
+        axs2[0].plot(pct_right_forecast, linewidth=2, color=self.stat_color_1)
         axs2[0].yaxis.set_label_position("right")
         axs2[0].yaxis.tick_right()
         axs2[1].plot(pct_price_diff_mean_plus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_1)
@@ -309,7 +320,7 @@ class Visualizer:
         else:
             title = '\nСTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
         axs2[0].set_title(f'{title}\n\nВероятность правильного движения цены после сигнала\n'
-                          f'(в среднем - {mean_right_prognosis}% {stat_change})',
+                          f'(в среднем - {mean_pct_right_forecast}% {stat_change})',
                           fontsize=13, color=self.ticker_color)
         axs2[1].set_title('Средняя разница между текущей ценой актива\nи его ценой во время сигнала + '
                           'среднее отклонение цены', fontsize=13, color=self.ticker_color)

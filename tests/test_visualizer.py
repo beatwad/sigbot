@@ -1,4 +1,3 @@
-import sys
 import pytest
 from os import environ
 
@@ -98,17 +97,16 @@ def test_get_prev_mean_pct_right_forecast(point, prev_stat_dict, expected):
 
 
 prev_mean_pct_right_forecasts = [None, 58.01, 34.20]
-mean_pct_right_forecast = [20, 158.01, 24.20]
+mean_pct_right_forecasts = [20, 158.01, 24.20]
 stat_results = ['= без изменений', '= выросла на 100.0%', '= уменьшилась на 10.0%']
 
 
 @pytest.mark.parametrize('prev_mean_pct_right_forecast, mean_pct_right_forecast, expected',
                          [
-                          (prev_mean_pct_right_forecasts[0], mean_pct_right_forecast[0], stat_results[0]),
-                          (prev_mean_pct_right_forecasts[1], mean_pct_right_forecast[1], stat_results[1]),
-                          (prev_mean_pct_right_forecasts[2], mean_pct_right_forecast[2], stat_results[2]),
+                          (prev_mean_pct_right_forecasts[0], mean_pct_right_forecasts[0], stat_results[0]),
+                          (prev_mean_pct_right_forecasts[1], mean_pct_right_forecasts[1], stat_results[1]),
+                          (prev_mean_pct_right_forecasts[2], mean_pct_right_forecasts[2], stat_results[2]),
                           ], ids=repr)
 def test_statistics_change(prev_mean_pct_right_forecast, mean_pct_right_forecast, expected):
     vis = Visualizer(**configs)
     assert vis.statistics_change(prev_mean_pct_right_forecast, mean_pct_right_forecast) == expected
-

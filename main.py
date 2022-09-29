@@ -102,7 +102,7 @@ class MainClass:
             tickers, all_tickers = self.exchanges[ex]['API'].get_tickers()
             # check if ticker wasn't used by previous exchange
             if i > 0:
-                prev_tickers = self.exchanges[exchange_list[i-1]]['tickers']
+                prev_tickers = self.exchanges[exchange_list[i - 1]]['tickers']
                 tickers, prev_tickers = self.filter_used_tickers(tickers, prev_tickers)
                 self.exchanges[exchange_list[i - 1]]['tickers'] = prev_tickers
             else:
@@ -115,8 +115,8 @@ class MainClass:
             # for periodic updates of ticker information
             exchange_api.fill_ticker_dict(tickers)
 
-    def filter_used_tickers(self, tickers: list, prev_tickers: list) -> (list, list):
-        """ Check if ticker was already used by previous exchange and balance number of tickers in currnet
+    def filter_used_tickers(self, tickers: list, prev_tickers: list, len_diff=50) -> (list, list):
+        """ Check if ticker was already used by previous exchange and balance number of tickers in current
             and previous exchanges if current exchange also has these tickers and their number is lesser
             than number of tickers in previous exchange """
         # create list of cleaned tickers from previous exchange
@@ -134,16 +134,16 @@ class MainClass:
             # if tickers is used by previous exchange, but number of tickers in previous exchange is significantly
             # bigger than number of tickers in current exchange - add it to current exchange list
             # and remove from previous exchange list
-            elif ticker in prev_cleaned_tickers and len(not_used_tickers) < prev_tickers_len - 50:
+            elif ticker in prev_cleaned_tickers and len(not_used_tickers) < prev_tickers_len - len_diff:
                 prev_tickers_len -= 1
                 idx = prev_cleaned_tickers.index(ticker)
                 prev_tickers_indexes.append(idx)
                 not_used_tickers.append(orig_ticker)
-        prev_tickers = self.clean_prev_excahnge_tickers(prev_tickers, prev_tickers_indexes)
+        prev_tickers = self.clean_prev_exchange_tickers(prev_tickers, prev_tickers_indexes)
         return not_used_tickers, prev_tickers
 
     @staticmethod
-    def clean_prev_excahnge_tickers(prev_tickers: list, prev_tickers_indexes: list) -> list:
+    def clean_prev_exchange_tickers(prev_tickers: list, prev_tickers_indexes: list) -> list:
         """ Delete tickers from previous to balance load on to exchanges """
         cleaned_prev_tickers = list()
         for idx, ticker in enumerate(prev_tickers):

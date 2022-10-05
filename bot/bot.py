@@ -17,9 +17,6 @@ from log.log import exception, logger
 sys.path.insert(0, '..')
 
 
-debug = False
-# Set environment variable
-environ["ENV"] = "development"
 # Get configs
 configs = ConfigFactory.factory(environ).configs
 # variable for thread locking
@@ -62,7 +59,7 @@ class SigBot:
         self.database = {'stat': {'buy': buy_stat, 'sell': sell_stat}}
         # List that is used to avoid processing of ticker that was already processed before
         self.used_tickers = list()
-        # Get list of working and higher timeframes
+        # Get working and higher timeframes
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.futures_exchanges = configs['Exchanges']['futures_exchanges']

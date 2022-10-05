@@ -14,6 +14,10 @@ class SignalStat:
         self.test = self.configs.get('test', False)
         self.stat_limit_hours = self.configs.get('stat_limit_hours', 72)
         self.prev_sig_limit = self.configs.get('prev_sig_limit_minutes', 40)
+        # Get working and higher timeframes
+        working_timeframe = configs['Timeframes']['work_timeframe']
+        self.buy_stat_path = f'signal_stat/buy_stat_{working_timeframe}.pkl'
+        self.sell_stat_path = f'signal_stat/sell_stat_{working_timeframe}.pkl'
 
     def write_stat(self, dfs: dict, signal_points: list) -> dict:
         """ Write signal statistics for every signal point for current ticker on current timeframe.
@@ -146,22 +150,21 @@ class SignalStat:
         """ Save statistics to the disk """
         if not self.test:
             try:
-                open('signal_stat/buy_stat.pkl', 'r').close()
-                open('signal_stat/sell_stat.pkl', 'r').close()
+                open(self.buy_stat_path, 'r').close()
+                open(self.sell_stat_path, 'r').close()
             except FileNotFoundError:
-                open('signal_stat/buy_stat.pkl', 'w+').close()
-                open('signal_stat/sell_stat.pkl', 'w+').close()
+                open(self.buy_stat_path, 'w+').close()
+                open(self.sell_stat_path, 'w+').close()
             # Write statistics to the dataframe dict
-            dfs['stat']['buy'].to_pickle('signal_stat/buy_stat.pkl')
-            dfs['stat']['sell'].to_pickle('signal_stat/sell_stat.pkl')
+            dfs['stat']['buy'].to_pickle(self.buy_stat_path)
+            dfs['stat']['sell'].to_pickle(self.sell_stat_path)
         return dfs
 
-    @staticmethod
-    def load_statistics() -> (pd.DataFrame, pd.DataFrame):
+    def load_statistics(self) -> (pd.DataFrame, pd.DataFrame):
         """ Load statistics from the disk """
         try:
-            buy_stat = pd.read_pickle('signal_stat/buy_stat.pkl')
-            sell_stat = pd.read_pickle('signal_stat/sell_stat.pkl')
+            buy_stat = pd.read_pickle(self.buy_stat_path)
+            sell_stat = pd.read_pickle(self.sell_stat_path)
         except (FileNotFoundError, EOFError):
             buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
             sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])

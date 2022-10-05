@@ -207,7 +207,6 @@
         "[('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())]" :  72
       },
       "prev_sig_limit_minutes": 40,
-      "stat_update_period": 3600,
       "stat_range": 24
     }
   },

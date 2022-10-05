@@ -5,8 +5,6 @@ import threading
 from os import environ
 from config.config import ConfigFactory
 
-# Set environment variable
-environ["ENV"] = "development"
 # Get configs
 configs = ConfigFactory.factory(environ).configs
 

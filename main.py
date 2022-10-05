@@ -1,14 +1,15 @@
 import sys
 import glob
-from bot.bot import SigBot
 from time import sleep
-from os import environ, remove
 from datetime import datetime
+from os import environ, remove
+
+# Set environment variable
+environ["ENV"] = "1h_1d"
+
+from bot.bot import SigBot
 from config.config import ConfigFactory
 
-debug = False
-# Set environment variable
-environ["ENV"] = "development"
 # Get configs
 configs = ConfigFactory.factory(environ).configs
 

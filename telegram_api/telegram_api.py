@@ -14,8 +14,6 @@ from telegram import Update
 from telegram.ext import Updater, CallbackContext, MessageHandler, Filters
 
 
-# Set environment variable
-environ["ENV"] = "development"
 # Get configs
 configs = ConfigFactory.factory(environ).configs
 
@@ -227,8 +225,6 @@ class TelegramBot(Thread):
 
 
 if __name__ == '__main__':
-    # Set environment variable
-    environ["ENV"] = "development"
     # Get configs
     configs = ConfigFactory.factory(environ).configs
 

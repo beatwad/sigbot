@@ -4,13 +4,10 @@ from time import sleep
 from os import remove
 from os import environ
 import pandas as pd
+from threading import Thread, Event
 
 from config.config import ConfigFactory
 from visualizer.visualizer import Visualizer
-
-# import threading
-from threading import Thread
-from threading import Event
 
 import telegram
 from telegram import Update
@@ -27,7 +24,7 @@ class TelegramBot(Thread):
     type = 'Telegram'
 
     # constructor
-    def __init__(self, token,  database, **params):
+    def __init__(self, token,  database, **configs):
         # initialize separate thread the Telegram bot, so it can work independently
         Thread.__init__(self)
         # event for stopping bot thread
@@ -39,10 +36,10 @@ class TelegramBot(Thread):
         # visualizer class
         self.visualizer = Visualizer(**configs)
         # bot parameters
-        self.params = params[self.type]['params']
-        self.chat_ids = self.params['chat_ids']
-        self.prev_sig_limit = self.params.get('prev_sig_limit', 1500)
-        self.max_notifications_in_row = self.params.get('self.max_notifications_in_row', 3)
+        self.configs = configs[self.type]['params']
+        self.chat_ids = self.configs['chat_ids']
+        self.prev_sig_limit = self.configs.get('prev_sig_minutes_limit', 25)
+        self.max_notifications_in_row = self.configs.get('self.max_notifications_in_row', 3)
         self.updater = Updater(token=token, use_context=True)
         self.dispatcher = self.updater.dispatcher
         # list of notifications
@@ -114,7 +111,7 @@ class TelegramBot(Thread):
                                    ]
         if tmp.shape[0] > 0:
             latest_time = tmp['time'].max()
-            if sig_time - latest_time < pd.Timedelta(self.prev_sig_limit, "s"):
+            if sig_time - latest_time < pd.Timedelta(self.prev_sig_limit, "m"):
                 return False
         return True
 
@@ -204,7 +201,7 @@ class TelegramBot(Thread):
             time.sleep(1)
         self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.delete_images()
-    
+
     def send_message(self, chat_id, text):
         try:
             self.updater.bot.send_message(chat_id=chat_id, text=text)

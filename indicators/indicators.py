@@ -9,19 +9,19 @@ from collections import Counter
 class IndicatorFactory(object):
     """ Return indicator according to 'indicator' variable value """
     @staticmethod
-    def factory(indicator, params):
+    def factory(indicator, configs):
         if indicator.startswith('RSI'):
-            return RSI(params)
+            return RSI(configs)
         elif indicator.startswith('STOCH'):
-            return STOCH(params)
+            return STOCH(configs)
         elif indicator.startswith('MACD'):
-            return MACD(params)
+            return MACD(configs)
         elif indicator.startswith('SUP_RES'):
-            return SupRes(params)
+            return SupRes(configs)
         elif indicator.startswith('PriceChange'):
-            return PriceChange(params)
+            return PriceChange(configs)
         elif indicator.startswith('LinearReg'):
-            return LinearReg(params)
+            return LinearReg(configs)
 
 
 class Indicator:
@@ -29,8 +29,8 @@ class Indicator:
     type = 'Indicator'
     name = 'Base'
 
-    def __init__(self, params):
-        self.params = params[self.type][self.name]['params']
+    def __init__(self, configs):
+        self.configs = configs[self.type][self.name]['params']
 
     @abstractmethod
     def get_indicator(self, *args, **kwargs):
@@ -42,17 +42,17 @@ class RSI(Indicator):
     """ RSI indicator, default settings: timeperiod: 14"""
     name = 'RSI'
 
-    def __init__(self, params: dict):
-        super(RSI, self).__init__(params)
+    def __init__(self, configs: dict):
+        super(RSI, self).__init__(configs)
 
     def get_indicator(self, df, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
         # if mean close price value is too small, RSI indicator can become zero,
         # so we should increase it to at least 1e-4
         if df['close'].mean() < 1e-4:
             multiplier = int(1e-4/df['close'].mean()) + 1
-            rsi = ta.RSI(df['close'] * multiplier, **self.params)
+            rsi = ta.RSI(df['close'] * multiplier, **self.configs)
         else:
-            rsi = ta.RSI(df['close'], **self.params)
+            rsi = ta.RSI(df['close'], **self.configs)
         df['rsi'] = rsi
         return df
 
@@ -61,12 +61,12 @@ class STOCH(Indicator):
     """ STOCH indicator, default settings: fastk_period: 14, slowk_period: 3, slowd_period:  3 """
     name = 'STOCH'
 
-    def __init__(self, params):
-        super(STOCH, self).__init__(params)
+    def __init__(self, configs):
+        super(STOCH, self).__init__(configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
         slowk, slowd = ta.STOCH(df['high'], df['low'],
-                                df['close'], **self.params)
+                                df['close'], **self.configs)
         df['stoch_slowk'] = slowk
         df['stoch_slowd'] = slowd
         return df
@@ -76,12 +76,12 @@ class LinearReg(Indicator):
     """ Indicator of linear regression and its angle indicators, default settings: timeperiod: 14 """
     name = 'LinearReg'
 
-    def __init__(self, params):
-        super(LinearReg, self).__init__(params)
+    def __init__(self, configs):
+        super(LinearReg, self).__init__(configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
-        linear_reg = ta.LINEARREG(df['close'], **self.params)
-        linear_reg_angle = ta.LINEARREG_ANGLE(df['close'], **self.params)
+        linear_reg = ta.LINEARREG(df['close'], **self.configs)
+        linear_reg_angle = ta.LINEARREG_ANGLE(df['close'], **self.configs)
         df['linear_reg'] = linear_reg
         df['linear_reg_angle'] = linear_reg_angle
         return df
@@ -91,11 +91,11 @@ class MACD(Indicator):
     """ MACD indicator, default settings: fastperiod: 12, slowperiod: 26, signalperiod: 9 """
     name = 'MACD'
 
-    def __init__(self, params):
-        super(MACD, self).__init__(params)
+    def __init__(self, configs):
+        super(MACD, self).__init__(configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
-        macd, macdsignal, macdhist = ta.MACD(df['close'], **self.params)
+        macd, macdsignal, macdhist = ta.MACD(df['close'], **self.configs)
         df['macd'] = macd
         df['macdsignal'] = macdsignal
         df['macdhist'] = macdhist
@@ -106,10 +106,10 @@ class SupRes(Indicator):
     """ Find support and resistance levels on the candle plot """
     name = 'SUP_RES'
 
-    def __init__(self, params):
-        super(SupRes, self).__init__(params)
-        self.alpha = self.params.get('alpha', 0.7)
-        self.merge_level_multiplier = self.params.get('merge_level_multiplier', 1)
+    def __init__(self, configs):
+        super(SupRes, self).__init__(configs)
+        self.alpha = self.configs.get('alpha', 0.7)
+        self.merge_level_multiplier = self.configs.get('merge_level_multiplier', 1)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, higher_levels,
                       merge=False) -> list:
@@ -193,12 +193,12 @@ class PriceChange(Indicator):
     """ Find big changes of price in both directions """
     name = 'PriceChange'
 
-    def __init__(self, params):
-        super(PriceChange, self).__init__(params)
-        self.low_price_quantile = self.params.get('low_price_quantile', 5)
-        self.high_price_quantile = self.params.get('high_price_quantile', 95)
-        self.round_decimals = self.params.get('decimals', 4)
-        self.stat_file_path = self.params.get('stat_file_path')
+    def __init__(self, configs):
+        super(PriceChange, self).__init__(configs)
+        self.low_price_quantile = self.configs.get('low_price_quantile', 5)
+        self.high_price_quantile = self.configs.get('high_price_quantile', 95)
+        self.round_decimals = self.configs.get('decimals', 4)
+        self.stat_file_path = self.configs.get('stat_file_path')
         self.price_stat = {'lag1': Counter(),
                            'lag2': Counter(),
                            'lag3': Counter()}

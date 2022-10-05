@@ -2,7 +2,7 @@ import pytest
 from os import environ
 
 from config.config import ConfigFactory
-from main import MainClass
+from bot.bot import SigBot
 
 environ["ENV"] = "test"
 # Get configs
@@ -16,7 +16,7 @@ expected = (['ETHUSDT', 'TRXUSDT', 'QTUMUSDT', 'ONTUSDT',  'TTTUSDT'],
                          [
                           (expected),
                           ], ids=repr)
-def test_add_to_notification_history(mocker, expected):
+def test_filter_used_tickers(mocker, expected):
     mocker.patch('telegram_api.telegram_api.TelegramBot.start', return_value=None)
     mocker.patch('telegram_api.telegram_api.TelegramBot.__init__', return_value=None)
     mocker.patch('signal_stat.signal_stat.SignalStat.__init__', return_value=None)
@@ -26,8 +26,7 @@ def test_add_to_notification_history(mocker, expected):
     mocker.patch('data.get_data.GetBinanceData.fill_ticker_dict', return_value=None)
     mocker.patch('data.get_data.GetOKEXData.__init__', return_value=None)
     mocker.patch('data.get_data.GetOKEXData.fill_ticker_dict', return_value=None)
-    # mocker.patch('main.MainClass.filter_used_tickers', return_value=(None, None))
-    mn = MainClass(**configs)
+    mn = SigBot(**configs)
     mn.exchanges = {'Binance': {'API': None, 'tickers': [], 'all_tickers': []},
                     'OKEX': {'API': None, 'tickers': [], 'all_tickers': []}}
     mn.used_tickers = ['ETH', 'QTUM', 'ONT', 'VET', 'HOT', 'SVM']
@@ -60,7 +59,7 @@ expected = [expected1, expected2, expected3]
                           (tickers[1], indexes[1], expected[1]),
                           (tickers[2], indexes[2], expected[2])
                           ], ids=repr)
-def test_add_to_notification_history(mocker, tickers, indexes, expected):
+def test_clean_prev_exchange_tickers(mocker, tickers, indexes, expected):
     mocker.patch('telegram_api.telegram_api.TelegramBot.start', return_value=None)
     mocker.patch('telegram_api.telegram_api.TelegramBot.__init__', return_value=None)
     mocker.patch('signal_stat.signal_stat.SignalStat.__init__', return_value=None)
@@ -70,8 +69,7 @@ def test_add_to_notification_history(mocker, tickers, indexes, expected):
     mocker.patch('data.get_data.GetBinanceData.fill_ticker_dict', return_value=None)
     mocker.patch('data.get_data.GetOKEXData.__init__', return_value=None)
     mocker.patch('data.get_data.GetOKEXData.fill_ticker_dict', return_value=None)
-    # mocker.patch('main.MainClass.filter_used_tickers', return_value=(None, None))
-    mn = MainClass(**configs)
+    mn = SigBot(**configs)
     mn.exchanges = {'Binance': {'API': None, 'tickers': [], 'all_tickers': []},
                     'OKEX': {'API': None, 'tickers': [], 'all_tickers': []}}
     # not_used_tickers, prev_tickers

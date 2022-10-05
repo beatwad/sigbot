@@ -200,10 +200,10 @@
       "take_profit_multiplier": 2,
       "stop_loss_multiplier": 2,
       "test": 0,
-      "stat_hour_limit": {
-        "['PriceChange']" :  24,
-        "['PriceChange', ('LinearReg', ())]" :  48,
-        "[('STOCH', (15, 85)), ('RSI', (25, 75))]" :  36,
+      "stat_limit_hours": {
+        "['PriceChange']" :  168,
+        "['PriceChange', ('LinearReg', ())]" :  168,
+        "[('STOCH', (15, 85)), ('RSI', (25, 75))]" :  168,
         "[('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())]" :  168
       },
       "prev_sig_limit_minutes": 40,

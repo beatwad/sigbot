@@ -20,21 +20,21 @@ class Visualizer:
     stat_std_color_2 = '#E73B19'
     stat_color_2 = '#EE4B1A'
 
-    def __init__(self, **params):
+    def __init__(self, **configs):
         # Get working and higher timeframes
-        self.working_timeframe = params['Timeframes']['work_timeframe']
-        self.higher_timeframe = params['Timeframes']['higher_timeframe']
+        self.working_timeframe = configs['Timeframes']['work_timeframe']
+        self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         # Get Visualizer parameters
-        self.params = params[self.type]['params']
+        self.configs = configs[self.type]['params']
         # Path to save plot files
-        self.image_path = self.params['image_path']
-        self.indicator_params = params['Indicator_signal']
-        self.plot_width = self.params.get('plot_width', 10)
-        self.indicator_dict = self.params.get('indicator_dict', dict())
-        self.level_indicators = self.params.get('level_indicators', list())
-        self.boundary_indicators = self.params.get('boundary_indicators', list())
+        self.image_path = self.configs['image_path']
+        self.indicator_configs = configs['Indicator_signal']
+        self.plot_width = self.configs.get('plot_width', 10)
+        self.indicator_dict = self.configs.get('indicator_dict', dict())
+        self.level_indicators = self.configs.get('level_indicators', list())
+        self.boundary_indicators = self.configs.get('boundary_indicators', list())
         # Max number of previous candles for which signal can be searched for
-        self.max_prev_candle_limit = self.params.get('max_prev_candle_limit', 0)
+        self.max_prev_candle_limit = self.configs.get('max_prev_candle_limit', 0)
         # dict for storing previous statistics values
         self.prev_stat_dict = dict()
 

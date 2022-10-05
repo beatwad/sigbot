@@ -6,21 +6,21 @@ from abc import abstractmethod
 class SignalFactory(object):
     """ Return indicator according to 'indicator' variable value """
     @staticmethod
-    def factory(indicator, params):
+    def factory(indicator, configs):
         if indicator == 'RSI':
-            return RSISignal(**params)
+            return RSISignal(**configs)
         elif indicator == 'STOCH':
-            return STOCHSignal(**params)
+            return STOCHSignal(**configs)
         elif indicator == 'MACD':
-            return MACDSignal(**params)
+            return MACDSignal(**configs)
         elif indicator == 'SUP_RES':
-            return SupResSignal(**params)
+            return SupResSignal(**configs)
         elif indicator == 'SUP_RES_Robust':
-            return SupResSignalRobust(**params)
+            return SupResSignalRobust(**configs)
         elif indicator == 'PriceChange':
-            return PriceChangeSignal(**params)
+            return PriceChangeSignal(**configs)
         elif indicator == 'LinearReg':
-            return LinearRegSignal(**params)
+            return LinearRegSignal(**configs)
 
 
 class SignalBase:
@@ -28,8 +28,8 @@ class SignalBase:
     type = 'Indicator_signal'
     name = 'Base'
 
-    def __init__(self, params):
-        self.params = params[self.type][self.name]['params']
+    def __init__(self, configs):
+        self.configs = configs[self.type][self.name]['params']
 
     @abstractmethod
     def find_signal(self, *args, **kwargs):
@@ -97,10 +97,10 @@ class STOCHSignal(SignalBase):
     type = 'Indicator_signal'
     name = 'STOCH'
 
-    def __init__(self, **params):
-        super(STOCHSignal, self).__init__(params)
-        self.low_bound = self.params.get('low_bound', 20)
-        self.high_bound = self.params.get('high_bound', 80)
+    def __init__(self, **configs):
+        super(STOCHSignal, self).__init__(configs)
+        self.low_bound = self.configs.get('low_bound', 20)
+        self.high_bound = self.configs.get('high_bound', 80)
 
     @staticmethod
     def crossed_lines(indicator: pd.Series, i: int, up: bool) -> bool:
@@ -140,10 +140,10 @@ class RSISignal(SignalBase):
     type = 'Indicator_signal'
     name = "RSI"
 
-    def __init__(self, **params):
-        super(RSISignal, self).__init__(params)
-        self.low_bound = self.params.get('low_bound', 25)
-        self.high_bound = self.params.get('high_bound', 75)
+    def __init__(self, **configs):
+        super(RSISignal, self).__init__(configs)
+        self.low_bound = self.configs.get('low_bound', 25)
+        self.high_bound = self.configs.get('high_bound', 75)
 
     def find_signal(self, df: pd.DataFrame, index: int, *args) -> (bool, str, tuple):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
@@ -161,10 +161,10 @@ class LinearRegSignal(SignalBase):
     type = 'Indicator_signal'
     name = "LinearReg"
 
-    def __init__(self, **params):
-        super(LinearRegSignal, self).__init__(params)
-        self.low_bound = self.params.get('low_bound', -0.1)
-        self.high_bound = self.params.get('high_bound', 0.1)
+    def __init__(self, **configs):
+        super(LinearRegSignal, self).__init__(configs)
+        self.low_bound = self.configs.get('low_bound', -0.1)
+        self.high_bound = self.configs.get('high_bound', 0.1)
 
     def find_signal(self, df: pd.DataFrame, index: int, *args) -> (bool, str, tuple):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
@@ -181,8 +181,8 @@ class PriceChangeSignal(SignalBase):
     type = 'Indicator_signal'
     name = 'PriceChange'
 
-    def __init__(self, **params):
-        super(PriceChangeSignal, self).__init__(params)
+    def __init__(self, **configs):
+        super(PriceChangeSignal, self).__init__(configs)
 
     def find_signal(self, df: pd.DataFrame, index: int, *args) -> (bool, str, tuple):
         """ Return signal if RSI is higher/lower than high/low bound (overbuy/oversell zone),
@@ -207,10 +207,10 @@ class MACDSignal(SignalBase):
     type = 'Indicator_signal'
     name = 'MACD'
 
-    def __init__(self, **params):
-        super(MACDSignal, self).__init__(params)
-        self.low_bound = self.params.get('low_bound', 20)
-        self.high_bound = self.params.get('high_bound', 80)
+    def __init__(self, **configs):
+        super(MACDSignal, self).__init__(configs)
+        self.low_bound = self.configs.get('low_bound', 20)
+        self.high_bound = self.configs.get('high_bound', 80)
 
     def find_signal(self, *args, **kwargs):
         return False, '', ()
@@ -221,9 +221,9 @@ class SupResSignal(SignalBase):
     type = 'Indicator_signal'
     name = 'SUP_RES'
 
-    def __init__(self, **params):
-        super(SupResSignal, self).__init__(params)
-        self.proximity_multiplier = self.params.get('proximity_multiplier', 1)
+    def __init__(self, **configs):
+        super(SupResSignal, self).__init__(configs)
+        self.proximity_multiplier = self.configs.get('proximity_multiplier', 1)
 
     def find_signal(self, *args, **kwargs):
         return True, '', ()

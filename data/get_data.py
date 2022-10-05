@@ -10,29 +10,29 @@ from json.decoder import JSONDecodeError
 
 class DataFactory(object):
     @staticmethod
-    def factory(exchange, **params):
+    def factory(exchange, **configs):
         if exchange == 'Binance':
-            return GetBinanceData(**params)
+            return GetBinanceData(**configs)
         elif exchange == 'BinanceFutures':
-            return GetBinanceFuturesData(**params)
+            return GetBinanceFuturesData(**configs)
         elif exchange == 'OKEX':
-            return GetOKEXData(**params)
+            return GetOKEXData(**configs)
         elif exchange == 'OKEXSwap':
-            return GetOKEXSwapData(**params)
+            return GetOKEXSwapData(**configs)
 
 
 class GetData:
     type = 'Data'
     name = 'Basic'
 
-    def __init__(self, **params):
-        self.params = params[self.type][self.name]['params']
+    def __init__(self, **configs):
+        self.configs = configs[self.type][self.name]['params']
         # basic interval (number of candles) to upload at startup
-        self.limit = self.params.get('limit', 0)
+        self.limit = self.configs.get('limit', 0)
         # minimum trading volume (USD) for exchange ticker to be added to watch list
-        self.min_volume = self.params.get('min_volume', 0)
+        self.min_volume = self.configs.get('min_volume', 0)
         # parameter to convert seconds to intervals
-        self.timeframe_div = self.params.get('timeframe_div', dict())
+        self.timeframe_div = self.configs.get('timeframe_div', dict())
         # dict to store timestamp for every timeframe
         self.ticker_dict = dict()
         self.api = None
@@ -128,8 +128,8 @@ class GetData:
 class GetBinanceData(GetData):
     name = 'Binance'
 
-    def __init__(self, **params):
-        super(GetBinanceData, self).__init__(**params)
+    def __init__(self, **configs):
+        super(GetBinanceData, self).__init__(**configs)
         self.key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
         self.secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
         self.api = Binance(self.key, self.secret)
@@ -138,8 +138,8 @@ class GetBinanceData(GetData):
 class GetBinanceFuturesData(GetData):
     name = 'BinanceFutures'
 
-    def __init__(self, **params):
-        super(GetBinanceFuturesData, self).__init__(**params)
+    def __init__(self, **configs):
+        super(GetBinanceFuturesData, self).__init__(**configs)
         self.key = "QD5nRIFvOXYBdVsnkfWf5G8D91CKTVgZXqReyO6PqL70r9PjP8SbbVh3bYlJc9cy"
         self.secret = "ht5hw25DzKOvfaU2rTqpSsy0CDTsKfYsb2JSQLSCbrz7zoLrnnKWi9SBh7NYFSZD"
         self.api = BinanceFutures(self.key, self.secret)
@@ -148,14 +148,14 @@ class GetBinanceFuturesData(GetData):
 class GetOKEXData(GetData):
     name = 'OKEX'
 
-    def __init__(self, **params):
-        super(GetOKEXData, self).__init__(**params)
+    def __init__(self, **configs):
+        super(GetOKEXData, self).__init__(**configs)
         self.api = OKEX()
 
 
 class GetOKEXSwapData(GetData):
     name = 'OKEX'
 
-    def __init__(self, **params):
-        super(GetOKEXSwapData, self).__init__(**params)
+    def __init__(self, **configs):
+        super(GetOKEXSwapData, self).__init__(**configs)
         self.api = OKEXSwap()

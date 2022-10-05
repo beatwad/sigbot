@@ -5,14 +5,15 @@ class SignalStat:
     """ Class for acquiring signal statistics """
     type = 'SignalStat'
 
-    def __init__(self, **params):
-        self.params = params[self.type]['params']
-        self.take_profit_multiplier = self.params.get('take_profit_multiplier', 2)
-        self.stop_loss_multiplier = self.params.get('stop_loss_multiplier', 2)
-        self.stat_range = self.params.get('stat_range', 24)
-        self.test = self.params.get('test', False)
-        self.stat_hour_limit = self.params.get('stat_hour_limit', 72)
-        self.prev_sig_limit = self.params.get('prev_sig_limit', 1500)
+    def __init__(self, **configs):
+        self.configs = configs[self.type]['params']
+        self.take_profit_multiplier = self.configs.get('take_profit_multiplier', 2)
+        self.stop_loss_multiplier = self.configs.get('stop_loss_multiplier', 2)
+        # the number of last candles for which statistics are calculated
+        self.stat_range = self.configs.get('stat_range', 24)
+        self.test = self.configs.get('test', False)
+        self.stat_limit_hours = self.configs.get('stat_limit_hours', 72)
+        self.prev_sig_limit = self.configs.get('prev_sig_limit_minutes', 40)
 
     def write_stat(self, dfs: dict, signal_points: list) -> dict:
         """ Write signal statistics for every signal point for current ticker on current timeframe.
@@ -169,7 +170,7 @@ class SignalStat:
     def cut_stat_df(self, stat, pattern):
         """ Get only last signals that have been created not earlier than N hours ago (depends on pattern) """
         latest_time = stat['time'].max()
-        stat = stat[latest_time - stat['time'] < pd.Timedelta(self.stat_hour_limit[pattern], "h")]
+        stat = stat[latest_time - stat['time'] < pd.Timedelta(self.stat_limit_hours[pattern], "h")]
         return stat
 
     def calculate_total_stat(self, dfs: dict, ttype: str, pattern: list) -> list:
@@ -225,7 +226,7 @@ class SignalStat:
             tmp['time_diff'] = tmp['time'] - tmp['time'].shift(1)
             tmp['ticker_shift'] = tmp['ticker'].shift(1)
             drop_index = tmp[(tmp['ticker'] == tmp['ticker_shift']) & (tmp['time_diff'] >= pd.Timedelta(0, 's')) &
-                             (tmp['time_diff'] < pd.Timedelta(self.prev_sig_limit, 's'))].index
+                             (tmp['time_diff'] < pd.Timedelta(self.prev_sig_limit, 'm'))].index
             df.loc[drop_index, 'to_drop'] = True
         df = df[df['to_drop'] == False]
         df = df.drop(['to_drop'], axis=1).reset_index(drop=True)

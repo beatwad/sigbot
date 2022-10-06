@@ -2,8 +2,9 @@ import inspect
 import logging
 import functools
 import threading
-from os import environ
+from os import path, environ
 from config.config import ConfigFactory
+
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs
@@ -16,8 +17,9 @@ def create_logger():
     _logger = logging.getLogger("example_logger")
     _logger.setLevel(logging.INFO)
     # create the logging file handler
+    basedir = path.abspath(path.dirname(__file__))
     log_path = configs['Log']['params']['log_path']
-    fh = logging.FileHandler(log_path)
+    fh = logging.FileHandler(f'{basedir}/{log_path}')
     fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     formatter = logging.Formatter(fmt)
     fh.setFormatter(formatter)

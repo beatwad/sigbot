@@ -201,10 +201,10 @@
       "stop_loss_multiplier": 2,
       "test": 0,
       "stat_limit_hours": {
-        "['PriceChange']" :  168,
-        "['PriceChange', ('LinearReg', ())]" :  168,
-        "[('STOCH', (15, 85)), ('RSI', (25, 75))]" :  168,
-        "[('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())]" :  168
+        "PriceChange" :  24,
+        "PriceChange_LinearReg" :  48,
+        "STOCH_RSI" :  36,
+        "STOCH_RSI_LinearReg" :  168
       },
       "prev_sig_limit_minutes": 40,
       "stat_range": 24
@@ -272,12 +272,12 @@
   },
   "Log": {
     "params": {
-      "log_path": "log/log.txt"
+      "log_path": "log.txt"
     }
   },
   "Telegram": {
     "params": {
-      "log_path": "log/telegram_log.txt",
+      "log_path": "telegram_log.txt",
       "chat_ids": {
         "STOCH_RSI": "-1001463253403",
         "STOCH_RSI_LinearReg": "-1001688789758",

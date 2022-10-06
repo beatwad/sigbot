@@ -272,12 +272,12 @@
   },
   "Log": {
     "params": {
-      "log_path": "log/log.txt"
+      "log_path": "log.txt"
     }
   },
   "Telegram": {
     "params": {
-      "log_path": "log/telegram_log.txt",
+      "log_path": "telegram_log.txt",
       "chat_ids": {
         "STOCH_RSI": "-1001463253403",
         "STOCH_RSI_LinearReg": "-1001688789758",

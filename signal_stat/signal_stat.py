@@ -65,10 +65,12 @@ class SignalStat:
         tmp['ticker'] = [ticker]
         tmp['timeframe'] = [timeframe]
         # if pattern is PriceChange - we need only its name without settings
-        if str(pattern[0][0]).startswith('PriceChange'):
-            pattern = str([pattern[0][0]] + pattern[1:])
-        else:
-            pattern = str(pattern)
+        # if str(pattern[0][0]).startswith('PriceChange'):
+        #     pattern = str([pattern[0][0]] + pattern[1:])
+        # else:
+        #     pattern = str(pattern)
+        pattern = '_'.join(p[0] for p in pattern)
+
         tmp['pattern'] = [pattern]
         # If current statistics is not in stat dataframe - write it
         if ttype == 'buy':
@@ -176,14 +178,16 @@ class SignalStat:
         stat = stat[latest_time - stat['time'] < pd.Timedelta(self.stat_limit_hours[pattern], "h")]
         return stat
 
-    def calculate_total_stat(self, dfs: dict, ttype: str, pattern: list) -> list:
+    def calculate_total_stat(self, dfs: dict, ttype: str, pattern: list) -> (list, int):
         """ Calculate signal statistics for all found signals and all tickers  """
         stat = dfs['stat'][ttype]
         # if pattern is PriceChange - we need only its name without settings
-        if str(pattern[0][0]).startswith('PriceChange'):
-            pattern = str([pattern[0][0]] + pattern[1:])
-        else:
-            pattern = str(pattern)
+        # if str(pattern[0][0]).startswith('PriceChange'):
+        #     pattern = str([pattern[0][0]] + pattern[1:])
+        # else:
+        #     pattern = str(pattern)
+        pattern = '_'.join(p[0] for p in pattern)
+
         # get statistics by pattern
         stat = stat[(stat['pattern'] == pattern)]
         # get only last signals that has been created not earlier than N hours ago (depends on pattern)
@@ -191,16 +195,16 @@ class SignalStat:
         if stat.shape[0] == 0:
             return [(0, 0, 0) for _ in range(1, self.stat_range + 1)]
         result_statistics = list()
-        # calculate percent of right prognosis
+        # calculate percent of right forecast
         for t in range(1, self.stat_range + 1):
             if ttype == 'buy':
-                pct_price_right_prognosis = round(stat[stat[f'price_diff_{t}'] > 0].shape[0] / stat.shape[0] * 100, 2)
+                pct_price_right_forecast = round(stat[stat[f'price_diff_{t}'] > 0].shape[0] / stat.shape[0] * 100, 2)
             else:
-                pct_price_right_prognosis = round(stat[stat[f'price_diff_{t}'] < 0].shape[0] / stat.shape[0] * 100, 2)
+                pct_price_right_forecast = round(stat[stat[f'price_diff_{t}'] < 0].shape[0] / stat.shape[0] * 100, 2)
             pct_price_diff_mean = round(stat[f'pct_price_diff_{t}'].median(), 2)
             pct_price_diff_std = round(stat[f'pct_price_diff_{t}'].std(), 2)
-            result_statistics.append((pct_price_right_prognosis, pct_price_diff_mean, pct_price_diff_std))
-        return result_statistics
+            result_statistics.append((pct_price_right_forecast, pct_price_diff_mean, pct_price_diff_std))
+        return result_statistics, stat.shape[0]
 
     # def calculate_ticker_stat(self, dfs: dict, ttype, ticker: str, timeframe: str, pattern: str) -> tuple:
     #     """ Calculate signal statistics for current ticker and current timeframe """
@@ -209,15 +213,15 @@ class SignalStat:
     #     stat = stat[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern)]
     #     if stat.shape[0] == 0:
     #         return None, None, None, None
-    #     # calculate percent of right prognosis
+    #     # calculate percent of right forecast
     #     if ttype == 'buy':
-    #         pct_price_right_prognosis = (stat[stat['price_diff'] > 0].shape[0] / stat.shape[0]) * 100
+    #         pct_price_right_forecast = (stat[stat['price_diff'] > 0].shape[0] / stat.shape[0]) * 100
     #     else:
-    #         pct_price_right_prognosis = (stat[stat['price_diff'] < 0].shape[0] / stat.shape[0]) * 100
+    #         pct_price_right_forecast = (stat[stat['price_diff'] < 0].shape[0] / stat.shape[0]) * 100
     #     # calculate mean absolute and mean percent price difference after the signal
     #     price_diff_mean = stat['price_diff'].mean()
     #     pct_price_diff_mean = stat['pct_price_diff'].mean()
-    #     return pct_price_right_prognosis, price_diff_mean, pct_price_diff_mean, stat.shape[0]
+    #     return pct_price_right_forecast, price_diff_mean, pct_price_diff_mean, stat.shape[0]
 
     def delete_close_trades(self, df: pd.DataFrame) -> pd.DataFrame:
         """ Find adjacent in time trades for the same tickers and delete them """

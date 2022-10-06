@@ -96,13 +96,13 @@ class SigBot:
             # get ticker list
             tickers, all_tickers = self.exchanges[ex]['API'].get_tickers()
             # check if ticker wasn't used by previous exchange
-            if i > 0:
-                prev_tickers = self.exchanges[exchange_list[i - 1]]['tickers']
-                tickers, prev_tickers = self.filter_used_tickers(tickers, prev_tickers)
-                self.exchanges[exchange_list[i - 1]]['tickers'] = prev_tickers
-            else:
-                prev_tickers = list()
-                tickers, prev_tickers = self.filter_used_tickers(tickers, prev_tickers)
+            # if i > 0:
+            #     prev_tickers = self.exchanges[exchange_list[i - 1]]['tickers']
+            #     tickers, prev_tickers = self.filter_used_tickers(tickers, prev_tickers)
+            #     #self.exchanges[exchange_list[i - 1]]['tickers'] = prev_tickers
+            # else:
+            prev_tickers = list()
+            tickers, prev_tickers = self.filter_used_tickers(tickers, prev_tickers)
 
             self.exchanges[ex]['tickers'] = tickers
             self.exchanges[ex]['all_tickers'] = all_tickers
@@ -116,9 +116,9 @@ class SigBot:
             than number of tickers in previous exchange """
         # create list of cleaned tickers from previous exchange
         not_used_tickers = list()
-        prev_cleaned_tickers = [t.replace('-', '').replace('/', '').replace('SWAP', '')[:-4] for t in prev_tickers]
-        prev_tickers_len = len(prev_tickers)
-        prev_tickers_indexes = list()
+        # prev_cleaned_tickers = [t.replace('-', '').replace('/', '').replace('SWAP', '')[:-4] for t in prev_tickers]
+        # prev_tickers_len = len(prev_tickers)
+        # prev_tickers_indexes = list()
         for ticker in tickers:
             orig_ticker = ticker
             ticker = ticker.replace('-', '').replace('/', '').replace('SWAP', '')[:-4]
@@ -129,12 +129,12 @@ class SigBot:
             # if tickers is used by previous exchange, but number of tickers in previous exchange is significantly
             # bigger than number of tickers in current exchange - add it to current exchange list
             # and remove from previous exchange list
-            elif ticker in prev_cleaned_tickers and len(not_used_tickers) < prev_tickers_len - len_diff:
-                prev_tickers_len -= 1
-                idx = prev_cleaned_tickers.index(ticker)
-                prev_tickers_indexes.append(idx)
-                not_used_tickers.append(orig_ticker)
-        prev_tickers = self.clean_prev_exchange_tickers(prev_tickers, prev_tickers_indexes)
+            # elif ticker in prev_cleaned_tickers and len(not_used_tickers) < prev_tickers_len - len_diff:
+            #     prev_tickers_len -= 1
+            #     idx = prev_cleaned_tickers.index(ticker)
+            #     prev_tickers_indexes.append(idx)
+            #     not_used_tickers.append(orig_ticker)
+        # prev_tickers = self.clean_prev_exchange_tickers(prev_tickers, prev_tickers_indexes)
         return not_used_tickers, prev_tickers
 
     @staticmethod
@@ -229,7 +229,7 @@ class SigBot:
         return filtered_points
 
     def add_statistics(self, sig_points: list) -> dict:
-        """ Calculate statistics and write it to the database """
+        """ Getstatistics and write it to the database """
         database = self.stat.write_stat(self.database, sig_points)
         return database
 
@@ -238,7 +238,7 @@ class SigBot:
         for sig_point in sig_points:
             sig_type = sig_point[3]
             pattern = sig_point[5]
-            result_statistics = self.stat.calculate_total_stat(self.database, sig_type, pattern)
+            result_statistics, _ = self.stat.calculate_total_stat(self.database, sig_type, pattern)
             sig_point[8].append(result_statistics)
         return sig_points
 
@@ -257,15 +257,6 @@ class SigBot:
                     sig_point[7].append(exchange)
         return sig_points
 
-    def save_dataframe(self, df: pd.DataFrame, ticker: str, timeframe: str) -> None:
-        if timeframe == self.work_timeframe:
-            """ Save dataframe to the disk """
-            try:
-                open(f'data/{ticker}_{timeframe}.pkl', 'w').close()
-            except FileNotFoundError:
-                pass
-            df.to_pickle(f'data/{ticker}_{timeframe}.pkl')
-
     def create_exchange_monitors(self) -> (list, list):
         """ Create list of instances for ticker monitoring for every exchange """
         spot_ex_monitor_list = list()
@@ -278,9 +269,35 @@ class SigBot:
                 spot_ex_monitor_list.append(monitor)
         return spot_ex_monitor_list, fut_ex_monitor_list
 
+    def save_opt_dataframes(self, load=False) -> None:
+        """ Save all ticker dataframes for further indicator/signal optimization """
+        self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
+        if load:
+            print('\nLoad the datasets...')
+            # start all spot exchange monitors
+            for monitor in self.spot_ex_monitor_list:
+                monitor.save_opt_dataframes()
+            # start all futures exchange monitors
+            for monitor in self.fut_ex_monitor_list:
+                monitor.save_opt_dataframes()
+
+    def save_opt_statistics(self) -> None:
+        """ Save statistics for further indicator/signal optimization """
+        self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
+        buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
+        sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
+        self.database['stat']['buy'] = buy_stat
+        self.database['stat']['buy'] = sell_stat
+        # start all spot exchange monitors
+        for monitor in self.spot_ex_monitor_list:
+            monitor.save_opt_statistics()
+        # start all futures exchange monitors
+        for monitor in self.fut_ex_monitor_list:
+            monitor.save_opt_statistics()
+
     @exception
     def main_cycle(self):
-        # create  exchange monitors
+        """ Create and run exchange monitors """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
         # start all spot exchange monitors
         for monitor in self.spot_ex_monitor_list:
@@ -296,6 +313,7 @@ class SigBot:
             monitor.join()
 
     def stop_monitors(self):
+        """ Stop all exchange monitors """
         for monitor in self.spot_ex_monitor_list:
             monitor.stopped.set()
         for monitor in self.fut_ex_monitor_list:
@@ -315,6 +333,8 @@ class MonitorExchange(Thread):
         self.exchange = exchange
         # exchange data
         self.exchange_data = exchange_data
+        # dataframe storage for optimization
+        self.opt_dfs = dict()
 
     @thread_lock
     def get_indicators(self, df, ticker, timeframe, exchange_api, data_qty):
@@ -329,6 +349,50 @@ class MonitorExchange(Thread):
     @thread_lock
     def clean_statistics(self):
         self.sigbot.clean_statistics()
+
+    def save_opt_dataframes(self) -> None:
+        """ Save dataframe for every ticker for further indicator/signal optimization """
+        exchange_api = self.exchange_data['API']
+        tickers = self.exchange_data['tickers']
+        print(f'{self.exchange}')
+        for ticker in tickers:
+            # For every timeframe get the data and find the signal
+            for timeframe in self.sigbot.timeframes:
+                df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe)
+                # Save dataframe to the disk
+                try:
+                    open(f'ticker_dataframes/{ticker}_{timeframe}.pkl', 'w').close()
+                except FileNotFoundError:
+                    pass
+                df_path = f'ticker_dataframes/{ticker}_{timeframe}.pkl'
+                df.to_pickle(df_path)
+                # if timeframe == self.sigbot.work_timeframe:
+                #     print(f'Exchange {self.exchange}, ticker {ticker}')
+
+    def save_opt_statistics(self):
+        """ Save statistics data for every ticker for further indicator/signal optimization """
+        exchange_api = self.exchange_data['API']
+        tickers = self.exchange_data['tickers']
+        for ticker in tickers:
+            # For every timeframe get the data and find the signal
+            for timeframe in self.sigbot.timeframes:
+                if f'{ticker}_{timeframe}' not in self.opt_dfs:
+                    try:
+                        df = pd.read_pickle(f'ticker_dataframes/{ticker}_{timeframe}.pkl')
+                        self.opt_dfs[f'{ticker}_{timeframe}'] = df
+                    except FileNotFoundError:
+                        continue
+                else:
+                    df = self.opt_dfs[f'{ticker}_{timeframe}']
+                df, data_qty = self.get_indicators(df, ticker, timeframe, exchange_api, 1000)
+                # If current timeframe is working timeframe
+                if timeframe == self.sigbot.work_timeframe:
+                    # Get the signals
+                    sig_points = self.sigbot.get_signals(ticker, timeframe, data_qty)
+                    # Filter repeating signals
+                    sig_points = self.sigbot.filter_sig_points(sig_points)
+                    # Add the signals to statistics
+                    self.add_statistics(sig_points)
 
     @exception
     def run(self) -> None:
@@ -358,7 +422,7 @@ class MonitorExchange(Thread):
                 # If we get new data - create indicator list from search signal patterns list, if it has
                 # the new data and data is not from higher timeframe, else get only levels
                 if data_qty > 1:
-                    # Get indicators and quantity of data  #
+                    # Get indicators and quantity of data
                     df, data_qty = self.get_indicators(df, ticker, timeframe, exchange_api, data_qty)
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:

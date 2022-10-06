@@ -3,7 +3,7 @@ from os import path
 from dotenv import load_dotenv, find_dotenv
 basedir = path.abspath(path.dirname(__file__))
 # here we load environment variables from .env, must be called before init. class
-load_dotenv(find_dotenv(), verbose=True)
+load_dotenv(find_dotenv(f'{basedir}/.env'), verbose=True)
 
 
 class ConfigFactory(object):

@@ -170,9 +170,10 @@ class TelegramBot(Thread):
         df_index = message[2]
         sig_type = message[3]
         sig_time = message[4]
+        sig_pattern = message[5]
         # get patterns
-        sig_pattern = [p[0] for p in message[5]]
-        sig_pattern = '_'.join(sig_pattern)
+        # sig_pattern = [p[0] for p in message[5]]
+        # sig_pattern = '_'.join(sig_pattern)
         # get path to image
         sig_img_path = self.add_plot(message)
         # get list of available exchanges

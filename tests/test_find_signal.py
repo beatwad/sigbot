@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 import pandas as pd
 from os import environ
 from datetime import datetime
@@ -206,85 +205,148 @@ def test_find_price_change_signal(mocker, timeframe, ticker, index, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     dfs, df = create_test_data()
     price_change_sig = SignalFactory().factory('PriceChange', configs)
-    res = price_change_sig.find_signal(dfs[ticker][timeframe]['data'], index)
     assert price_change_sig.find_signal(dfs[ticker][timeframe]['data'], index) == expected
 
 
-@pytest.mark.parametrize('ticker, timeframe, index, buy, expected',
+@pytest.mark.parametrize('ticker, timeframe, index, expected',
                          [
-                          ('BTCUSDT', '5m', 71, True, False),
-                          ('BTCUSDT', '5m', 242, True, True),
-                          ('BTCUSDT', '5m', 247, True, False),
-                          ('BTCUSDT', '5m', 447, False, True),
-                          ('BTCUSDT', '5m', 462, False, False),
-                          ('ETHUSDT', '5m', 30, True, True),
-                          ('ETHUSDT', '5m', 30, False, True),
-                          ('ETHUSDT', '5m', 68, True, False),
-                          ('ETHUSDT', '5m', 133, False, False),
-                          ], ids=repr)
-def test_check_levels(mocker, timeframe, ticker, index, buy, expected):
+                             ('BTCUSDT', '5m', 2, (False, '', ())),
+                             ('BTCUSDT', '5m', 242, (True, 'buy', 1)),
+                             ('BTCUSDT', '5m', 459, (True, 'sell', 1)),
+                             ('BTCUSDT', '5m', 25, (True, 'buy', 1)),
+                             ('ETHUSDT', '5m', 2, (True, 'sell', 1)),
+                             ('ETHUSDT', '5m', 3, (True, 'buy', 1)),
+                             ('ETHUSDT', '5m', 82, (True, 'sell', 3)),
+                             ('ETHUSDT', '5m', 128, (True, 'sell', 2)),
+                             ('ETHUSDT', '5m', 143, (True, 'buy', 2)),
+                             ('ETHUSDT', '5m', 146, (False, '', ())),
+                             ('ETHUSDT', '5m', 203, (False, '', ())),
+                         ], ids=repr)
+def test_find_price_change_signal_vect_1(mocker, timeframe, ticker, index, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
-    dfs, _ = create_test_data()
-    sup_res_sig = SignalFactory().factory('SUP_RES', configs)
-    df = dfs[ticker][timeframe]['data']
-    levels = dfs[ticker][timeframe]['levels']
-    level_proximity = np.mean(df['high'] - df['low']) * sup_res_sig.proximity_multiplier
-    assert sup_res_sig.check_levels(df, index, levels, level_proximity, buy) == expected
+    dfs, df = create_test_data()
+    price_change_sig = SignalFactory().factory('PriceChange', configs)
+    assert price_change_sig.find_signal_vect_1(dfs[ticker][timeframe]['data']) == expected
 
 
-@pytest.mark.parametrize('ticker, timeframe, index, buy, expected',
+@pytest.mark.parametrize('ticker, timeframe, index, expected',
                          [
-                          ('BTCUSDT', '5m', 71, True, False),
-                          ('BTCUSDT', '5m', 242, True, True),
-                          ('BTCUSDT', '5m', 247, True, False),
-                          ('BTCUSDT', '5m', 253, True, False),
-                          ('BTCUSDT', '5m', 447, False, True),
-                          ('BTCUSDT', '5m', 448, False, False),
-                          ('ETHUSDT', '5m', 30, True, False),
-                          ('ETHUSDT', '5m', 30, False, False),
-                          ('ETHUSDT', '5m', 68, True, False),
-                          ('ETHUSDT', '5m', 133, False, False),
-                          ], ids=repr)
-def test_check_levels_robust(mocker, timeframe, ticker, index, buy, expected):
+                             ('BTCUSDT', '5m', 2, (False, '', ())),
+                             ('BTCUSDT', '5m', 242, (True, 'buy', 1)),
+                             ('BTCUSDT', '5m', 459, (True, 'sell', 1)),
+                             ('BTCUSDT', '5m', 25, (True, 'buy', 1)),
+                             ('ETHUSDT', '5m', 2, (True, 'sell', 1)),
+                             ('ETHUSDT', '5m', 3, (True, 'buy', 1)),
+                             ('ETHUSDT', '5m', 82, (True, 'sell', 3)),
+                             ('ETHUSDT', '5m', 128, (True, 'sell', 2)),
+                             ('ETHUSDT', '5m', 143, (True, 'buy', 2)),
+                             ('ETHUSDT', '5m', 146, (False, '', ())),
+                             ('ETHUSDT', '5m', 203, (False, '', ())),
+                         ], ids=repr)
+def test_find_price_change_signal_vect_2(mocker, timeframe, ticker, index, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
-    dfs, _ = create_test_data()
-    sup_res_sig = SignalFactory().factory('SUP_RES_Robust', configs)
-    df = dfs[ticker][timeframe]['data']
-    levels = dfs[ticker][timeframe]['levels']
-    level_proximity = np.mean(df['high'] - df['low']) * sup_res_sig.proximity_multiplier
-    assert sup_res_sig.check_levels(df, index, levels, level_proximity, buy) == expected
+    dfs, df = create_test_data()
+    price_change_sig = SignalFactory().factory('PriceChange', configs)
+    assert price_change_sig.find_signal_vect_2(dfs[ticker][timeframe]['data']) == expected
 
 
-points1 = [['BTCUSDT', '5m', 91, 'sell', datetime(2022, 8, 21, 11, 20),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
+@pytest.mark.parametrize('ticker, timeframe, index, expected',
+                         [
+                             ('BTCUSDT', '5m', 2, (False, '', ())),
+                             ('BTCUSDT', '5m', 242, (True, 'buy', 1)),
+                             ('BTCUSDT', '5m', 459, (True, 'sell', 1)),
+                             ('BTCUSDT', '5m', 25, (True, 'buy', 1)),
+                             ('ETHUSDT', '5m', 2, (True, 'sell', 1)),
+                             ('ETHUSDT', '5m', 3, (True, 'buy', 1)),
+                             ('ETHUSDT', '5m', 82, (True, 'sell', 3)),
+                             ('ETHUSDT', '5m', 128, (True, 'sell', 2)),
+                             ('ETHUSDT', '5m', 143, (True, 'buy', 2)),
+                             ('ETHUSDT', '5m', 146, (False, '', ())),
+                             ('ETHUSDT', '5m', 203, (False, '', ())),
+                         ], ids=repr)
+def test_find_price_change_signal_vect_3(mocker, timeframe, ticker, index, expected):
+    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+    dfs, df = create_test_data()
+    price_change_sig = SignalFactory().factory('PriceChange', configs)
+    assert price_change_sig.find_signal_vect_3(dfs[ticker][timeframe]['data']) == expected
+
+
+# @pytest.mark.parametrize('ticker, timeframe, index, buy, expected',
+#                          [
+#                           ('BTCUSDT', '5m', 71, True, False),
+#                           ('BTCUSDT', '5m', 242, True, True),
+#                           ('BTCUSDT', '5m', 247, True, False),
+#                           ('BTCUSDT', '5m', 447, False, True),
+#                           ('BTCUSDT', '5m', 462, False, False),
+#                           ('ETHUSDT', '5m', 30, True, True),
+#                           ('ETHUSDT', '5m', 30, False, True),
+#                           ('ETHUSDT', '5m', 68, True, False),
+#                           ('ETHUSDT', '5m', 133, False, False),
+#                           ], ids=repr)
+# def test_check_levels(mocker, timeframe, ticker, index, buy, expected):
+#     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+#     dfs, _ = create_test_data()
+#     sup_res_sig = SignalFactory().factory('SUP_RES', configs)
+#     df = dfs[ticker][timeframe]['data']
+#     levels = dfs[ticker][timeframe]['levels']
+#     level_proximity = np.mean(df['high'] - df['low']) * sup_res_sig.proximity_multiplier
+#     assert sup_res_sig.check_levels(df, index, levels, level_proximity, buy) == expected
+#
+#
+# @pytest.mark.parametrize('ticker, timeframe, index, buy, expected',
+#                          [
+#                           ('BTCUSDT', '5m', 71, True, False),
+#                           ('BTCUSDT', '5m', 242, True, True),
+#                           ('BTCUSDT', '5m', 247, True, False),
+#                           ('BTCUSDT', '5m', 253, True, False),
+#                           ('BTCUSDT', '5m', 447, False, True),
+#                           ('BTCUSDT', '5m', 448, False, False),
+#                           ('ETHUSDT', '5m', 30, True, False),
+#                           ('ETHUSDT', '5m', 30, False, False),
+#                           ('ETHUSDT', '5m', 68, True, False),
+#                           ('ETHUSDT', '5m', 133, False, False),
+#                           ], ids=repr)
+# def test_check_levels_robust(mocker, timeframe, ticker, index, buy, expected):
+#     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+#     dfs, _ = create_test_data()
+#     sup_res_sig = SignalFactory().factory('SUP_RES_Robust', configs)
+#     df = dfs[ticker][timeframe]['data']
+#     levels = dfs[ticker][timeframe]['levels']
+#     level_proximity = np.mean(df['high'] - df['low']) * sup_res_sig.proximity_multiplier
+#     assert sup_res_sig.check_levels(df, index, levels, level_proximity, buy) == expected
+
+
+points1 = [['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
+            ['STOCH', 'RSI'], [], [], [], []],
            ['BTCUSDT', '5m', 91, 'sell', datetime(2022, 8, 21, 11, 20),
-            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())], [], [], [], []],
-           ['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
-           ['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
-            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())], [], [], [], []],
-           ['BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []]]
+            ['STOCH', 'RSI'], [], [], [], []],
+            ['BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
+            ['STOCH', 'RSI'], [], [], [], []],
+            ['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
+            ['STOCH', 'RSI', 'LinearReg'], [], [], [], []],
+            ['BTCUSDT', '5m', 91, 'sell', datetime(2022, 8, 21, 11, 20),
+            ['STOCH', 'RSI', 'LinearReg'], [], [], [], []]]
+
 points2 = [['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
-           ['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
-            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())], [], [], [], []],
+            ['STOCH', 'RSI'], [], [], [], []],
            ['BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []]]
-points3 = [['ETHUSDT', '5m', 83, 'sell', datetime(2022, 8, 21, 11, 20),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
-           ['ETHUSDT', '5m', 83, 'sell', datetime(2022, 8, 21, 11, 20),
-            [('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())], [], [], [], []],
-           ['ETHUSDT', '5m', 370, 'buy', datetime(2022, 8, 22, 11, 15),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
+            ['STOCH', 'RSI'], [], [], [], []],
+           ['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
+            ['STOCH', 'RSI', 'LinearReg'], [], [], [], []]]
+points3 = [['ETHUSDT', '5m', 370, 'buy', datetime(2022, 8, 22, 11, 15),
+            ['STOCH', 'RSI'], [], [], [], []],
            ['ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
+            ['STOCH', 'RSI'], [], [], [], []],
            ['ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []]]
+            ['STOCH', 'RSI'], [], [], [], []],
+           ['ETHUSDT', '5m', 83, 'sell', datetime(2022, 8, 21, 11, 20),
+            ['STOCH', 'RSI'], [], [], [], []],
+           ['ETHUSDT', '5m', 83, 'sell', datetime(2022, 8, 21, 11, 20),
+            ['STOCH', 'RSI', 'LinearReg'], [], [], [], []]]
 points4 = [['ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []],
+            ['STOCH', 'RSI'], [], [], [], []],
            ['ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
-            [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []]]
+            ['STOCH', 'RSI'], [], [], [], []]]
 expected = [points1, points2, points3, points4]
 
 
@@ -302,6 +364,22 @@ def test_find_signal(mocker, ticker, timeframe, limit, expected):
     dfs, _ = create_test_data()
     fs = FindSignal(configs)
     fs.patterns = [['STOCH', 'RSI'], ['STOCH', 'RSI', 'LinearReg']]
-    res = fs.find_signal(dfs, ticker, timeframe, limit)
     assert fs.find_signal(dfs, ticker, timeframe, limit) == expected
+
+
+@pytest.mark.parametrize('ticker, timeframe, limit, expected',
+                         [
+                          ('BTCUSDT', '5m', 1000, expected[0]),
+                          ('BTCUSDT', '5m', 500, expected[1]),
+                          ('BTCUSDT', '5m', 10, []),
+                          ('ETHUSDT', '5m', 1000, expected[2]),
+                          ('ETHUSDT', '5m', 400, expected[3]),
+                          ('ETHUSDT', '5m', 10, []),
+                          ], ids=repr)
+def test_find_signal_vect(mocker, ticker, timeframe, limit, expected):
+    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+    dfs, _ = create_test_data()
+    fs = FindSignal(configs)
+    fs.patterns = [['STOCH', 'RSI'], ['STOCH', 'RSI', 'LinearReg']]
+    assert fs.find_signal_vect(dfs, ticker, timeframe, limit) == expected
 

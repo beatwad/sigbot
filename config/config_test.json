@@ -134,17 +134,6 @@
         "signalperiod": 9
       }
     },
-    "SUP_RES": {
-      "params": {
-        "merge_level_multiplier": 1,
-        "alpha": "0.7"
-      }
-    },
-    "SUP_RES_Robust": {
-      "params": {
-        "merge_level_multiplier": 1
-      }
-    },
     "PriceChange": {
       "params": {
         "round_decimals": 4,
@@ -169,16 +158,6 @@
     },
     "MACD": {
       "params": {}
-    },
-    "SUP_RES": {
-      "params": {
-        "proximity_multiplier": 0.5
-      }
-    },
-    "SUP_RES_Robust": {
-      "params": {
-        "proximity_multiplier": 0.5
-      }
     },
     "PriceChange": {
       "params": {}
@@ -213,12 +192,10 @@
   "Indicator_list": [
     "STOCH",
     "RSI",
-    "SUP_RES",
     "PriceChange",
     "LinearReg"
   ],
   "Higher_TF_indicator_list": [
-    "SUP_RES",
     "LinearReg"
   ],
   "Patterns": [
@@ -248,8 +225,6 @@
       "plot_width": 30,
       "image_path": "images",
       "level_indicators": [
-        "SUP_RES",
-        "SUP_RES_Robust"
       ],
       "boundary_indicators": [
         "STOCH",
@@ -264,9 +239,7 @@
           "rsi"
         ],
         "MACD": [],
-        "PriceChange": [],
-        "SUP_RES": [],
-        "SUP_RES_Robust": []
+        "PriceChange": []
       }
     }
   },
@@ -281,7 +254,6 @@
       "chat_ids": {
         "STOCH_RSI": "-1001463253403",
         "STOCH_RSI_LinearReg": "-1001688789758",
-        "STOCH_RSI_SUP_RES": "-1001702067917",
         "PriceChange": "-1001700504878",
         "PriceChange_LinearReg": "-1001691421580"
       },

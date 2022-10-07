@@ -2,13 +2,18 @@ import pytest
 from os import environ
 
 from config.config import ConfigFactory
+environ["ENV"] = "test"
 from bot.bot import SigBot
 
-environ["ENV"] = "test"
 # Get configs
 configs = ConfigFactory.factory(environ).configs
-expected = (['ETHUSDT', 'TRXUSDT', 'QTUMUSDT', 'ONTUSDT',  'TTTUSDT'],
-            ['BTCUSDT', 'VETUSDT', 'HOTUSDT', 'FETUSDT', 'SVMUSDT', 'NNUSDT'],
+
+
+# expected = (['ETHUSDT', 'TRXUSDT', 'QTUMUSDT', 'ONTUSDT',  'TTTUSDT'],
+#             ['BTCUSDT', 'VETUSDT', 'HOTUSDT', 'FETUSDT', 'SVMUSDT', 'NNUSDT'],
+#             ['ETH', 'QTUM', 'ONT', 'VET', 'HOT', 'SVM', 'TRX', 'TTT'])
+expected = (['TRXUSDT', 'TTTUSDT'],
+            ['BTCUSDT', 'ETHUSDT', 'QTUMUSDT', 'ONTUSDT', 'VETUSDT', 'HOTUSDT', 'FETUSDT', 'SVMUSDT', 'NNUSDT'],
             ['ETH', 'QTUM', 'ONT', 'VET', 'HOT', 'SVM', 'TRX', 'TTT'])
 
 

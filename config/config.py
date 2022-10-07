@@ -41,6 +41,7 @@ class Development(Config):
     TESTING = False
 
     def __init__(self, environ):
+        x = environ.get('CONFIG_PATH')
         pth = path.join(basedir, environ.get('CONFIG_PATH'))
         self.configs = Config.get_config(pth)
 

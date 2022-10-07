@@ -193,7 +193,7 @@ class SignalStat:
         # get only last signals that has been created not earlier than N hours ago (depends on pattern)
         stat = self.cut_stat_df(stat, pattern)
         if stat.shape[0] == 0:
-            return [(0, 0, 0) for _ in range(1, self.stat_range + 1)]
+            return [(0, 0, 0) for _ in range(1, self.stat_range + 1)], stat.shape[0]
         result_statistics = list()
         # calculate percent of right forecast
         for t in range(1, self.stat_range + 1):

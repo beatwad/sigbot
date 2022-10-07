@@ -201,10 +201,10 @@
       "stop_loss_multiplier": 2,
       "test": 1,
       "stat_limit_hours": {
-        "['PriceChange']" :  72,
-        "['PriceChange', ('LinearReg', ())]" :  72,
-        "[('STOCH', (15, 85)), ('RSI', (25, 75))]" :  72,
-        "[('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())]" :  72
+        "PriceChange" :  72,
+        "PriceChange_LinearReg" :  72,
+        "STOCH_RSI" :  72,
+        "STOCH_RSI_LinearReg" :  72
       },
       "prev_sig_limit_minutes": 40,
       "stat_range": 24

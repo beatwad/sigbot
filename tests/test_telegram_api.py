@@ -1,16 +1,15 @@
 import sys
 import pytest
 from os import environ
-
-import pandas as pd
 from config.config import ConfigFactory
-from telegram_api.telegram_api import TelegramBot
-
-sys.path.insert(0, '..')
+import pandas as pd
 # Set environment variable
 environ["ENV"] = "test"
+from telegram_api.telegram_api import TelegramBot
+
 # Get configs
 configs = ConfigFactory.factory(environ).configs
+
 
 points_btc = [('BTCUSDT', '5m', 0, 'buy', pd.to_datetime('2022-08-21 3:45:00'),
                [('STOCH', (15, 85)), ('RSI', (25, 75))], [], [], [], []

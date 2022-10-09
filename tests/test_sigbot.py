@@ -19,19 +19,21 @@ expected = (['TRXUSDT', 'TTTUSDT'],
 
 @pytest.mark.parametrize('expected',
                          [
-                          (expected),
+                          expected,
                           ], ids=repr)
 def test_filter_used_tickers(mocker, expected):
     mocker.patch('telegram_api.telegram_api.TelegramBot.start', return_value=None)
     mocker.patch('telegram_api.telegram_api.TelegramBot.__init__', return_value=None)
     mocker.patch('signal_stat.signal_stat.SignalStat.__init__', return_value=None)
+    mocker.patch('signal_stat.signal_stat.SignalStat.load_statistics', return_value=(None, None))
     mocker.patch('data.get_data.GetData.__init__', return_value=None)
-    mocker.patch('data.get_data.GetData.get_tickers', return_value=(None, None))
+    mocker.patch('data.get_data.GetData.get_tickers', return_value=([], []))
     mocker.patch('data.get_data.GetBinanceData.__init__', return_value=None)
     mocker.patch('data.get_data.GetBinanceData.fill_ticker_dict', return_value=None)
     mocker.patch('data.get_data.GetOKEXData.__init__', return_value=None)
     mocker.patch('data.get_data.GetOKEXData.fill_ticker_dict', return_value=None)
-    mn = SigBot(**configs)
+    main = None
+    mn = SigBot(main, **configs)
     mn.exchanges = {'Binance': {'API': None, 'tickers': [], 'all_tickers': []},
                     'OKEX': {'API': None, 'tickers': [], 'all_tickers': []}}
     mn.used_tickers = ['ETH', 'QTUM', 'ONT', 'VET', 'HOT', 'SVM']
@@ -68,13 +70,15 @@ def test_clean_prev_exchange_tickers(mocker, tickers, indexes, expected):
     mocker.patch('telegram_api.telegram_api.TelegramBot.start', return_value=None)
     mocker.patch('telegram_api.telegram_api.TelegramBot.__init__', return_value=None)
     mocker.patch('signal_stat.signal_stat.SignalStat.__init__', return_value=None)
+    mocker.patch('signal_stat.signal_stat.SignalStat.load_statistics', return_value=(None, None))
     mocker.patch('data.get_data.GetData.__init__', return_value=None)
-    mocker.patch('data.get_data.GetData.get_tickers', return_value=(None, None))
+    mocker.patch('data.get_data.GetData.get_tickers', return_value=([], []))
     mocker.patch('data.get_data.GetBinanceData.__init__', return_value=None)
     mocker.patch('data.get_data.GetBinanceData.fill_ticker_dict', return_value=None)
     mocker.patch('data.get_data.GetOKEXData.__init__', return_value=None)
     mocker.patch('data.get_data.GetOKEXData.fill_ticker_dict', return_value=None)
-    mn = SigBot(**configs)
+    main = None
+    mn = SigBot(main, **configs)
     mn.exchanges = {'Binance': {'API': None, 'tickers': [], 'all_tickers': []},
                     'OKEX': {'API': None, 'tickers': [], 'all_tickers': []}}
     # not_used_tickers, prev_tickers

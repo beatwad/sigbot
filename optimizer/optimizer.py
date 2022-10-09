@@ -110,7 +110,7 @@ class Optimizer:
         helper(prod_dict)
         return headers
 
-    def optimize(self, pattern, ttype):
+    def optimize(self, pattern, ttype, load):
         main = Main()
         # get list of config dicts with all possible combinations of pattern settings
         product_dicts = self.get_product_dicts()
@@ -119,7 +119,6 @@ class Optimizer:
         headers = self.get_headers_from_dict(product_dicts[0])
         result_statistics = None
         # if load flag set to True - load fresh data from exchanges, else get data from dist
-        load = True
         for prod_dict in tqdm(product_dicts):
             # load data
             confs = self.set_configs(prod_dict)
@@ -157,7 +156,9 @@ if __name__ == '__main__':
                             'slowd_period': [3, 5, 7], 'low_bound': [10, 15, 20]}}
 
     opt = Optimizer(pattern, optim_dict, **configs)
-    rs = opt.optimize(pattern, 'sell')
+
+    load = True
+    rs = opt.optimize(pattern, 'sell', load)
 
 
 

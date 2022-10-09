@@ -123,7 +123,8 @@ class TelegramBot(Thread):
             message_dict[pattern] = list()
         for i in range(n_len):
             message = self.notification_list[i]
-            sig_pattern = '_'.join([p[0] for p in message[5]])
+            sig_pattern = message[5]
+            # sig_pattern = '_'.join([p[0] for p in message[5]])
             message_dict[sig_pattern].append([i, message])
         for pattern in self.chat_ids.keys():
             # send too long notification list in one message

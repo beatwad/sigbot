@@ -233,36 +233,36 @@ def test_find_price_change_signal(mocker, ticker, timeframe, expected):
 
 
 points1 = [['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
-            ['STOCH', 'RSI'], [], [], [], []],
+            'STOCH_RSI', [], [], [], []],
            ['BTCUSDT', '5m', 91, 'sell', datetime(2022, 8, 21, 11, 20),
-            ['STOCH', 'RSI'], [], [], [], []],
+            'STOCH_RSI', [], [], [], []],
             ['BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
-           ['STOCH', 'RSI'], [], [], [], []],
+           'STOCH_RSI', [], [], [], []],
             ['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
-           ['STOCH', 'RSI', 'LinearReg'], [], [], [], []],
+           'STOCH_RSI_LinearReg', [], [], [], []],
             ['BTCUSDT', '5m', 91, 'sell', datetime(2022, 8, 21, 11, 20),
-           ['STOCH', 'RSI', 'LinearReg'], [], [], [], []]]
+           'STOCH_RSI_LinearReg', [], [], [], []]]
 
 points2 = [['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
-            ['STOCH', 'RSI'], [], [], [], []],
+            'STOCH_RSI', [], [], [], []],
            ['BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
-            ['STOCH', 'RSI'], [], [], [], []],
+            'STOCH_RSI', [], [], [], []],
            ['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
-            ['STOCH', 'RSI', 'LinearReg'], [], [], [], []]]
+            'STOCH_RSI_LinearReg', [], [], [], []]]
 points3 = [['ETHUSDT', '5m', 370, 'buy', datetime(2022, 8, 22, 11, 15),
-            ['STOCH', 'RSI'], [], [], [], []],
+            'STOCH_RSI', [], [], [], []],
            ['ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
-            ['STOCH', 'RSI'], [], [], [], []],
+            'STOCH_RSI', [], [], [], []],
            ['ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
-            ['STOCH', 'RSI'], [], [], [], []],
+            'STOCH_RSI', [], [], [], []],
            ['ETHUSDT', '5m', 83, 'sell', datetime(2022, 8, 21, 11, 20),
-            ['STOCH', 'RSI'], [], [], [], []],
+            'STOCH_RSI', [], [], [], []],
            ['ETHUSDT', '5m', 83, 'sell', datetime(2022, 8, 21, 11, 20),
-            ['STOCH', 'RSI', 'LinearReg'], [], [], [], []]]
+            'STOCH_RSI_LinearReg', [], [], [], []]]
 points4 = [['ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
-            ['STOCH', 'RSI'], [], [], [], []],
+            'STOCH_RSI', [], [], [], []],
            ['ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
-            ['STOCH', 'RSI'], [], [], [], []]]
+            'STOCH_RSI', [], [], [], []]]
 expected = [points1, points2, points3, points4]
 
 

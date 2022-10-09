@@ -64,12 +64,6 @@ class SignalStat:
         tmp['time'] = [time]
         tmp['ticker'] = [ticker]
         tmp['timeframe'] = [timeframe]
-        # if pattern is PriceChange - we need only its name without settings
-        # if str(pattern[0][0]).startswith('PriceChange'):
-        #     pattern = str([pattern[0][0]] + pattern[1:])
-        # else:
-        #     pattern = str(pattern)
-        pattern = '_'.join(p[0] for p in pattern)
 
         tmp['pattern'] = [pattern]
         # If current statistics is not in stat dataframe - write it
@@ -93,60 +87,6 @@ class SignalStat:
             else:
                 dfs['stat']['sell'] = stat
         return dfs
-
-    # def get_result_price_tp_sl(self, df, index, ttype, signal_price):
-    #     """ Depending on deal type, try to find if price after signal hit stop loss and take profit levels.
-    #         If price hit stop loss but hit take profit before - save take profit as the result price.
-    #         If price hit stop loss and didn't hit take profit before - save stop loss as the result price.
-    #         If price didn't hit stop loss but hit take profit  - depending on deal type save max or min price value.
-    #         If price hit neither stop loss nor take profit  - depending on deal type save max or min price value. """
-    #     # Get high and low price arrays
-    #     high_price_points = np.zeros(self.stat_range)
-    #     low_price_points = np.zeros(self.stat_range)
-    #     for i in range(self.stat_range):
-    #         high_price_points[i] = df['high'].iloc[index + i]
-    #         low_price_points[i] = df['low'].iloc[index + i]
-    #     # Calculate the result price
-    #     take_profit = np.mean(df['high'] - df['low']) * self.take_profit_multiplier
-    #     stop_loss = np.mean(df['high'] - df['low']) * self.stop_loss_multiplier
-    #     if ttype == 'buy':
-    #         try:
-    #             low_price_index = np.where(np.abs(signal_price - low_price_points) > stop_loss)[0][0]
-    #             stop_loss_price = low_price_points[low_price_index]
-    #         except IndexError:
-    #             low_price_index = self.stat_range
-    #             stop_loss_price = None
-    #         try:
-    #             high_price_index = np.where(np.abs(high_price_points[:low_price_index] - signal_price) >
-    #                                         take_profit)[0][0]
-    #             take_profit_price = high_price_points[high_price_index]
-    #         except IndexError:
-    #             take_profit_price = None
-    #     else:
-    #         try:
-    #             high_price_index = np.where(np.abs(high_price_points - signal_price) >
-    #                                         take_profit)[0][0]
-    #             stop_loss_price = high_price_points[high_price_index]
-    #         except IndexError:
-    #             high_price_index = self.stat_range
-    #             stop_loss_price = None
-    #         try:
-    #             low_price_index = np.where(np.abs(signal_price - low_price_points[:high_price_index]) >
-    #                                        stop_loss)[0][0]
-    #             take_profit_price = low_price_points[low_price_index]
-    #         except IndexError:
-    #             take_profit_price = None
-    #
-    #     if stop_loss_price is None:
-    #         if ttype == 'buy':
-    #             result_price = np.max(high_price_points)
-    #         else:
-    #             result_price = np.min(low_price_points)
-    #     elif stop_loss_price is not None and take_profit_price is None:
-    #         result_price = stop_loss_price
-    #     else:
-    #         result_price = take_profit_price
-    #     return result_price
 
     def save_statistics(self, dfs: dict) -> dict:
         """ Save statistics to the disk """
@@ -178,15 +118,10 @@ class SignalStat:
         stat = stat[latest_time - stat['time'] < pd.Timedelta(self.stat_limit_hours[pattern], "h")]
         return stat
 
-    def calculate_total_stat(self, dfs: dict, ttype: str, pattern: list) -> (list, int):
+    def calculate_total_stat(self, dfs: dict, ttype: str, pattern: str) -> (list, int):
         """ Calculate signal statistics for all found signals and all tickers  """
         stat = dfs['stat'][ttype]
-        # if pattern is PriceChange - we need only its name without settings
-        # if str(pattern[0][0]).startswith('PriceChange'):
-        #     pattern = str([pattern[0][0]] + pattern[1:])
-        # else:
-        #     pattern = str(pattern)
-        pattern = '_'.join(p[0] for p in pattern)
+        # pattern = '_'.join(p[0] for p in pattern)
 
         # get statistics by pattern
         stat = stat[(stat['pattern'] == pattern)]
@@ -205,23 +140,6 @@ class SignalStat:
             pct_price_diff_std = round(stat[f'pct_price_diff_{t}'].std(), 2)
             result_statistics.append((pct_price_right_forecast, pct_price_diff_mean, pct_price_diff_std))
         return result_statistics, stat.shape[0]
-
-    # def calculate_ticker_stat(self, dfs: dict, ttype, ticker: str, timeframe: str, pattern: str) -> tuple:
-    #     """ Calculate signal statistics for current ticker and current timeframe """
-    #     stat = dfs['stat'][ttype]
-    #     stat = self.cut_stat_df(stat, pattern)
-    #     stat = stat[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern)]
-    #     if stat.shape[0] == 0:
-    #         return None, None, None, None
-    #     # calculate percent of right forecast
-    #     if ttype == 'buy':
-    #         pct_price_right_forecast = (stat[stat['price_diff'] > 0].shape[0] / stat.shape[0]) * 100
-    #     else:
-    #         pct_price_right_forecast = (stat[stat['price_diff'] < 0].shape[0] / stat.shape[0]) * 100
-    #     # calculate mean absolute and mean percent price difference after the signal
-    #     price_diff_mean = stat['price_diff'].mean()
-    #     pct_price_diff_mean = stat['pct_price_diff'].mean()
-    #     return pct_price_right_forecast, price_diff_mean, pct_price_diff_mean, stat.shape[0]
 
     def delete_close_trades(self, df: pd.DataFrame) -> pd.DataFrame:
         """ Find adjacent in time trades for the same tickers and delete them """

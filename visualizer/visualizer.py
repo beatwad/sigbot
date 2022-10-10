@@ -37,17 +37,22 @@ class Visualizer:
         self.max_prev_candle_limit = self.configs.get('max_prev_candle_limit', 0)
         # dict for storing previous statistics values
         self.prev_stat_dict = dict()
+        # list of indicator parameters that can be plotted
+        self.indicator_params = configs['Indicator_signal']
+        self.indicators_to_plot = ['RSI', 'STOCH']
 
     def plot_indicator_parameters(self, point_type: str, index: int, indicator: str,
-                                  axs: plt.axis, indicator_params: list) -> None:
+                                  axs: plt.axis, indicator_list: list) -> None:
         """ Plot parameters of indicator (like low or high boundary, etc.)"""
-        indicator_param = indicator_params[index]
-        if indicator_param:
-            if indicator in self.boundary_indicators:
-                if point_type == 'buy':
-                    axs[index + 1].axhline(y=indicator_param[0], color='g', linestyle='--', linewidth=1.5)
-                else:
-                    axs[index + 1].axhline(y=indicator_param[1], color='r', linestyle='--', linewidth=1.5)
+        indicator = indicator_list[index]
+        if indicator in self.indicators_to_plot:
+            indicator_params = list(self.indicator_params[indicator]['params'].values())
+            if indicator_params:
+                if indicator in self.boundary_indicators:
+                    if point_type == 'buy':
+                        axs[index + 1].axhline(y=indicator_params[0], color='g', linestyle='--', linewidth=1.5)
+                    else:
+                        axs[index + 1].axhline(y=indicator_params[1], color='r', linestyle='--', linewidth=1.5)
 
     def plot_point(self, point_type: str, data: pd.DataFrame, ax: plt.axis, index=0) -> None:
         """ Plot trade point """
@@ -125,23 +130,16 @@ class Visualizer:
         df_working = df_working.loc[point_index - self.plot_width:point_index]
         ohlc = df_working[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
         # get indicator list
-        indicator_list = [p[0] for p in pattern if p[0] not in self.level_indicators]
-        indicator_params = [p[1] for p in pattern if p not in self.level_indicators]
+        indicator_list = [p for p in pattern.split('_') if p[0] not in self.level_indicators]
 
         # check if PriceChange indicator is in indicator list to make a special plot
         if 'PriceChange' in indicator_list:
             plot_num = len(indicator_list)
-            point_index = indicator_list.index('PriceChange')
-            price_index = indicator_params[point_index]
-            del indicator_params[point_index]
             indicator_list.remove('PriceChange')
-            has_price_change_flag = True
             candles_height = 1.5
             plot_height_mult = 2.5
         else:
-            price_index = 0
             plot_num = len(indicator_list) + 1
-            has_price_change_flag = False
             candles_height = 3
             plot_height_mult = 1.7
 
@@ -217,7 +215,7 @@ class Visualizer:
                 m = mpf.make_addplot(df_working[i_c], panel=index + 1, title=indicator, ax=axs1[index + 1], width=2)
                 ap.append(m)
             # plot indicator parameters
-            self.plot_indicator_parameters(point_type, index, indicator, axs1, indicator_params)
+            self.plot_indicator_parameters(point_type, index, indicator, axs1, indicator_list)
             # plot y-labels from right side
             axs1[index + 1].yaxis.set_label_position("right")
             axs1[index + 1].yaxis.tick_right()
@@ -271,10 +269,6 @@ class Visualizer:
 
         # plot point of trade
         self.plot_point(point_type, df_working, axs1_0)
-        # plot
-        if has_price_change_flag:
-            self.plot_point(point_type, df_working, axs1_0, price_index)
-
         # plot levels
         # self.plot_levels(data, levels, axs1)
 

@@ -13,12 +13,12 @@ class ConfigFactory(object):
         env = environ.get("ENV", "development")
         if env == 'test':
             return Testing(environ)
-        elif env == 'development':
-            return Development(environ)
         elif env == '5m_1h':
             return Development5M1H(environ)
         elif env == '1h_1d':
             return Development1H1D(environ)
+        elif env == 'optimize':
+            return Optimize(environ)
         elif env == 'docker':
             return Docker(environ)
         elif env == 'production':
@@ -70,6 +70,15 @@ class Testing(Config):
 
     def __init__(self, environ):
         pth = path.join(basedir, environ.get('CONFIG_PATH_TEST'))
+        self.configs = Config.get_config(pth)
+
+
+class Optimize(Config):
+    DEBUG = True
+    TESTING = False
+
+    def __init__(self, environ):
+        pth = path.join(basedir, environ.get('CONFIG_PATH_OPTIMIZE'))
         self.configs = Config.get_config(pth)
 
 

@@ -171,7 +171,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 20
+      "max_prev_candle_limit": 2
     }
   },
   "SignalStat": {

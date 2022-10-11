@@ -68,9 +68,9 @@ class SigBot:
         self.higher_tf_indicators, self.work_tf_indicators = self.create_indicators()
         # Set list of available exchanges, cryptocurrencies and tickers
         self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
+                          # 'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                          'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},}
+                          # 'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
         self.get_api_and_tickers()
@@ -281,19 +281,19 @@ class SigBot:
             for monitor in self.fut_ex_monitor_list:
                 monitor.save_opt_dataframes()
 
-    def save_opt_statistics(self) -> None:
-        """ Save statistics for further indicator/signal optimization """
+    def save_opt_statistics(self, opt_limit) -> None:
+        """ Save statistics in program memory for further indicator/signal optimization """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
         buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
         sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
         self.database['stat']['buy'] = buy_stat
-        self.database['stat']['buy'] = sell_stat
+        self.database['stat']['sell'] = sell_stat
         # start all spot exchange monitors
         for monitor in self.spot_ex_monitor_list:
-            monitor.save_opt_statistics()
+            monitor.save_opt_statistics(opt_limit)
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
-            monitor.save_opt_statistics()
+            monitor.save_opt_statistics(opt_limit)
 
     @exception
     def main_cycle(self):
@@ -335,6 +335,8 @@ class MonitorExchange(Thread):
         self.exchange_data = exchange_data
         # dataframe storage for optimization
         self.opt_dfs = dict()
+        # limit of candles for use in optimization statistics
+        self.opt_limit = 1000
 
     @thread_lock
     def get_indicators(self, df, ticker, timeframe, exchange_api, data_qty):
@@ -369,7 +371,7 @@ class MonitorExchange(Thread):
                 # if timeframe == self.sigbot.work_timeframe:
                 #     print(f'Exchange {self.exchange}, ticker {ticker}')
 
-    def save_opt_statistics(self):
+    def save_opt_statistics(self, opt_limit):
         """ Save statistics data for every ticker for further indicator/signal optimization """
         exchange_api = self.exchange_data['API']
         tickers = self.exchange_data['tickers']
@@ -384,11 +386,11 @@ class MonitorExchange(Thread):
                         continue
                 else:
                     df = self.opt_dfs[f'{ticker}_{timeframe}']
-                df, data_qty = self.get_indicators(df, ticker, timeframe, exchange_api, 1000)
+                df, _ = self.get_indicators(df, ticker, timeframe, exchange_api, 1000)
                 # If current timeframe is working timeframe
                 if timeframe == self.sigbot.work_timeframe:
                     # Get the signals
-                    sig_points = self.sigbot.get_signals(ticker, timeframe, data_qty)
+                    sig_points = self.sigbot.get_signals(ticker, timeframe, opt_limit)
                     # Filter repeating signals
                     sig_points = self.sigbot.filter_sig_points(sig_points)
                     # Add the signals to statistics

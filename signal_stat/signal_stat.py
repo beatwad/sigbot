@@ -124,7 +124,7 @@ class SignalStat:
         # pattern = '_'.join(p[0] for p in pattern)
 
         # get statistics by pattern
-        stat = stat[(stat['pattern'] == pattern)]
+        stat = stat[stat['pattern'] == pattern]
         # get only last signals that has been created not earlier than N hours ago (depends on pattern)
         stat = self.cut_stat_df(stat, pattern)
         if stat.shape[0] == 0:

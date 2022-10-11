@@ -180,10 +180,10 @@
       "stop_loss_multiplier": 2,
       "test": 0,
       "stat_limit_hours": {
-        "PriceChange" :  24,
-        "PriceChange_LinearReg" :  48,
-        "STOCH_RSI" :  36,
-        "STOCH_RSI_LinearReg" :  168
+        "PriceChange" :  9999,
+        "PriceChange_LinearReg" :  9999,
+        "STOCH_RSI" :  9999,
+        "STOCH_RSI_LinearReg" :  9999
       },
       "prev_sig_limit_minutes": 40,
       "stat_range": 24
@@ -217,8 +217,8 @@
     ]
   ],
   "Timeframes": {
-    "work_timeframe": "5m",
-    "higher_timeframe": "1h"
+    "work_timeframe": "1h",
+    "higher_timeframe": "1d"
   },
   "Visualizer": {
     "params": {

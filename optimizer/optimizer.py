@@ -3,12 +3,12 @@ import itertools as it
 
 import pandas as pd
 from tqdm.auto import tqdm
-from os import environ
+from os import environ, remove
 
 sys.path.insert(0, '..')
 
 # Set environment variable
-environ["ENV"] = "1h_1d"
+environ["ENV"] = "optimize"
 
 from bot.bot import SigBot
 from config.config import ConfigFactory
@@ -20,20 +20,35 @@ configs = ConfigFactory.factory(environ).configs
 # mock class
 class Main:
     def __init__(self):
-        self.cycle_number = 2
+        self.cycle_number = 1
 
 
 class Optimizer:
     def __init__(self, pattern, optim_dict, **configs):
         self.statistics = dict()
         self.configs = configs
-        self.pattern = pattern
+        self.pattern_list = pattern.split('_')
         self.optim_dict = optim_dict
+        self.remove_path = optim_dict
+        self.working_timeframe = configs['Timeframes']['work_timeframe']
+        self.buy_stat_path = f'signal_stat/buy_stat_{self.working_timeframe}.pkl'
+        self.sell_stat_path = f'signal_stat/sell_stat_{self.working_timeframe}.pkl'
+
+    def clean_prev_stat(self):
+        """ Clean previous statistics files """
+        try:
+            remove(self.buy_stat_path)
+        except FileNotFoundError:
+            pass
+        try:
+            remove(self.sell_stat_path)
+        except FileNotFoundError:
+            pass
 
     def clean_dict(self, dict1):
         res_dict = dict()
         for key, value in dict1.items():
-            if key in self.pattern:
+            if key in self.pattern_list:
                 res_dict[key] = value['params']
         for key, value in res_dict.items():
             i, vk = 0, list(value.keys())
@@ -58,7 +73,7 @@ class Optimizer:
         return res_dict1
 
     def get_product_dicts(self):
-        res_dict = {k: v for k, v in self.optim_dict.items() if k in self.pattern}
+        res_dict = {k: v for k, v in self.optim_dict.items() if k in self.pattern_list}
         perm_values = list()
         for key, value in res_dict.items():
             keys, values = zip(*value.items())
@@ -110,7 +125,7 @@ class Optimizer:
         helper(prod_dict)
         return headers
 
-    def optimize(self, pattern, ttype, load):
+    def optimize(self, pattern, ttype, opt_limit, load):
         main = Main()
         # get list of config dicts with all possible combinations of pattern settings
         product_dicts = self.get_product_dicts()
@@ -126,15 +141,14 @@ class Optimizer:
             if load:
                 sb.save_opt_dataframes(load)
                 load = False
-            sb.save_opt_statistics()
+            sb.save_opt_statistics(opt_limit)
             # calculate statistic
-            tmp_pattern = [[p] + ['()'] for p in pattern]
-            rs, fn = sb.stat.calculate_total_stat(sb.database, ttype, tmp_pattern)
+            rs, fn = sb.stat.calculate_total_stat(sb.database, ttype, pattern)
             # create df to store statistics results
             tmp = pd.DataFrame(columns=['pattern'] + headers +
                                        [f'pct_right_forecast_{lag + 1}' for lag in range(24)] +
                                        [f'pct_price_diff_{lag + 1}' for lag in range(24)] + ['forecasts_num'])
-            tmp['pattern'] = ['_'.join(p for p in pattern)]
+            tmp['pattern'] = [pattern]
             tmp[headers] = self.get_values_from_dict(prod_dict)
             tmp[[f'pct_right_forecast_{lag + 1}' for lag in range(24)]] = [r[0] for r in rs]
             tmp[[f'pct_price_diff_{lag + 1}' for lag in range(24)]] = [r[1] for r in rs]
@@ -145,20 +159,21 @@ class Optimizer:
             else:
                 result_statistics = pd.concat([result_statistics, tmp])
             result_statistics = result_statistics.reset_index(drop=True)
-            result_statistics.to_pickle(f"opt_{'_'.join(p for p in pattern)}_{ttype}.pkl")
+            result_statistics.to_pickle(f"opt_{pattern}_{ttype}.pkl")
         return result_statistics
 
 
 if __name__ == '__main__':
-    pattern = ['STOCH', 'RSI']
+    pattern = 'STOCH_RSI'
+    opt_limit = 100
+    load = False
     optim_dict = {'RSI': {'timeperiod': [12, 14, 16], 'low_bound': [25, 30, 35]},
                   'STOCH': {'fastk_period': [9, 14], 'slowk_period': [2, 3, 4],
                             'slowd_period': [3, 5, 7], 'low_bound': [10, 15, 20]}}
 
     opt = Optimizer(pattern, optim_dict, **configs)
-
-    load = True
-    rs = opt.optimize(pattern, 'sell', load)
+    opt.clean_prev_stat()
+    rs = opt.optimize(pattern, 'sell', opt_limit, load)
 
 
 

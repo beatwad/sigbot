@@ -164,16 +164,22 @@ class Optimizer:
 
 
 if __name__ == '__main__':
+    ttype = 'buy'
     pattern = 'STOCH_RSI'
     opt_limit = 100
     load = False
+
     optim_dict = {'RSI': {'timeperiod': [12, 14, 16], 'low_bound': [25, 30, 35]},
                   'STOCH': {'fastk_period': [9, 14], 'slowk_period': [2, 3, 4],
                             'slowd_period': [3, 5, 7], 'low_bound': [10, 15, 20]}}
 
     opt = Optimizer(pattern, optim_dict, **configs)
     opt.clean_prev_stat()
-    rs = opt.optimize(pattern, 'sell', opt_limit, load)
+    rs = opt.optimize(pattern, ttype, opt_limit, load)
+
+    # sell
+    # RSI: 30/70, pariod 14
+    # STOCH: 15/85, fastk 9,slowk, 3, slowd 7
 
 
 

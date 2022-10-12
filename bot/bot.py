@@ -50,7 +50,7 @@ class SigBot:
     """ Class for running main the entire Signal Bot """
 
     @exception
-    def __init__(self, main_class, **configs):
+    def __init__(self, main_class, load_tickers=True, **configs):
         # Create statistics class
         self.stat = SignalStat(**configs)
         # Create find signal class
@@ -65,15 +65,16 @@ class SigBot:
         self.futures_exchanges = configs['Exchanges']['futures_exchanges']
         self.timeframes = [self.higher_timeframe, self.work_timeframe]
         # Create indicators
-        self.higher_tf_indicators, self.work_tf_indicators = self.create_indicators()
+        self.higher_tf_indicators, self.work_tf_indicators = self.create_indicators(configs)
         # Set list of available exchanges, cryptocurrencies and tickers
         self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           # 'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},}
+                          'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}, }
                           # 'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}}
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
-        self.get_api_and_tickers()
+        if load_tickers:
+            self.get_api_and_tickers()
         # Start Telegram bot
         self.telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', database=self.database,
                                         **configs)
@@ -108,7 +109,7 @@ class SigBot:
             self.exchanges[ex]['all_tickers'] = all_tickers
             # fill ticker dict of exchange API with tickers to store current time
             # for periodic updates of ticker information
-            exchange_api.fill_ticker_dict(tickers)
+            self.exchanges[ex]['API'].fill_ticker_dict(tickers)
 
     def filter_used_tickers(self, tickers: list, prev_tickers: list, len_diff=50) -> (list, list):
         """ Check if ticker was already used by previous exchange and balance number of tickers in current
@@ -154,7 +155,7 @@ class SigBot:
         return df, data_qty
 
     @staticmethod
-    def create_indicators() -> (list, list):
+    def create_indicators(configs) -> (list, list):
         """ Create indicators list for higher and working timeframe """
         higher_tf_indicators = list()
         working_tf_indicators = list()

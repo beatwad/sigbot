@@ -23,7 +23,7 @@ class Main:
         self.cycle_number = 1
         self.bot_cycle_length = configs[self.type]['params']['bot_cycle_length_sec']
         self.cycle_length = configs[self.type]['params']['cycle_length_hours']
-        self.sigbot = SigBot(self, **configs)
+        self.sigbot = SigBot(self, load_tickers=True, **configs)
 
     def cycle(self):
         try:

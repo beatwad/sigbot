@@ -27,7 +27,7 @@ class Optimizer:
     def __init__(self, pattern, optim_dict, **configs):
         self.statistics = dict()
         self.configs = configs
-        self.pattern_list = pattern.split('_')
+        self.pattern_list = pattern
         self.optim_dict = optim_dict
         self.remove_path = optim_dict
         self.working_timeframe = configs['Timeframes']['work_timeframe']
@@ -86,15 +86,22 @@ class Optimizer:
         confs = self.configs.copy()
 
         for key in confs:
-            if key in ['Indicator', 'Indicator_signal']:
+            if key == 'Patterns':
+                confs[key] = [self.pattern_list]
+            elif key == 'Indicator_list':
+                confs[key] = self.pattern_list
+            elif key in ['Indicator', 'Indicator_signal']:
                 for indicator in prod_dict.keys():
                     prod_values = prod_dict[indicator]
                     conf_values = confs[key][indicator]['params']
                     for k, v in conf_values.items():
                         if k in prod_values:
                             conf_values[k] = prod_values[k]
-                    if 'high_bound' in conf_values:
-                        conf_values['high_bound'] = 100 - conf_values['low_bound']
+                    if indicator != 'LinearReg':
+                        if 'high_bound' in conf_values:
+                            conf_values['high_bound'] = 100 - conf_values['low_bound']
+                        elif 'high_price_quantile' in conf_values:
+                            conf_values['high_price_quantile'] = 100 - conf_values['low_price_quantile']
         return confs
 
     @staticmethod
@@ -127,17 +134,28 @@ class Optimizer:
 
     def optimize(self, pattern, ttype, opt_limit, load):
         main = Main()
+        # set pattern string
+        pattern = '_'.join(pattern)
         # get list of config dicts with all possible combinations of pattern settings
         product_dicts = self.get_product_dicts()
         print(f'Number of combinations is {len(product_dicts)}')
         # get pattern headers
         headers = self.get_headers_from_dict(product_dicts[0])
         result_statistics = None
+        # flag that helps to prevent not necessary exchange data loading
+        load_tickers, exchanges = True, None
         # if load flag set to True - load fresh data from exchanges, else get data from dist
         for prod_dict in tqdm(product_dicts):
             # load data
             confs = self.set_configs(prod_dict)
-            sb = SigBot(main, **confs)
+            sb = SigBot(main, load_tickers=load_tickers, **confs)
+            # load ticker data from exchange only at first time
+            if load_tickers:
+                exchanges = sb.exchanges
+                load_tickers = False
+            else:
+                sb.exchanges = exchanges
+            # load candle data from exchanges only at first time
             if load:
                 sb.save_opt_dataframes(load)
                 load = False
@@ -165,22 +183,15 @@ class Optimizer:
 
 if __name__ == '__main__':
     ttype = 'buy'
-    pattern = 'STOCH_RSI'
+    pattern = ['STOCH', 'RSI', 'LinearReg']
     opt_limit = 100
     load = False
 
-    optim_dict = {'RSI': {'timeperiod': [12, 14, 16], 'low_bound': [25, 30, 35]},
-                  'STOCH': {'fastk_period': [9, 14], 'slowk_period': [2, 3, 4],
-                            'slowd_period': [3, 5, 7], 'low_bound': [10, 15, 20]}}
+    optim_dict = {'RSI': {'timeperiod': [14], 'low_bound': [25, 30, 35]},
+                  'STOCH': {'fastk_period': [9], 'slowk_period': [2, 3, 4],
+                            'slowd_period': [3, 5, 7], 'low_bound': [10, 15, 20]},
+                  'LinearReg': {'timeperiod': [16, 20, 24, 28, 32], 'low_bound': [0]}}
 
     opt = Optimizer(pattern, optim_dict, **configs)
     opt.clean_prev_stat()
     rs = opt.optimize(pattern, ttype, opt_limit, load)
-
-    # sell
-    # RSI: 30/70, pariod 14
-    # STOCH: 15/85, fastk 9,slowk, 3, slowd 7
-
-
-
-

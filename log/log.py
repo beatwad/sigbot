@@ -56,5 +56,5 @@ def exception(function):
             err += f', module {modname}.'
             logger.exception(err)
             # re-raise the exception
-            # raise
+            raise
     return wrapper

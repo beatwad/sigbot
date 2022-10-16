@@ -31,19 +31,19 @@ class Optimizer:
         self.optim_dict = optim_dict
         self.remove_path = optim_dict
         self.working_timeframe = configs['Timeframes']['work_timeframe']
-        self.buy_stat_path = f'signal_stat/buy_stat_{self.working_timeframe}.pkl'
-        self.sell_stat_path = f'signal_stat/sell_stat_{self.working_timeframe}.pkl'
+        # self.buy_stat_path = f'signal_stat/buy_stat_{self.working_timeframe}.pkl'
+        # self.sell_stat_path = f'signal_stat/sell_stat_{self.working_timeframe}.pkl'
 
-    def clean_prev_stat(self):
-        """ Clean previous statistics files """
-        try:
-            remove(self.buy_stat_path)
-        except FileNotFoundError:
-            pass
-        try:
-            remove(self.sell_stat_path)
-        except FileNotFoundError:
-            pass
+    # def clean_prev_stat(self):
+    #     """ Clean previous statistics files """
+    #     try:
+    #         remove(self.buy_stat_path)
+    #     except FileNotFoundError:
+    #         pass
+    #     try:
+    #         remove(self.sell_stat_path)
+    #     except FileNotFoundError:
+    #         pass
 
     def clean_dict(self, dict1):
         res_dict = dict()
@@ -143,7 +143,7 @@ class Optimizer:
         headers = self.get_headers_from_dict(product_dicts[0])
         result_statistics = None
         # flag that helps to prevent not necessary exchange data loading
-        load_tickers, exchanges = True, None
+        load_tickers, exchanges, opt_dfs = True, None, None
         # if load flag set to True - load fresh data from exchanges, else get data from dist
         for prod_dict in tqdm(product_dicts):
             # load data
@@ -152,8 +152,10 @@ class Optimizer:
             # load ticker data from exchange only at first time
             if load_tickers:
                 exchanges = sb.exchanges
+                opt_dfs = sb.opt_dfs
                 load_tickers = False
             else:
+                sb.opt_dfs = opt_dfs
                 sb.exchanges = exchanges
             # load candle data from exchanges only at first time
             if load:
@@ -177,7 +179,7 @@ class Optimizer:
             else:
                 result_statistics = pd.concat([result_statistics, tmp])
             result_statistics = result_statistics.reset_index(drop=True)
-            result_statistics.to_pickle(f"opt_{pattern}_{ttype}.pkl")
+
         return result_statistics
 
 
@@ -193,5 +195,5 @@ if __name__ == '__main__':
                   'LinearReg': {'timeperiod': [16, 20, 24, 28, 32], 'low_bound': [0]}}
 
     opt = Optimizer(pattern, optim_dict, **configs)
-    opt.clean_prev_stat()
+    # opt.clean_prev_stat()
     rs = opt.optimize(pattern, ttype, opt_limit, load)

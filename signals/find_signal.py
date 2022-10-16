@@ -327,8 +327,14 @@ class FindSignal:
                 fs_buy, fs_sell = indicator_signal.find_signal(df_higher, timeframe_ratio, df_work.shape[0])
             else:
                 fs_buy, fs_sell = indicator_signal.find_signal(df_work)
-            buy_points[indicator_signal.name] = fs_buy
-            sell_points[indicator_signal.name] = fs_sell
+            try:
+                buy_points[indicator_signal.name] = fs_buy
+            except ValueError:
+                pass
+            try:
+                sell_points[indicator_signal.name] = fs_sell
+            except ValueError:
+                pass
 
         # If any pattern has all 1 - add corresponding point as signal
         for pattern in sig_patterns:

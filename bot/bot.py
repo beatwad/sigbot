@@ -51,12 +51,12 @@ class SigBot:
 
     @exception
     def __init__(self, main_class, load_tickers=True, **configs):
+        # Get main bot class
+        self.main = main_class
         # Create statistics class
         self.stat = SignalStat(**configs)
         # Create find signal class
         self.find_signal = FindSignal(configs)
-        buy_stat, sell_stat = self.stat.load_statistics()
-        self.database = {'stat': {'buy': buy_stat, 'sell': sell_stat}}
         # List that is used to avoid processing of ticker that was already processed before
         self.used_tickers = list()
         # Get working and higher timeframes
@@ -74,18 +74,26 @@ class SigBot:
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
         if load_tickers:
+            # Load statistics
+            buy_stat, sell_stat = self.stat.load_statistics()
+            self.database = {'stat': {'buy': buy_stat, 'sell': sell_stat}}
+            # Load tickers
             self.get_api_and_tickers()
-        # Start Telegram bot
-        self.telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', database=self.database,
-                                        **configs)
-        self.telegram_bot.start()
+            # Start Telegram bot
+            self.telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA',
+                                            database=self.database, **configs)
+            self.telegram_bot.start()
+        else:
+            buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
+            sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
+            self.database = {'stat': {'buy': buy_stat, 'sell': sell_stat}}
         # Set candle range in which signal stat update can happen
         self.stat_update_range = configs['SignalStat']['params']['stat_range'] * 2
         # Lists for storing exchange monitor threads (Spot and Futures)
         self.spot_ex_monitor_list = list()
         self.fut_ex_monitor_list = list()
-        # Cycle counter
-        self.main = main_class
+        # dataframe storage for optimization
+        self.opt_dfs = dict()
 
     def get_api_and_tickers(self) -> None:
         """ Get API and ticker list for every exchange in list """
@@ -285,10 +293,6 @@ class SigBot:
     def save_opt_statistics(self, opt_limit) -> None:
         """ Save statistics in program memory for further indicator/signal optimization """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
-        buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
-        sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
-        self.database['stat']['buy'] = buy_stat
-        self.database['stat']['sell'] = sell_stat
         # start all spot exchange monitors
         for monitor in self.spot_ex_monitor_list:
             monitor.save_opt_statistics(opt_limit)
@@ -334,8 +338,6 @@ class MonitorExchange(Thread):
         self.exchange = exchange
         # exchange data
         self.exchange_data = exchange_data
-        # dataframe storage for optimization
-        self.opt_dfs = dict()
         # limit of candles for use in optimization statistics
         self.opt_limit = 1000
 
@@ -379,14 +381,14 @@ class MonitorExchange(Thread):
         for ticker in tickers:
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
-                if f'{ticker}_{timeframe}' not in self.opt_dfs:
+                if f'{ticker}_{timeframe}' not in self.sigbot.opt_dfs:
                     try:
                         df = pd.read_pickle(f'ticker_dataframes/{ticker}_{timeframe}.pkl')
-                        self.opt_dfs[f'{ticker}_{timeframe}'] = df
+                        self.sigbot.opt_dfs[f'{ticker}_{timeframe}'] = df
                     except FileNotFoundError:
                         continue
                 else:
-                    df = self.opt_dfs[f'{ticker}_{timeframe}']
+                    df = self.sigbot.opt_dfs[f'{ticker}_{timeframe}']
                 df, _ = self.get_indicators(df, ticker, timeframe, exchange_api, 1000)
                 # If current timeframe is working timeframe
                 if timeframe == self.sigbot.work_timeframe:
@@ -396,6 +398,7 @@ class MonitorExchange(Thread):
                     sig_points = self.sigbot.filter_sig_points(sig_points)
                     # Add the signals to statistics
                     self.add_statistics(sig_points)
+
 
     @exception
     def run(self) -> None:
@@ -446,13 +449,15 @@ class MonitorExchange(Thread):
                             sig_points = self.sigbot.calc_statistics(sig_points)
                             # Send Telegram notification
                             t_print(self.exchange, [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
-                            if self.sigbot.main.cycle_number > 0:
+                            if self.sigbot.main.cycle_number > 1:
                                 self.sigbot.telegram_bot.notification_list += sig_points
                                 self.sigbot.telegram_bot.update_bot.set()
                                 # Log the signals
-                                sig_message = f'Find the signal points. Exchange is {self.exchange}, ticker is ' \
-                                              f'{ticker}, timeframe is {timeframe}, time is {sig_points[0][4]}'
-                                logger.info(sig_message)
+                                for sig_point in sig_points:
+                                    sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
+                                                  f'{ticker}, timeframe is {timeframe}, pattern is {sig_point[5]}, ' \
+                                                  f'time is {sig_point[4]}'
+                                    logger.info(sig_message)
                     # Save dataframe for further analysis
                     # self.save_dataframe(df, ticker, timeframe)
 

@@ -217,8 +217,8 @@
     ]
   ],
   "Timeframes": {
-    "work_timeframe": "1h",
-    "higher_timeframe": "1d"
+    "work_timeframe": "5m",
+    "higher_timeframe": "1h"
   },
   "Visualizer": {
     "params": {

@@ -1,7 +1,7 @@
 import sys
-import itertools as it
-
+import glob
 import pandas as pd
+import itertools as it
 from tqdm.auto import tqdm
 from os import environ, remove
 
@@ -31,19 +31,12 @@ class Optimizer:
         self.optim_dict = optim_dict
         self.remove_path = optim_dict
         self.working_timeframe = configs['Timeframes']['work_timeframe']
-        # self.buy_stat_path = f'signal_stat/buy_stat_{self.working_timeframe}.pkl'
-        # self.sell_stat_path = f'signal_stat/sell_stat_{self.working_timeframe}.pkl'
 
-    # def clean_prev_stat(self):
-    #     """ Clean previous statistics files """
-    #     try:
-    #         remove(self.buy_stat_path)
-    #     except FileNotFoundError:
-    #         pass
-    #     try:
-    #         remove(self.sell_stat_path)
-    #     except FileNotFoundError:
-    #         pass
+    def clean_prev_stat(self):
+        """ Clean previous statistics files """
+        files = glob.glob('signal_stat/*.pkl')
+        for f in files:
+            remove(f)
 
     def clean_dict(self, dict1):
         res_dict = dict()
@@ -134,6 +127,7 @@ class Optimizer:
 
     def optimize(self, pattern, ttype, opt_limit, load):
         main = Main()
+        self.clean_prev_stat()
         # set pattern string
         pattern = '_'.join(pattern)
         # get list of config dicts with all possible combinations of pattern settings
@@ -184,16 +178,14 @@ class Optimizer:
 
 
 if __name__ == '__main__':
-    ttype = 'buy'
-    pattern = ['STOCH', 'RSI', 'LinearReg']
+    ttype = 'sell'
+    pattern = ['STOCH', 'RSI']
     opt_limit = 100
     load = False
 
-    optim_dict = {'RSI': {'timeperiod': [14], 'low_bound': [25, 30, 35]},
-                  'STOCH': {'fastk_period': [9], 'slowk_period': [2, 3, 4],
-                            'slowd_period': [3, 5, 7], 'low_bound': [10, 15, 20]},
-                  'LinearReg': {'timeperiod': [16, 20, 24, 28, 32], 'low_bound': [0]}}
+    optim_dict = {'RSI': {'timeperiod': [18], 'low_bound': [25]},
+                  'STOCH': {'fastk_period': [5], 'slowk_period': [3, 4],
+                            'slowd_period': [3], 'low_bound': [20]}}
 
     opt = Optimizer(pattern, optim_dict, **configs)
-    # opt.clean_prev_stat()
     rs = opt.optimize(pattern, ttype, opt_limit, load)

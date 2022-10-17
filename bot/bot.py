@@ -384,11 +384,11 @@ class MonitorExchange(Thread):
                 if f'{ticker}_{timeframe}' not in self.sigbot.opt_dfs:
                     try:
                         df = pd.read_pickle(f'ticker_dataframes/{ticker}_{timeframe}.pkl')
-                        self.sigbot.opt_dfs[f'{ticker}_{timeframe}'] = df
+                        self.sigbot.opt_dfs[f'{ticker}_{timeframe}'] = df.copy()
                     except FileNotFoundError:
                         continue
                 else:
-                    df = self.sigbot.opt_dfs[f'{ticker}_{timeframe}']
+                    df = self.sigbot.opt_dfs[f'{ticker}_{timeframe}'].copy()
                 df, _ = self.get_indicators(df, ticker, timeframe, exchange_api, 1000)
                 # If current timeframe is working timeframe
                 if timeframe == self.sigbot.work_timeframe:

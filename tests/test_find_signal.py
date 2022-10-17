@@ -244,8 +244,8 @@ eth_lr_sell_expected_2 = np.load('test_eth_sell_indexes_2.npy')
 
 @pytest.mark.parametrize('df_higher, df_working, expected',
                          [
-                             # (df_btc_1h, df_btc_5m, (btc_lr_buy_expected_1, btc_lr_sell_expected_1)),
-                             # (df_btc_1h[-37:], df_btc_5m[-889:], (btc_lr_buy_expected_2, btc_lr_sell_expected_2)),
+                             (df_btc_1h, df_btc_5m, (btc_lr_buy_expected_1, btc_lr_sell_expected_1)),
+                             (df_btc_1h[-37:], df_btc_5m[-889:], (btc_lr_buy_expected_2, btc_lr_sell_expected_2)),
                              (df_eth_1h, df_eth_5m, (eth_lr_buy_expected_1, eth_lr_sell_expected_1)),
                              (df_eth_1h[-47:], df_eth_5m[-800:], (eth_lr_buy_expected_2, eth_lr_sell_expected_2)),
                          ], ids=repr)

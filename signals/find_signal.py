@@ -14,10 +14,6 @@ class SignalFactory(object):
             return STOCHSignal(**configs)
         elif indicator == 'MACD':
             return MACDSignal(**configs)
-        # elif indicator == 'SUP_RES':
-        #     return SupResSignal(**configs)
-        # elif indicator == 'SUP_RES_Robust':
-        #     return SupResSignalRobust(**configs)
         elif indicator == 'PriceChange':
             return PriceChangeSignal(**configs)
         elif indicator == 'LinearReg':
@@ -229,46 +225,6 @@ class MACDSignal(SignalBase):
         return False, '', ()
 
 
-# class SupResSignal(SignalBase):
-#     """ Find support and resistance levels on the candle plot """
-#     type = 'Indicator_signal'
-#     name = 'SUP_RES'
-#
-#     def __init__(self, **configs):
-#         super(SupResSignal, self).__init__(configs)
-#         self.proximity_multiplier = self.configs.get('proximity_multiplier', 1)
-#
-#     def find_signal(self, *args, **kwargs):
-#         return True, '', ()
-#
-#     @staticmethod
-#     def check_levels(df, index, levels, level_proximity, buy):
-#         """ Check if buy points are near support levels and sell points are near resistance levels"""
-#         for level in levels:
-#             if buy and abs(df.loc[index, 'low'] - level[0]) < level_proximity:
-#                 return True
-#             if not buy and abs(df.loc[index, 'high'] - level[0]) < level_proximity:
-#                 return True
-#         return False
-#
-#
-# class SupResSignalRobust(SupResSignal):
-#     """ Find support and resistance levels on the candle plot but return True only if support level is
-#         lower than buy point or resistance level is higher than sell point """
-#     name = 'SUP_RES_Robust'
-#
-#     @staticmethod
-#     def check_levels(df, index, levels, level_proximity, buy):
-#         """ Check if buy points are near support levels and sell points are near resistance levels"""
-#         for level in levels:
-#             if buy and abs(df.loc[index, 'low'] - level[0]) < level_proximity and df.loc[index, 'low'] >= level[0]:
-#                 return True
-#             if not buy and abs(df.loc[index, 'high'] -
-#                                level[0]) < level_proximity and df.loc[index, 'high'] <= level[0]:
-#                 return True
-#         return False
-
-
 class FindSignal:
     """ Class for searching of the indicator combination """
 
@@ -334,14 +290,9 @@ class FindSignal:
                                                                buy_points.shape[0])
             else:
                 fs_buy, fs_sell = indicator_signal.find_signal(df_work)
-            try:
-                buy_points[indicator_signal.name] = fs_buy
-                sell_points[indicator_signal.name] = fs_sell
-            except ValueError:
-                buy_points[indicator_signal.name] = 0
-                sell_points[indicator_signal.name] = 0
-                buy_points.loc[buy_points.shape[0] - fs_buy.shape[0]:, indicator_signal.name] = fs_buy
-                sell_points.loc[sell_points.shape[0] - fs_sell.shape[0]:, indicator_signal.name] = fs_sell
+
+            buy_points[indicator_signal.name] = fs_buy
+            sell_points[indicator_signal.name] = fs_sell
 
         # If any pattern has all 1 - add corresponding point as signal
         for pattern in sig_patterns:

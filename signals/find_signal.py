@@ -170,22 +170,28 @@ class LinearRegSignal(SignalBase):
         self.low_bound = self.configs.get('low_bound', -0.1)
         self.high_bound = self.configs.get('high_bound', 0.1)
 
-    def find_signal(self, df: pd.DataFrame, timeframe_ratio: int, working_df_len: int, *args) -> (bool, str, tuple):
+    def find_signal(self, df: pd.DataFrame, timeframe_ratio: int, working_df_len: int, points_shape: int,
+                    *args) -> (bool, str, tuple):
         """ 1 - Return true if trend is moving up (buy signal)
             2 - Return true if trend is moving down (sell signal)  """
         # According to difference between working timeframe and higher timeframe for every point on working timeframe
         # find corresponding value of Linear Regression from higher timeframe
         higher_shape = int(working_df_len / timeframe_ratio) + 1
-        linear_reg_angle = df.loc[df.shape[0] - higher_shape:, 'linear_reg_angle']
+        linear_reg_angle = df.loc[max(df.shape[0] - higher_shape, 0):, 'linear_reg_angle']
         # Then find Linear Regression signal
         lr_lower_bound = self.lower_bound_robust(self.low_bound, linear_reg_angle)
+        lr_higher_bound = self.higher_bound_robust(self.high_bound, linear_reg_angle)
         # Then for each working timeframe point add corresponding LR singal
         # and make size of the signal the same as size of working timeframe df
         lr_lower_bound = np.repeat(lr_lower_bound, timeframe_ratio)
-        lr_lower_bound = lr_lower_bound[lr_lower_bound.shape[0] - working_df_len:]
-        lr_higher_bound = self.higher_bound_robust(self.high_bound, linear_reg_angle)
+        lr_lower_bound = lr_lower_bound[max(lr_lower_bound.shape[0] - working_df_len, 0):]
         lr_higher_bound = np.repeat(lr_higher_bound, timeframe_ratio)
-        lr_higher_bound = lr_higher_bound[lr_higher_bound.shape[0] - working_df_len:]
+        lr_higher_bound = lr_higher_bound[max(lr_higher_bound.shape[0] - working_df_len, 0):]
+        # If signal shape differs from point shape - bring them to one shape
+        if lr_lower_bound.shape[0] < points_shape:
+            diff = points_shape - lr_lower_bound.shape[0]
+            lr_lower_bound = np.concatenate([np.zeros(diff), lr_lower_bound])
+            lr_higher_bound = np.concatenate([np.zeros(diff), lr_higher_bound])
         return lr_higher_bound, lr_lower_bound
 
 
@@ -324,17 +330,18 @@ class FindSignal:
                 # get time ratio between higher timeframe and working timeframe
                 timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] /
                                       self.timeframe_div[self.work_timeframe])
-                fs_buy, fs_sell = indicator_signal.find_signal(df_higher, timeframe_ratio, df_work.shape[0])
+                fs_buy, fs_sell = indicator_signal.find_signal(df_higher, timeframe_ratio, df_work.shape[0],
+                                                               buy_points.shape[0])
             else:
                 fs_buy, fs_sell = indicator_signal.find_signal(df_work)
             try:
                 buy_points[indicator_signal.name] = fs_buy
-            except ValueError:
-                pass
-            try:
                 sell_points[indicator_signal.name] = fs_sell
             except ValueError:
-                pass
+                buy_points[indicator_signal.name] = 0
+                sell_points[indicator_signal.name] = 0
+                buy_points.loc[buy_points.shape[0] - fs_buy.shape[0]:, indicator_signal.name] = fs_buy
+                sell_points.loc[sell_points.shape[0] - fs_sell.shape[0]:, indicator_signal.name] = fs_sell
 
         # If any pattern has all 1 - add corresponding point as signal
         for pattern in sig_patterns:

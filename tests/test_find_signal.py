@@ -232,6 +232,33 @@ def test_find_price_change_signal(mocker, ticker, timeframe, expected):
     assert np.array_equal(sell_indexes[0], expected[1])
 
 
+btc_lr_buy_expected_1 = np.load('test_btc_buy_indexes_1.npy')
+btc_lr_sell_expected_1 = np.load('test_btc_sell_indexes_1.npy')
+btc_lr_buy_expected_2 = np.load('test_btc_buy_indexes_2.npy')
+btc_lr_sell_expected_2 = np.load('test_btc_sell_indexes_2.npy')
+eth_lr_buy_expected_1 = np.load('test_eth_buy_indexes_1.npy')
+eth_lr_sell_expected_1 = np.load('test_eth_sell_indexes_1.npy')
+eth_lr_buy_expected_2 = np.load('test_eth_buy_indexes_2.npy')
+eth_lr_sell_expected_2 = np.load('test_eth_sell_indexes_2.npy')
+
+
+@pytest.mark.parametrize('df_higher, df_working, expected',
+                         [
+                             # (df_btc_1h, df_btc_5m, (btc_lr_buy_expected_1, btc_lr_sell_expected_1)),
+                             # (df_btc_1h[-37:], df_btc_5m[-889:], (btc_lr_buy_expected_2, btc_lr_sell_expected_2)),
+                             (df_eth_1h, df_eth_5m, (eth_lr_buy_expected_1, eth_lr_sell_expected_1)),
+                             (df_eth_1h[-47:], df_eth_5m[-800:], (eth_lr_buy_expected_2, eth_lr_sell_expected_2)),
+                         ], ids=repr)
+def test_find_linear_reg_signal(mocker, df_higher, df_working, expected):
+    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+    linear_reg_sig = SignalFactory().factory('LinearReg', configs)
+    buy_points, sell_points = linear_reg_sig.find_signal(df_higher, 24, df_working.shape[0], df_btc_5m.shape[0])
+    buy_indexes = np.where(buy_points == 1)
+    sell_indexes = np.where(sell_points == 1)
+    assert np.array_equal(buy_indexes, expected[0])
+    assert np.array_equal(sell_indexes, expected[1])
+
+
 points1 = [['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
             'STOCH_RSI', [], [], [], []],
            ['BTCUSDT', '5m', 91, 'sell', datetime(2022, 8, 21, 11, 20),

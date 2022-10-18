@@ -110,62 +110,126 @@
     }
   },
   "Indicator": {
-    "RSI": {
-      "params": {
-        "timeperiod": 14
+    "buy": {
+      "RSI": {
+        "params": {
+          "timeperiod": 14
+        }
+      },
+      "STOCH": {
+        "params": {
+          "fastk_period": 9,
+          "slowk_period": 3,
+          "slowd_period": 7
+        }
+      },
+      "LinearReg": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
+      "MACD": {
+        "params": {
+          "fastperiod": 12,
+          "slowperiod": 26,
+          "signalperiod": 9
+        }
+      },
+      "PriceChange": {
+        "params": {
+          "round_decimals": 4,
+          "low_price_quantile": 10,
+          "high_price_quantile": 990,
+          "stat_file_path": "signal_stat/price_stat_buy.json"
+        }
       }
     },
-    "STOCH": {
-      "params": {
-        "fastk_period": 14,
-        "slowk_period": 3,
-        "slowd_period": 3
-      }
-    },
-    "LinearReg": {
-      "params": {
-        "timeperiod": 24
-      }
-    },
-    "MACD": {
-      "params": {
-        "fastperiod": 12,
-        "slowperiod": 26,
-        "signalperiod": 9
-      }
-    },
-    "PriceChange": {
-      "params": {
-        "round_decimals": 4,
-        "low_price_quantile": 10,
-        "high_price_quantile": 990,
-        "stat_file_path": "signal_stat/price_stat.json"
+    "sell": {
+      "RSI": {
+        "params": {
+          "timeperiod": 14
+        }
+      },
+      "STOCH": {
+        "params": {
+          "fastk_period": 9,
+          "slowk_period": 3,
+          "slowd_period": 7
+        }
+      },
+      "LinearReg": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
+      "MACD": {
+        "params": {
+          "fastperiod": 12,
+          "slowperiod": 26,
+          "signalperiod": 9
+        }
+      },
+      "PriceChange": {
+        "params": {
+          "round_decimals": 4,
+          "low_price_quantile": 10,
+          "high_price_quantile": 990,
+          "stat_file_path": "signal_stat/price_stat_sell.json"
+        }
       }
     }
   },
   "Indicator_signal": {
-    "RSI": {
-      "params": {
-        "low_bound": 25,
-        "high_bound": 75
+    "buy": {
+      "RSI": {
+        "params": {
+          "low_bound": 30,
+          "high_bound": 70
+        }
+      },
+      "STOCH": {
+        "params": {
+          "low_bound": 15,
+          "high_bound": 85
+        }
+      },
+      "MACD": {
+        "params": {}
+      },
+      "PriceChange": {
+        "params": {}
+      },
+      "LinearReg": {
+        "params": {
+           "low_bound": 0,
+           "high_bound": 0
+        }
       }
     },
-    "STOCH": {
-      "params": {
-        "low_bound": 15,
-        "high_bound": 85
-      }
-    },
-    "MACD": {
-      "params": {}
-    },
-    "PriceChange": {
-      "params": {}
-    },
-    "LinearReg": {
-      "params": {
-         "low_bound": 0,
-         "high_bound": 0
+    "sell": {
+      "RSI": {
+        "params": {
+          "low_bound": 30,
+          "high_bound": 70
+        }
+      },
+      "STOCH": {
+        "params": {
+          "low_bound": 15,
+          "high_bound": 85
+        }
+      },
+      "MACD": {
+        "params": {}
+      },
+      "PriceChange": {
+        "params": {}
+      },
+      "LinearReg": {
+        "params": {
+           "low_bound": 0,
+           "high_bound": 0
+        }
       }
     }
   },

@@ -95,14 +95,7 @@ class GetData:
         """ Add indicator data to cryptocurrency dataframe """
         levels = list()
         for indicator in indicators:
-            # If indicator is support-resistance levels - get levels and add them to 'levels' category of dfs dict
-            if indicator.name == 'SUP_RES':
-                merge = timeframe == configs['Timeframes']['work_timeframe']
-                higher_timeframe = configs['Timeframes']['higher_timeframe']
-                higher_levels = dfs.get(ticker, dict()).get(higher_timeframe, dict()).get('levels', list())
-                levels = indicator.get_indicator(df, ticker, timeframe, data_qty, higher_levels, merge)
-            else:
-                df = indicator.get_indicator(df, ticker, timeframe, data_qty)
+            df = indicator.get_indicator(df, ticker, timeframe, data_qty)
         # Update dataframe dict
         if ticker not in dfs:
             dfs[ticker] = dict()

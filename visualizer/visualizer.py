@@ -46,7 +46,7 @@ class Visualizer:
         """ Plot parameters of indicator (like low or high boundary, etc.)"""
         indicator = indicator_list[index]
         if indicator in self.indicators_to_plot:
-            indicator_params = list(self.indicator_params[indicator]['params'].values())
+            indicator_params = list(self.indicator_params[point_type][indicator]['params'].values())
             if indicator_params:
                 if indicator in self.boundary_indicators:
                     if point_type == 'buy':

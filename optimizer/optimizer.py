@@ -32,9 +32,17 @@ class Optimizer:
         self.remove_path = optim_dict
         self.working_timeframe = configs['Timeframes']['work_timeframe']
 
-    def clean_prev_stat(self):
+    @staticmethod
+    def clean_prev_stat():
         """ Clean previous statistics files """
         files = glob.glob('signal_stat/*.pkl')
+        for f in files:
+            remove(f)
+
+    @staticmethod
+    def clean_prev_tickers_dfs():
+        """ Clean previous ticker market data files """
+        files = glob.glob('ticker_dataframes/*.pkl')
         for f in files:
             remove(f)
 
@@ -75,9 +83,8 @@ class Optimizer:
         product_dict = [dict(zip(res_dict.keys(), v)) for v in it.product(*perm_values)]
         return product_dict
 
-    def set_configs(self, prod_dict):
+    def set_configs(self, prod_dict: dict, ttype: str):
         confs = self.configs.copy()
-
         for key in confs:
             if key == 'Patterns':
                 confs[key] = [self.pattern_list]
@@ -86,7 +93,24 @@ class Optimizer:
             elif key in ['Indicator', 'Indicator_signal']:
                 for indicator in prod_dict.keys():
                     prod_values = prod_dict[indicator]
-                    conf_values = confs[key][indicator]['params']
+                    conf_values = confs[key][ttype][indicator]['params']
+                    for k, v in conf_values.items():
+                        if k in prod_values:
+                            conf_values[k] = prod_values[k]
+                    if indicator != 'LinearReg':
+                        if 'high_bound' in conf_values:
+                            conf_values['high_bound'] = 100 - conf_values['low_bound']
+                        elif 'high_price_quantile' in conf_values:
+                            conf_values['high_price_quantile'] = 100 - conf_values['low_price_quantile']
+        return confs
+
+    def save_configs(self, prod_dict: dict, ttype: str):
+        confs = self.configs.copy()
+        for key in confs:
+            if key in ['Indicator', 'Indicator_signal']:
+                for indicator in prod_dict.keys():
+                    prod_values = prod_dict[indicator]
+                    conf_values = confs[key][ttype][indicator]['params']
                     for k, v in conf_values.items():
                         if k in prod_values:
                             conf_values[k] = prod_values[k]
@@ -141,7 +165,7 @@ class Optimizer:
         # if load flag set to True - load fresh data from exchanges, else get data from dist
         for prod_dict in tqdm(product_dicts):
             # load data
-            confs = self.set_configs(prod_dict)
+            confs = self.set_configs(prod_dict, ttype)
             sb = SigBot(main, load_tickers=load_tickers, **confs)
             # load ticker data from exchange only at first time
             if load_tickers:
@@ -153,9 +177,10 @@ class Optimizer:
                 sb.exchanges = exchanges
             # load candle data from exchanges only at first time
             if load:
+                self.clean_prev_tickers_dfs()
                 sb.save_opt_dataframes(load)
                 load = False
-            sb.save_opt_statistics(opt_limit)
+            sb.save_opt_statistics(ttype, opt_limit)
             # calculate statistic
             rs, fn = sb.stat.calculate_total_stat(sb.database, ttype, pattern)
             # create df to store statistics results
@@ -178,7 +203,7 @@ class Optimizer:
 
 
 if __name__ == '__main__':
-    ttype = 'sell'
+    ttype = 'buy'
     pattern = ['STOCH', 'RSI']
     opt_limit = 100
     load = False

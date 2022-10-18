@@ -293,15 +293,15 @@ class SigBot:
             for monitor in self.fut_ex_monitor_list:
                 monitor.save_opt_dataframes()
 
-    def save_opt_statistics(self, opt_limit) -> None:
+    def save_opt_statistics(self, ttype: str, opt_limit: int) -> None:
         """ Save statistics in program memory for further indicator/signal optimization """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
         # start all spot exchange monitors
         for monitor in self.spot_ex_monitor_list:
-            monitor.save_opt_statistics(opt_limit)
+            monitor.save_opt_statistics(ttype, opt_limit)
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
-            monitor.save_opt_statistics(opt_limit)
+            monitor.save_opt_statistics(ttype, opt_limit)
 
     @exception
     def main_cycle(self):
@@ -377,7 +377,7 @@ class MonitorExchange(Thread):
                 # if timeframe == self.sigbot.work_timeframe:
                 #     print(f'Exchange {self.exchange}, ticker {ticker}')
 
-    def save_opt_statistics(self, opt_limit):
+    def save_opt_statistics(self, ttype: str, opt_limit: int):
         """ Save statistics data for every ticker for further indicator/signal optimization """
         exchange_api = self.exchange_data['API']
         tickers = self.exchange_data['tickers']
@@ -396,12 +396,16 @@ class MonitorExchange(Thread):
                 # If current timeframe is working timeframe
                 if timeframe == self.sigbot.work_timeframe:
                     # Get the signals
-                    sig_points = self.sigbot.get_signals(ticker, timeframe, opt_limit)
+                    if ttype == 'buy':
+                        sig_points = self.sigbot.find_signal_buy.find_signal(self.sigbot.database, ticker, timeframe,
+                                                                             opt_limit)
+                    else:
+                        sig_points = self.sigbot.find_signal_sell.find_signal(self.sigbot.database, ticker, timeframe,
+                                                                              opt_limit)
                     # Filter repeating signals
                     sig_points = self.sigbot.filter_sig_points(sig_points)
                     # Add the signals to statistics
                     self.add_statistics(sig_points)
-
 
     @exception
     def run(self) -> None:
@@ -452,7 +456,7 @@ class MonitorExchange(Thread):
                             sig_points = self.sigbot.calc_statistics(sig_points)
                             # Send Telegram notification
                             t_print(self.exchange, [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
-                            if self.sigbot.main.cycle_number > 0:
+                            if self.sigbot.main.cycle_number > 1:
                                 self.sigbot.telegram_bot.notification_list += sig_points
                                 self.sigbot.telegram_bot.update_bot.set()
                                 # Log the signals

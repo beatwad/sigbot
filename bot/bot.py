@@ -56,7 +56,8 @@ class SigBot:
         # Create statistics class
         self.stat = SignalStat(**configs)
         # Create find signal class
-        self.find_signal = FindSignal(configs)
+        self.find_signal_buy = FindSignal('buy', configs)
+        self.find_signal_sell = FindSignal('sell', configs)
         # List that is used to avoid processing of ticker that was already processed before
         self.used_tickers = list()
         # Get working and higher timeframes
@@ -200,8 +201,9 @@ class SigBot:
 
     def get_signals(self, ticker: str, timeframe: str, data_qty: int) -> list:
         """ Try to find the signals and if succeed - return them and support/resistance levels """
-        sig_points = self.find_signal.find_signal(self.database, ticker, timeframe, data_qty)
-        return sig_points
+        sig_points_buy = self.find_signal_buy.find_signal(self.database, ticker, timeframe, data_qty)
+        sig_points_sell = self.find_signal_buy.find_signal(self.database, ticker, timeframe, data_qty)
+        return sig_points_buy + sig_points_sell
 
     @staticmethod
     def filter_sig_points(sig_points: list) -> list:

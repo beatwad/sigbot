@@ -180,28 +180,56 @@
     }
   },
   "Indicator_signal": {
-    "RSI": {
-      "params": {
-        "low_bound": 30,
-        "high_bound": 70
+    "buy": {
+      "RSI": {
+        "params": {
+          "low_bound": 30,
+          "high_bound": 70
+        }
+      },
+      "STOCH": {
+        "params": {
+          "low_bound": 15,
+          "high_bound": 85
+        }
+      },
+      "MACD": {
+        "params": {}
+      },
+      "PriceChange": {
+        "params": {}
+      },
+      "LinearReg": {
+        "params": {
+           "low_bound": 0,
+           "high_bound": 0
+        }
       }
     },
-    "STOCH": {
-      "params": {
-        "low_bound": 15,
-        "high_bound": 85
-      }
-    },
-    "MACD": {
-      "params": {}
-    },
-    "PriceChange": {
-      "params": {}
-    },
-    "LinearReg": {
-      "params": {
-         "low_bound": 0,
-         "high_bound": 0
+    "sell": {
+      "RSI": {
+        "params": {
+          "low_bound": 30,
+          "high_bound": 70
+        }
+      },
+      "STOCH": {
+        "params": {
+          "low_bound": 15,
+          "high_bound": 85
+        }
+      },
+      "MACD": {
+        "params": {}
+      },
+      "PriceChange": {
+        "params": {}
+      },
+      "LinearReg": {
+        "params": {
+           "low_bound": 0,
+           "high_bound": 0
+        }
       }
     }
   },

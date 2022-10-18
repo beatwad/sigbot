@@ -7,17 +7,17 @@ class SignalFactory(object):
     """ Return indicator according to 'indicator' variable value """
 
     @staticmethod
-    def factory(indicator, configs):
+    def factory(indicator, ttype, configs):
         if indicator == 'RSI':
-            return RSISignal(**configs)
+            return RSISignal(ttype, **configs)
         elif indicator == 'STOCH':
-            return STOCHSignal(**configs)
+            return STOCHSignal(ttype, **configs)
         elif indicator == 'MACD':
-            return MACDSignal(**configs)
+            return MACDSignal(ttype, **configs)
         elif indicator == 'PriceChange':
-            return PriceChangeSignal(**configs)
+            return PriceChangeSignal(ttype, **configs)
         elif indicator == 'LinearReg':
-            return LinearRegSignal(**configs)
+            return LinearRegSignal(ttype, **configs)
 
 
 class SignalBase:
@@ -25,8 +25,9 @@ class SignalBase:
     type = 'Indicator_signal'
     name = 'Base'
 
-    def __init__(self, configs):
-        self.configs = configs[self.type][self.name]['params']
+    def __init__(self, ttype, configs):
+        self.ttype = ttype
+        self.configs = configs[self.type][self.ttype][self.name]['params']
 
     @abstractmethod
     def find_signal(self, *args, **kwargs):
@@ -78,8 +79,8 @@ class STOCHSignal(SignalBase):
     type = 'Indicator_signal'
     name = 'STOCH'
 
-    def __init__(self, **configs):
-        super(STOCHSignal, self).__init__(configs)
+    def __init__(self, ttype: str, **configs):
+        super(STOCHSignal, self).__init__(ttype, configs)
         self.low_bound = self.configs.get('low_bound', 20)
         self.high_bound = self.configs.get('high_bound', 80)
 
@@ -102,7 +103,7 @@ class STOCHSignal(SignalBase):
         indicator = np.maximum(indicator_lag_1, indicator_lag_2)
         return np.where(indicator > 1, 1, 0)
 
-    def find_signal(self, df: pd.DataFrame, *args) -> (np.ndarray, np.ndarray):
+    def find_signal(self, df: pd.DataFrame, *args) -> np.ndarray:
         """ 1 - Return true if Stochastic is lower than low bound, lines have crossed and look up (buy signal)
             2 - Return true if Stochastic is higher than high bound, lines have crossed and look down (sell signal)  """
         # Find STOCH signal
@@ -116,12 +117,15 @@ class STOCHSignal(SignalBase):
         stoch_diff_lag_1 = df['stoch_diff'].shift(1)
         stoch_diff_lag_2 = df['stoch_diff'].shift(2)
 
-        lower_bound_slowk = self.lower_bound(self.low_bound, stoch_slowk, stoch_slowk_lag_1, stoch_slowk_lag_2)
-        lower_bound_slowd = self.lower_bound(self.low_bound, stoch_slowd, stoch_slowd_lag_1, stoch_slowd_lag_2)
-        crossed_lines_down = self.crossed_lines(False, stoch_diff, stoch_diff_lag_1, stoch_diff_lag_2)
-        up_direction_slowk = self.up_direction(df['stoch_slowk_dir'])
-        up_direction_slowd = self.up_direction(df['stoch_slowd_dir'])
-        stoch_up = lower_bound_slowk & lower_bound_slowd & crossed_lines_down & up_direction_slowk & up_direction_slowd
+        if self.ttype == 'buy':
+            lower_bound_slowk = self.lower_bound(self.low_bound, stoch_slowk, stoch_slowk_lag_1, stoch_slowk_lag_2)
+            lower_bound_slowd = self.lower_bound(self.low_bound, stoch_slowd, stoch_slowd_lag_1, stoch_slowd_lag_2)
+            crossed_lines_down = self.crossed_lines(False, stoch_diff, stoch_diff_lag_1, stoch_diff_lag_2)
+            up_direction_slowk = self.up_direction(df['stoch_slowk_dir'])
+            up_direction_slowd = self.up_direction(df['stoch_slowd_dir'])
+            stoch_up = lower_bound_slowk & lower_bound_slowd & crossed_lines_down & up_direction_slowk & \
+                       up_direction_slowd
+            return stoch_up
 
         higher_bound_slowk = self.higher_bound(self.high_bound, stoch_slowk, stoch_slowk_lag_1, stoch_slowk_lag_2)
         higher_bound_slowd = self.higher_bound(self.high_bound, stoch_slowd, stoch_slowd_lag_1, stoch_slowd_lag_2)
@@ -130,8 +134,7 @@ class STOCHSignal(SignalBase):
         down_direction_slowd = self.down_direction(df['stoch_slowd_dir'])
         stoch_down = higher_bound_slowk & higher_bound_slowd & crossed_lines_up & down_direction_slowk & \
                      down_direction_slowd
-
-        return stoch_up, stoch_down
+        return stoch_down
 
 
 class RSISignal(SignalBase):
@@ -139,21 +142,23 @@ class RSISignal(SignalBase):
     type = 'Indicator_signal'
     name = "RSI"
 
-    def __init__(self, **configs):
-        super(RSISignal, self).__init__(configs)
+    def __init__(self, ttype: str, **configs):
+        super(RSISignal, self).__init__(ttype, configs)
         self.low_bound = self.configs.get('low_bound', 25)
         self.high_bound = self.configs.get('high_bound', 75)
 
-    def find_signal(self, df: pd.DataFrame, *args) -> (bool, str, tuple):
+    def find_signal(self, df: pd.DataFrame, *args) -> np.ndarray:
         """ 1 - Return true if RSI is lower than low bound (buy signal)
             2 - Return true if RSI is higher than low bound (sell signal)  """
         # Find RSI signal
         rsi = df['rsi']
         rsi_lag_1 = df['rsi'].shift(1)
         rsi_lag_2 = df['rsi'].shift(2)
-        rsi_lower = self.lower_bound(self.low_bound, rsi, rsi_lag_1, rsi_lag_2)
+        if self.ttype == 'buy':
+            rsi_lower = self.lower_bound(self.low_bound, rsi, rsi_lag_1, rsi_lag_2)
+            return rsi_lower
         rsi_higher = self.higher_bound(self.high_bound, rsi, rsi_lag_1, rsi_lag_2)
-        return rsi_lower, rsi_higher
+        return rsi_higher
 
 
 class LinearRegSignal(SignalBase):
@@ -161,63 +166,78 @@ class LinearRegSignal(SignalBase):
     type = 'Indicator_signal'
     name = "LinearReg"
 
-    def __init__(self, **configs):
-        super(LinearRegSignal, self).__init__(configs)
-        self.low_bound = self.configs.get('low_bound', -0.1)
-        self.high_bound = self.configs.get('high_bound', 0.1)
+    def __init__(self, ttype, **configs):
+        super(LinearRegSignal, self).__init__(ttype, configs)
+        self.low_bound = self.configs.get('low_bound', 0)
+        self.high_bound = self.configs.get('high_bound', 0)
 
     def find_signal(self, df: pd.DataFrame, timeframe_ratio: int, working_df_len: int, points_shape: int,
-                    *args) -> (bool, str, tuple):
+                    *args) -> np.ndarray:
         """ 1 - Return true if trend is moving up (buy signal)
             2 - Return true if trend is moving down (sell signal)  """
         # According to difference between working timeframe and higher timeframe for every point on working timeframe
         # find corresponding value of Linear Regression from higher timeframe
         higher_shape = int(working_df_len / timeframe_ratio) + 1
         linear_reg_angle = df.loc[max(df.shape[0] - higher_shape, 0):, 'linear_reg_angle']
-        # Then find Linear Regression signal
+
+        # buy trade
+        if self.ttype == 'buy':
+            # Find Linear Regression signal
+            lr_higher_bound = self.higher_bound_robust(self.high_bound, linear_reg_angle)
+            # Then for each working timeframe point add corresponding LR singal
+            # and make size of the signal the same as size of working timeframe df
+            lr_higher_bound = np.repeat(lr_higher_bound, timeframe_ratio)
+            lr_higher_bound = lr_higher_bound[max(lr_higher_bound.shape[0] - working_df_len, 0):]
+            # If signal shape differs from point shape - bring them to one shape
+            if lr_higher_bound.shape[0] < points_shape:
+                diff = points_shape - lr_higher_bound.shape[0]
+                lr_higher_bound = np.concatenate([np.zeros(diff), lr_higher_bound])
+            return lr_higher_bound
+
+        # same for the sell trade
+        # Find Linear Regression signal
         lr_lower_bound = self.lower_bound_robust(self.low_bound, linear_reg_angle)
-        lr_higher_bound = self.higher_bound_robust(self.high_bound, linear_reg_angle)
         # Then for each working timeframe point add corresponding LR singal
         # and make size of the signal the same as size of working timeframe df
         lr_lower_bound = np.repeat(lr_lower_bound, timeframe_ratio)
         lr_lower_bound = lr_lower_bound[max(lr_lower_bound.shape[0] - working_df_len, 0):]
-        lr_higher_bound = np.repeat(lr_higher_bound, timeframe_ratio)
-        lr_higher_bound = lr_higher_bound[max(lr_higher_bound.shape[0] - working_df_len, 0):]
         # If signal shape differs from point shape - bring them to one shape
         if lr_lower_bound.shape[0] < points_shape:
             diff = points_shape - lr_lower_bound.shape[0]
             lr_lower_bound = np.concatenate([np.zeros(diff), lr_lower_bound])
-            lr_higher_bound = np.concatenate([np.zeros(diff), lr_higher_bound])
-        return lr_higher_bound, lr_lower_bound
+        return lr_lower_bound
 
 
 class PriceChangeSignal(SignalBase):
     type = 'Indicator_signal'
     name = 'PriceChange'
 
-    def __init__(self, **configs):
-        super(PriceChangeSignal, self).__init__(configs)
+    def __init__(self, ttype, **configs):
+        super(PriceChangeSignal, self).__init__(ttype, configs)
 
-    def find_signal(self, df: pd.DataFrame) -> (np.ndarray, np.ndarray):
+    def find_signal(self, df: pd.DataFrame) -> np.ndarray:
         """ 1 - Price rapidly moves down in one candle (buy signal)
             2 - Price rapidly moves up  in one candle (sell signal)  """
         # Find price change signal
-        price_change_lower_1 = self.lower_bound_robust(df['q_low_lag_1'].loc[0], df['close_price_change_lag_1'])
+        # buy trade
+        if self.ttype == 'buy':
+            price_change_lower_1 = self.lower_bound_robust(df['q_low_lag_1'].loc[0], df['close_price_change_lag_1'])
+            price_change_lower_2 = self.lower_bound_robust(df['q_low_lag_2'].loc[0], df['close_price_change_lag_2'])
+            price_change_lower_3 = self.lower_bound_robust(df['q_low_lag_3'].loc[0], df['close_price_change_lag_3'])
+            return price_change_lower_1 | price_change_lower_2 | price_change_lower_3
+        # sell trade
         price_change_higher_1 = self.higher_bound_robust(df['q_high_lag_1'].loc[0], df['close_price_change_lag_1'])
-        price_change_lower_2 = self.lower_bound_robust(df['q_low_lag_2'].loc[0], df['close_price_change_lag_2'])
         price_change_higher_2 = self.higher_bound_robust(df['q_high_lag_2'].loc[0], df['close_price_change_lag_2'])
-        price_change_lower_3 = self.lower_bound_robust(df['q_low_lag_3'].loc[0], df['close_price_change_lag_3'])
         price_change_higher_3 = self.higher_bound_robust(df['q_high_lag_3'].loc[0], df['close_price_change_lag_3'])
-        return price_change_lower_1 | price_change_lower_2 | price_change_lower_3, \
-               price_change_higher_1 | price_change_higher_2 | price_change_higher_3
+        return price_change_higher_1 | price_change_higher_2 | price_change_higher_3
 
 
 class MACDSignal(SignalBase):
     type = 'Indicator_signal'
     name = 'MACD'
 
-    def __init__(self, **configs):
-        super(MACDSignal, self).__init__(configs)
+    def __init__(self, ttype, **configs):
+        super(MACDSignal, self).__init__(ttype, configs)
         self.low_bound = self.configs.get('low_bound', 20)
         self.high_bound = self.configs.get('high_bound', 80)
 
@@ -228,7 +248,8 @@ class MACDSignal(SignalBase):
 class FindSignal:
     """ Class for searching of the indicator combination """
 
-    def __init__(self, configs):
+    def __init__(self, ttype, configs):
+        self.ttype = ttype
         self.configs = configs
         self.indicator_list = configs['Indicator_list']
         self.indicator_signals = self.prepare_indicator_signals()
@@ -258,7 +279,7 @@ class FindSignal:
         """ Get all indicator signal classes """
         indicator_signals = list()
         for indicator in self.indicator_list:
-            indicator_signals.append(SignalFactory.factory(indicator, self.configs))
+            indicator_signals.append(SignalFactory.factory(indicator, self.ttype, self.configs))
         return indicator_signals
 
     def find_signal(self, dfs: dict, ticker: str, timeframe: str, data_qty: int) -> list:
@@ -268,17 +289,16 @@ class FindSignal:
         points = list()
 
         try:
-            df_work = dfs[ticker][self.work_timeframe]['data']
-            df_higher = dfs[ticker][self.higher_timeframe]['data']
+            df_work = dfs[ticker][self.work_timeframe]['data'].copy()
+            df_higher = dfs[ticker][self.higher_timeframe]['data'].copy()
         except KeyError:
             return points
 
         df_work = self.prepare_dataframe(df_work)
         sig_patterns = [p.copy() for p in self.patterns]
 
-        buy_points = pd.DataFrame()
-        sell_points = pd.DataFrame()
-        buy_points['time'] = sell_points['time'] = df_work['time']
+        trade_points = pd.DataFrame()
+        trade_points['time'] = df_work['time']
 
         # Get signal points for each indicator
         for indicator_signal in self.indicator_signals:
@@ -286,31 +306,22 @@ class FindSignal:
                 # get time ratio between higher timeframe and working timeframe
                 timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] /
                                       self.timeframe_div[self.work_timeframe])
-                fs_buy, fs_sell = indicator_signal.find_signal(df_higher, timeframe_ratio, df_work.shape[0],
-                                                               buy_points.shape[0])
+                fs = indicator_signal.find_signal(df_higher, timeframe_ratio, df_work.shape[0], trade_points.shape[0])
             else:
-                fs_buy, fs_sell = indicator_signal.find_signal(df_work)
+                fs = indicator_signal.find_signal(df_work)
 
-            buy_points[indicator_signal.name] = fs_buy
-            sell_points[indicator_signal.name] = fs_sell
+            trade_points[indicator_signal.name] = fs
 
-        # If any pattern has all 1 - add corresponding point as signal
+        # If any pattern has all 1 - add corresponding point as a signal
         for pattern in sig_patterns:
-            # find indexes of buy points
-            pattern_points = buy_points[pattern]
+            # find indexes of trade points
+            pattern_points = trade_points[pattern]
             max_shape = pattern_points.shape[1]
             pattern_points = pattern_points.sum(axis=1)
-            buy_indexes = pattern_points[pattern_points == max_shape].index
-            buy_indexes = buy_indexes[df_work.shape[0] - buy_indexes < data_qty]
-            # find indexes of sell points
-            pattern_points = sell_points[pattern]
-            pattern_points = pattern_points.sum(axis=1)
-            sell_indexes = pattern_points[pattern_points == max_shape].index
-            sell_indexes = sell_indexes[df_work.shape[0] - sell_indexes < data_qty]
+            trade_indexes = pattern_points[pattern_points == max_shape].index
+            trade_indexes = trade_indexes[df_work.shape[0] - trade_indexes < data_qty]
             sig_pattern = '_'.join(pattern)
-            points += [[ticker, timeframe, index, 'buy', buy_points.loc[index, 'time'], sig_pattern, [], [], [], []]
-                       for index in buy_indexes]
-            points += [[ticker, timeframe, index, 'sell', sell_points.loc[index, 'time'], sig_pattern, [], [], [], []]
-                       for index in sell_indexes]
+            points += [[ticker, timeframe, index, self.ttype, trade_points.loc[index, 'time'],
+                        sig_pattern, [], [], [], []] for index in trade_indexes]
 
         return points

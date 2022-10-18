@@ -41,7 +41,7 @@ class SignalStat:
 
         # Save trade statistics on disk
         if signal_points:
-            dfs = self.save_statistics(dfs)
+            self.save_statistics(dfs)
         return dfs
 
     def get_result_price_after_period(self, df: pd.DataFrame, index: int, ttype: str) -> list:
@@ -68,9 +68,9 @@ class SignalStat:
         tmp['pattern'] = [pattern]
         # If current statistics is not in stat dataframe - write it
         if ttype == 'buy':
-            stat = dfs.get('stat').get('buy')
+            stat = dfs['stat']['buy']
         else:
-            stat = dfs.get('stat').get('sell')
+            stat = dfs['stat']['sell']
         if stat[(stat['time'] == time) & (stat['ticker'] == ticker) &
                 (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern)].shape[0] == 0:
             tmp['signal_price'] = [signal_price]
@@ -88,13 +88,12 @@ class SignalStat:
                 dfs['stat']['sell'] = stat
         return dfs
 
-    def save_statistics(self, dfs: dict) -> dict:
+    def save_statistics(self, dfs: dict) -> None:
         """ Save statistics to the disk """
         if not self.test:
             # Write statistics to the dataframe dict
             dfs['stat']['buy'].to_pickle(self.buy_stat_path)
             dfs['stat']['sell'].to_pickle(self.sell_stat_path)
-        return dfs
 
     def load_statistics(self) -> (pd.DataFrame, pd.DataFrame):
         """ Load statistics from the disk """

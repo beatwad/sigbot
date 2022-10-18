@@ -68,7 +68,7 @@ eth_expected = [np.array([18, 19])]
 def test_higher_bound(mocker, timeframe, ticker, high_bound, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     dfs, df = create_test_data()
-    stoch_sig = SignalFactory().factory('STOCH', configs)
+    stoch_sig = SignalFactory().factory('STOCH', 'sell', configs)
 
     df = dfs[ticker][timeframe]['data'][:50]
     stoch_slowd = df['stoch_slowd']
@@ -93,7 +93,7 @@ eth_expected = [np.array([21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34
 def test_lower_bound(mocker, timeframe, ticker, low_bound, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     dfs, df = create_test_data()
-    stoch_sig = SignalFactory().factory('STOCH', configs)
+    stoch_sig = SignalFactory().factory('STOCH', 'sell', configs)
 
     df = dfs[ticker][timeframe]['data'][:50]
     stoch_slowk = df['stoch_slowk']
@@ -117,7 +117,7 @@ eth_expected = [np.array([27, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 47, 48
 def test_up_direction(mocker, timeframe, ticker, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     dfs, df = create_test_data()
-    stoch_sig = SignalFactory().factory('STOCH', configs)
+    stoch_sig = SignalFactory().factory('STOCH', 'sell', configs)
 
     df = dfs[ticker][timeframe]['data'][:50]
 
@@ -138,7 +138,7 @@ eth_expected = [np.array([22, 23, 24, 25, 26, 28, 29, 41, 42, 43, 44, 45, 46])]
 def test_down_direction(mocker, timeframe, ticker, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     dfs, df = create_test_data()
-    stoch_sig = SignalFactory().factory('STOCH', configs)
+    stoch_sig = SignalFactory().factory('STOCH', 'sell', configs)
 
     df = dfs[ticker][timeframe]['data'][:50]
 
@@ -163,7 +163,7 @@ eth_expected = [np.array([41, 42, 58, 59, 83, 84, 98]),
 def test_crossed_lines(mocker, timeframe, ticker, up, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     dfs, df = create_test_data()
-    stoch_sig = SignalFactory().factory('STOCH', configs)
+    stoch_sig = SignalFactory().factory('STOCH', 'sell', configs)
 
     df = dfs[ticker][timeframe]['data'][:100]
     stoch_diff = df['stoch_diff']
@@ -189,7 +189,8 @@ eth_expected = [np.array([68, 146, 374, 611, 612, 631, 632]),
 def test_find_stoch_signal(mocker, timeframe, ticker, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     dfs, df = create_test_data()
-    stoch_sig = SignalFactory().factory('STOCH', configs)
+    stoch_sig_buy = SignalFactory().factory('STOCH', 'buy', configs)
+    stoch_sig_sell = SignalFactory().factory('STOCH', 'sell', configs)
     if ticker == 'BTCUSDT':
         dfs[ticker][timeframe]['data'].loc[447, 'stoch_diff'] *= -1
         dfs[ticker][timeframe]['data'].loc[446, 'stoch_slowk'] += 3
@@ -203,7 +204,8 @@ def test_find_stoch_signal(mocker, timeframe, ticker, expected):
         dfs[ticker][timeframe]['data'].loc[146, 'stoch_slowd_dir'] *= -1
         dfs[ticker][timeframe]['data'].loc[146, 'stoch_diff'] *= -1
     df = dfs[ticker][timeframe]['data']
-    buy_points, sell_points = stoch_sig.find_signal(df)
+    buy_points = stoch_sig_buy.find_signal(df)
+    sell_points = stoch_sig_sell.find_signal(df)
     buy_indexes = np.where(buy_points == 1)
     sell_indexes = np.where(sell_points == 1)
     assert np.array_equal(buy_indexes[0], expected[0])
@@ -224,8 +226,10 @@ eth_expected = [np.array([3, 10, 17, 18, 19, 20, 21, 25, 38, 40, 44, 63, 64, 65,
 def test_find_price_change_signal(mocker, ticker, timeframe, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     dfs, df = create_test_data()
-    price_change_sig = SignalFactory().factory('PriceChange', configs)
-    buy_points, sell_points = price_change_sig.find_signal(dfs[ticker][timeframe]['data'][:100])
+    price_change_sig_buy = SignalFactory().factory('PriceChange', 'buy', configs)
+    price_change_sig_sell = SignalFactory().factory('PriceChange', 'sell', configs)
+    buy_points = price_change_sig_buy.find_signal(dfs[ticker][timeframe]['data'][:100])
+    sell_points = price_change_sig_sell.find_signal(dfs[ticker][timeframe]['data'][:100])
     buy_indexes = np.where(buy_points == 1)
     sell_indexes = np.where(sell_points == 1)
     assert np.array_equal(buy_indexes[0], expected[0])
@@ -251,8 +255,10 @@ eth_lr_sell_expected_2 = np.load('test_eth_sell_indexes_2.npy')
                          ], ids=repr)
 def test_find_linear_reg_signal(mocker, df_higher, df_working, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
-    linear_reg_sig = SignalFactory().factory('LinearReg', configs)
-    buy_points, sell_points = linear_reg_sig.find_signal(df_higher, 24, df_working.shape[0], df_btc_5m.shape[0])
+    linear_reg_sig_buy = SignalFactory().factory('LinearReg', 'buy', configs)
+    linear_reg_sig_sell = SignalFactory().factory('LinearReg', 'sell', configs)
+    buy_points = linear_reg_sig_buy.find_signal(df_higher, 24, df_working.shape[0], df_btc_5m.shape[0])
+    sell_points = linear_reg_sig_sell.find_signal(df_higher, 24, df_working.shape[0], df_btc_5m.shape[0])
     buy_indexes = np.where(buy_points == 1)
     sell_indexes = np.where(sell_points == 1)
     assert np.array_equal(buy_indexes, expected[0])
@@ -269,7 +275,6 @@ points1 = [['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
            'STOCH_RSI_LinearReg', [], [], [], []],
             ['BTCUSDT', '5m', 91, 'sell', datetime(2022, 8, 21, 11, 20),
            'STOCH_RSI_LinearReg', [], [], [], []]]
-
 points2 = [['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
             'STOCH_RSI', [], [], [], []],
            ['BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
@@ -290,22 +295,38 @@ points4 = [['ETHUSDT', '5m', 629, 'buy', datetime(2022, 8, 23, 8, 50),
             'STOCH_RSI', [], [], [], []],
            ['ETHUSDT', '5m', 631, 'buy', datetime(2022, 8, 23, 9),
             'STOCH_RSI', [], [], [], []]]
-expected = [points1, points2, points3, points4]
+expected_buy = [points1, points2, points3, points4]
+
+points1 = [['BTCUSDT', '5m', 91, 'sell', datetime(2022, 8, 21, 11, 20),
+            'STOCH_RSI', [], [], [], []],
+            ['BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
+           'STOCH_RSI', [], [], [], []],
+            ['BTCUSDT', '5m', 91, 'sell', datetime(2022, 8, 21, 11, 20),
+           'STOCH_RSI_LinearReg', [], [], [], []]]
+points2 = [['BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
+            'STOCH_RSI', [], [], [], []]]
+points3 = [['ETHUSDT', '5m', 83, 'sell', datetime(2022, 8, 21, 11, 20),
+            'STOCH_RSI', [], [], [], []],
+           ['ETHUSDT', '5m', 83, 'sell', datetime(2022, 8, 21, 11, 20),
+            'STOCH_RSI_LinearReg', [], [], [], []]]
+points4 = []
+expected_sell = [points1, points2, points3]
 
 
 @pytest.mark.parametrize('ticker, timeframe, limit, expected',
                          [
-                          ('BTCUSDT', '5m', 1000, expected[0]),
-                          ('BTCUSDT', '5m', 500, expected[1]),
+                          ('BTCUSDT', '5m', 1000, expected_sell[0]),
+                          ('BTCUSDT', '5m', 500, expected_sell[1]),
                           ('BTCUSDT', '5m', 10, []),
-                          ('ETHUSDT', '5m', 1000, expected[2]),
-                          ('ETHUSDT', '5m', 400, expected[3]),
+                          ('ETHUSDT', '5m', 1000, expected_sell[2]),
+                          ('ETHUSDT', '5m', 400, []),
                           ('ETHUSDT', '5m', 10, []),
                           ], ids=repr)
 def test_find_signal(mocker, ticker, timeframe, limit, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     dfs, _ = create_test_data()
-    fs = FindSignal(configs)
-    fs.patterns = [['STOCH', 'RSI'], ['STOCH', 'RSI', 'LinearReg']]
-    assert fs.find_signal(dfs, ticker, timeframe, limit) == expected
-
+    fs_buy = FindSignal('buy', configs)
+    fs_sell = FindSignal('sell', configs)
+    fs_buy.patterns = [['STOCH', 'RSI'], ['STOCH', 'RSI', 'LinearReg']]
+    fs_sell.patterns = [['STOCH', 'RSI'], ['STOCH', 'RSI', 'LinearReg']]
+    assert fs_sell.find_signal(dfs, ticker, timeframe, limit) == expected

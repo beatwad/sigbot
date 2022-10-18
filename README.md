@@ -20,4 +20,4 @@ Works with Binance API
 * freezegun `1.2.2`
 * python-telegram-bot `13.13`
 * proplot `0.9.5`
-* msttcorefonts `3.8` (apt)
+* msttcorefonts `3.7` (apt)

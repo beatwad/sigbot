@@ -52,25 +52,26 @@ if __name__ == "__main__":
     database, exchanges, tb_bot = None, None, None
 
     while True:
-        main = Main(load_tickers, **configs)
-        # variables that is used to save some important sigbot object to prevent their recreation
-        # and additional memory consumption; their values are saved on the first cycle and then are used
-        # on the next cycles
-        if load_tickers:
-            database = main.sigbot.database
-            exchanges = main.sigbot.exchanges
-            tb_bot = main.sigbot.telegram_bot
-            load_tickers = False
-        else:
-            main.sigbot.database = database
-            main.sigbot.exchanges = exchanges
-            main.sigbot.telegram_bot = tb_bot
-        # restart the bot every 24 hours
-        dt1 = datetime.now()
-        dt2 = datetime.now()
         try:
+            main = Main(load_tickers, **configs)
+            # variables that is used to save some important sigbot object to prevent their recreation
+            # and additional memory consumption; their values are saved on the first cycle and then are used
+            # on the next cycles
+            if load_tickers:
+                database = main.sigbot.database
+                exchanges = main.sigbot.exchanges
+                tb_bot = main.sigbot.telegram_bot
+                load_tickers = False
+            else:
+                main.sigbot.database = database
+                main.sigbot.exchanges = exchanges
+                main.sigbot.telegram_bot = tb_bot
+            # restart the bot every 24 hours
+            dt1 = datetime.now()
+            dt2 = datetime.now()
             while int((dt2 - dt1).total_seconds() / 3600) <= main.cycle_length:
                 main.cycle()
                 dt2 = datetime.now()
         except:
+            sleep(60)
             continue

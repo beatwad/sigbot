@@ -126,7 +126,7 @@ class Visualizer:
     def create_plot(self, dfs, point, levels):
         # get necessary info
         ticker, timeframe, point_index, point_type, sig_time, pattern, plot_path, exchange_list, statistics, y = point
-        df_working = dfs[ticker][self.working_timeframe]['data']
+        df_working = dfs[ticker][self.working_timeframe]['data'][point_type]
         df_working = df_working.loc[point_index - self.plot_width:point_index]
         ohlc = df_working[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
         # get indicator list
@@ -157,7 +157,7 @@ class Visualizer:
             # plot higher timeframe with linear regression
             subfigs[1].patch.set_facecolor(self.background_color)
             axs_higher = subfigs[1].subplots(1, 1)
-            df_higher = dfs[ticker][self.higher_timeframe]['data']
+            df_higher = dfs[ticker][self.higher_timeframe]['data'][point_type]
             # get corresponding to signal_time index of dataframe with higher timeframe candles
             df_higher = df_higher.loc[max(df_higher.shape[0] - self.plot_width * 2, 0):].reset_index(drop=True)
             ohlc_higher = df_higher[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')

@@ -178,7 +178,7 @@ class Optimizer:
             # load candle data from exchanges only at first time
             if load:
                 self.clean_prev_tickers_dfs()
-                sb.save_opt_dataframes(load)
+                sb.save_opt_dataframes(ttype)
                 load = False
             sb.save_opt_statistics(ttype, opt_limit)
             # calculate statistic

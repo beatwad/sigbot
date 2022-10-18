@@ -289,8 +289,12 @@ class FindSignal:
         points = list()
 
         try:
-            df_work = dfs[ticker][self.work_timeframe]['data'].copy()
-            df_higher = dfs[ticker][self.higher_timeframe]['data'].copy()
+            if self.ttype == 'buy':
+                df_work = dfs[ticker][self.work_timeframe]['data']['buy'].copy()
+                df_higher = dfs[ticker][self.higher_timeframe]['data']['buy'].copy()
+            else:
+                df_work = dfs[ticker][self.work_timeframe]['data']['sell'].copy()
+                df_higher = dfs[ticker][self.higher_timeframe]['data']['sell'].copy()
         except KeyError:
             return points
 

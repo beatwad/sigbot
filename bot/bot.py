@@ -156,9 +156,10 @@ class SigBot:
                 cleaned_prev_tickers.append(ticker)
         return cleaned_prev_tickers
 
-    def get_data(self, exchange_api, ticker: str, timeframe: str) -> (pd.DataFrame, int, bool):
+    def get_data(self, exchange_api, ticker: str, timeframe: str) -> (pd.DataFrame, int):
         """ Check if new data appeared. If it is - return dataframe with the new data and amount of data """
-        df = self.database.get(ticker, dict()).get(timeframe, dict()).get('data', pd.DataFrame())
+        df = self.database.get(ticker, dict()).get(timeframe,
+                                                   dict()).get('data', pd.DataFrame()).get('buy', pd.DataFrame())
         # Write data to the dataframe
         df, data_qty = exchange_api.get_data(df, ticker, timeframe)
         return df, data_qty
@@ -179,12 +180,12 @@ class SigBot:
             # get indicators for working timeframe
             for indicator in indicator_list:
                 ind_factory = IndicatorFactory.factory(indicator, ttype, configs)
-                if ind_factory:
+                if ind_factory and indicator not in higher_tf_indicator_list:
                     working_tf_indicators.append(ind_factory)
         return higher_tf_indicators, working_tf_indicators
 
-    def get_indicators(self, df: pd.DataFrame, ticker: str, timeframe: str,
-                       exchange_api, data_qty: int) -> (dict, pd.DataFrame, int):
+    def get_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str,
+                       exchange_api, data_qty: int) -> (dict, int):
         """ Create indicator list from search signal patterns list, if it has the new data and
             data is not from higher timeframe, else get only levels """
         if timeframe == self.work_timeframe:
@@ -192,18 +193,22 @@ class SigBot:
         else:
             indicators = self.higher_tf_indicators
         # Write indicators to the dataframe, update dataframe dict
-        database, df = exchange_api.add_indicator_data(self.database, df, indicators, ticker, timeframe, data_qty,
-                                                       configs)
+        database = exchange_api.add_indicator_data(self.database, df, ttype, indicators, ticker, timeframe,
+                                                       data_qty, configs)
         # If enough time has passed - update statistics
         if data_qty > 1 and self.main.cycle_number > 1 and timeframe == self.work_timeframe:
             data_qty = self.stat_update_range
-        return database, df, data_qty
+        return database, data_qty
 
-    def get_signals(self, ticker: str, timeframe: str, data_qty: int) -> list:
+    def get_buy_signals(self, ticker: str, timeframe: str, data_qty: int) -> list:
         """ Try to find the signals and if succeed - return them and support/resistance levels """
         sig_points_buy = self.find_signal_buy.find_signal(self.database, ticker, timeframe, data_qty)
+        return sig_points_buy
+
+    def get_sell_signals(self, ticker: str, timeframe: str, data_qty: int) -> list:
+        """ Try to find the signals and if succeed - return them and support/resistance levels """
         sig_points_sell = self.find_signal_buy.find_signal(self.database, ticker, timeframe, data_qty)
-        return sig_points_buy + sig_points_sell
+        return sig_points_sell
 
     @staticmethod
     def filter_sig_points(sig_points: list) -> list:
@@ -240,9 +245,9 @@ class SigBot:
                 filtered_points.append(point)
         return filtered_points
 
-    def add_statistics(self, sig_points: list) -> dict:
-        """ Getstatistics and write it to the database """
-        database = self.stat.write_stat(self.database, sig_points)
+    def add_statistics(self, sig_points: list, ttype: str) -> dict:
+        """ Get statistics and write it to the database """
+        database = self.stat.write_stat(self.database, sig_points, ttype)
         return database
 
     def calc_statistics(self, sig_points: list) -> list:
@@ -345,17 +350,18 @@ class MonitorExchange(Thread):
         self.opt_limit = 1000
 
     @thread_lock
-    def get_indicators(self, df, ticker, timeframe, exchange_api, data_qty):
+    def get_indicators(self, df, ttype, ticker, timeframe, exchange_api, data_qty) -> (pd.DataFrame, pd.DataFrame, int):
         # Get indicators and quantity of data
-        self.sigbot.database, df, data_qty = self.sigbot.get_indicators(df, ticker, timeframe, exchange_api, data_qty)
-        return df, data_qty
+        self.sigbot.database, data_qty = self.sigbot.get_indicators(df, ttype, ticker, timeframe, exchange_api,
+                                                                    data_qty)
+        return data_qty
 
     @thread_lock
-    def add_statistics(self, sig_points):
-        self.sigbot.database = self.sigbot.add_statistics(sig_points)
+    def add_statistics(self, sig_points, ttype) -> None:
+        self.sigbot.database = self.sigbot.add_statistics(sig_points, ttype)
 
     @thread_lock
-    def clean_statistics(self):
+    def clean_statistics(self) -> None:
         self.sigbot.clean_statistics()
 
     def save_opt_dataframes(self) -> None:
@@ -392,7 +398,7 @@ class MonitorExchange(Thread):
                         continue
                 else:
                     df = self.sigbot.opt_dfs[f'{ticker}_{timeframe}'].copy()
-                df, _ = self.get_indicators(df, ticker, timeframe, exchange_api, 1000)
+                self.get_indicators(df, ticker, timeframe, exchange_api, 1000)
                 # If current timeframe is working timeframe
                 if timeframe == self.sigbot.work_timeframe:
                     # Get the signals
@@ -405,7 +411,7 @@ class MonitorExchange(Thread):
                     # Filter repeating signals
                     sig_points = self.sigbot.filter_sig_points(sig_points)
                     # Add the signals to statistics
-                    self.add_statistics(sig_points)
+                    self.add_statistics(sig_points, ttype)
 
     @exception
     def run(self) -> None:
@@ -436,17 +442,26 @@ class MonitorExchange(Thread):
                 # the new data and data is not from higher timeframe, else get only levels
                 if data_qty > 1:
                     # Get indicators and quantity of data
-                    df, data_qty = self.get_indicators(df, ticker, timeframe, exchange_api, data_qty)
+                    data_qty_buy = self.get_indicators(df, 'buy', ticker, timeframe, exchange_api, data_qty)
+                    data_qty_sell = self.get_indicators(df, 'sell', ticker, timeframe, exchange_api, data_qty)
+                    df_sell = df.copy()
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Get the signals
-                        sig_points = self.sigbot.get_signals(ticker, timeframe, data_qty)
+                        sig_buy_points = self.sigbot.get_buy_signals(ticker, timeframe, data_qty_buy)
+                        sig_sell_points = self.sigbot.get_sell_signals(ticker, timeframe, data_qty_sell)
                         # Filter repeating signals
-                        sig_points = self.sigbot.filter_sig_points(sig_points)
+                        sig_buy_points = self.sigbot.filter_sig_points(sig_buy_points)
+                        sig_sell_points = self.sigbot.filter_sig_points(sig_sell_points)
                         # Add the signals to statistics
-                        self.add_statistics(sig_points)
+                        self.add_statistics(sig_buy_points, 'buy')
+                        self.add_statistics(sig_sell_points, 'sell')
                         # Get signals only if they are fresh (not earlier than 10-15 min ago)
-                        sig_points = self.sigbot.filter_early_sig_points(sig_points, df)
+                        df_buy = self.sigbot.database[ticker][timeframe]['data']['buy']
+                        sig_buy_points = self.sigbot.filter_early_sig_points(sig_buy_points, df_buy)
+                        df_sell = self.sigbot.database[ticker][timeframe]['data']['sell']
+                        sig_sell_points = self.sigbot.filter_early_sig_points(sig_buy_points, df_sell)
+                        sig_points = sig_buy_points + sig_sell_points
                         if sig_points:
                             # Clean statistics dataframes from close signal points
                             self.clean_statistics()

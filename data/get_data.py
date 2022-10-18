@@ -90,10 +90,12 @@ class GetData:
         return df
 
     @staticmethod
-    def add_indicator_data(dfs: dict, df: pd.DataFrame, indicators: list, ticker: str, timeframe: str,
-                           data_qty: int, configs: dict) -> (dict, pd.DataFrame):
+    def add_indicator_data(dfs: dict, df: pd.DataFrame, ttype: str, indicators: list, ticker: str, timeframe: str,
+                           data_qty: int, configs: dict) -> dict:
         """ Add indicator data to cryptocurrency dataframe """
         levels = list()
+        indicators = [i for i in indicators if i.ttype == ttype]
+
         for indicator in indicators:
             df = indicator.get_indicator(df, ticker, timeframe, data_qty)
         # Update dataframe dict
@@ -101,9 +103,11 @@ class GetData:
             dfs[ticker] = dict()
         if timeframe not in dfs[ticker]:
             dfs[ticker][timeframe] = dict()
-        dfs[ticker][timeframe]['data'] = df
-        dfs[ticker][timeframe]['levels'] = levels
-        return dfs, df
+        if 'data' not in dfs[ticker][timeframe]:
+            dfs[ticker][timeframe]['data'] = dict()
+        dfs[ticker][timeframe]['data'][ttype] = df.copy()
+        dfs[ticker][timeframe]['levels'] = levels.copy()
+        return dfs
 
     def get_limit(self, df: pd.DataFrame, ticker: str, timeframe: str) -> int:
         """ Get interval needed to download from exchange according to difference between current time and

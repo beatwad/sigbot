@@ -170,15 +170,16 @@ class SigBot:
         higher_tf_indicator_list = configs['Higher_TF_indicator_list']
         indicator_list = configs['Indicator_list']
         # get indicators for higher timeframe
-        for indicator in higher_tf_indicator_list:
-            ind_factory = IndicatorFactory.factory(indicator, configs)
-            if ind_factory:
-                higher_tf_indicators.append(ind_factory)
-        # get indicators for working timeframe
-        for indicator in indicator_list:
-            ind_factory = IndicatorFactory.factory(indicator, configs)
-            if ind_factory:
-                working_tf_indicators.append(ind_factory)
+        for ttype in ['buy', 'sell']:
+            for indicator in higher_tf_indicator_list:
+                ind_factory = IndicatorFactory.factory(indicator, ttype, configs)
+                if ind_factory:
+                    higher_tf_indicators.append(ind_factory)
+            # get indicators for working timeframe
+            for indicator in indicator_list:
+                ind_factory = IndicatorFactory.factory(indicator, ttype, configs)
+                if ind_factory:
+                    working_tf_indicators.append(ind_factory)
         return higher_tf_indicators, working_tf_indicators
 
     def get_indicators(self, df: pd.DataFrame, ticker: str, timeframe: str,
@@ -449,7 +450,7 @@ class MonitorExchange(Thread):
                             sig_points = self.sigbot.calc_statistics(sig_points)
                             # Send Telegram notification
                             t_print(self.exchange, [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
-                            if self.sigbot.main.cycle_number > 1:
+                            if self.sigbot.main.cycle_number > 0:
                                 self.sigbot.telegram_bot.notification_list += sig_points
                                 self.sigbot.telegram_bot.update_bot.set()
                                 # Log the signals

@@ -110,36 +110,72 @@
     }
   },
   "Indicator": {
-    "RSI": {
-      "params": {
-        "timeperiod": 14
+    "buy": {
+      "RSI": {
+        "params": {
+          "timeperiod": 14
+        }
+      },
+      "STOCH": {
+        "params": {
+          "fastk_period": 9,
+          "slowk_period": 3,
+          "slowd_period": 7
+        }
+      },
+      "LinearReg": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
+      "MACD": {
+        "params": {
+          "fastperiod": 12,
+          "slowperiod": 26,
+          "signalperiod": 9
+        }
+      },
+      "PriceChange": {
+        "params": {
+          "round_decimals": 4,
+          "low_price_quantile": 10,
+          "high_price_quantile": 990,
+          "stat_file_path": "signal_stat/price_stat_buy.json"
+        }
       }
     },
-    "STOCH": {
-      "params": {
-        "fastk_period": 9,
-        "slowk_period": 3,
-        "slowd_period": 7
-      }
-    },
-    "LinearReg": {
-      "params": {
-        "timeperiod": 24
-      }
-    },
-    "MACD": {
-      "params": {
-        "fastperiod": 12,
-        "slowperiod": 26,
-        "signalperiod": 9
-      }
-    },
-    "PriceChange": {
-      "params": {
-        "round_decimals": 4,
-        "low_price_quantile": 10,
-        "high_price_quantile": 990,
-        "stat_file_path": "signal_stat/price_stat.json"
+    "sell": {
+      "RSI": {
+        "params": {
+          "timeperiod": 14
+        }
+      },
+      "STOCH": {
+        "params": {
+          "fastk_period": 9,
+          "slowk_period": 3,
+          "slowd_period": 7
+        }
+      },
+      "LinearReg": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
+      "MACD": {
+        "params": {
+          "fastperiod": 12,
+          "slowperiod": 26,
+          "signalperiod": 9
+        }
+      },
+      "PriceChange": {
+        "params": {
+          "round_decimals": 4,
+          "low_price_quantile": 10,
+          "high_price_quantile": 990,
+          "stat_file_path": "signal_stat/price_stat_sell.json"
+        }
       }
     }
   },
@@ -171,7 +207,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 2
+      "max_prev_candle_limit": 200
     }
   },
   "SignalStat": {
@@ -180,10 +216,10 @@
       "stop_loss_multiplier": 2,
       "test": 0,
       "stat_limit_hours": {
-        "PriceChange" :  24,
-        "PriceChange_LinearReg" :  48,
-        "STOCH_RSI" :  36,
-        "STOCH_RSI_LinearReg" :  168
+        "PriceChange" :  288,
+        "PriceChange_LinearReg" :  576,
+        "STOCH_RSI" :  432,
+        "STOCH_RSI_LinearReg" :  1000
       },
       "prev_sig_limit_minutes": 40,
       "stat_range": 24

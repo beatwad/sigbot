@@ -156,14 +156,11 @@ class Visualizer:
             subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height, 1.5, 2.5])
             # plot higher timeframe with linear regression
             subfigs[1].patch.set_facecolor(self.background_color)
-            axs_higher = subfigs[1].subplots(1, 1, sharex=True)
+            axs_higher = subfigs[1].subplots(1, 1)
             df_higher = dfs[ticker][self.higher_timeframe]['data']
             # get corresponding to signal_time index of dataframe with higher timeframe candles
             df_higher = df_higher.loc[max(df_higher.shape[0] - self.plot_width * 2, 0):].reset_index(drop=True)
             ohlc_higher = df_higher[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
-            # plot candles
-            mpf.plot(ohlc_higher, type='candle', ax=axs_higher, warn_too_much_data=1001, style='yahoo',
-                     ylabel='', returnfig=True)
             # plot linear regression indicator
             if point_type == 'buy':
                 axs_higher.plot(df_higher['linear_reg'], linewidth=2, color='green')
@@ -184,6 +181,9 @@ class Visualizer:
             # plot title
             axs_higher.set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Тренд', fontsize=14,
                                     color=self.ticker_color)
+            # plot candles
+            mpf.plot(ohlc_higher, type='candle', ax=axs_higher, warn_too_much_data=1001, style='yahoo',
+                     ylabel='', returnfig=True)
         else:
             subfigs_num = 2
             subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height, 2.5])

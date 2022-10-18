@@ -91,12 +91,6 @@ class SignalStat:
     def save_statistics(self, dfs: dict) -> dict:
         """ Save statistics to the disk """
         if not self.test:
-            try:
-                open(self.buy_stat_path, 'r').close()
-                open(self.sell_stat_path, 'r').close()
-            except FileNotFoundError:
-                open(self.buy_stat_path, 'w+').close()
-                open(self.sell_stat_path, 'w+').close()
             # Write statistics to the dataframe dict
             dfs['stat']['buy'].to_pickle(self.buy_stat_path)
             dfs['stat']['sell'].to_pickle(self.sell_stat_path)
@@ -121,7 +115,6 @@ class SignalStat:
     def calculate_total_stat(self, dfs: dict, ttype: str, pattern: str) -> (list, int):
         """ Calculate signal statistics for all found signals and all tickers  """
         stat = dfs['stat'][ttype]
-        # pattern = '_'.join(p[0] for p in pattern)
 
         # get statistics by pattern
         stat = stat[stat['pattern'] == pattern]

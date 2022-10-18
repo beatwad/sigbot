@@ -45,7 +45,7 @@ def create_test_data():
             else:
                 indicator_list = ['SUP_RES']
             for indicator in indicator_list:
-                ind_factory = IndicatorFactory.factory(indicator, configs)
+                ind_factory = IndicatorFactory.factory(indicator, 'buy', configs)
                 if ind_factory:
                     indicators.append(ind_factory)
             # Write indicators to dataframe, update dataframe dict

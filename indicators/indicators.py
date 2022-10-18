@@ -9,19 +9,17 @@ from collections import Counter
 class IndicatorFactory(object):
     """ Return indicator according to 'indicator' variable value """
     @staticmethod
-    def factory(indicator, configs):
+    def factory(indicator, ttype, configs):
         if indicator.startswith('RSI'):
-            return RSI(configs)
+            return RSI(ttype, configs)
         elif indicator.startswith('STOCH'):
-            return STOCH(configs)
+            return STOCH(ttype, configs)
         elif indicator.startswith('MACD'):
-            return MACD(configs)
-        # elif indicator.startswith('SUP_RES'):
-        #     return SupRes(configs)
+            return MACD(ttype, configs)
         elif indicator.startswith('PriceChange'):
-            return PriceChange(configs)
+            return PriceChange(ttype, configs)
         elif indicator.startswith('LinearReg'):
-            return LinearReg(configs)
+            return LinearReg(ttype, configs)
 
 
 class Indicator:
@@ -29,8 +27,9 @@ class Indicator:
     type = 'Indicator'
     name = 'Base'
 
-    def __init__(self, configs):
-        self.configs = configs[self.type][self.name]['params']
+    def __init__(self, ttype, configs):
+        self.ttype = ttype
+        self.configs = configs[self.type][self.ttype][self.name]['params']
 
     @abstractmethod
     def get_indicator(self, *args, **kwargs):
@@ -42,8 +41,8 @@ class RSI(Indicator):
     """ RSI indicator, default settings: timeperiod: 14"""
     name = 'RSI'
 
-    def __init__(self, configs: dict):
-        super(RSI, self).__init__(configs)
+    def __init__(self, ttype: str, configs: dict):
+        super(RSI, self).__init__(ttype, configs)
 
     def get_indicator(self, df, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
         # if mean close price value is too small, RSI indicator can become zero,
@@ -61,8 +60,8 @@ class STOCH(Indicator):
     """ STOCH indicator, default settings: fastk_period: 14, slowk_period: 3, slowd_period:  3 """
     name = 'STOCH'
 
-    def __init__(self, configs):
-        super(STOCH, self).__init__(configs)
+    def __init__(self, ttype: str, configs: dict):
+        super(STOCH, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
         slowk, slowd = ta.STOCH(df['high'], df['low'],
@@ -76,8 +75,8 @@ class LinearReg(Indicator):
     """ Indicator of linear regression and its angle indicators, default settings: timeperiod: 14 """
     name = 'LinearReg'
 
-    def __init__(self, configs):
-        super(LinearReg, self).__init__(configs)
+    def __init__(self, ttype: str, configs: dict):
+        super(LinearReg, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
         linear_reg = ta.LINEARREG(df['close'], **self.configs)
@@ -91,8 +90,8 @@ class MACD(Indicator):
     """ MACD indicator, default settings: fastperiod: 12, slowperiod: 26, signalperiod: 9 """
     name = 'MACD'
 
-    def __init__(self, configs):
-        super(MACD, self).__init__(configs)
+    def __init__(self, ttype: str, configs: dict):
+        super(MACD, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
         macd, macdsignal, macdhist = ta.MACD(df['close'], **self.configs)
@@ -106,8 +105,8 @@ class PriceChange(Indicator):
     """ Find big changes of price in both directions """
     name = 'PriceChange'
 
-    def __init__(self, configs):
-        super(PriceChange, self).__init__(configs)
+    def __init__(self, ttype: str, configs: dict):
+        super(PriceChange, self).__init__(ttype, configs)
         self.low_price_quantile = self.configs.get('low_price_quantile', 5)
         self.high_price_quantile = self.configs.get('high_price_quantile', 95)
         self.round_decimals = self.configs.get('decimals', 4)

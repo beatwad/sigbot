@@ -172,7 +172,7 @@ def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
         indicator_list = ['LinearReg']
 
     for indicator in indicator_list:
-        ind_factory = IndicatorFactory.factory(indicator, configs)
+        ind_factory = IndicatorFactory.factory(indicator, 'buy', configs)
         if ind_factory:
             indicators.append(ind_factory)
 

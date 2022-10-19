@@ -207,7 +207,7 @@ class SigBot:
 
     def get_sell_signals(self, ticker: str, timeframe: str, data_qty: int) -> list:
         """ Try to find the signals and if succeed - return them and support/resistance levels """
-        sig_points_sell = self.find_signal_buy.find_signal(self.database, ticker, timeframe, data_qty)
+        sig_points_sell = self.find_signal_sell.find_signal(self.database, ticker, timeframe, data_qty)
         return sig_points_sell
 
     @staticmethod
@@ -380,8 +380,6 @@ class MonitorExchange(Thread):
                     pass
                 df_path = f'ticker_dataframes/{ticker}_{timeframe}.pkl'
                 df.to_pickle(df_path)
-                # if timeframe == self.sigbot.work_timeframe:
-                #     print(f'Exchange {self.exchange}, ticker {ticker}')
 
     def save_opt_statistics(self, ttype: str, opt_limit: int):
         """ Save statistics data for every ticker for further indicator/signal optimization """
@@ -398,7 +396,7 @@ class MonitorExchange(Thread):
                         continue
                 else:
                     df = self.sigbot.opt_dfs[f'{ticker}_{timeframe}'].copy()
-                self.get_indicators(df, ticker, timeframe, exchange_api, 1000)
+                self.get_indicators(df, ttype, ticker, timeframe, exchange_api, 1000)
                 # If current timeframe is working timeframe
                 if timeframe == self.sigbot.work_timeframe:
                     # Get the signals
@@ -444,7 +442,6 @@ class MonitorExchange(Thread):
                     # Get indicators and quantity of data
                     data_qty_buy = self.get_indicators(df, 'buy', ticker, timeframe, exchange_api, data_qty)
                     data_qty_sell = self.get_indicators(df, 'sell', ticker, timeframe, exchange_api, data_qty)
-                    df_sell = df.copy()
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Get the signals
@@ -460,8 +457,8 @@ class MonitorExchange(Thread):
                         df_buy = self.sigbot.database[ticker][timeframe]['data']['buy']
                         sig_buy_points = self.sigbot.filter_early_sig_points(sig_buy_points, df_buy)
                         df_sell = self.sigbot.database[ticker][timeframe]['data']['sell']
-                        sig_sell_points = self.sigbot.filter_early_sig_points(sig_buy_points, df_sell)
-                        sig_points = sig_buy_points + sig_sell_points
+                        sig_sell_points = self.sigbot.filter_early_sig_points(sig_sell_points, df_sell)
+                        sig_points = sig_sell_points  # sig_buy_points + sig_sell_points
                         if sig_points:
                             # Clean statistics dataframes from close signal points
                             self.clean_statistics()

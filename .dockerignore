@@ -1,2 +1,4 @@
 optimizer
 tests
+signal_stat/*.pkl
+visualizer/images/*

@@ -43,7 +43,7 @@ def thread_lock(function):
 @thread_lock
 def t_print(*args):
     """ Thread safe print """
-    print(*args)
+    print(*args, flush=True)
 
 
 class SigBot:

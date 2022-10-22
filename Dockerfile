@@ -28,6 +28,5 @@ ENV PATH="/opt/venv/bin:$PATH"
 ENV LD_LIBRARY_PATH="/opt/venv/lib"
 
 WORKDIR /sigbot
-COPY . .
 
 CMD ["python", "main.py"]

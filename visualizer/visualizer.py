@@ -312,7 +312,7 @@ class Visualizer:
                           'среднее отклонение цены', fontsize=13, color=self.ticker_color)
 
         # set x-ticks
-        xticklabels = ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '120']
+        xticklabels = ['30', '60', '90', '120', '150', '180', '210', '240', '270', '300', '330', '360']
         # set ticker color
         axs2[0].tick_params(axis='x', colors=self.ticker_color)
         axs2[0].tick_params(axis='y', colors=self.ticker_color)

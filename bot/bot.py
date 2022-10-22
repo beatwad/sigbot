@@ -194,7 +194,7 @@ class SigBot:
             indicators = self.higher_tf_indicators
         # Write indicators to the dataframe, update dataframe dict
         database = exchange_api.add_indicator_data(self.database, df, ttype, indicators, ticker, timeframe,
-                                                       data_qty, configs)
+                                                   data_qty, configs)
         # If enough time has passed - update statistics
         if data_qty > 1 and self.main.cycle_number > 1 and timeframe == self.work_timeframe:
             data_qty = self.stat_update_range
@@ -458,7 +458,7 @@ class MonitorExchange(Thread):
                         sig_buy_points = self.sigbot.filter_early_sig_points(sig_buy_points, df_buy)
                         df_sell = self.sigbot.database[ticker][timeframe]['data']['sell']
                         sig_sell_points = self.sigbot.filter_early_sig_points(sig_sell_points, df_sell)
-                        sig_points = sig_sell_points  # sig_buy_points + sig_sell_points
+                        sig_points = sig_buy_points # + sig_sell_points
                         if sig_points:
                             # Clean statistics dataframes from close signal points
                             self.clean_statistics()
@@ -474,8 +474,8 @@ class MonitorExchange(Thread):
                                 # Log the signals
                                 for sig_point in sig_points:
                                     sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
-                                                  f'{ticker}, timeframe is {timeframe}, pattern is {sig_point[5]}, ' \
-                                                  f'time is {sig_point[4]}'
+                                                  f'{ticker}, timeframe is {timeframe}, type is {sig_point[3]}, ' \
+                                                  f'pattern is {sig_point[5]}, time is {sig_point[4]}'
                                     logger.info(sig_message)
                     # Save dataframe for further analysis
                     # self.save_dataframe(df, ticker, timeframe)

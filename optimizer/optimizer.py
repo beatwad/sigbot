@@ -30,7 +30,6 @@ class Optimizer:
         self.pattern_list = pattern
         self.optim_dict = optim_dict
         self.remove_path = optim_dict
-        self.working_timeframe = configs['Timeframes']['work_timeframe']
 
     @staticmethod
     def clean_prev_stat():

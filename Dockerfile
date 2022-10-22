@@ -1,19 +1,33 @@
-FROM python:alpine
+FROM python:3.10-slim AS compile-image
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends build-essential gcc wget
 
-WORKDIR /app
+# Make sure we use the virtualenv:
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-RUN pip install pandas==1.4.3
-RUN pip install numpy==1.23.2
-RUN pip install ta-lib==0.4.19
-RUN pip install python-binance==1.0.16
-RUN pip install python-dotenv==0.20.0
-RUN pip install mplfinance==0.12.9b1
-RUN pip install matplotlib==3.5.3
-RUN pip install python-telegram-bot==13.13
-RUN pip install proplot==0.9.5
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
-RUN sudo apt-get install msttcorefonts
+# TA-Lib
+RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
+  tar -xvzf ta-lib-0.4.0-src.tar.gz && \
+  cd ta-lib/ && \
+  ./configure --prefix=/opt/venv && \
+  make && \
+  make install
 
+RUN pip install --global-option=build_ext --global-option="-L/opt/venv/lib" TA-Lib==0.4.19
+RUN rm -R ta-lib ta-lib-0.4.0-src.tar.gz
+
+FROM python:3.10-slim AS build-image
+COPY --from=compile-image /opt/venv /opt/venv
+
+# Make sure we use the virtualenv:
+ENV PATH="/opt/venv/bin:$PATH"
+ENV LD_LIBRARY_PATH="/opt/venv/lib"
+
+WORKDIR /sigbot
 COPY . .
 
 CMD ["python", "main.py"]

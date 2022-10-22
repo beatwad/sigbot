@@ -1,5 +1,9 @@
 config/.env
 *.pkl
+*.npy
+*.png
+*.txt
 .idea/
 .ipynb_checkpoints/
-*/__pycache__/*
+sigbot/__pycache__/
+sigbot/*/__pycache__/*

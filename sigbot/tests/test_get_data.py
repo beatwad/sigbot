@@ -132,8 +132,10 @@ df_eth_5['time'] = df_eth_5['time'] + pd.to_timedelta(3, unit='h')
 df_eth_1 = df_eth_1h[['time', 'open', 'high', 'low', 'close', 'volume']]
 df_eth_1['time'] = df_eth_1['time'] + pd.to_timedelta(3, unit='h')
 
-dfss = {'BTCUSDT': {'5m': {'data': df_btc_5}, '1h': {'data': df_btc_1}},
-        'ETHUSDT': {'5m': {'data': df_eth_5}, '1h': {'data': df_eth_1}}}
+dfss = {'BTCUSDT': {'1h': {'data': {'buy': df_btc_1h, 'sell': df_btc_1h}},
+                    '5m': {'data': {'buy': df_btc_5m, 'sell': df_btc_5m}}},
+        'ETHUSDT': {'1h': {'data': {'buy': df_eth_1h, 'sell': df_eth_1h}},
+                    '5m': {'data': {'buy': df_eth_5m, 'sell': df_eth_5m}}}}
 
 df_ind1 = pd.read_pickle('test_ETHUSDT_1h_indicators.pkl')
 df_ind2 = pd.read_pickle('test_ETHUSDT_5m_indicators.pkl')
@@ -164,7 +166,7 @@ levels = [level1, level2, level3, level4]
                           ], ids=repr)
 def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
     dfs = dfss.copy()
-    dfs[ticker][timeframe]['data'] = df.loc[:499]
+    dfs[ticker][timeframe]['data']['buy'] = df.loc[:499]
     indicators = list()
     if timeframe == work_timeframe:
         indicator_list = configs['Indicator_list']
@@ -188,9 +190,9 @@ def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
 
     data = gd.get_data(df.loc[:499], ticker, timeframe)[0]
     data_qty = 20
-    res = gd.add_indicator_data(dfs, data, indicators, ticker, timeframe, data_qty, configs)[1]
-    dfs[ticker][timeframe]['data'] = gd.add_indicator_data(dfs, data, indicators, ticker, timeframe,
-                                                           data_qty, configs)[1]
+    res = gd.add_indicator_data(dfs, data, 'buy', indicators, ticker,
+                                timeframe, data_qty, configs)[ticker][timeframe]['data']['buy']
+    dfs[ticker][timeframe]['data']['buy'] = res
     assert res.equals(expected[0])
 
     # assert dfs[ticker][timeframe]['levels'] == expected[1]

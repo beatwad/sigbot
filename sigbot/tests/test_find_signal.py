@@ -23,9 +23,10 @@ configs = ConfigFactory.factory(environ).configs
 def create_test_data():
     dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),
                     'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe'])},
-           'BTCUSDT': {'1h': {'data': df_btc_1h}, '5m': {'data': df_btc_5m}},
-           'ETHUSDT': {'1h': {'data': df_eth_1h}, '5m': {'data': df_eth_5m}}
-           }
+           'BTCUSDT': {'1h': {'data': {'buy': df_btc_1h, 'sell': df_btc_1h}},
+                       '5m': {'data': {'buy': df_btc_5m, 'sell': df_btc_5m}}},
+           'ETHUSDT': {'1h': {'data': {'buy': df_eth_1h, 'sell': df_eth_1h}},
+                       '5m': {'data': {'buy': df_eth_5m, 'sell': df_eth_5m}}}}
 
     # Create exchange API
     exchange_api = DataFactory.factory('Binance', **configs)
@@ -49,10 +50,9 @@ def create_test_data():
                 if ind_factory:
                     indicators.append(ind_factory)
             # Write indicators to dataframe, update dataframe dict
-            dfs, df = exchange_api.add_indicator_data(dfs, dfs[ticker][timeframe]['data'], indicators, ticker,
+            dfs = exchange_api.add_indicator_data(dfs, dfs[ticker][timeframe]['data']['buy'], 'buy', indicators, ticker,
                                                       timeframe, data_qty, configs)
-
-    return dfs, df
+    return dfs
 
 
 btc_expected = [np.array([18, 19, 20, 21, 25, 26, 27, 45, 46, 47, 48])]
@@ -67,10 +67,10 @@ eth_expected = [np.array([18, 19])]
                           ], ids=repr)
 def test_higher_bound(mocker, timeframe, ticker, high_bound, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
-    dfs, df = create_test_data()
+    dfs = create_test_data()
     stoch_sig = SignalFactory().factory('STOCH', 'sell', configs)
 
-    df = dfs[ticker][timeframe]['data'][:50]
+    df = dfs[ticker][timeframe]['data']['buy'][:50]
     stoch_slowd = df['stoch_slowd']
     stoch_slowd_lag_1 = df['stoch_slowd'].shift(1)
     stoch_slowd_lag_2 = df['stoch_slowd'].shift(2)
@@ -92,10 +92,10 @@ eth_expected = [np.array([21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34
                           ], ids=repr)
 def test_lower_bound(mocker, timeframe, ticker, low_bound, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
-    dfs, df = create_test_data()
+    dfs = create_test_data()
     stoch_sig = SignalFactory().factory('STOCH', 'sell', configs)
 
-    df = dfs[ticker][timeframe]['data'][:50]
+    df = dfs[ticker][timeframe]['data']['buy'][:50]
     stoch_slowk = df['stoch_slowk']
     stoch_slowk_lag_1 = df['stoch_slowk'].shift(1)
     stoch_slowk_lag_2 = df['stoch_slowk'].shift(2)
@@ -116,10 +116,10 @@ eth_expected = [np.array([27, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 47, 48
                           ], ids=repr)
 def test_up_direction(mocker, timeframe, ticker, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
-    dfs, df = create_test_data()
+    dfs = create_test_data()
     stoch_sig = SignalFactory().factory('STOCH', 'sell', configs)
 
-    df = dfs[ticker][timeframe]['data'][:50]
+    df = dfs[ticker][timeframe]['data']['buy'][:50]
 
     points = stoch_sig.up_direction(df['stoch_slowk_dir'])
     indexes = np.where(points == 1)
@@ -137,10 +137,10 @@ eth_expected = [np.array([22, 23, 24, 25, 26, 28, 29, 41, 42, 43, 44, 45, 46])]
                           ], ids=repr)
 def test_down_direction(mocker, timeframe, ticker, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
-    dfs, df = create_test_data()
+    dfs = create_test_data()
     stoch_sig = SignalFactory().factory('STOCH', 'sell', configs)
 
-    df = dfs[ticker][timeframe]['data'][:50]
+    df = dfs[ticker][timeframe]['data']['buy'][:50]
 
     points = stoch_sig.down_direction(df['stoch_slowk_dir'])
     indexes = np.where(points == 1)
@@ -162,10 +162,10 @@ eth_expected = [np.array([41, 42, 58, 59, 83, 84, 98]),
                           ], ids=repr)
 def test_crossed_lines(mocker, timeframe, ticker, up, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
-    dfs, df = create_test_data()
+    dfs = create_test_data()
     stoch_sig = SignalFactory().factory('STOCH', 'sell', configs)
 
-    df = dfs[ticker][timeframe]['data'][:100]
+    df = dfs[ticker][timeframe]['data']['buy'][:100]
     stoch_diff = df['stoch_diff']
     stoch_diff_lag_1 = df['stoch_diff'].shift(1)
     stoch_diff_lag_2 = df['stoch_diff'].shift(2)
@@ -188,22 +188,22 @@ eth_expected = [np.array([68, 146, 374, 611, 612, 631, 632]),
                          ], ids=repr)
 def test_find_stoch_signal(mocker, timeframe, ticker, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
-    dfs, df = create_test_data()
+    dfs = create_test_data()
     stoch_sig_buy = SignalFactory().factory('STOCH', 'buy', configs)
     stoch_sig_sell = SignalFactory().factory('STOCH', 'sell', configs)
     if ticker == 'BTCUSDT':
-        dfs[ticker][timeframe]['data'].loc[447, 'stoch_diff'] *= -1
-        dfs[ticker][timeframe]['data'].loc[446, 'stoch_slowk'] += 3
-        dfs[ticker][timeframe]['data'].loc[446, 'stoch_slowd'] += 3
-        dfs[ticker][timeframe]['data'].loc[447, 'stoch_slowk_dir'] *= -1
-        dfs[ticker][timeframe]['data'].loc[447, 'stoch_slowd_dir'] *= -1
+        dfs[ticker][timeframe]['data']['buy'].loc[447, 'stoch_diff'] *= -1
+        dfs[ticker][timeframe]['data']['buy'].loc[446, 'stoch_slowk'] += 3
+        dfs[ticker][timeframe]['data']['buy'].loc[446, 'stoch_slowd'] += 3
+        dfs[ticker][timeframe]['data']['buy'].loc[447, 'stoch_slowk_dir'] *= -1
+        dfs[ticker][timeframe]['data']['buy'].loc[447, 'stoch_slowd_dir'] *= -1
     elif ticker == 'ETHUSDT':
-        dfs[ticker][timeframe]['data'].loc[145, 'stoch_slowd'] -= 1
-        dfs[ticker][timeframe]['data'].loc[145, 'stoch_slowk_dir'] *= -1
-        dfs[ticker][timeframe]['data'].loc[146, 'stoch_slowk_dir'] *= -1
-        dfs[ticker][timeframe]['data'].loc[146, 'stoch_slowd_dir'] *= -1
-        dfs[ticker][timeframe]['data'].loc[146, 'stoch_diff'] *= -1
-    df = dfs[ticker][timeframe]['data']
+        dfs[ticker][timeframe]['data']['buy'].loc[145, 'stoch_slowd'] -= 1
+        dfs[ticker][timeframe]['data']['buy'].loc[145, 'stoch_slowk_dir'] *= -1
+        dfs[ticker][timeframe]['data']['buy'].loc[146, 'stoch_slowk_dir'] *= -1
+        dfs[ticker][timeframe]['data']['buy'].loc[146, 'stoch_slowd_dir'] *= -1
+        dfs[ticker][timeframe]['data']['buy'].loc[146, 'stoch_diff'] *= -1
+    df = dfs[ticker][timeframe]['data']['buy']
     buy_points = stoch_sig_buy.find_signal(df)
     sell_points = stoch_sig_sell.find_signal(df)
     buy_indexes = np.where(buy_points == 1)
@@ -225,11 +225,11 @@ eth_expected = [np.array([3, 10, 17, 18, 19, 20, 21, 25, 38, 40, 44, 63, 64, 65,
                          ], ids=repr)
 def test_find_price_change_signal(mocker, ticker, timeframe, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
-    dfs, df = create_test_data()
+    dfs = create_test_data()
     price_change_sig_buy = SignalFactory().factory('PriceChange', 'buy', configs)
     price_change_sig_sell = SignalFactory().factory('PriceChange', 'sell', configs)
-    buy_points = price_change_sig_buy.find_signal(dfs[ticker][timeframe]['data'][:100])
-    sell_points = price_change_sig_sell.find_signal(dfs[ticker][timeframe]['data'][:100])
+    buy_points = price_change_sig_buy.find_signal(dfs[ticker][timeframe]['data']['buy'][:100])
+    sell_points = price_change_sig_sell.find_signal(dfs[ticker][timeframe]['data']['buy'][:100])
     buy_indexes = np.where(buy_points == 1)
     sell_indexes = np.where(sell_points == 1)
     assert np.array_equal(buy_indexes[0], expected[0])
@@ -324,7 +324,7 @@ expected_sell = [points1, points2, points3]
                           ], ids=repr)
 def test_find_signal(mocker, ticker, timeframe, limit, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
-    dfs, _ = create_test_data()
+    dfs = create_test_data()
     fs_buy = FindSignal('buy', configs)
     fs_sell = FindSignal('sell', configs)
     fs_buy.patterns = [['STOCH', 'RSI'], ['STOCH', 'RSI', 'LinearReg']]

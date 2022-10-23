@@ -245,9 +245,9 @@ class SigBot:
                 filtered_points.append(point)
         return filtered_points
 
-    def add_statistics(self, sig_points: list, ttype: str) -> dict:
+    def add_statistics(self, sig_points: list) -> dict:
         """ Get statistics and write it to the database """
-        database = self.stat.write_stat(self.database, sig_points, ttype)
+        database = self.stat.write_stat(self.database, sig_points)
         return database
 
     def calc_statistics(self, sig_points: list) -> list:
@@ -357,8 +357,8 @@ class MonitorExchange(Thread):
         return data_qty
 
     @thread_lock
-    def add_statistics(self, sig_points, ttype) -> None:
-        self.sigbot.database = self.sigbot.add_statistics(sig_points, ttype)
+    def add_statistics(self, sig_points) -> None:
+        self.sigbot.database = self.sigbot.add_statistics(sig_points)
 
     @thread_lock
     def clean_statistics(self) -> None:
@@ -409,7 +409,7 @@ class MonitorExchange(Thread):
                     # Filter repeating signals
                     sig_points = self.sigbot.filter_sig_points(sig_points)
                     # Add the signals to statistics
-                    self.add_statistics(sig_points, ttype)
+                    self.add_statistics(sig_points)
 
     @exception
     def run(self) -> None:
@@ -451,14 +451,14 @@ class MonitorExchange(Thread):
                         sig_buy_points = self.sigbot.filter_sig_points(sig_buy_points)
                         sig_sell_points = self.sigbot.filter_sig_points(sig_sell_points)
                         # Add the signals to statistics
-                        self.add_statistics(sig_buy_points, 'buy')
-                        self.add_statistics(sig_sell_points, 'sell')
+                        self.add_statistics(sig_buy_points)
+                        self.add_statistics(sig_sell_points)
                         # Get signals only if they are fresh (not earlier than 10-15 min ago)
                         df_buy = self.sigbot.database[ticker][timeframe]['data']['buy']
                         sig_buy_points = self.sigbot.filter_early_sig_points(sig_buy_points, df_buy)
                         df_sell = self.sigbot.database[ticker][timeframe]['data']['sell']
                         sig_sell_points = self.sigbot.filter_early_sig_points(sig_sell_points, df_sell)
-                        sig_points = sig_buy_points # + sig_sell_points
+                        sig_points = sig_buy_points + sig_sell_points
                         if sig_points:
                             # Clean statistics dataframes from close signal points
                             self.clean_statistics()

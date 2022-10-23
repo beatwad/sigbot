@@ -19,7 +19,7 @@ class SignalStat:
         self.buy_stat_path = f'signal_stat/buy_stat_{working_timeframe}.pkl'
         self.sell_stat_path = f'signal_stat/sell_stat_{working_timeframe}.pkl'
 
-    def write_stat(self, dfs: dict, signal_points: list, ttype: str) -> dict:
+    def write_stat(self, dfs: dict, signal_points: list) -> dict:
         """ Write signal statistics for every signal point for current ticker on current timeframe.
             Statistics for buy and sell trades is written separately """
         for point in signal_points:

@@ -3,6 +3,7 @@ import logging
 import functools
 import threading
 from os import path, environ
+
 from config.config import ConfigFactory
 
 
@@ -58,3 +59,7 @@ def exception(function):
             # re-raise the exception
             raise
     return wrapper
+
+
+if __name__ == '__main__':
+    logger.info('test')

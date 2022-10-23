@@ -100,7 +100,7 @@ class Optimizer:
                         if 'high_bound' in conf_values:
                             conf_values['high_bound'] = 100 - conf_values['low_bound']
                         elif 'high_price_quantile' in conf_values:
-                            conf_values['high_price_quantile'] = 100 - conf_values['low_price_quantile']
+                            conf_values['high_price_quantile'] = 1000 - conf_values['low_price_quantile']
         return confs
 
     def save_configs(self, prod_dict: dict, ttype: str):
@@ -117,7 +117,7 @@ class Optimizer:
                         if 'high_bound' in conf_values:
                             conf_values['high_bound'] = 100 - conf_values['low_bound']
                         elif 'high_price_quantile' in conf_values:
-                            conf_values['high_price_quantile'] = 100 - conf_values['low_price_quantile']
+                            conf_values['high_price_quantile'] = 1000 - conf_values['low_price_quantile']
         return confs
 
     @staticmethod

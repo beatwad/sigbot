@@ -40,7 +40,7 @@ class Main:
             # on interruption or exit stop Telegram module thread
             self.sigbot.telegram_bot.stopped.set()
             # delete everything in image directory on exit
-            files = glob.glob('visualizer/images/*')
+            files = glob.glob('visualizer/images/*.png')
             for f in files:
                 remove(f)
             # exit program

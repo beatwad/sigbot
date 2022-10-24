@@ -29,8 +29,17 @@ ENV LD_LIBRARY_PATH="/opt/venv/lib"
 
 # Get time and timezone from host
 ENV TZ=Europe/Moscow
-RUN apt-get update && apt-get install -yy tzdata
+RUN apt-get install -yy tzdata
 RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN deb http://archive.ubuntu.com/ubuntu/ trusty multiverse
+RUN deb-src http://archive.ubuntu.com/ubuntu/ trusty multiverse
+RUN deb http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse
+RUN deb-src http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse
+RUN deb http://archive.ubuntu.com/ubuntu/ trusty-security multiverse
+RUN deb-src http://archive.ubuntu.com/ubuntu/ trusty-security multiverse
+
+RUN apt-get install msttcorefonts
 
 WORKDIR /sigbot
 

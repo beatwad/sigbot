@@ -243,7 +243,8 @@ class SigBot:
         for point in sig_points:
             point_time = point[4]
             # if too much time has passed after signal was found - skip it
-            if (datetime.now() - point_time).total_seconds() <= self.timeframe_div[self.work_timeframe] * self.max_prev_candle_limit:
+            if (datetime.now() - point_time).total_seconds() <= self.timeframe_div[self.work_timeframe] * \
+                    self.max_prev_candle_limit:
                 filtered_points.append(point)
         return filtered_points
 

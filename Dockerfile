@@ -27,8 +27,11 @@ COPY --from=compile-image /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 ENV LD_LIBRARY_PATH="/opt/venv/lib"
 
+# Get time and timezone from host
+ENV TZ=Europe/Moscow
+RUN apt-get update && apt-get install -yy tzdata
+RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 WORKDIR /sigbot
 
 CMD ["python", "main.py"]
-
-# docker run -v ${PWD}/sigbot:/sigbot sigbot

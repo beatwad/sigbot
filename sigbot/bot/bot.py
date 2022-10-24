@@ -1,10 +1,10 @@
 import sys
 import functools
 import threading
-from threading import Thread
-from threading import Event
+from threading import Thread, Event
 import pandas as pd
 from os import environ
+from datetime import datetime
 from data.get_data import GetData
 from data.get_data import DataFactory
 from config.config import ConfigFactory
@@ -95,6 +95,8 @@ class SigBot:
         self.fut_ex_monitor_list = list()
         # dataframe storage for optimization
         self.opt_dfs = dict()
+        # dictionary that is used to determine too late signals according to current work_timeframe
+        self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
 
     def get_api_and_tickers(self) -> None:
         """ Get API and ticker list for every exchange in list """
@@ -239,9 +241,9 @@ class SigBot:
         """ Remove signals that were sent too long time ago (more than 10-15 minutes) """
         filtered_points = list()
         for point in sig_points:
-            point_index = point[2]
+            point_time = point[4]
             # if too much time has passed after signal was found - skip it
-            if point_index >= df.shape[0] - self.max_prev_candle_limit:
+            if (datetime.now() - point_time).total_seconds() <= self.timeframe_div[self.work_timeframe] * self.max_prev_candle_limit:
                 filtered_points.append(point)
         return filtered_points
 

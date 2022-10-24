@@ -30,3 +30,5 @@ ENV LD_LIBRARY_PATH="/opt/venv/lib"
 WORKDIR /sigbot
 
 CMD ["python", "main.py"]
+
+# docker run -v ${PWD}/sigbot:/sigbot sigbot

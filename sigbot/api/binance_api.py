@@ -59,7 +59,7 @@ if __name__ == '__main__':
     key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
     secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
     binance_api = Binance(key, secret)
-    tickers = binance_api.client.get_ticker()
+    klines = binance_api.get_klines('ETHBTC', '15m', 1000)
     t_list = list()
     for t in tickers:
         t_list.append(t['symbol'])

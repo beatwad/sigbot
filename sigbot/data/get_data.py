@@ -4,6 +4,8 @@ from api.binance_api import Binance
 from api.binance_futures_api import BinanceFutures
 from api.okex_api import OKEX
 from api.okex_swap_api import OKEXSwap
+from api.bybit_api import ByBit
+from api.bybit_perpetual_api import ByBitPerpetual
 from datetime import datetime
 from json.decoder import JSONDecodeError
 
@@ -19,6 +21,10 @@ class DataFactory(object):
             return GetOKEXData(**configs)
         elif exchange == 'OKEXSwap':
             return GetOKEXSwapData(**configs)
+        elif exchange == 'ByBit':
+            return GetByBitData(**configs)
+        elif exchange == 'ByBitPerpetual':
+            return GetByBitPerpetualData(**configs)
 
 
 class GetData:
@@ -156,3 +162,19 @@ class GetOKEXSwapData(GetData):
     def __init__(self, **configs):
         super(GetOKEXSwapData, self).__init__(**configs)
         self.api = OKEXSwap()
+
+
+class GetByBitData(GetData):
+    name = 'ByBit'
+
+    def __init__(self, **configs):
+        super(GetByBitData, self).__init__(**configs)
+        self.api = ByBit()
+
+
+class GetByBitPerpetualData(GetData):
+    name = 'ByBit'
+
+    def __init__(self, **configs):
+        super(GetByBitPerpetualData, self).__init__(**configs)
+        self.api = ByBitPerpetual()

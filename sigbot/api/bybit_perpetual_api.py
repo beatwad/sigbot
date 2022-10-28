@@ -4,7 +4,7 @@ from pybit import usdt_perpetual
 from datetime import datetime
 
 
-class ByBit(ApiBase):
+class ByBitPerpetual(ApiBase):
     client = ""
 
     def __init__(self, api_key="Key", api_secret="Secret"):
@@ -51,6 +51,6 @@ class ByBit(ApiBase):
 if __name__ == '__main__':
     key = ""
     secret = ""
-    bybit_api = ByBit()
+    bybit_api = ByBitPerpetual()
     tickers = bybit_api.get_ticker_names(1e6)
     kline = bybit_api.get_klines('1000BTTUSDT', '5m', 1000)

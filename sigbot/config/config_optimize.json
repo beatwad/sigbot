@@ -9,7 +9,7 @@
     "futures_exchanges": [
       "BinanceFutures",
       "OKEXSwap"
-      ]
+    ]
   },
   "Data": {
     "Basic": {
@@ -201,8 +201,8 @@
       },
       "LinearReg": {
         "params": {
-           "low_bound": 0,
-           "high_bound": 0
+          "low_bound": 0,
+          "high_bound": 0
         }
       }
     },
@@ -227,8 +227,8 @@
       },
       "LinearReg": {
         "params": {
-           "low_bound": 0,
-           "high_bound": 0
+          "low_bound": 0,
+          "high_bound": 0
         }
       }
     }
@@ -244,10 +244,10 @@
       "stop_loss_multiplier": 2,
       "test": 0,
       "stat_limit_hours": {
-        "PriceChange" :  9999,
-        "PriceChange_LinearReg" :  9999,
-        "STOCH_RSI" :  9999,
-        "STOCH_RSI_LinearReg" :  9999
+        "PriceChange": 9999,
+        "PriceChange_LinearReg": 9999,
+        "STOCH_RSI": 9999,
+        "STOCH_RSI_LinearReg": 9999
       },
       "prev_sig_limit_minutes": 40,
       "stat_range": 24

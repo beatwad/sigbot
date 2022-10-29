@@ -71,10 +71,10 @@ class SigBot:
         self.exchanges = {
                           'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'ByBit': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          # 'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                          'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'ByBitPerpetual': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          # 'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}
+                          'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}
                           }
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
@@ -110,7 +110,12 @@ class SigBot:
             exchange_api = DataFactory.factory(ex, **configs)
             self.exchanges[ex]['API'] = exchange_api
             # get ticker list
-            tickers, all_tickers = self.exchanges[ex]['API'].get_tickers()
+            try:
+                tickers, all_tickers = self.exchanges[ex]['API'].get_tickers()
+            except:
+                del self.exchanges[ex]
+                continue
+
             # check if ticker wasn't used by previous exchange
             # if i > 0:
             #     prev_tickers = self.exchanges[exchange_list[i - 1]]['tickers']

@@ -6,9 +6,6 @@ RUN apt-get install -y --no-install-recommends build-essential gcc wget
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
 # TA-Lib
 RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
   tar -xvzf ta-lib-0.4.0-src.tar.gz && \
@@ -31,6 +28,10 @@ ENV LD_LIBRARY_PATH="/opt/venv/lib"
 ENV TZ=Europe/Moscow
 RUN apt-get install -yy tzdata
 RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install requirements
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
 WORKDIR /sigbot
 

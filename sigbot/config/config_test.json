@@ -1,16 +1,4 @@
 {
-  "Main": {
-    "params": {
-      "bot_cycle_length_sec": 60,
-      "cycle_length_hours": 168
-    }
-  },
-  "Exchanges": {
-    "futures_exchanges": [
-      "BinanceFutures",
-      "OKEXSwap"
-      ]
-  },
   "Data": {
     "Basic": {
       "params": {
@@ -24,6 +12,8 @@
           "2h": 7200,
           "3h": 10800,
           "4h": 14400,
+          "6h": 21600,
+          "12h": 42300,
           "1d": 86400,
           "4d": 345600,
           "1w": 604800
@@ -43,11 +33,33 @@
           "2h": 7200,
           "3h": 10800,
           "4h": 14400,
+          "6h": 21600,
+          "12h": 42300,
           "1d": 86400,
           "4d": 345600,
           "1w": 604800
         },
-        "min_volume": 1e6
+        "min_volume": 1000000.0
+      }
+    },
+    "ByBit": {
+      "params": {
+        "limit": 1000,
+        "timeframe_div": {
+          "1m": 60,
+          "3m": 180,
+          "5m": 300,
+          "15m": 900,
+          "30m": 1800,
+          "1h": 3600,
+          "2h": 7200,
+          "4h": 14400,
+          "6h": 21600,
+          "12h": 42300,
+          "1d": 86400,
+          "1w": 604800
+        },
+        "min_volume": 500000.0
       }
     },
     "OKEX": {
@@ -62,11 +74,13 @@
           "1h": 3600,
           "2h": 7200,
           "4h": 14400,
+          "6h": 21600,
+          "12h": 42300,
           "1d": 86400,
           "3d": 259200,
           "1w": 604800
         },
-        "min_volume": 1e6
+        "min_volume": 1000000.0
       }
     },
     "BinanceFutures": {
@@ -82,11 +96,33 @@
           "2h": 7200,
           "3h": 10800,
           "4h": 14400,
+          "6h": 21600,
+          "12h": 42300,
           "1d": 86400,
           "4d": 345600,
           "1w": 604800
         },
-        "min_volume": 1e6
+        "min_volume": 1000000.0
+      }
+    },
+    "ByBitPerpetual": {
+      "params": {
+        "limit": 1000,
+        "timeframe_div": {
+          "1m": 60,
+          "3m": 180,
+          "5m": 300,
+          "15m": 900,
+          "30m": 1800,
+          "1h": 3600,
+          "2h": 7200,
+          "4h": 14400,
+          "6h": 21600,
+          "12h": 42300,
+          "1d": 86400,
+          "1w": 604800
+        },
+        "min_volume": 500000.0
       }
     },
     "OKEXFutures": {
@@ -101,14 +137,26 @@
           "1h": 3600,
           "2h": 7200,
           "4h": 14400,
+          "6h": 21600,
+          "12h": 42300,
           "1d": 86400,
           "3d": 259200,
           "1w": 604800
         },
-        "min_volume": 1e6
+        "min_volume": 1000000.0
       }
     }
   },
+  "Exchanges": {
+    "futures_exchanges": [
+      "BinanceFutures",
+      "ByBitPerpetual",
+      "OKEXSwap"
+    ]
+  },
+  "Higher_TF_indicator_list": [
+    "LinearReg"
+  ],
   "Indicator": {
     "buy": {
       "RSI": {
@@ -179,6 +227,12 @@
       }
     }
   },
+  "Indicator_list": [
+    "STOCH",
+    "RSI",
+    "PriceChange",
+    "LinearReg"
+  ],
   "Indicator_signal": {
     "buy": {
       "RSI": {
@@ -233,35 +287,17 @@
       }
     }
   },
-  "Signal_params": {
+  "Log": {
     "params": {
-      "max_prev_candle_limit": 500
+      "log_path": "log.txt"
     }
   },
-  "SignalStat": {
+  "Main": {
     "params": {
-      "take_profit_multiplier": 2,
-      "stop_loss_multiplier": 2,
-      "test": 1,
-      "stat_limit_hours": {
-        "PriceChange" :  72,
-        "PriceChange_LinearReg" :  72,
-        "STOCH_RSI" :  72,
-        "STOCH_RSI_LinearReg" :  72
-      },
-      "prev_sig_limit_minutes": 40,
-      "stat_range": 24
+      "bot_cycle_length_sec": 60,
+      "cycle_length_hours": 168
     }
   },
-  "Indicator_list": [
-    "STOCH",
-    "RSI",
-    "PriceChange",
-    "LinearReg"
-  ],
-  "Higher_TF_indicator_list": [
-    "LinearReg"
-  ],
   "Patterns": [
     [
       "STOCH",
@@ -280,6 +316,39 @@
       "LinearReg"
     ]
   ],
+    "SignalStat": {
+    "params": {
+      "take_profit_multiplier": 2,
+      "stop_loss_multiplier": 2,
+      "test": 1,
+      "stat_limit_hours": {
+        "PriceChange" :  72,
+        "PriceChange_LinearReg" :  72,
+        "STOCH_RSI" :  72,
+        "STOCH_RSI_LinearReg" :  72
+      },
+      "prev_sig_limit_minutes": 40,
+      "stat_range": 24
+    }
+  },
+  "Signal_params": {
+    "params": {
+      "max_prev_candle_limit": 500
+    }
+  },
+  "Telegram": {
+    "params": {
+      "log_path": "telegram_log.txt",
+      "chat_ids": {
+        "STOCH_RSI": "-1001463253403",
+        "STOCH_RSI_LinearReg": "-1001688789758",
+        "PriceChange": "-1001700504878",
+        "PriceChange_LinearReg": "-1001691421580"
+      },
+      "prev_sig_minutes_limit": 25,
+      "max_notifications_in_row": 3
+    }
+  },
   "Timeframes": {
     "work_timeframe": "5m",
     "higher_timeframe": "1h"
@@ -288,8 +357,7 @@
     "params": {
       "plot_width": 30,
       "image_path": "images",
-      "level_indicators": [
-      ],
+      "level_indicators": [],
       "boundary_indicators": [
         "STOCH",
         "RSI"
@@ -305,24 +373,6 @@
         "MACD": [],
         "PriceChange": []
       }
-    }
-  },
-  "Log": {
-    "params": {
-      "log_path": "log.txt"
-    }
-  },
-  "Telegram": {
-    "params": {
-      "log_path": "telegram_log.txt",
-      "chat_ids": {
-        "STOCH_RSI": "-1001463253403",
-        "STOCH_RSI_LinearReg": "-1001688789758",
-        "PriceChange": "-1001700504878",
-        "PriceChange_LinearReg": "-1001691421580"
-      },
-      "prev_sig_minutes_limit": 25,
-      "max_notifications_in_row": 3
     }
   }
 }

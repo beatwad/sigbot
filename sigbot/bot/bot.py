@@ -68,7 +68,8 @@ class SigBot:
         # Create indicators
         self.higher_tf_indicators, self.work_tf_indicators = self.create_indicators(configs)
         # Set list of available exchanges, cryptocurrencies and tickers
-        self.exchanges = {'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+        self.exchanges = {
+                          'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'ByBit': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           # 'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
@@ -286,7 +287,7 @@ class SigBot:
         fut_ex_monitor_list = list()
         for exchange, exchange_data in self.exchanges.items():
             monitor = MonitorExchange(self, exchange, exchange_data)
-            if exchange.endswith('Futures') or exchange.endswith('Swap'):
+            if exchange.endswith('Futures') or exchange.endswith('Swap') or exchange.endswith('Perpetual'):
                 fut_ex_monitor_list.append(monitor)
             else:
                 spot_ex_monitor_list.append(monitor)

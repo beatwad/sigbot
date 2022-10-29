@@ -39,10 +39,37 @@ class ByBitPerpetual(ApiBase):
 
         return tickers['symbol'].to_list(), all_tickers
 
-    def get_klines(self, symbol, interval, limit) -> pd.DataFrame:
+    @staticmethod
+    def convert_interval_to_secs(interval: str) -> int:
+        if interval[-1] == 'h':
+            interval = int(interval[:-1]) * 60 * 60
+        elif interval[-1] == 'd':
+            interval = int(interval[:-1]) * 60 * 60 * 24
+        elif interval[-1] == 'w':
+            interval = int(interval[:-1]) * 60 * 60 * 24 * 7
+        else:
+            interval = int(interval[:-1]) * 60
+        return interval
+
+    @staticmethod
+    def convert_interval(interval: str) -> str:
+        if interval[-1] == 'h':
+            interval = str(int(interval[:-1]) * 60)
+        elif interval[-1] == 'd':
+            interval = 'D'
+        elif interval[-1] == 'w':
+            interval = 'W'
+        else:
+            interval = interval[:-1]
+        return interval
+
+    def get_klines(self, symbol: str, interval: str, limit: int) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
-        from_time = (self.get_timestamp() - (limit * int(interval[:-1])) * 60)
-        tickers = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval[:-1],
+        interval_secs = self.convert_interval_to_secs(interval)
+        from_time = (self.get_timestamp() - (limit * interval_secs))
+
+        interval = self.convert_interval(interval)
+        tickers = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval,
                                                        from_time=from_time, limit=limit)['result'])
         tickers = tickers.rename({'open_time': 'time'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].astype(float)
@@ -52,5 +79,7 @@ if __name__ == '__main__':
     key = ""
     secret = ""
     bybit_api = ByBitPerpetual()
-    tickers = bybit_api.get_ticker_names(1e6)
-    kline = bybit_api.get_klines('1000BTTUSDT', '5m', 1000)
+    # tickers = bybit_api.get_ticker_names(1e6)
+    # print(tickers)
+    kline = bybit_api.get_klines('10000NFTUSDT', '4h', 1000)
+    print(kline)

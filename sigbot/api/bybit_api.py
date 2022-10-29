@@ -57,7 +57,8 @@ if __name__ == '__main__':
     secret = ""
     bybit_api = ByBit()
     tickers = bybit_api.get_ticker_names(5e5)
-    kline = bybit_api.get_klines('BTCUSDT', '15m', 1000)
+    kline = bybit_api.get_klines('BTCUSDT', '4h', 1000)
+    print(kline)
     # t_list = list()
     # for t in tickers:
     #     t_list.append(t['symbol'])

@@ -325,17 +325,16 @@ class SigBot:
         """ Create and run exchange monitors """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
         # start all spot exchange monitors
-        for monitor1, monitor2 in zip(self.spot_ex_monitor_list, self.fut_ex_monitor_list):
-            for m in [monitor1, monitor2]:
-                m.start()
-            for m in [monitor1, monitor2]:
-                m.join()
+        for monitor in self.spot_ex_monitor_list:
+            monitor.run_cycle()
+            # monitor.start()
         # wait until spot monitor finish its work
         # for monitor in self.spot_ex_monitor_list:
         #     monitor.join()
         # start all futures exchange monitors
-        # for monitor in self.fut_ex_monitor_list:
-        #     monitor.run_cycle()
+        for monitor in self.fut_ex_monitor_list:
+            monitor.run_cycle()
+            # monitor.start()
         # wait until futures monitor finish its work
         # for monitor in self.fut_ex_monitor_list:
         #     monitor.join()
@@ -427,7 +426,7 @@ class MonitorExchange(Thread):
                     self.add_statistics(sig_points)
 
     @exception
-    def run(self) -> None:
+    def run_cycle(self) -> None:
         """ For every exchange, ticker, timeframe and indicator patterns in the database find the latest signals and
             send them to the Telegram module
             Signal point's structure:

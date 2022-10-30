@@ -1,3 +1,4 @@
+import re
 import time
 from log.log import exception
 from time import sleep
@@ -163,12 +164,20 @@ class TelegramBot(Thread):
         self.send_message(chat_id, text)
         self.delete_images()
 
+    @staticmethod
+    def clean_ticker(ticker: str) -> str:
+        """ Clean ticker of not necessary symbols (2U, 1000, 10000, SWAP, -, etc.) """
+        ticker = re.sub(r'\b\d+', '', ticker)
+        ticker = re.sub(r'2[a-zA-Z-]', '', ticker)
+        ticker = re.sub('SWAP', '', ticker)
+        ticker = re.sub('-', '', ticker)
+        return ticker
+
     def send_notification(self, message) -> None:
         """ Send notification separately """
         # Get info from signal
         ticker = self.process_ticker(message[0])
         timeframe = message[1]
-        df_index = message[2]
         sig_type = message[3]
         sig_time = message[4]
         sig_pattern = message[5]
@@ -194,7 +203,7 @@ class TelegramBot(Thread):
             for exchange in sig_exchanges:
                 text += f' • {exchange}\n'
             text += 'Ссылка на TradingView: \n'
-            text += f"https://ru.tradingview.com/symbols/{ticker.replace('-', '').replace('SWAP', '')}"
+            text += f"https://ru.tradingview.com/symbols/{self.clean_ticker(ticker)}"
             # Send message + image
             if sig_img_path:
                 self.send_photo(chat_id, sig_img_path, text)

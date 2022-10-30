@@ -6,8 +6,7 @@ import mplfinance as mpf
 from matplotlib import rcParams
 
 matplotlib.use('Agg')
-# style.use('dark_background')
-rcParams['font.family'] = 'Nimbus Sans'
+rcParams['font.family'] = 'DejaVu Sans'
 
 
 class Visualizer:
@@ -127,9 +126,9 @@ class Visualizer:
         # get necessary info
         ticker, timeframe, point_index, point_type, sig_time, pattern, plot_path, exchange_list, statistics, y = point
         df_working = dfs[ticker][self.working_timeframe]['data'][point_type]
-        print(df_working['time'].loc[df_working.shape[0]-1])
         df_working = df_working.loc[point_index - self.plot_width:point_index]
         ohlc = df_working[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
+        print(ohlc.index[ohlc.shape[0] - 1])
         # get indicator list
         indicator_list = [p for p in pattern.split('_') if p[0] not in self.level_indicators]
 

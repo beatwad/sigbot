@@ -72,7 +72,7 @@ class ByBitPerpetual(ApiBase):
         tickers = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval,
                                                        from_time=from_time, limit=limit)['result'])
         tickers = tickers.rename({'open_time': 'time'}, axis=1)
-        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].astype(float)
+        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
 
 
 if __name__ == '__main__':

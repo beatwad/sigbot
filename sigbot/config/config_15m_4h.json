@@ -333,7 +333,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 5
+      "max_prev_candle_limit": 10
     }
   },
   "Telegram": {

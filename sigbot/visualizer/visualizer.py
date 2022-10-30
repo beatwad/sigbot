@@ -184,6 +184,27 @@ class Visualizer:
             # plot candles
             mpf.plot(ohlc_higher, type='candle', ax=axs_higher, warn_too_much_data=1001, style='yahoo',
                      ylabel='', returnfig=True)
+
+            # workaround to show the last xticks for higher timeframe plot
+            format = '%b-%d-%X'
+            newxticks = []
+            newlabels = []
+
+            # copy and format the existing xticks:
+            for xt in axs_higher.get_xticks():
+                p = int(xt)
+                if 0 <= p < len(ohlc_higher):
+                    ts = ohlc_higher.index[p]
+                    newxticks.append(p)
+                    newlabels.append(ts.strftime(format))
+
+            # Here we create the final tick and tick label:
+            newxticks.append(len(ohlc_higher) - 1)
+            newlabels.append(ohlc_higher.index[len(ohlc_higher) - 1].strftime(format))
+
+            # set the xticks and labels with the new ticks and labels:
+            axs_higher.set_xticks(newxticks)
+            axs_higher.set_xticklabels(newlabels)
         else:
             subfigs_num = 2
             subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height, 2.5])
@@ -245,7 +266,7 @@ class Visualizer:
 
         # plot all subplots
         mpf.plot(ohlc, type='candle', ax=axs1_0, addplot=ap, warn_too_much_data=1001, style='yahoo',
-                 ylabel='', returnfig=True)
+                 ylabel='', returnfig=True, tz_localize=True)
 
         # plot titles
         price = df_working["close"].iloc[-1]

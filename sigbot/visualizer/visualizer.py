@@ -294,7 +294,7 @@ class Visualizer:
         if price > 1:
             price = round(price, 3)
         else:
-            price = round(price, 6)
+            price = round(price, 7)
         axs1_0.set_title(f'{self.process_ticker(ticker)} - {timeframe} - {price} $ - '
                          f'{df_working["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
                          color=self.ticker_color)

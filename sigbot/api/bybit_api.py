@@ -56,11 +56,7 @@ if __name__ == '__main__':
     key = ""
     secret = ""
     bybit_api = ByBit()
-    tickers = bybit_api.get_ticker_names(5e5)
-    kline = bybit_api.get_klines('BTCUSDT', '4h', 1000)
-    print(kline)
-    # t_list = list()
-    # for t in tickers:
-    #     t_list.append(t['symbol'])
-    # exchange_info = binance_api.client.futures_exchange_info()
-    # print('1000SHIBUSDT' in t_list)
+    tickers = bybit_api.get_ticker_names(1)
+    print(tickers)
+    # kline = bybit_api.get_klines('BTCUSDT', '4h', 1000)
+    # print(kline)

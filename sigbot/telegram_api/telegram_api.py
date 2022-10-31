@@ -168,7 +168,7 @@ class TelegramBot(Thread):
     def clean_ticker(ticker: str) -> str:
         """ Clean ticker of not necessary symbols (2U, 1000, 10000, SWAP, -, etc.) """
         ticker = re.sub(r'\b\d+', '', ticker)
-        ticker = re.sub(r'2[LS]', '', ticker)
+        ticker = re.sub(r'[23][LS]', '', ticker)
         ticker = re.sub('SWAP', '', ticker)
         ticker = re.sub('-', '', ticker)
         return ticker

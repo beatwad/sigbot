@@ -79,7 +79,7 @@ if __name__ == '__main__':
     key = ""
     secret = ""
     bybit_api = ByBitPerpetual()
-    # tickers = bybit_api.get_ticker_names(1e6)
-    # print(tickers)
-    kline = bybit_api.get_klines('10000NFTUSDT', '4h', 1000)
-    print(kline)
+    tickers = bybit_api.get_ticker_names(1)
+    print(tickers)
+    # kline = bybit_api.get_klines('10000NFTUSDT', '4h', 1000)
+    # print(kline)

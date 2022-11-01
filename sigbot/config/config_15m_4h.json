@@ -161,14 +161,14 @@
     "buy": {
       "RSI": {
         "params": {
-          "timeperiod": 16
+          "timeperiod": 14
         }
       },
       "STOCH": {
         "params": {
-          "fastk_period": 7,
+          "fastk_period": 9,
           "slowk_period": 3,
-          "slowd_period": 5
+          "slowd_period": 7
         }
       },
       "LinearReg": {
@@ -195,14 +195,14 @@
     "sell": {
       "RSI": {
         "params": {
-          "timeperiod": 16
+          "timeperiod": 14
         }
       },
       "STOCH": {
         "params": {
-          "fastk_period": 7,
-          "slowk_period": 4,
-          "slowd_period": 3
+          "fastk_period": 9,
+          "slowk_period": 3,
+          "slowd_period": 7
         }
       },
       "LinearReg": {
@@ -237,14 +237,14 @@
     "buy": {
       "RSI": {
         "params": {
-          "low_bound": 25,
-          "high_bound": 75
+          "low_bound": 35,
+          "high_bound": 65
         }
       },
       "STOCH": {
         "params": {
-          "low_bound": 10,
-          "high_bound": 90
+          "low_bound": 25,
+          "high_bound": 75
         }
       },
       "MACD": {
@@ -263,8 +263,8 @@
     "sell": {
       "RSI": {
         "params": {
-          "low_bound": 15,
-          "high_bound": 85
+          "low_bound": 35,
+          "high_bound": 65
         }
       },
       "STOCH": {

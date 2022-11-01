@@ -296,7 +296,7 @@
     "params": {
       "bot_cycle_length_sec": 20,
       "cycle_length_hours": 168,
-      "first_cycle_qty_miss": 1
+      "first_cycle_qty_miss": 0
     }
   },
   "Patterns": [
@@ -334,17 +334,17 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 2
+      "max_prev_candle_limit": 20
     }
   },
   "Telegram": {
     "params": {
       "log_path": "telegram_log.txt",
       "chat_ids": {
-        "STOCH_RSI": "-1001463253403",
-        "STOCH_RSI_LinearReg": "-1001688789758",
-        "PriceChange": "-1001700504878",
-        "PriceChange_LinearReg": "-1001691421580"
+        "STOCH_RSI": "-1001752697158",
+        "STOCH_RSI_LinearReg": "-1001752697158",
+        "PriceChange": "-1001752697158",
+        "PriceChange_LinearReg": "-1001752697158"
       },
       "prev_sig_minutes_limit": 25,
       "max_notifications_in_row": 3

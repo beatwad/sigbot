@@ -1,9 +1,12 @@
 import re
 import time
+from os import environ, remove
+
+# # Get configs
+# environ["ENV"] = "15m_4h"
+
 from log.log import exception
 from time import sleep
-from os import remove
-from os import environ
 import pandas as pd
 from threading import Thread, Event
 
@@ -203,7 +206,10 @@ class TelegramBot(Thread):
             for exchange in sig_exchanges:
                 text += f' • {exchange}\n'
             text += 'Ссылка на TradingView: \n'
-            text += f"https://ru.tradingview.com/symbols/{self.clean_ticker(ticker)}"
+            text += f"https://ru.tradingview.com/symbols/{self.clean_ticker(ticker)}\n"
+            if self.clean_ticker(ticker)[:-4] != 'BTC':
+                text += 'Ссылка на график с BTC: \n'
+                text += f"https://ru.tradingview.com/symbols/{self.clean_ticker(ticker)[:-4]}BTC"
             # Send message + image
             if sig_img_path:
                 self.send_photo(chat_id, sig_img_path, text)
@@ -236,8 +242,7 @@ class TelegramBot(Thread):
 
 
 if __name__ == '__main__':
-    # Get configs
     configs = ConfigFactory.factory(environ).configs
 
-    telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', **configs)
+    telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', database=None, **configs)
     telegram_bot.start()

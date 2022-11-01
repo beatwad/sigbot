@@ -5,7 +5,7 @@ from datetime import datetime
 from os import environ, remove
 
 # Set environment variable
-environ["ENV"] = "15m_4h"
+environ["ENV"] = "debug"
 
 from bot.bot import SigBot
 from config.config import ConfigFactory
@@ -23,6 +23,7 @@ class Main:
         self.cycle_number = 1
         self.bot_cycle_length = configs[self.type]['params']['bot_cycle_length_sec']
         self.cycle_length = configs[self.type]['params']['cycle_length_hours']
+        self.first_cycle_qty_miss = configs[self.type]['params']['first_cycle_qty_miss']
         self.sigbot = SigBot(self, load_tickers=load_tickers, **configs)
 
     def cycle(self):

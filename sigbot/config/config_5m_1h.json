@@ -295,7 +295,8 @@
   "Main": {
     "params": {
       "bot_cycle_length_sec": 60,
-      "cycle_length_hours": 168
+      "cycle_length_hours": 168,
+      "first_cycle_qty_miss": 1
     }
   },
   "Patterns": [

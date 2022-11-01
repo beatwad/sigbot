@@ -25,6 +25,8 @@ class ConfigFactory(object):
             return Docker(environ)
         elif env == 'production':
             return Production(environ)
+        elif env == 'debug':
+            return Debug(environ)
 
 
 class Config:
@@ -108,4 +110,13 @@ class Production(Config):
 
     def __init__(self, environ):
         pth = path.join(basedir, environ.get('CONFIG_PATH_PROD'))
+        self.configs = Config.get_config(pth)
+
+
+class Debug(Config):
+    DEBUG = True
+    TESTING = False
+
+    def __init__(self, environ):
+        pth = path.join(basedir, environ.get('CONFIG_PATH_DEBUG'))
         self.configs = Config.get_config(pth)

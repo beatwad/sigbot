@@ -482,7 +482,7 @@ class MonitorExchange(Thread):
                             sig_points = self.sigbot.calc_statistics(sig_points)
                             # Send Telegram notification
                             t_print(self.exchange, [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
-                            if self.sigbot.main.cycle_number > self.sigbot.first_cycle_qty_miss:
+                            if self.sigbot.main.cycle_number > self.sigbot.main.first_cycle_qty_miss:
                                 self.sigbot.telegram_bot.notification_list += sig_points
                                 self.sigbot.telegram_bot.update_bot.set()
                                 # Log the signals

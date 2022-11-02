@@ -167,8 +167,8 @@
       "STOCH": {
         "params": {
           "fastk_period": 9,
-          "slowk_period": 3,
-          "slowd_period": 7
+          "slowk_period": 7,
+          "slowd_period": 3
         }
       },
       "LinearReg": {
@@ -201,8 +201,8 @@
       "STOCH": {
         "params": {
           "fastk_period": 9,
-          "slowk_period": 3,
-          "slowd_period": 7
+          "slowk_period": 7,
+          "slowd_period": 3
         }
       },
       "LinearReg": {
@@ -243,8 +243,8 @@
       },
       "STOCH": {
         "params": {
-          "low_bound": 25,
-          "high_bound": 75
+          "low_bound": 15,
+          "high_bound": 85
         }
       },
       "MACD": {
@@ -269,8 +269,8 @@
       },
       "STOCH": {
         "params": {
-          "low_bound": 25,
-          "high_bound": 75
+          "low_bound": 15,
+          "high_bound": 85
         }
       },
       "MACD": {

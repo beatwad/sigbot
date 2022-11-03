@@ -186,8 +186,8 @@
       "PriceChange": {
         "params": {
           "round_decimals": 4,
-          "low_price_quantile": 6,
-          "high_price_quantile": 994,
+          "low_price_quantile": 1,
+          "high_price_quantile": 999,
           "stat_file_path": "signal_stat/price_stat_buy.json"
         }
       }
@@ -220,8 +220,8 @@
       "PriceChange": {
         "params": {
           "round_decimals": 4,
-          "low_price_quantile": 19,
-          "high_price_quantile": 981,
+          "low_price_quantile": 20,
+          "high_price_quantile": 980,
           "stat_file_path": "signal_stat/price_stat_sell.json"
         }
       }
@@ -237,8 +237,8 @@
     "buy": {
       "RSI": {
         "params": {
-          "low_bound": 35,
-          "high_bound": 65
+          "low_bound": 15,
+          "high_bound": 85
         }
       },
       "STOCH": {
@@ -263,8 +263,8 @@
     "sell": {
       "RSI": {
         "params": {
-          "low_bound": 35,
-          "high_bound": 65
+          "low_bound": 25,
+          "high_bound": 75
         }
       },
       "STOCH": {

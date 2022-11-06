@@ -97,13 +97,13 @@ class GetData:
 
     @staticmethod
     def add_indicator_data(dfs: dict, df: pd.DataFrame, ttype: str, indicators: list, ticker: str, timeframe: str,
-                           data_qty: int, configs: dict) -> dict:
+                           data_qty: int, volume: float) -> dict:
         """ Add indicator data to cryptocurrency dataframe """
         levels = list()
         indicators = [i for i in indicators if i.ttype == ttype]
 
         for indicator in indicators:
-            df = indicator.get_indicator(df, ticker, timeframe, data_qty)
+            df = indicator.get_indicator(df, ticker, timeframe, data_qty, volume)
         # Update dataframe dict
         if ticker not in dfs:
             dfs[ticker] = dict()

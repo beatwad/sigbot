@@ -205,6 +205,11 @@ class Visualizer:
             # set the xticks and labels with the new ticks and labels:
             axs_higher.set_xticks(newxticks)
             axs_higher.set_xticklabels(newlabels)
+        elif 'HighVolume' in indicator_list:
+            indicator_list.remove('HighVolume')
+            plot_num -= 1
+            subfigs_num = 1
+            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height])
         else:
             subfigs_num = 2
             subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height, 2.5])

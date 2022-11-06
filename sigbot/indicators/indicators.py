@@ -20,6 +20,8 @@ class IndicatorFactory(object):
             return PriceChange(ttype, configs)
         elif indicator.startswith('LinearReg'):
             return LinearReg(ttype, configs)
+        elif indicator.startswith('HighVolume'):
+            return HighVolume(ttype, configs)
 
 
 class Indicator:
@@ -44,7 +46,7 @@ class RSI(Indicator):
     def __init__(self, ttype: str, configs: dict):
         super(RSI, self).__init__(ttype, configs)
 
-    def get_indicator(self, df, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
+    def get_indicator(self, df, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
         # if mean close price value is too small, RSI indicator can become zero,
         # so we should increase it to at least 1e-4
         if df['close'].mean() < 1e-4:
@@ -63,7 +65,7 @@ class STOCH(Indicator):
     def __init__(self, ttype: str, configs: dict):
         super(STOCH, self).__init__(ttype, configs)
 
-    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
         slowk, slowd = ta.STOCH(df['high'], df['low'],
                                 df['close'], **self.configs)
         df['stoch_slowk'] = slowk
@@ -78,7 +80,7 @@ class LinearReg(Indicator):
     def __init__(self, ttype: str, configs: dict):
         super(LinearReg, self).__init__(ttype, configs)
 
-    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
         linear_reg = ta.LINEARREG(df['close'], **self.configs)
         linear_reg_angle = ta.LINEARREG_ANGLE(df['close'], **self.configs)
         df['linear_reg'] = linear_reg
@@ -93,7 +95,7 @@ class MACD(Indicator):
     def __init__(self, ttype: str, configs: dict):
         super(MACD, self).__init__(ttype, configs)
 
-    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
         macd, macdsignal, macdhist = ta.MACD(df['close'], **self.configs)
         df['macd'] = macd
         df['macdsignal'] = macdsignal
@@ -134,14 +136,13 @@ class PriceChange(Indicator):
         with open(self.stat_file_path, 'w+') as f:
             json.dump(self.price_stat, f)
 
-    @staticmethod
-    def get_price_change(df: pd.DataFrame, data_qty: int, lag: int) -> list:
+    def get_price_change(self, df: pd.DataFrame, data_qty: int, lag: int) -> list:
         """ Get difference between current price and previous price """
         close_prices = (df['close'] - df['close'].shift(lag)) / df['close'].shift(lag) * 100
-        df[f'close_price_change_lag_{lag}'] = np.round(close_prices.values, 4)
+        df[f'close_price_change_lag_{lag}'] = np.round(close_prices.values, self.round_decimals)
         return df[f'close_price_change_lag_{lag}'][max(df.shape[0] - data_qty + 1, 0):].values
 
-    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int) -> pd.DataFrame:
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
         """ Measure degree of ticker price change """
         # get frequency counter
         close_prices_lag_1 = self.get_price_change(df, data_qty, lag=1)
@@ -167,4 +168,46 @@ class PriceChange(Indicator):
         df[['q_low_lag_3', 'q_high_lag_3']] = q_low_lag_3, q_high_lag_3
         # save price statistics to file
         # self.save_price_stat()
+        return df
+
+
+class HighVolume(Indicator):
+    """ Find a high volume """
+    name = 'HighVolume'
+
+    def __init__(self, ttype: str, configs: dict):
+        super(HighVolume, self).__init__(ttype, configs)
+        self.high_volume_quantile = self.configs.get('high_volume_quantile', 950)
+        self.round_decimals = self.configs.get('round_decimals', 4)
+        self.vol_stat_file_path = self.configs.get('vol_stat_file_path')
+        self.vol_stat = np.array([])
+        self.get_vol_stat()
+
+    def get_vol_stat(self) -> None:
+        """ Load volume statistics from file """
+        try:
+            self.vol_stat = np.load(self.vol_stat_file_path)
+        except FileNotFoundError:
+            pass
+
+    def save_vol_stat(self) -> None:
+        """ Save volume statistics to file """
+        np.save(self.vol_stat_file_path)
+
+    def get_volume(self, df: pd.DataFrame, data_qty: int, volume: int) -> list:
+        """ Get MinMax normalized volume """
+        normalized_vol = df['volume'] * (df['close'] + df['open']) / (2 * volume) * 100
+        df[f'normalized_vol'] = np.round(normalized_vol.values, self.round_decimals)
+        return df[f'normalized_vol'][max(df.shape[0] - data_qty + 1, 0):].values
+
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, volume: int) -> pd.DataFrame:
+        """ Measure degree of ticker price change """
+        # get frequency counter
+        vol = self.get_volume(df, data_qty, volume)
+        self.vol_stat = np.append(self.vol_stat, vol)
+        self.vol_stat = np.unique(self.vol_stat)
+        # get lag 1 quantiles and save to dataframe
+        normalized_vol = pd.Series(data=self.vol_stat)
+        quantile_vol = normalized_vol.sort_values(ascending=False).quantile(self.high_volume_quantile / 1000)
+        df['quantile_vol'] = quantile_vol
         return df

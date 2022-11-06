@@ -111,7 +111,7 @@ class SigBot:
             self.exchanges[ex]['API'] = exchange_api
             # get ticker list
             try:
-                tickers, all_tickers = self.exchanges[ex]['API'].get_tickers()
+                tickers, ticker_vols, all_tickers = self.exchanges[ex]['API'].get_tickers()
             except:
                 del self.exchanges[ex]
                 continue
@@ -125,7 +125,9 @@ class SigBot:
             prev_tickers = list()
             tickers, prev_tickers = self.filter_used_tickers(tickers, prev_tickers)
 
-            self.exchanges[ex]['tickers'] = tickers
+            # create dictionary to store info for each ticker (volume, funding, etc.)
+            self.exchanges[ex]['tickers'] = {tickers[i]: [ticker_vols[i]] for i in range(len(tickers))}
+            # create list of all available tickers
             self.exchanges[ex]['all_tickers'] = all_tickers
             # fill ticker dict of exchange API with tickers to store current time
             # for periodic updates of ticker information
@@ -169,8 +171,8 @@ class SigBot:
 
     def get_data(self, exchange_api, ticker: str, timeframe: str) -> (pd.DataFrame, int):
         """ Check if new data appeared. If it is - return dataframe with the new data and amount of data """
-        df = self.database.get(ticker, dict()).get(timeframe,
-                                                   dict()).get('data', pd.DataFrame()).get('buy', pd.DataFrame())
+        df = self.database.get(ticker, dict()).get(timeframe, dict()).get('data', pd.DataFrame()).get('buy',
+                                                                                                      pd.DataFrame())
         # Write data to the dataframe
         df, data_qty = exchange_api.get_data(df, ticker, timeframe)
         return df, data_qty
@@ -190,13 +192,15 @@ class SigBot:
                     higher_tf_indicators.append(ind_factory)
             # get indicators for working timeframe
             for indicator in indicator_list:
+                if ttype == 'sell' and indicator == 'HighVolume':
+                    continue
                 ind_factory = IndicatorFactory.factory(indicator, ttype, configs)
                 if ind_factory and indicator not in higher_tf_indicator_list:
                     working_tf_indicators.append(ind_factory)
         return higher_tf_indicators, working_tf_indicators
 
     def get_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str,
-                       exchange_api, data_qty: int) -> (dict, int):
+                       exchange_data: dict, data_qty: int) -> (dict, int):
         """ Create indicator list from search signal patterns list, if it has the new data and
             data is not from higher timeframe, else get only levels """
         if timeframe == self.work_timeframe:
@@ -204,8 +208,10 @@ class SigBot:
         else:
             indicators = self.higher_tf_indicators
         # Write indicators to the dataframe, update dataframe dict
-        database = exchange_api.add_indicator_data(self.database, df, ttype, indicators, ticker, timeframe,
-                                                   data_qty, configs)
+        exchange_api = exchange_data['API']
+        volume = exchange_data['tickers'][ticker][0]
+        database = exchange_api.add_indicator_data(self.database, df, ttype, indicators, ticker, timeframe, data_qty,
+                                                   volume)
         # If enough time has passed - update statistics
         if data_qty > 1 and self.main.cycle_number > 1 and timeframe == self.work_timeframe:
             data_qty = self.stat_update_range
@@ -364,9 +370,9 @@ class MonitorExchange(Thread):
         self.opt_limit = 1000
 
     @thread_lock
-    def get_indicators(self, df, ttype, ticker, timeframe, exchange_api, data_qty) -> (pd.DataFrame, pd.DataFrame, int):
-        # Get indicators and quantity of data
-        self.sigbot.database, data_qty = self.sigbot.get_indicators(df, ttype, ticker, timeframe, exchange_api,
+    def get_indicators(self, df, ttype, ticker, timeframe, data_qty) -> int:
+        """ Get indicators and quantity of data """
+        self.sigbot.database, data_qty = self.sigbot.get_indicators(df, ttype, ticker, timeframe, self.exchange_data,
                                                                     data_qty)
         return data_qty
 
@@ -410,7 +416,7 @@ class MonitorExchange(Thread):
                         continue
                 else:
                     df = self.sigbot.opt_dfs[f'{ticker}_{timeframe}'].copy()
-                self.get_indicators(df, ttype, ticker, timeframe, exchange_api, 1000)
+                self.get_indicators(df, ttype, ticker, timeframe, 1000)
                 # If current timeframe is working timeframe
                 if timeframe == self.sigbot.work_timeframe:
                     # Get the signals
@@ -439,7 +445,6 @@ class MonitorExchange(Thread):
                 6 - path to file with candle/indicator plots of the signal
                 7 - list of exchanges where ticker with this signal can be found
                 8 - statistics for the current pattern """
-        exchange_api = self.exchange_data['API']
         tickers = self.exchange_data['tickers']
         for ticker in tickers:
             # stop thread if stop flag is set
@@ -447,15 +452,15 @@ class MonitorExchange(Thread):
                 break
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
-                df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe)
+                df, data_qty = self.sigbot.get_data(self.exchange_data['API'], ticker, timeframe)
                 if timeframe == self.sigbot.work_timeframe:
                     t_print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}, ticker {ticker}')
                 # If we get new data - create indicator list from search signal patterns list, if it has
                 # the new data and data is not from higher timeframe, else get only levels
                 if data_qty > 1:
                     # Get indicators and quantity of data
-                    data_qty_buy = self.get_indicators(df, 'buy', ticker, timeframe, exchange_api, data_qty)
-                    data_qty_sell = self.get_indicators(df, 'sell', ticker, timeframe, exchange_api, data_qty)
+                    data_qty_buy = self.get_indicators(df, 'buy', ticker, timeframe, data_qty)
+                    data_qty_sell = self.get_indicators(df, 'sell', ticker, timeframe, data_qty)
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Get the signals

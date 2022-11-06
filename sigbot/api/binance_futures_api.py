@@ -33,7 +33,8 @@ class BinanceFutures(ApiBase):
                 filtered_symbols.append(symbol)
         return filtered_symbols
 
-    def get_ticker_names(self, min_volume) -> (list, list):
+    def get_ticker_names(self, min_volume) -> (list, list, list):
+        """ Get tickers and their volumes """
         tickers = pd.DataFrame(self.client.futures_ticker())
         all_tickers = tickers['symbol'].to_list()
 
@@ -46,7 +47,7 @@ class BinanceFutures(ApiBase):
         filtered_symbols = self.delete_duplicate_symbols(tickers['symbol'])
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
 
-        return tickers['symbol'].to_list(), all_tickers
+        return tickers['symbol'].to_list(), tickers['quoteVolume'].to_list(), all_tickers
 
     def get_klines(self, symbol, interval, limit) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """

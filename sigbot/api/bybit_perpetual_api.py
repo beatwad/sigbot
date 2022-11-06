@@ -24,7 +24,7 @@ class ByBitPerpetual(ApiBase):
         in_secods_now = int(dt.timestamp())
         return in_secods_now
 
-    def get_ticker_names(self, min_volume) -> (list, list):
+    def get_ticker_names(self, min_volume) -> (list, list, list):
         tickers = pd.DataFrame(self.client.latest_information_for_symbol()['result'])
 
         all_tickers = tickers['symbol'].to_list()
@@ -37,7 +37,7 @@ class ByBitPerpetual(ApiBase):
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)]
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
 
-        return tickers['symbol'].to_list(), all_tickers
+        return tickers['symbol'].to_list(), tickers['quoteVolume'].to_list(), all_tickers
 
     @staticmethod
     def convert_interval_to_secs(interval: str) -> int:

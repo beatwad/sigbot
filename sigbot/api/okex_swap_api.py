@@ -21,7 +21,7 @@ class OKEXSwap(ApiBase):
                 filtered_symbols.append(symbol)
         return filtered_symbols
 
-    def get_ticker_names(self, min_volume) -> (list, list):
+    def get_ticker_names(self, min_volume) -> (list, list, list):
         """ Get tickers from spot, futures and swap OKEX exchanges and get tickers with big enough 24h volume """
         tickers_futures = pd.DataFrame(requests.get(self.URL +
                                                     '/api/v5/market/tickers?instType=SWAP').json()['data'])
@@ -38,7 +38,8 @@ class OKEXSwap(ApiBase):
         filtered_symbols = self.delete_duplicate_symbols(tickers['instId'])
         tickers = tickers[tickers['instId'].isin(filtered_symbols)].reset_index(drop=True)
         tickers = tickers.drop_duplicates(subset=['instId'])
-        return tickers['instId'].to_list(), all_tickers
+
+        return tickers['instId'].to_list(), tickers['volCcy24h'].to_list(), all_tickers
 
     def get_klines(self, symbol, interval, limit=300) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """

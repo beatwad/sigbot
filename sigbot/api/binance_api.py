@@ -33,7 +33,8 @@ class Binance(ApiBase):
                 filtered_symbols.append(symbol)
         return filtered_symbols
 
-    def get_ticker_names(self, min_volume) -> (list, list):
+    def get_ticker_names(self, min_volume) -> (list, list, list):
+        """ Get tickers and their volumes """
         tickers = pd.DataFrame(self.client.get_ticker())
         all_tickers = tickers['symbol'].to_list()
 
@@ -46,7 +47,7 @@ class Binance(ApiBase):
         filtered_symbols = self.delete_duplicate_symbols(tickers['symbol'])
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
 
-        return tickers['symbol'].to_list(), all_tickers
+        return tickers['symbol'].to_list(), tickers['quoteVolume'].to_list(), all_tickers
 
     def get_klines(self, symbol, interval, limit) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
@@ -61,7 +62,7 @@ if __name__ == '__main__':
     binance_api = Binance(key, secret)
     klines = binance_api.get_klines('ETHBTC', '15m', 1000)
     t_list = list()
-    for t in tickers:
-        t_list.append(t['symbol'])
-    exchange_info = binance_api.client.futures_exchange_info()
-    print('1000SHIBUSDT' in t_list)
+    # for t in tickers:
+    #     t_list.append(t['symbol'])
+    # exchange_info = binance_api.client.futures_exchange_info()
+    # print('1000SHIBUSDT' in t_list)

@@ -18,6 +18,8 @@ class SignalFactory(object):
             return PriceChangeSignal(ttype, **configs)
         elif indicator == 'LinearReg':
             return LinearRegSignal(ttype, **configs)
+        elif indicator == 'HighVolume':
+            return HighVolumeSignal(ttype, **configs)
 
 
 class SignalBase:
@@ -232,6 +234,20 @@ class PriceChangeSignal(SignalBase):
         return price_change_higher_1 | price_change_higher_2 | price_change_higher_3
 
 
+class HighVolumeSignal(SignalBase):
+    type = 'Indicator_signal'
+    name = 'HighVolume'
+
+    def __init__(self, ttype, **configs):
+        super(HighVolumeSignal, self).__init__(ttype, configs)
+
+    def find_signal(self, df: pd.DataFrame) -> np.ndarray:
+        """ Find high volume signal  """
+        # Find high volume signal
+        high_vol = self.higher_bound_robust(df['quantile_vol'].loc[0], df['normalized_vol'])
+        return high_vol
+
+
 class MACDSignal(SignalBase):
     type = 'Indicator_signal'
     name = 'MACD'
@@ -279,6 +295,8 @@ class FindSignal:
         """ Get all indicator signal classes """
         indicator_signals = list()
         for indicator in self.indicator_list:
+            if indicator == 'HighVolume' and self.ttype == 'sell':
+                continue
             indicator_signals.append(SignalFactory.factory(indicator, self.ttype, self.configs))
         return indicator_signals
 
@@ -319,6 +337,8 @@ class FindSignal:
         # If any pattern has all 1 - add corresponding point as a signal
         for pattern in sig_patterns:
             # find indexes of trade points
+            if self.ttype == 'sell' and pattern == ['HighVolume']:
+                continue
             pattern_points = trade_points[pattern]
             max_shape = pattern_points.shape[1]
             pattern_points = pattern_points.sum(axis=1)

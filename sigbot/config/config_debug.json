@@ -190,6 +190,13 @@
           "high_price_quantile": 990,
           "stat_file_path": "signal_stat/price_stat_buy.json"
         }
+      },
+       "HighVolume": {
+        "params": {
+          "round_decimals": 4,
+          "volume_quantile": 990,
+          "vol_stat_file_path": "signal_stat/vol_stat.npy"
+        }
       }
     },
     "sell": {
@@ -224,14 +231,18 @@
           "high_price_quantile": 990,
           "stat_file_path": "signal_stat/price_stat_sell.json"
         }
+      },
+       "HighVolume": {
+        "params": {
+          "round_decimals": 4,
+          "volume_quantile": 990,
+          "vol_stat_file_path": "signal_stat/vol_stat_sell.json"
+        }
       }
     }
   },
   "Indicator_list": [
-    "STOCH",
-    "RSI",
-    "PriceChange",
-    "LinearReg"
+    "HighVolume"
   ],
   "Indicator_signal": {
     "buy": {
@@ -251,6 +262,9 @@
         "params": {}
       },
       "PriceChange": {
+        "params": {}
+      },
+      "HighVolume": {
         "params": {}
       },
       "LinearReg": {
@@ -296,25 +310,12 @@
     "params": {
       "bot_cycle_length_sec": 20,
       "cycle_length_hours": 168,
-      "first_cycle_qty_miss": 1
+      "first_cycle_qty_miss": 0
     }
   },
   "Patterns": [
     [
-      "STOCH",
-      "RSI"
-    ],
-    [
-      "STOCH",
-      "RSI",
-      "LinearReg"
-    ],
-    [
-      "PriceChange"
-    ],
-    [
-      "PriceChange",
-      "LinearReg"
+      "HighVolume"
     ]
   ],
   "SignalStat": {
@@ -324,6 +325,7 @@
       "test": 0,
       "stat_limit_hours": {
         "PriceChange": 24,
+        "HighVolume": 24,
         "PriceChange_LinearReg": 48,
         "STOCH_RSI": 36,
         "STOCH_RSI_LinearReg": 168
@@ -334,7 +336,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 2
+      "max_prev_candle_limit": 20
     }
   },
   "Telegram": {
@@ -344,7 +346,8 @@
         "STOCH_RSI": "-1001752697158",
         "STOCH_RSI_LinearReg": "-1001752697158",
         "PriceChange": "-1001752697158",
-        "PriceChange_LinearReg": "-1001752697158"
+        "PriceChange_LinearReg": "-1001752697158",
+        "HighVolume": "-1001752697158"
       },
       "prev_sig_minutes_limit": 25,
       "max_notifications_in_row": 3
@@ -372,7 +375,8 @@
           "rsi"
         ],
         "MACD": [],
-        "PriceChange": []
+        "PriceChange": [],
+        "HighVolume": []
       }
     }
   }

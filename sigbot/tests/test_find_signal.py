@@ -61,7 +61,7 @@ eth_expected = [np.array([18, 19])]
 
 @pytest.mark.parametrize('ticker, timeframe, high_bound, expected',
                          [
-                          # ('BTCUSDT', '5m', 100, []),
+                          ('BTCUSDT', '5m', 100, []),
                           ('BTCUSDT', '5m', 60, btc_expected[0]),
                           ('ETHUSDT', '5m', 75, eth_expected[0]),
                           ], ids=repr)

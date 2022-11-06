@@ -310,7 +310,7 @@
     "params": {
       "bot_cycle_length_sec": 20,
       "cycle_length_hours": 168,
-      "first_cycle_qty_miss": 0
+      "first_cycle_qty_miss": 1
     }
   },
   "Patterns": [
@@ -336,7 +336,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 20
+      "max_prev_candle_limit": 2
     }
   },
   "Telegram": {
@@ -376,7 +376,7 @@
         ],
         "MACD": [],
         "PriceChange": [],
-        "HighVolume": []
+        "HighVolume": ["volume"]
       }
     }
   }

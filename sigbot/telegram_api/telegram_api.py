@@ -128,7 +128,6 @@ class TelegramBot(Thread):
         for i in range(n_len):
             message = self.notification_list[i]
             sig_pattern = message[5]
-            # sig_pattern = '_'.join([p[0] for p in message[5]])
             message_dict[sig_pattern].append([i, message])
         for pattern in self.chat_ids.keys():
             # send too long notification list in one message
@@ -154,15 +153,15 @@ class TelegramBot(Thread):
             sig_type = message[2]
             sig_time = message[4]
             # get patterns
-            sig_pattern = [p[0] for p in message[5]]
-            sig_pattern = '_'.join(sig_pattern)
+            sig_pattern = message[5]
             # add ticker info to notification list
             if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
-                text += f' • {ticker}: '
-                if sig_type == 'buy':
-                    text += 'Покупка \n'
+                if sig_pattern == 'HighVolume':
+                    text += f' • {ticker} \n '
+                elif sig_type == 'buy':
+                    text += f' • {ticker}: Покупка \n'
                 else:
-                    text += 'Продажа \n'
+                    text += f' • {ticker}: Продажа \n'
             self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.send_message(chat_id, text)
         self.delete_images()
@@ -185,8 +184,6 @@ class TelegramBot(Thread):
         sig_time = message[4]
         sig_pattern = message[5]
         # get patterns
-        # sig_pattern = [p[0] for p in message[5]]
-        # sig_pattern = '_'.join(sig_pattern)
         # get path to image
         sig_img_path = self.add_plot(message)
         # get list of available exchanges
@@ -198,7 +195,9 @@ class TelegramBot(Thread):
             chat_id = self.chat_ids[sig_pattern]
             # Form text message
             text = f'{ticker} \n'
-            if sig_type == 'buy':
+            if sig_pattern == 'HighVolume':
+                pass
+            elif sig_type == 'buy':
                 text += 'Покупка \n'
             else:
                 text += 'Продажа \n'

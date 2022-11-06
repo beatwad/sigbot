@@ -131,13 +131,18 @@ class Visualizer:
         print(ohlc.index[ohlc.shape[0] - 1])
         # get indicator list
         indicator_list = [p for p in pattern.split('_') if p[0] not in self.level_indicators]
+        indicator_list_tmp = indicator_list.copy()
 
         # check if PriceChange indicator is in indicator list to make a special plot
-        if 'PriceChange' in indicator_list:
+        if 'PriceChange' in indicator_list_tmp:
             plot_num = len(indicator_list)
             indicator_list.remove('PriceChange')
             candles_height = 1.5
             plot_height_mult = 2.5
+        elif 'HighVolume' in indicator_list_tmp:
+            plot_num = len(indicator_list) + 1
+            candles_height = 3
+            plot_height_mult = 5
         else:
             plot_num = len(indicator_list) + 1
             candles_height = 3
@@ -149,7 +154,7 @@ class Visualizer:
         fig.patch.set_facecolor(self.background_color)
         # If linear regression is in indicator list - remove it from list and plot one more plot with higher timeframe
         # candles and linear regression indicator
-        if 'LinearReg' in indicator_list:
+        if 'LinearReg' in indicator_list_tmp:
             indicator_list.remove('LinearReg')
             plot_num -= 1
             subfigs_num = 3
@@ -205,11 +210,9 @@ class Visualizer:
             # set the xticks and labels with the new ticks and labels:
             axs_higher.set_xticks(newxticks)
             axs_higher.set_xticklabels(newlabels)
-        elif 'HighVolume' in indicator_list:
-            indicator_list.remove('HighVolume')
-            plot_num -= 1
-            subfigs_num = 1
-            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height])
+        elif 'HighVolume' in indicator_list_tmp:
+            subfigs_num = 2
+            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height/3, 0.01])
         else:
             subfigs_num = 2
             subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height, 2.5])
@@ -230,7 +233,11 @@ class Visualizer:
             # plot indicator
             indicator_columns = self.indicator_dict[indicator]
             for i_c in indicator_columns:
-                m = mpf.make_addplot(df_working[i_c], panel=index + 1, title=indicator, ax=axs1[index + 1], width=2)
+                if i_c == 'volume':
+                    m = mpf.make_addplot(df_working[i_c], panel=index + 1, title=indicator, ax=axs1[index + 1],
+                                         width=0.5, type='bar')
+                else:
+                    m = mpf.make_addplot(df_working[i_c], panel=index + 1, title=indicator, ax=axs1[index + 1], width=2)
                 ap.append(m)
             # plot indicator parameters
             self.plot_indicator_parameters(point_type, index, indicator, axs1, indicator_list)
@@ -312,88 +319,89 @@ class Visualizer:
         # self.plot_levels(data, levels, axs1)
 
         # Plot signal statistics
-        pct_right_forecast = [s[0] for s in statistics[0]]
-        pct_price_diff_mean = [s[1] for s in statistics[0]]
-        pct_price_diff_std = [s[2] for s in statistics[0]]
-        pct_price_diff_mean_plus_std = [a + b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
-        pct_price_diff_mean_minus_std = [a - b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
+        if 'HighVolume' not in indicator_list_tmp:
+            pct_right_forecast = [s[0] for s in statistics[0]]
+            pct_price_diff_mean = [s[1] for s in statistics[0]]
+            pct_price_diff_std = [s[2] for s in statistics[0]]
+            pct_price_diff_mean_plus_std = [a + b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
+            pct_price_diff_mean_minus_std = [a - b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
 
-        # get previous percent of right forecast and save current percent to statistics dictionary
-        mean_pct_right_forecast = round(sum(pct_right_forecast)/len(pct_right_forecast), 2)
-        
-        # get key for statistics dict
-        key = self.get_statistics_dict_key(pattern)
+            # get previous percent of right forecast and save current percent to statistics dictionary
+            mean_pct_right_forecast = round(sum(pct_right_forecast)/len(pct_right_forecast), 2)
 
-        # get previous mean percent of right forecasts and
-        # check if pattern and trade type are in statistics dictionary
-        prev_mean_pct_right_forecast = self.get_prev_mean_pct_right_forecast(key, point_type, mean_pct_right_forecast)
+            # get key for statistics dict
+            key = self.get_statistics_dict_key(pattern)
 
-        # get change of statistics
-        stat_change = self.statistics_change(prev_mean_pct_right_forecast, mean_pct_right_forecast)
+            # get previous mean percent of right forecasts and
+            # check if pattern and trade type are in statistics dictionary
+            prev_mean_pct_right_forecast = self.get_prev_mean_pct_right_forecast(key, point_type, mean_pct_right_forecast)
 
-        # make subplots
-        axs2 = subfigs[-1].subplots(2, 1, sharex=True)
+            # get change of statistics
+            stat_change = self.statistics_change(prev_mean_pct_right_forecast, mean_pct_right_forecast)
 
-        # make plots
-        axs2[0].plot(pct_right_forecast, linewidth=2, color=self.stat_color_1)
-        axs2[0].yaxis.set_label_position("right")
-        axs2[0].yaxis.tick_right()
-        axs2[1].plot(pct_price_diff_mean_plus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_1)
-        axs2[1].plot(pct_price_diff_mean_minus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_2)
-        axs2[1].plot(pct_price_diff_mean, linewidth=2, color=self.stat_color_2)
-        axs2[1].yaxis.set_label_position("right")
-        axs2[1].yaxis.tick_right()
-        # plot grid
-        axs2[0].grid(which='both', linestyle='--', linewidth=0.3)
-        axs2[1].grid(which='both', linestyle='--', linewidth=0.3)
+            # make subplots
+            axs2 = subfigs[-1].subplots(2, 1, sharex=True)
 
-        # set title
-        if point_type == 'buy':
-            title = '\nСTATИСТИКА СИГНАЛА НА ПОКУПКУ'
-        else:
-            title = '\nСTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
-        axs2[0].set_title(f'{title}\n\nВероятность правильного движения цены после сигнала\n'
-                          f'(в среднем - {mean_pct_right_forecast}% {stat_change})',
-                          fontsize=13, color=self.ticker_color)
-        axs2[1].set_title('Средняя разница между текущей ценой актива\nи его ценой во время сигнала + '
-                          'среднее отклонение цены', fontsize=13, color=self.ticker_color)
+            # make plots
+            axs2[0].plot(pct_right_forecast, linewidth=2, color=self.stat_color_1)
+            axs2[0].yaxis.set_label_position("right")
+            axs2[0].yaxis.tick_right()
+            axs2[1].plot(pct_price_diff_mean_plus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_1)
+            axs2[1].plot(pct_price_diff_mean_minus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_2)
+            axs2[1].plot(pct_price_diff_mean, linewidth=2, color=self.stat_color_2)
+            axs2[1].yaxis.set_label_position("right")
+            axs2[1].yaxis.tick_right()
+            # plot grid
+            axs2[0].grid(which='both', linestyle='--', linewidth=0.3)
+            axs2[1].grid(which='both', linestyle='--', linewidth=0.3)
 
-        # set x-ticks
-        xticklabels = ['30', '60', '90', '120', '150', '180', '210', '240', '270', '300', '330', '360']
-        # set ticker color
-        axs2[0].tick_params(axis='x', colors=self.ticker_color)
-        axs2[0].tick_params(axis='y', colors=self.ticker_color)
-        # set background color
-        axs2[0].patch.set_facecolor(self.background_color)
-        # set border color
-        axs2[0].spines['bottom'].set_color(self.border_color)
-        axs2[0].spines['top'].set_color(self.border_color)
-        axs2[0].spines['right'].set_color(self.border_color)
-        axs2[0].spines['left'].set_color(self.border_color)
+            # set title
+            if point_type == 'buy':
+                title = '\nСTATИСТИКА СИГНАЛА НА ПОКУПКУ'
+            else:
+                title = '\nСTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
+            axs2[0].set_title(f'{title}\n\nВероятность правильного движения цены после сигнала\n'
+                              f'(в среднем - {mean_pct_right_forecast}% {stat_change})',
+                              fontsize=13, color=self.ticker_color)
+            axs2[1].set_title('Средняя разница между текущей ценой актива\nи его ценой во время сигнала + '
+                              'среднее отклонение цены', fontsize=13, color=self.ticker_color)
 
-        axs2[1].set_xticks(np.arange(1, 25, 2))
-        axs2[1].set_xticklabels(xticklabels)
-        plt.xticks(rotation=30)
+            # set x-ticks
+            xticklabels = ['30', '60', '90', '120', '150', '180', '210', '240', '270', '300', '330', '360']
+            # set ticker color
+            axs2[0].tick_params(axis='x', colors=self.ticker_color)
+            axs2[0].tick_params(axis='y', colors=self.ticker_color)
+            # set background color
+            axs2[0].patch.set_facecolor(self.background_color)
+            # set border color
+            axs2[0].spines['bottom'].set_color(self.border_color)
+            axs2[0].spines['top'].set_color(self.border_color)
+            axs2[0].spines['right'].set_color(self.border_color)
+            axs2[0].spines['left'].set_color(self.border_color)
 
-        # set x-labels
-        axs2[1].set_xlabel(f"время после сигнала, в минутах", fontsize=12, color=self.ticker_color)
+            axs2[1].set_xticks(np.arange(1, 25, 2))
+            axs2[1].set_xticklabels(xticklabels)
+            plt.xticks(rotation=30)
 
-        # set y-labels
-        axs2[0].set_ylabel("вероятность, %", fontsize=9.5, color=self.ticker_color)
-        axs2[1].set_ylabel("разница цен %", fontsize=9.5, color=self.ticker_color)
+            # set x-labels
+            axs2[1].set_xlabel(f"время после сигнала, в минутах", fontsize=12, color=self.ticker_color)
 
-        # set ticker color
-        axs2[1].tick_params(axis='x', colors=self.ticker_color)
-        axs2[1].tick_params(axis='y', colors=self.ticker_color)
+            # set y-labels
+            axs2[0].set_ylabel("вероятность, %", fontsize=9.5, color=self.ticker_color)
+            axs2[1].set_ylabel("разница цен %", fontsize=9.5, color=self.ticker_color)
 
-        # set background color
-        axs2[1].patch.set_facecolor(self.background_color)
+            # set ticker color
+            axs2[1].tick_params(axis='x', colors=self.ticker_color)
+            axs2[1].tick_params(axis='y', colors=self.ticker_color)
 
-        # set border color
-        axs2[1].spines['bottom'].set_color(self.border_color)
-        axs2[1].spines['top'].set_color(self.border_color)
-        axs2[1].spines['right'].set_color(self.border_color)
-        axs2[1].spines['left'].set_color(self.border_color)
+            # set background color
+            axs2[1].patch.set_facecolor(self.background_color)
+
+            # set border color
+            axs2[1].spines['bottom'].set_color(self.border_color)
+            axs2[1].spines['top'].set_color(self.border_color)
+            axs2[1].spines['right'].set_color(self.border_color)
+            axs2[1].spines['left'].set_color(self.border_color)
 
         # save plot to file
         filename = self.save_plot(ticker, timeframe, pattern, df_working)

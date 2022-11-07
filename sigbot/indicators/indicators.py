@@ -181,7 +181,7 @@ class HighVolume(Indicator):
         self.round_decimals = self.configs.get('round_decimals', 4)
         self.vol_stat_file_path = self.configs.get('vol_stat_file_path')
         self.vol_stat = np.array([])
-        self.get_vol_stat()
+        # self.get_vol_stat()
 
     def get_vol_stat(self) -> None:
         """ Load volume statistics from file """
@@ -206,9 +206,9 @@ class HighVolume(Indicator):
         vol = self.get_volume(df, data_qty, volume)
         self.vol_stat = np.append(self.vol_stat, vol)
         self.vol_stat = np.unique(self.vol_stat)
+        np.sort(self.vol_stat)
         # get quantiles and save to dataframe
-        normalized_vol = pd.Series(data=self.vol_stat)
-        quantile_vol = normalized_vol.sort_values(ascending=False).quantile(self.high_volume_quantile / 1000)
+        quantile_vol = np.quantile(self.vol_stat, self.high_volume_quantile / 1000)
         df['quantile_vol'] = quantile_vol
         # save volume statistics to file
         # self.save_vol_stat()

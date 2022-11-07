@@ -314,28 +314,12 @@
     "params": {
       "bot_cycle_length_sec": 20,
       "cycle_length_hours": 168,
-      "first_cycle_qty_miss": 1
+      "first_cycle_qty_miss": 0
     }
   },
   "Patterns": [
     [
-      "STOCH",
-      "RSI"
-    ],
-    [
-      "STOCH",
-      "RSI",
-      "LinearReg"
-    ],
-    [
-      "PriceChange"
-    ],
-    [
       "HighVolume"
-    ],
-    [
-      "PriceChange",
-      "LinearReg"
     ]
   ],
   "SignalStat": {
@@ -356,7 +340,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 2
+      "max_prev_candle_limit": 50
     }
   },
   "Telegram": {

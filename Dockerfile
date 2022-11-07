@@ -1,4 +1,4 @@
-FROM python:3.10-slim AS compile-image
+FROM python:3.11-slim-buster AS compile-image
 
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends build-essential gcc wget

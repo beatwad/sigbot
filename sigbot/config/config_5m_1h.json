@@ -367,7 +367,7 @@
         "STOCH_RSI_LinearReg": "-1001688789758",
         "PriceChange": "-1001700504878",
         "PriceChange_LinearReg": "-1001691421580",
-        "HighVolume": "-1001700504878"
+        "HighVolume": "-1001656085421"
       },
       "prev_sig_minutes_limit": 25,
       "max_notifications_in_row": 3
@@ -396,7 +396,7 @@
         ],
         "MACD": [],
         "PriceChange": [],
-        "HighVolume": []
+        "HighVolume": ["volume"]
       }
     }
   }

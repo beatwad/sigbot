@@ -242,7 +242,11 @@
     }
   },
   "Indicator_list": [
-    "HighVolume"
+    "STOCH",
+    "RSI",
+    "PriceChange",
+    "HighVolume",
+    "LinearReg"
   ],
   "Indicator_signal": {
     "buy": {
@@ -315,7 +319,23 @@
   },
   "Patterns": [
     [
+      "STOCH",
+      "RSI"
+    ],
+    [
+      "STOCH",
+      "RSI",
+      "LinearReg"
+    ],
+    [
+      "PriceChange"
+    ],
+    [
       "HighVolume"
+    ],
+    [
+      "PriceChange",
+      "LinearReg"
     ]
   ],
   "SignalStat": {

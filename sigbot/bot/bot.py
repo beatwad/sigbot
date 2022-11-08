@@ -116,8 +116,7 @@ class SigBot:
                 del self.exchanges[ex]
                 continue
 
-            prev_tickers = list()
-            tickers, prev_tickers = self.filter_used_tickers(tickers, prev_tickers)
+            tickers, ticker_vols = self.filter_used_tickers(tickers, ticker_vols)
 
             # create dictionary to store info for each ticker (volume, funding, etc.)
             self.exchanges[ex]['tickers'] = {tickers[i]: [float(ticker_vols[i])] for i in range(len(tickers))}
@@ -127,29 +126,22 @@ class SigBot:
             # for periodic updates of ticker information
             self.exchanges[ex]['API'].fill_ticker_dict(tickers)
 
-    def filter_used_tickers(self, tickers: list, prev_tickers: list, len_diff=50) -> (list, list):
+    def filter_used_tickers(self, tickers: list, ticker_vols: list) -> (list, list):
         """ Check if ticker was already used by previous exchange and balance number of tickers in current
             and previous exchanges if current exchange also has these tickers and their number is lesser
             than number of tickers in previous exchange """
         # create list of cleaned tickers from previous exchange
         not_used_tickers = list()
-        for ticker in tickers:
+        not_used_ticker_vols = list()
+        for ticker, ticker_vol in zip(tickers, ticker_vols):
             orig_ticker = ticker
             ticker = ticker.replace('-', '').replace('/', '').replace('SWAP', '')[:-4]
             # if tickers is not used - add it to current exchange list
             if ticker not in self.used_tickers:
                 self.used_tickers.append(ticker)
                 not_used_tickers.append(orig_ticker)
-        return not_used_tickers, prev_tickers
-
-    @staticmethod
-    def clean_prev_exchange_tickers(prev_tickers: list, prev_tickers_indexes: list) -> list:
-        """ Delete tickers from previous to balance load on to exchanges """
-        cleaned_prev_tickers = list()
-        for idx, ticker in enumerate(prev_tickers):
-            if idx not in prev_tickers_indexes:
-                cleaned_prev_tickers.append(ticker)
-        return cleaned_prev_tickers
+                not_used_ticker_vols.append(ticker_vol)
+        return not_used_tickers, not_used_ticker_vols
 
     def get_data(self, exchange_api, ticker: str, timeframe: str) -> (pd.DataFrame, int):
         """ Check if new data appeared. If it is - return dataframe with the new data and amount of data """

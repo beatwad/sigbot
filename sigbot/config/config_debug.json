@@ -186,15 +186,17 @@
       "PriceChange": {
         "params": {
           "round_decimals": 4,
-          "low_price_quantile": 10,
-          "high_price_quantile": 990,
+          "max_stat_size": 100000,
+          "low_price_quantile": 5,
+          "high_price_quantile": 995,
           "stat_file_path": "signal_stat/price_stat_buy.json"
         }
       },
        "HighVolume": {
         "params": {
           "round_decimals": 4,
-          "volume_quantile": 990,
+          "max_stat_size": 100000,
+          "volume_quantile": 995,
           "vol_stat_file_path": "signal_stat/vol_stat.npy"
         }
       }
@@ -227,15 +229,17 @@
       "PriceChange": {
         "params": {
           "round_decimals": 4,
-          "low_price_quantile": 10,
-          "high_price_quantile": 990,
+          "max_stat_size": 100000,
+          "low_price_quantile": 5,
+          "high_price_quantile": 995,
           "stat_file_path": "signal_stat/price_stat_sell.json"
         }
       },
        "HighVolume": {
         "params": {
           "round_decimals": 4,
-          "volume_quantile": 990,
+          "max_stat_size": 100000,
+          "volume_quantile": 995,
           "vol_stat_file_path": "signal_stat/vol_stat_sell.json"
         }
       }
@@ -314,12 +318,28 @@
     "params": {
       "bot_cycle_length_sec": 20,
       "cycle_length_hours": 168,
-      "first_cycle_qty_miss": 0
+      "first_cycle_qty_miss": 1
     }
   },
   "Patterns": [
     [
+      "STOCH",
+      "RSI"
+    ],
+    [
+      "STOCH",
+      "RSI",
+      "LinearReg"
+    ],
+    [
+      "PriceChange"
+    ],
+    [
       "HighVolume"
+    ],
+    [
+      "PriceChange",
+      "LinearReg"
     ]
   ],
   "SignalStat": {
@@ -328,11 +348,11 @@
       "stop_loss_multiplier": 2,
       "test": 0,
       "stat_limit_hours": {
-        "PriceChange": 24,
-        "HighVolume": 24,
-        "PriceChange_LinearReg": 48,
-        "STOCH_RSI": 36,
-        "STOCH_RSI_LinearReg": 168
+        "PriceChange": 250,
+        "HighVolume": 250,
+        "PriceChange_LinearReg": 500,
+        "STOCH_RSI": 400,
+        "STOCH_RSI_LinearReg": 1000
       },
       "prev_sig_limit_minutes": 40,
       "stat_range": 24
@@ -340,7 +360,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 50
+      "max_prev_candle_limit": 2
     }
   },
   "Telegram": {

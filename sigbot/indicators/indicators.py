@@ -111,11 +111,14 @@ class PriceChange(Indicator):
         super(PriceChange, self).__init__(ttype, configs)
         self.low_price_quantile = self.configs.get('low_price_quantile', 5)
         self.high_price_quantile = self.configs.get('high_price_quantile', 95)
+        self.max_stat_size = self.configs.get('max_stat_size', 100000)
         self.round_decimals = self.configs.get('decimals', 4)
         self.stat_file_path = self.configs.get('stat_file_path')
-        self.price_stat = {'lag1': Counter(),
-                           'lag2': Counter(),
-                           'lag3': Counter()}
+        self.price_stat = {
+                           'lag1': np.array([]),
+                           'lag2': np.array([]),
+                           'lag3': np.array([])
+                           }
         # self.get_price_stat()
 
     def get_price_stat(self) -> None:
@@ -138,7 +141,7 @@ class PriceChange(Indicator):
 
     def get_price_change(self, df: pd.DataFrame, data_qty: int, lag: int) -> list:
         """ Get difference between current price and previous price """
-        close_prices = (df['close'] - df['close'].shift(lag)) / df['close'].shift(lag)
+        close_prices = (df['close'] - df['close'].shift(lag)) / df['close'].shift(lag) * 100
         df[f'close_price_change_lag_{lag}'] = np.round(close_prices.values, self.round_decimals)
         return df[f'close_price_change_lag_{lag}'][max(df.shape[0] - data_qty + 1, 0):].values
 
@@ -148,25 +151,44 @@ class PriceChange(Indicator):
         close_prices_lag_1 = self.get_price_change(df, data_qty, lag=1)
         close_prices_lag_2 = self.get_price_change(df, data_qty, lag=2)
         close_prices_lag_3 = self.get_price_change(df, data_qty, lag=3)
-        self.price_stat['lag1'] += Counter(close_prices_lag_1)
-        self.price_stat['lag2'] += Counter(close_prices_lag_2)
-        self.price_stat['lag3'] += Counter(close_prices_lag_3)
-        # get lag 1 quantiles and save to dataframe
-        q_lag_1 = pd.Series(data=self.price_stat['lag1'].keys(), index=self.price_stat['lag1'].values())
-        q_low_lag_1 = q_lag_1.sort_index().quantile(self.low_price_quantile / 1000)
-        q_high_lag_1 = q_lag_1.sort_index().quantile(self.high_price_quantile / 1000)
+        # add price statistics
+        self.price_stat['lag1'] = np.append(self.price_stat['lag1'], close_prices_lag_1)
+        self.price_stat['lag2'] = np.append(self.price_stat['lag2'], close_prices_lag_2)
+        self.price_stat['lag3'] = np.append(self.price_stat['lag3'], close_prices_lag_3)
+        # delete NaNs
+        self.price_stat['lag1'] = self.price_stat['lag1'][~np.isnan(self.price_stat['lag1'])]
+        self.price_stat['lag2'] = self.price_stat['lag2'][~np.isnan(self.price_stat['lag2'])]
+        self.price_stat['lag3'] = self.price_stat['lag3'][~np.isnan(self.price_stat['lag3'])]
+        # if our price statistics is too big - prune it
+        if len(self.price_stat['lag1']) > self.max_stat_size * 1.5:
+            indices = np.where(self.price_stat['lag1'])[0]
+            to_replace = np.random.permutation(indices)[:self.max_stat_size]
+            self.price_stat['lag1'] = self.price_stat['lag1'][to_replace]
+        if len(self.price_stat['lag2']) > self.max_stat_size * 1.5:
+            indices = np.where(self.price_stat['lag2'])[0]
+            to_replace = np.random.permutation(indices)[:self.max_stat_size]
+            self.price_stat['lag2'] = self.price_stat['lag2'][to_replace]
+        if len(self.price_stat['lag3']) > self.max_stat_size * 1.5:
+            indices = np.where(self.price_stat['lag3'])[0]
+            to_replace = np.random.permutation(indices)[:self.max_stat_size]
+            self.price_stat['lag3'] = self.price_stat['lag3'][to_replace]
+        # sort price values
+        np.sort(self.price_stat['lag1'])
+        np.sort(self.price_stat['lag2'])
+        np.sort(self.price_stat['lag3'])
+        # get lag 1 quantiles and save to the dataframe
+        q_low_lag_1 = np.quantile(self.price_stat['lag1'], self.low_price_quantile / 1000)
+        q_high_lag_1 = np.quantile(self.price_stat['lag1'], self.high_price_quantile / 1000)
         df[['q_low_lag_1', 'q_high_lag_1']] = q_low_lag_1, q_high_lag_1
-        # get lag 2 quantiles and save to dataframe
-        q_lag_2 = pd.Series(data=self.price_stat['lag2'].keys(), index=self.price_stat['lag2'].values())
-        q_low_lag_2 = q_lag_2.sort_index().quantile(self.low_price_quantile / 1000)
-        q_high_lag_2 = q_lag_2.sort_index().quantile(self.high_price_quantile / 1000)
+        # get lag 2 quantiles and save to the dataframe
+        q_low_lag_2 = np.quantile(self.price_stat['lag2'], self.low_price_quantile / 1000)
+        q_high_lag_2 = np.quantile(self.price_stat['lag2'], self.high_price_quantile / 1000)
         df[['q_low_lag_2', 'q_high_lag_2']] = q_low_lag_2, q_high_lag_2
-        # get lag 3 quantiles and save to dataframe
-        q_lag_3 = pd.Series(data=self.price_stat['lag3'].keys(), index=self.price_stat['lag3'].values())
-        q_low_lag_3 = q_lag_3.sort_index().quantile(self.low_price_quantile / 1000)
-        q_high_lag_3 = q_lag_3.sort_index().quantile(self.high_price_quantile / 1000)
+        # get lag 3 quantiles and save to the dataframe
+        q_low_lag_3 = np.quantile(self.price_stat['lag3'], self.low_price_quantile / 1000)
+        q_high_lag_3 = np.quantile(self.price_stat['lag3'], self.high_price_quantile / 1000)
         df[['q_low_lag_3', 'q_high_lag_3']] = q_low_lag_3, q_high_lag_3
-        # save price statistics to file
+        # save price statistics to the file
         # self.save_price_stat()
         return df
 
@@ -177,8 +199,9 @@ class HighVolume(Indicator):
 
     def __init__(self, ttype: str, configs: dict):
         super(HighVolume, self).__init__(ttype, configs)
-        self.high_volume_quantile = self.configs.get('high_volume_quantile', 990)
+        self.high_volume_quantile = self.configs.get('high_volume_quantile', 995)
         self.round_decimals = self.configs.get('round_decimals', 4)
+        self.max_stat_size = self.configs.get('self.max_stat_size', 100000)
         self.vol_stat_file_path = self.configs.get('vol_stat_file_path')
         self.vol_stat = np.array([])
         # self.get_vol_stat()
@@ -196,7 +219,7 @@ class HighVolume(Indicator):
 
     def get_volume(self, df: pd.DataFrame, data_qty: int, volume: int) -> list:
         """ Get MinMax normalized volume """
-        normalized_vol = df['volume'] / volume
+        normalized_vol = df['volume'] / volume * 10
         df[f'normalized_vol'] = np.round(normalized_vol.values, self.round_decimals)
         return df[f'normalized_vol'][max(df.shape[0] - data_qty + 1, 0):].values
 
@@ -204,10 +227,18 @@ class HighVolume(Indicator):
         """ Measure degree of ticker price change """
         # get frequency counter
         vol = self.get_volume(df, data_qty, volume)
+        # add volume statistics
         self.vol_stat = np.append(self.vol_stat, vol)
-        self.vol_stat = np.unique(self.vol_stat)
+        # delete NaNs
+        self.vol_stat = self.vol_stat[~np.isnan(self.vol_stat)]
+        # if our volume statistics is too big - prune it
+        if len(self.vol_stat) > self.max_stat_size * 1.5:
+            indices = np.where(self.vol_stat)[0]
+            to_replace = np.random.permutation(indices)[:self.max_stat_size]
+            self.vol_stat = self.vol_stat[to_replace]
+        # sort volume values
         np.sort(self.vol_stat)
-        # get quantiles and save to dataframe
+        # get volume quantile and save to the dataframe
         quantile_vol = np.quantile(self.vol_stat, self.high_volume_quantile / 1000)
         df['quantile_vol'] = quantile_vol
         # save volume statistics to file

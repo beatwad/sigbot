@@ -145,6 +145,9 @@ class TelegramBot(Thread):
         chat_id = self.chat_ids[pattern]
         # Form text message
         text = f'Новые сигналы:\n'
+        # flag that lets message sending only if there are new tickers
+        send_flag = False
+        # list to filter duplicate messages
         message_list_tmp = list()
         for _message in message_list:
             _, message = _message
@@ -159,15 +162,17 @@ class TelegramBot(Thread):
                 message_list_tmp.append([ticker, sig_type])
                 # add ticker info to notification list
                 if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
+                    send_flag = True
                     if sig_pattern == 'HighVolume':
-                        text += f' • {ticker} \n'
+                        text += f' • {ticker} \n '
                     elif sig_type == 'buy':
                         text += f' • {ticker}: Покупка \n'
                     else:
                         text += f' • {ticker}: Продажа \n'
                 self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
-        self.send_message(chat_id, text)
-        self.delete_images()
+        if send_flag:
+            self.send_message(chat_id, text)
+            self.delete_images()
 
     @staticmethod
     def clean_ticker(ticker: str) -> str:

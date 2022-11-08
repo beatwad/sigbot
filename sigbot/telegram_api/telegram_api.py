@@ -145,24 +145,27 @@ class TelegramBot(Thread):
         chat_id = self.chat_ids[pattern]
         # Form text message
         text = f'Новые сигналы:\n'
+        message_list_tmp = list()
         for _message in message_list:
-            i, message = _message
+            _, message = _message
             # Get info from signal
             ticker = self.process_ticker(message[0])
             timeframe = message[1]
-            sig_type = message[2]
+            sig_type = message[3]
             sig_time = message[4]
-            # get patterns
             sig_pattern = message[5]
-            # add ticker info to notification list
-            if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
-                if sig_pattern == 'HighVolume':
-                    text += f' • {ticker} \n '
-                elif sig_type == 'buy':
-                    text += f' • {ticker}: Покупка \n'
-                else:
-                    text += f' • {ticker}: Продажа \n'
-            self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
+            # if ticker and trade type aren't in message list already - add them
+            if [ticker, sig_type] not in message_list_tmp:
+                message_list_tmp.append([ticker, sig_type])
+                # add ticker info to notification list
+                if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
+                    if sig_pattern == 'HighVolume':
+                        text += f' • {ticker} \n'
+                    elif sig_type == 'buy':
+                        text += f' • {ticker}: Покупка \n'
+                    else:
+                        text += f' • {ticker}: Продажа \n'
+                self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.send_message(chat_id, text)
         self.delete_images()
 

@@ -138,7 +138,7 @@ class PriceChange(Indicator):
 
     def get_price_change(self, df: pd.DataFrame, data_qty: int, lag: int) -> list:
         """ Get difference between current price and previous price """
-        close_prices = (df['close'] - df['close'].shift(lag)) / df['close'].shift(lag) * 100
+        close_prices = (df['close'] - df['close'].shift(lag)) / df['close'].shift(lag)
         df[f'close_price_change_lag_{lag}'] = np.round(close_prices.values, self.round_decimals)
         return df[f'close_price_change_lag_{lag}'][max(df.shape[0] - data_qty + 1, 0):].values
 
@@ -196,7 +196,7 @@ class HighVolume(Indicator):
 
     def get_volume(self, df: pd.DataFrame, data_qty: int, volume: int) -> list:
         """ Get MinMax normalized volume """
-        normalized_vol = df['volume'] * (df['close'] + df['open']) / (2 * volume) * 100
+        normalized_vol = df['volume'] / volume
         df[f'normalized_vol'] = np.round(normalized_vol.values, self.round_decimals)
         return df[f'normalized_vol'][max(df.shape[0] - data_qty + 1, 0):].values
 

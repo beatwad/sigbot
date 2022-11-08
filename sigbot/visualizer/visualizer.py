@@ -128,7 +128,6 @@ class Visualizer:
         df_working = dfs[ticker][self.working_timeframe]['data'][point_type]
         df_working = df_working.loc[point_index - self.plot_width:point_index]
         ohlc = df_working[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
-        print(ohlc.index[ohlc.shape[0] - 1])
         # get indicator list
         indicator_list = [p for p in pattern.split('_') if p[0] not in self.level_indicators]
         indicator_list_tmp = indicator_list.copy()

@@ -39,7 +39,7 @@ class OKEXSwap(ApiBase):
         tickers = tickers[tickers['instId'].isin(filtered_symbols)].reset_index(drop=True)
         tickers = tickers.drop_duplicates(subset=['instId'])
 
-        return tickers['instId'].to_list(), tickers['volCcy24h'].to_list(), all_tickers
+        return tickers['instId'].to_list(), tickers['vol24h'].to_list(), all_tickers
 
     def get_klines(self, symbol, interval, limit=300) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """

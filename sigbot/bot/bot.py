@@ -116,17 +116,11 @@ class SigBot:
                 del self.exchanges[ex]
                 continue
 
-            # check if ticker wasn't used by previous exchange
-            # if i > 0:
-            #     prev_tickers = self.exchanges[exchange_list[i - 1]]['tickers']
-            #     tickers, prev_tickers = self.filter_used_tickers(tickers, prev_tickers)
-            #     #self.exchanges[exchange_list[i - 1]]['tickers'] = prev_tickers
-            # else:
             prev_tickers = list()
             tickers, prev_tickers = self.filter_used_tickers(tickers, prev_tickers)
 
             # create dictionary to store info for each ticker (volume, funding, etc.)
-            self.exchanges[ex]['tickers'] = {tickers[i]: [ticker_vols[i]] for i in range(len(tickers))}
+            self.exchanges[ex]['tickers'] = {tickers[i]: [float(ticker_vols[i])] for i in range(len(tickers))}
             # create list of all available tickers
             self.exchanges[ex]['all_tickers'] = all_tickers
             # fill ticker dict of exchange API with tickers to store current time
@@ -139,9 +133,6 @@ class SigBot:
             than number of tickers in previous exchange """
         # create list of cleaned tickers from previous exchange
         not_used_tickers = list()
-        # prev_cleaned_tickers = [t.replace('-', '').replace('/', '').replace('SWAP', '')[:-4] for t in prev_tickers]
-        # prev_tickers_len = len(prev_tickers)
-        # prev_tickers_indexes = list()
         for ticker in tickers:
             orig_ticker = ticker
             ticker = ticker.replace('-', '').replace('/', '').replace('SWAP', '')[:-4]
@@ -149,15 +140,6 @@ class SigBot:
             if ticker not in self.used_tickers:
                 self.used_tickers.append(ticker)
                 not_used_tickers.append(orig_ticker)
-            # if tickers is used by previous exchange, but number of tickers in previous exchange is significantly
-            # bigger than number of tickers in current exchange - add it to current exchange list
-            # and remove from previous exchange list
-            # elif ticker in prev_cleaned_tickers and len(not_used_tickers) < prev_tickers_len - len_diff:
-            #     prev_tickers_len -= 1
-            #     idx = prev_cleaned_tickers.index(ticker)
-            #     prev_tickers_indexes.append(idx)
-            #     not_used_tickers.append(orig_ticker)
-        # prev_tickers = self.clean_prev_exchange_tickers(prev_tickers, prev_tickers_indexes)
         return not_used_tickers, prev_tickers
 
     @staticmethod

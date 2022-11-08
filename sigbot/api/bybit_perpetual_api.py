@@ -37,7 +37,7 @@ class ByBitPerpetual(ApiBase):
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)]
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
 
-        return tickers['symbol'].to_list(), tickers['quoteVolume'].to_list(), all_tickers
+        return tickers['symbol'].to_list(), tickers['volume'].to_list(), all_tickers
 
     @staticmethod
     def convert_interval_to_secs(interval: str) -> int:

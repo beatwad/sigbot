@@ -12,8 +12,7 @@ configs = ConfigFactory.factory(environ).configs
 # expected = (['ETHUSDT', 'TRXUSDT', 'QTUMUSDT', 'ONTUSDT',  'TTTUSDT'],
 #             ['BTCUSDT', 'VETUSDT', 'HOTUSDT', 'FETUSDT', 'SVMUSDT', 'NNUSDT'],
 #             ['ETH', 'QTUM', 'ONT', 'VET', 'HOT', 'SVM', 'TRX', 'TTT'])
-expected = (['TRXUSDT', 'TTTUSDT'],
-            ['BTCUSDT', 'ETHUSDT', 'QTUMUSDT', 'ONTUSDT', 'VETUSDT', 'HOTUSDT', 'FETUSDT', 'SVMUSDT', 'NNUSDT'],
+expected = (['TRXUSDT', 'TTTUSDT'], [265, 10],
             ['ETH', 'QTUM', 'ONT', 'VET', 'HOT', 'SVM', 'TRX', 'TTT'])
 
 
@@ -38,9 +37,9 @@ def test_filter_used_tickers(mocker, expected):
                     'OKEX': {'API': None, 'tickers': [], 'all_tickers': []}}
     mn.used_tickers = ['ETH', 'QTUM', 'ONT', 'VET', 'HOT', 'SVM']
     tickers = ['ETHUSDT', 'TRXUSDT', 'QTUMUSDT', 'ONTUSDT', 'VETUSDT', 'HOTUSDT', 'SVMUSDT', 'TTTUSDT']
-    prev_tickers = ['BTCUSDT', 'ETHUSDT', 'QTUMUSDT', 'ONTUSDT', 'VETUSDT', 'HOTUSDT', 'FETUSDT', 'SVMUSDT', 'NNUSDT']
+    prev_tickers = [1488, 265, 322, 228, 309, 300, 1, 10]
     # not_used_tickers, prev_tickers
-    assert mn.filter_used_tickers(tickers, prev_tickers, 2) == (expected[0], expected[1])
+    assert mn.filter_used_tickers(tickers, prev_tickers) == (expected[0], expected[1])
     assert mn.used_tickers == expected[2]
 
 

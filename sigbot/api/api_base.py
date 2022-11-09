@@ -5,12 +5,14 @@ from abc import ABCMeta
 class ApiBase(metaclass=ABCMeta):
     @staticmethod
     def check_symbols(symbols: list) -> list:
-        """ Check if ticker is not pair with fiat currency or stablecoin """
+        """ Check if ticker is not pair with fiat currency or stablecoin or ticker is not a leverage type """
         filtered_symbols = list()
         for symbol in symbols:
-            fiat = ['EUR', 'CHF', 'GBP', 'JPY', 'CNY', 'RUB', 'AUD']
-            if re.match('.?USD', symbol) or re.match('.?UST', symbol):
+            if symbol.endswith('USD') or symbol.endswith('UST'):
                 continue
+            if re.match(r'.+[23][LS].+', symbol) or symbol.endswith('UP') or symbol.endswith('DOWN'):
+                continue
+            fiat = ['EUR', 'CHF', 'GBP', 'JPY', 'CNY', 'RUB', 'AUD']
             for f in fiat:
                 if symbol.startswith(f):
                     break

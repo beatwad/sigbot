@@ -119,6 +119,11 @@ class PriceChange(Indicator):
                            'lag2': np.array([]),
                            'lag3': np.array([])
                            }
+        self.price_tmp_stat = {
+            'lag1': np.array([]),
+            'lag2': np.array([]),
+            'lag3': np.array([])
+        }
         # self.get_price_stat()
 
     def get_price_stat(self) -> None:
@@ -147,47 +152,35 @@ class PriceChange(Indicator):
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
         """ Measure degree of ticker price change """
-        # get frequency counter
-        close_prices_lag_1 = self.get_price_change(df, data_qty, lag=1)
-        close_prices_lag_2 = self.get_price_change(df, data_qty, lag=2)
-        close_prices_lag_3 = self.get_price_change(df, data_qty, lag=3)
-        # add price statistics
-        self.price_stat['lag1'] = np.append(self.price_stat['lag1'], close_prices_lag_1)
-        self.price_stat['lag2'] = np.append(self.price_stat['lag2'], close_prices_lag_2)
-        self.price_stat['lag3'] = np.append(self.price_stat['lag3'], close_prices_lag_3)
-        # delete NaNs
-        self.price_stat['lag1'] = self.price_stat['lag1'][~np.isnan(self.price_stat['lag1'])]
-        self.price_stat['lag2'] = self.price_stat['lag2'][~np.isnan(self.price_stat['lag2'])]
-        self.price_stat['lag3'] = self.price_stat['lag3'][~np.isnan(self.price_stat['lag3'])]
-        # if our price statistics is too big - prune it
-        if len(self.price_stat['lag1']) > self.max_stat_size * 1.5:
-            indices = np.where(self.price_stat['lag1'])[0]
-            to_replace = np.random.permutation(indices)[:self.max_stat_size]
-            self.price_stat['lag1'] = self.price_stat['lag1'][to_replace]
-        if len(self.price_stat['lag2']) > self.max_stat_size * 1.5:
-            indices = np.where(self.price_stat['lag2'])[0]
-            to_replace = np.random.permutation(indices)[:self.max_stat_size]
-            self.price_stat['lag2'] = self.price_stat['lag2'][to_replace]
-        if len(self.price_stat['lag3']) > self.max_stat_size * 1.5:
-            indices = np.where(self.price_stat['lag3'])[0]
-            to_replace = np.random.permutation(indices)[:self.max_stat_size]
-            self.price_stat['lag3'] = self.price_stat['lag3'][to_replace]
-        # sort price values
-        np.sort(self.price_stat['lag1'])
-        np.sort(self.price_stat['lag2'])
-        np.sort(self.price_stat['lag3'])
-        # get lag 1 quantiles and save to the dataframe
-        q_low_lag_1 = np.quantile(self.price_stat['lag1'], self.low_price_quantile / 1000)
-        q_high_lag_1 = np.quantile(self.price_stat['lag1'], self.high_price_quantile / 1000)
-        df[['q_low_lag_1', 'q_high_lag_1']] = q_low_lag_1, q_high_lag_1
-        # get lag 2 quantiles and save to the dataframe
-        q_low_lag_2 = np.quantile(self.price_stat['lag2'], self.low_price_quantile / 1000)
-        q_high_lag_2 = np.quantile(self.price_stat['lag2'], self.high_price_quantile / 1000)
-        df[['q_low_lag_2', 'q_high_lag_2']] = q_low_lag_2, q_high_lag_2
-        # get lag 3 quantiles and save to the dataframe
-        q_low_lag_3 = np.quantile(self.price_stat['lag3'], self.low_price_quantile / 1000)
-        q_high_lag_3 = np.quantile(self.price_stat['lag3'], self.high_price_quantile / 1000)
-        df[['q_low_lag_3', 'q_high_lag_3']] = q_low_lag_3, q_high_lag_3
+        for i in range(1, 2):
+            # get statistics
+            close_prices = self.get_price_change(df, data_qty, lag=i)
+            # add price statistics, if statistics size is enough - add data to temp file to prevent high load of CPU
+            if len(self.price_stat[f'lag{i}']) < self.max_stat_size:
+                self.price_stat[f'lag{i}'] = np.append(self.price_stat[f'lag{i}'], close_prices)
+                # delete NaNs
+                self.price_stat[f'lag{i}'] = self.price_stat[f'lag{i}'][~np.isnan(self.price_stat[f'lag{i}'])]
+                # sort price values
+                np.sort(self.price_stat[f'lag{i}'])
+            else:
+                self.price_tmp_stat[f'lag{i}'] = np.append(self.price_tmp_stat['lag1'], close_prices)
+            # if we accumulate enough data - add them to our main statistics and prune it to reasonable size
+            if len(self.price_tmp_stat[f'lag{i}']) > self.max_stat_size * 0.2:
+                # add new data
+                self.price_stat[f'lag{i}'] = np.append(self.price_stat[f'lag{i}'], self.price_tmp_stat[f'lag{i}'])
+                self.price_tmp_stat[f'lag{i}'] = np.array([])
+                # delete NaNs
+                self.price_stat[f'lag{i}'] = self.price_stat[f'lag{i}'][~np.isnan(self.price_stat[f'lag{i}'])]
+                # prune statistics
+                indices = np.where(self.price_stat[f'lag{i}'])[0]
+                to_replace = np.random.permutation(indices)[:self.max_stat_size]
+                self.price_stat[f'lag{i}'] = self.price_stat[f'lag{i}'][to_replace]
+                # sort price values
+                np.sort(self.price_stat[f'lag{i}'])
+            # get lag quantiles and save to the dataframe
+            q_low_lag = np.quantile(self.price_stat[f'lag{i}'], self.low_price_quantile / 1000)
+            q_high_lag = np.quantile(self.price_stat[f'lag{i}'], self.high_price_quantile / 1000)
+            df[[f'q_low_lag_{i}', f'q_high_lag_{i}']] = q_low_lag, q_high_lag
         # save price statistics to the file
         # self.save_price_stat()
         return df
@@ -204,6 +197,7 @@ class HighVolume(Indicator):
         self.max_stat_size = self.configs.get('self.max_stat_size', 100000)
         self.vol_stat_file_path = self.configs.get('vol_stat_file_path')
         self.vol_stat = np.array([])
+        self.vol_tmp_stat = np.array([])
         # self.get_vol_stat()
 
     def get_vol_stat(self) -> None:
@@ -227,17 +221,28 @@ class HighVolume(Indicator):
         """ Measure degree of ticker price change """
         # get frequency counter
         vol = self.get_volume(df, data_qty, volume)
-        # add volume statistics
-        self.vol_stat = np.append(self.vol_stat, vol)
-        # delete NaNs
-        self.vol_stat = self.vol_stat[~np.isnan(self.vol_stat)]
-        # if our volume statistics is too big - prune it
-        if len(self.vol_stat) > self.max_stat_size * 1.5:
+        # add price statistics, if statistics size is enough - add data to temp file to prevent high load of CPU
+        if len(self.vol_stat) < self.max_stat_size:
+            self.vol_stat = np.append(self.vol_stat, vol)
+            # delete NaNs
+            self.vol_stat = self.vol_stat[~np.isnan(self.vol_stat)]
+            # sort price values
+            np.sort(self.vol_stat)
+        else:
+            self.vol_tmp_stat = np.append(self.vol_tmp_stat, vol)
+        # if we accumulate enough data - add them to our main statistics and prune it to reasonable size
+        if len(self.vol_tmp_stat) > self.max_stat_size * 0.2:
+            # add new data
+            self.vol_stat = np.append(self.vol_stat, self.vol_tmp_stat)
+            self.vol_tmp_stat = np.array([])
+            # delete NaNs
+            self.vol_stat = self.vol_stat[~np.isnan(self.vol_stat)]
+            # prune statistics
             indices = np.where(self.vol_stat)[0]
             to_replace = np.random.permutation(indices)[:self.max_stat_size]
             self.vol_stat = self.vol_stat[to_replace]
-        # sort volume values
-        np.sort(self.vol_stat)
+            # sort price values
+            np.sort(self.vol_stat)
         # get volume quantile and save to the dataframe
         quantile_vol = np.quantile(self.vol_stat, self.high_volume_quantile / 1000)
         df['quantile_vol'] = quantile_vol

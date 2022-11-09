@@ -10,7 +10,8 @@ class ApiBase(metaclass=ABCMeta):
         for symbol in symbols:
             if symbol.endswith('USD') or symbol.endswith('UST'):
                 continue
-            if re.match(r'.+[23][LS].+', symbol) or symbol.endswith('UP') or symbol.endswith('DOWN'):
+            if re.match(r'.+[23][LS].+', symbol) or re.match(r'.+UP-?(BUSD|USD[TC])].+', symbol) or \
+                    re.match(r'.+DOWN-?(BUSD|USD[TC])', symbol):
                 continue
             fiat = ['EUR', 'CHF', 'GBP', 'JPY', 'CNY', 'RUB', 'AUD']
             for f in fiat:
@@ -19,3 +20,8 @@ class ApiBase(metaclass=ABCMeta):
             else:
                 filtered_symbols.append(symbol)
         return filtered_symbols
+
+
+if __name__ == '__main__':
+    symbol = 'XRPDOWN-BUSD'
+    print(re.match(r'.+DOWN-?(BUSD|USD[TC])', symbol))

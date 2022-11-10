@@ -185,7 +185,7 @@
       },
       "PriceChange": {
         "params": {
-          "round_decimals": 4,
+          "round_decimals": 6,
           "max_stat_size": 100000,
           "low_price_quantile": 7,
           "high_price_quantile": 993,
@@ -194,9 +194,9 @@
       },
       "HighVolume": {
         "params": {
-          "round_decimals": 4,
+          "round_decimals": 6,
           "max_stat_size": 100000,
-          "volume_quantile": 995,
+          "volume_quantile": 990,
           "vol_stat_file_path": "signal_stat/vol_stat.npy"
         }
       }
@@ -228,18 +228,18 @@
       },
       "PriceChange": {
         "params": {
-          "round_decimals": 4,
+          "round_decimals": 6,
           "max_stat_size": 100000,
           "low_price_quantile": 7,
           "high_price_quantile": 993,
           "stat_file_path": "signal_stat/price_stat_sell.json"
         }
       },
-      "HighVolume": {
+       "HighVolume": {
         "params": {
-          "round_decimals": 4,
+          "round_decimals": 6,
           "max_stat_size": 100000,
-          "volume_quantile": 995,
+          "volume_quantile": 990,
           "vol_stat_file_path": "signal_stat/vol_stat_sell.json"
         }
       }
@@ -317,7 +317,7 @@
   "Main": {
     "params": {
       "bot_cycle_length_sec": 20,
-      "cycle_length_hours": 168,
+      "cycle_length_hours": 24,
       "first_cycle_qty_miss": 1
     }
   },

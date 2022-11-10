@@ -196,7 +196,7 @@
         "params": {
           "round_decimals": 4,
           "max_stat_size": 100000,
-          "volume_quantile": 995,
+          "volume_quantile": 990,
           "vol_stat_file_path": "signal_stat/vol_stat.npy"
         }
       }
@@ -239,7 +239,7 @@
         "params": {
           "round_decimals": 4,
           "max_stat_size": 100000,
-          "volume_quantile": 995,
+          "volume_quantile": 990,
           "vol_stat_file_path": "signal_stat/vol_stat_sell.json"
         }
       }

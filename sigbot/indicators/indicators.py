@@ -161,7 +161,7 @@ class PriceChange(Indicator):
                 # delete NaNs
                 self.price_stat[f'lag{i}'] = self.price_stat[f'lag{i}'][~np.isnan(self.price_stat[f'lag{i}'])]
                 # sort price values
-                np.sort(self.price_stat[f'lag{i}'])
+                self.price_stat[f'lag{i}'] = np.sort(self.price_stat[f'lag{i}'])
             else:
                 self.price_tmp_stat[f'lag{i}'] = np.append(self.price_tmp_stat['lag1'], close_prices)
             # if we accumulate enough data - add them to our main statistics and prune it to reasonable size
@@ -176,7 +176,7 @@ class PriceChange(Indicator):
                 to_replace = np.random.permutation(indices)[:self.max_stat_size]
                 self.price_stat[f'lag{i}'] = self.price_stat[f'lag{i}'][to_replace]
                 # sort price values
-                np.sort(self.price_stat[f'lag{i}'])
+                self.price_stat[f'lag{i}'] = np.sort(self.price_stat[f'lag{i}'])
             # get lag quantiles and save to the dataframe
             q_low_lag = np.quantile(self.price_stat[f'lag{i}'], self.low_price_quantile / 1000)
             q_high_lag = np.quantile(self.price_stat[f'lag{i}'], self.high_price_quantile / 1000)
@@ -227,7 +227,7 @@ class HighVolume(Indicator):
             # delete NaNs
             self.vol_stat = self.vol_stat[~np.isnan(self.vol_stat)]
             # sort price values
-            np.sort(self.vol_stat)
+            self.vol_stat = np.sort(self.vol_stat)
         else:
             self.vol_tmp_stat = np.append(self.vol_tmp_stat, vol)
         # if we accumulate enough data - add them to our main statistics and prune it to reasonable size
@@ -242,7 +242,7 @@ class HighVolume(Indicator):
             to_replace = np.random.permutation(indices)[:self.max_stat_size]
             self.vol_stat = self.vol_stat[to_replace]
             # sort price values
-            np.sort(self.vol_stat)
+            self.vol_stat = np.sort(self.vol_stat)
         # get volume quantile and save to the dataframe
         quantile_vol = np.quantile(self.vol_stat, self.high_volume_quantile / 1000)
         df['quantile_vol'] = quantile_vol

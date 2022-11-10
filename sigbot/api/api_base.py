@@ -8,14 +8,16 @@ class ApiBase(metaclass=ABCMeta):
         """ Check if ticker is not pair with fiat currency or stablecoin or ticker is not a leverage type """
         filtered_symbols = list()
         for symbol in symbols:
-            if symbol.endswith('USD') or symbol.endswith('UST'):
+            if symbol.startswith('USD') or symbol.startswith('BUSD'):
                 continue
-            if re.match(r'.+[23][LS].+', symbol) or re.match(r'.+UP-?(BUSD|USD[TC])].+', symbol) or \
+            if (symbol.endswith('USD') and symbol[-4] != 'B') or symbol.endswith('UST'):
+                continue
+            if re.match(r'.+[23][LS]', symbol) or re.match(r'.+UP-?(BUSD|USD[TC])]', symbol) or \
                     re.match(r'.+DOWN-?(BUSD|USD[TC])', symbol):
                 continue
             fiat = ['EUR', 'CHF', 'GBP', 'JPY', 'CNY', 'RUB', 'AUD']
             for f in fiat:
-                if symbol.startswith(f):
+                if symbol.startswith(f) and len(symbol) == 7:
                     break
             else:
                 filtered_symbols.append(symbol)
@@ -23,5 +25,5 @@ class ApiBase(metaclass=ABCMeta):
 
 
 if __name__ == '__main__':
-    symbol = 'XRPDOWN-BUSD'
-    print(re.match(r'.+DOWN-?(BUSD|USD[TC])', symbol))
+    symbol = 'TRXUPUSDT'
+    print(re.match(r'.+UP-?(BUSD|USD[TC])', symbol))

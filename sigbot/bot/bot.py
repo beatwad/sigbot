@@ -183,9 +183,7 @@ class SigBot:
             indicators = self.higher_tf_indicators
         # Write indicators to the dataframe, update dataframe dict
         exchange_api = exchange_data['API']
-        volume = exchange_data['tickers'][ticker][0]
-        database = exchange_api.add_indicator_data(self.database, df, ttype, indicators, ticker, timeframe, data_qty,
-                                                   volume)
+        database = exchange_api.add_indicator_data(self.database, df, ttype, indicators, ticker, timeframe, data_qty)
         # If enough time has passed - update statistics
         if data_qty > 1 and self.main.cycle_number > 1 and timeframe == self.work_timeframe:
             data_qty = self.stat_update_range
@@ -469,6 +467,10 @@ class MonitorExchange(Thread):
                                     sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
                                                   f'{ticker}, timeframe is {timeframe}, type is {sig_point[3]}, ' \
                                                   f'pattern is {sig_point[5]}, time is {sig_point[4]}'
+                                    if sig_point[5] == 'HighVolume':
+                                        sig_message += f', total volume is {df["volume"].sum()}, '
+                                        sig_message += f'current volume is {df.iloc[-1]["volume"]} ,'
+                                        sig_message += f'volume ratio is {round(df.iloc[-1]["volume"]/df["volume"].sum(), 5)}'
                                     logger.info(sig_message)
                     # Save dataframe for further analysis
                     # self.save_dataframe(df, ticker, timeframe)

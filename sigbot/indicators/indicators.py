@@ -211,16 +211,16 @@ class HighVolume(Indicator):
         """ Save volume statistics to file """
         np.save(self.vol_stat_file_path)
 
-    def get_volume(self, df: pd.DataFrame, data_qty: int, volume: int) -> list:
+    def get_volume(self, df: pd.DataFrame, data_qty: int) -> list:
         """ Get MinMax normalized volume """
-        normalized_vol = df['volume'] / volume
+        normalized_vol = df['volume'] / df['volume'].sum()
         df[f'normalized_vol'] = np.round(normalized_vol.values, self.round_decimals)
         return df[f'normalized_vol'][max(df.shape[0] - data_qty + 1, 0):].values
 
-    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, volume: int) -> pd.DataFrame:
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
         """ Measure degree of ticker price change """
         # get frequency counter
-        vol = self.get_volume(df, data_qty, volume)
+        vol = self.get_volume(df, data_qty)
         # add price statistics, if statistics size is enough - add data to temp file to prevent high load of CPU
         if len(self.vol_stat) < self.max_stat_size:
             self.vol_stat = np.append(self.vol_stat, vol)

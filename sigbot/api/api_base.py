@@ -12,7 +12,7 @@ class ApiBase(metaclass=ABCMeta):
                 continue
             if (symbol.endswith('USD') and symbol[-4] != 'B') or symbol.endswith('UST'):
                 continue
-            if re.match(r'.+[23][LS]', symbol) or re.match(r'.+UP-?(BUSD|USD[TC])]', symbol) or \
+            if re.match(r'.+[23][LS]', symbol) or re.match(r'.+UP-?(BUSD|USD[TC])', symbol) or \
                     re.match(r'.+DOWN-?(BUSD|USD[TC])', symbol):
                 continue
             fiat = ['EUR', 'CHF', 'GBP', 'JPY', 'CNY', 'RUB', 'AUD']

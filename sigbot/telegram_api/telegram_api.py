@@ -212,10 +212,14 @@ class TelegramBot(Thread):
             for exchange in sig_exchanges:
                 text += f' • {exchange}\n'
             text += 'Ссылка на TradingView: \n'
-            text += f"https://ru.tradingview.com/symbols/{self.clean_ticker(ticker)}\n"
-            if self.clean_ticker(ticker)[:-4] != 'BTC':
+            clean_ticker = self.clean_ticker(ticker)
+            text += f"https://ru.tradingview.com/symbols/{clean_ticker}\n"
+            # text += f"https://ru.tradingview.com/chart/?symbol={sig_exchanges[0]}%3A{self.clean_ticker(ticker)}\n"
+            if clean_ticker[:-4] != 'BTC':
                 text += 'Ссылка на график с BTC: \n'
-                text += f"https://ru.tradingview.com/symbols/{self.clean_ticker(ticker)[:-4]}BTC"
+                text += f"https://ru.tradingview.com/symbols/{clean_ticker[:-4]}BTC"
+                # text += f"https://ru.tradingview.com/chart/" \
+                #         f"?symbol={sig_exchanges[0]}%3A{self.clean_ticker(ticker)[:-4]}BTC"
             # Send message + image
             if sig_img_path:
                 self.send_photo(chat_id, sig_img_path, text)

@@ -112,7 +112,7 @@ class PriceChange(Indicator):
         self.low_price_quantile = self.configs.get('low_price_quantile', 5)
         self.high_price_quantile = self.configs.get('high_price_quantile', 95)
         self.max_stat_size = self.configs.get('max_stat_size', 100000)
-        self.round_decimals = self.configs.get('decimals', 4)
+        self.round_decimals = self.configs.get('decimals', 6)
         self.stat_file_path = self.configs.get('stat_file_path')
         self.price_stat = {
                            'lag1': np.array([]),
@@ -146,7 +146,7 @@ class PriceChange(Indicator):
 
     def get_price_change(self, df: pd.DataFrame, data_qty: int, lag: int) -> list:
         """ Get difference between current price and previous price """
-        close_prices = (df['close'] - df['close'].shift(lag)) / df['close'].shift(lag) * 100
+        close_prices = (df['close'] - df['close'].shift(lag)) / df['close'].shift(lag)
         df[f'close_price_change_lag_{lag}'] = np.round(close_prices.values, self.round_decimals)
         return df[f'close_price_change_lag_{lag}'][max(df.shape[0] - data_qty + 1, 0):].values
 
@@ -193,7 +193,7 @@ class HighVolume(Indicator):
     def __init__(self, ttype: str, configs: dict):
         super(HighVolume, self).__init__(ttype, configs)
         self.high_volume_quantile = self.configs.get('high_volume_quantile', 995)
-        self.round_decimals = self.configs.get('round_decimals', 4)
+        self.round_decimals = self.configs.get('round_decimals', 6)
         self.max_stat_size = self.configs.get('self.max_stat_size', 100000)
         self.vol_stat_file_path = self.configs.get('vol_stat_file_path')
         self.vol_stat = np.array([])
@@ -213,7 +213,7 @@ class HighVolume(Indicator):
 
     def get_volume(self, df: pd.DataFrame, data_qty: int, volume: int) -> list:
         """ Get MinMax normalized volume """
-        normalized_vol = df['volume'] / volume * 10
+        normalized_vol = df['volume'] / volume
         df[f'normalized_vol'] = np.round(normalized_vol.values, self.round_decimals)
         return df[f'normalized_vol'][max(df.shape[0] - data_qty + 1, 0):].values
 
@@ -224,7 +224,7 @@ class HighVolume(Indicator):
         # add price statistics, if statistics size is enough - add data to temp file to prevent high load of CPU
         if len(self.vol_stat) < self.max_stat_size:
             self.vol_stat = np.append(self.vol_stat, vol)
-            # delete NaNs
+            # delete NaNs and small values
             self.vol_stat = self.vol_stat[~np.isnan(self.vol_stat)]
             # sort price values
             self.vol_stat = np.sort(self.vol_stat)

@@ -161,7 +161,7 @@
     "buy": {
       "RSI": {
         "params": {
-          "timeperiod": 14
+          "timeperiod": 12
         }
       },
       "STOCH": {
@@ -173,7 +173,7 @@
       },
       "LinearReg": {
         "params": {
-          "timeperiod": 24
+          "timeperiod": 6
         }
       },
       "MACD": {
@@ -187,8 +187,8 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "low_price_quantile": 7,
-          "high_price_quantile": 993,
+          "low_price_quantile": 10,
+          "high_price_quantile": 990,
           "stat_file_path": "signal_stat/price_stat_buy.json"
         }
       },
@@ -204,7 +204,7 @@
     "sell": {
       "RSI": {
         "params": {
-          "timeperiod": 14
+          "timeperiod": 12
         }
       },
       "STOCH": {
@@ -216,7 +216,7 @@
       },
       "LinearReg": {
         "params": {
-          "timeperiod": 24
+          "timeperiod": 6
         }
       },
       "MACD": {
@@ -230,12 +230,12 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "low_price_quantile": 7,
-          "high_price_quantile": 993,
+          "low_price_quantile": 6,
+          "high_price_quantile": 994,
           "stat_file_path": "signal_stat/price_stat_sell.json"
         }
       },
-       "HighVolume": {
+      "HighVolume": {
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
@@ -256,8 +256,8 @@
     "buy": {
       "RSI": {
         "params": {
-          "low_bound": 20,
-          "high_bound": 80
+          "low_bound": 30,
+          "high_bound": 70
         }
       },
       "STOCH": {
@@ -291,8 +291,8 @@
       },
       "STOCH": {
         "params": {
-          "low_bound": 25,
-          "high_bound": 75
+          "low_bound": 30,
+          "high_bound": 70
         }
       },
       "MACD": {
@@ -318,13 +318,24 @@
     "params": {
       "bot_cycle_length_sec": 20,
       "cycle_length_hours": 24,
-      "first_cycle_qty_miss": 0
+      "first_cycle_qty_miss": 1
     }
   },
   "Patterns": [
     [
       "STOCH",
+      "RSI"
+    ],
+    [
+      "STOCH",
       "RSI",
+      "LinearReg"
+    ],
+    [
+      "HighVolume"
+    ],
+    [
+      "PriceChange",
       "LinearReg"
     ]
   ],
@@ -346,7 +357,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 50
+      "max_prev_candle_limit": 1
     }
   },
   "Telegram": {

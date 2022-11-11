@@ -196,7 +196,7 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "volume_quantile": 990,
+          "volume_quantile": 950,
           "vol_stat_file_path": "signal_stat/vol_stat.npy"
         }
       }
@@ -239,7 +239,7 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "volume_quantile": 990,
+          "volume_quantile": 950,
           "vol_stat_file_path": "signal_stat/vol_stat_sell.json"
         }
       }
@@ -318,27 +318,13 @@
     "params": {
       "bot_cycle_length_sec": 20,
       "cycle_length_hours": 24,
-      "first_cycle_qty_miss": 1
+      "first_cycle_qty_miss": 0
     }
   },
   "Patterns": [
     [
       "STOCH",
-      "RSI"
-    ],
-    [
-      "STOCH",
       "RSI",
-      "LinearReg"
-    ],
-    [
-      "PriceChange"
-    ],
-    [
-      "HighVolume"
-    ],
-    [
-      "PriceChange",
       "LinearReg"
     ]
   ],
@@ -360,7 +346,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 2
+      "max_prev_candle_limit": 50
     }
   },
   "Telegram": {
@@ -379,7 +365,7 @@
   },
   "Timeframes": {
     "work_timeframe": "15m",
-    "higher_timeframe": "4h"
+    "higher_timeframe": "1h"
   },
   "Visualizer": {
     "params": {

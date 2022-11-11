@@ -81,10 +81,11 @@ class LinearReg(Indicator):
         super(LinearReg, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        linear_reg = ta.LINEARREG(df['close'], **self.configs)
-        linear_reg_angle = ta.LINEARREG_ANGLE(df['close'], **self.configs)
-        df['linear_reg'] = linear_reg
-        df['linear_reg_angle'] = linear_reg_angle
+        adx = ta.ADX(df['high'], df['low'], df['close'], timeperiod=14)
+        plus_di = ta.PLUS_DI(df['high'], df['low'], df['close'], timeperiod=14)
+        minus_di = ta.MINUS_DI(df['high'], df['low'], df['close'], timeperiod=14)
+        df['linear_reg'] = adx
+        df['linear_reg_angle'] = plus_di - minus_di
         return df
 
 

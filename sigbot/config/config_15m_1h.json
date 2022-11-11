@@ -376,7 +376,7 @@
   },
   "Timeframes": {
     "work_timeframe": "15m",
-    "higher_timeframe": "4h"
+    "higher_timeframe": "1h"
   },
   "Visualizer": {
     "params": {

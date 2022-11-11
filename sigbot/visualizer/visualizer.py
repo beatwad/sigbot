@@ -136,20 +136,20 @@ class Visualizer:
         if 'PriceChange' in indicator_list_tmp:
             plot_num = len(indicator_list)
             indicator_list.remove('PriceChange')
-            candles_height = 1.5
-            plot_height_mult = 2.5
+            main_candleplot_ratio = 1.5
+            plot_width_mult = 2.5
         elif 'HighVolume' in indicator_list_tmp:
             plot_num = len(indicator_list) + 1
-            candles_height = 3
-            plot_height_mult = 5
+            main_candleplot_ratio = 3
+            plot_width_mult = 5
         else:
             plot_num = len(indicator_list) + 1
-            candles_height = 3
-            plot_height_mult = 1.7
+            main_candleplot_ratio = 3
+            plot_width_mult = 1.8
 
         # Plot signals
         # make subfigs
-        fig = plt.figure(constrained_layout=True, figsize=(plot_height_mult * (plot_num + 1), 3 * (plot_num + 1)))
+        fig = plt.figure(constrained_layout=True, figsize=(plot_width_mult * (plot_num + 1), 3 * (plot_num + 1)))
         fig.patch.set_facecolor(self.background_color)
         # If linear regression is in indicator list - remove it from list and plot one more plot with higher timeframe
         # candles and linear regression indicator
@@ -157,36 +157,53 @@ class Visualizer:
             indicator_list.remove('LinearReg')
             plot_num -= 1
             subfigs_num = 3
-            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height, 1.5, 2.5])
+            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[main_candleplot_ratio, 2.5, 2.5])
             # plot higher timeframe with linear regression
             subfigs[1].patch.set_facecolor(self.background_color)
-            axs_higher = subfigs[1].subplots(1, 1)
+            axs_higher = subfigs[1].subplots(2, 1, sharex=True)
             df_higher = dfs[ticker][self.higher_timeframe]['data'][point_type]
             # get corresponding to signal_time index of dataframe with higher timeframe candles
             df_higher = df_higher.loc[max(df_higher.shape[0] - self.plot_width * 2, 0):].reset_index(drop=True)
             ohlc_higher = df_higher[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
             # plot linear regression indicator
             if point_type == 'buy':
-                axs_higher.plot(df_higher['linear_reg'], linewidth=2, color='green')
+                axs_higher[1].plot(df_higher['linear_reg'], linewidth=2, color='green')
+                # m = mpf.make_addplot(df_higher['linear_reg'], panel=1, title='Сила Тренда', ax=axs_higher[1], width=2)
             else:
-                axs_higher.plot(df_higher['linear_reg'], linewidth=2, color='red')
-            # plot grid
-            axs_higher.grid(which='both', linestyle='--', linewidth=0.3)
+                axs_higher[1].plot(df_higher['linear_reg'], linewidth=2, color='red')
+                # m = mpf.make_addplot(df_higher['linear_reg'], panel=1, title='Сила Тренда', ax=axs_higher[1], width=2)
+            ap = list()
+            # ap.append(m)
+            # plot grid for candles
+            axs_higher[0].grid(which='both', linestyle='--', linewidth=0.3)
             # set ticker color
-            axs_higher.tick_params(axis='x', colors=self.ticker_color)
-            axs_higher.tick_params(axis='y', colors=self.ticker_color)
+            axs_higher[0].tick_params(axis='x', colors=self.ticker_color)
+            axs_higher[0].tick_params(axis='y', colors=self.ticker_color)
             # set background color
-            axs_higher.patch.set_facecolor(self.background_color)
+            axs_higher[0].patch.set_facecolor(self.background_color)
             # set border color
-            axs_higher.spines['bottom'].set_color(self.border_color)
-            axs_higher.spines['top'].set_color(self.border_color)
-            axs_higher.spines['right'].set_color(self.border_color)
-            axs_higher.spines['left'].set_color(self.border_color)
-            # plot title
-            axs_higher.set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Тренд', fontsize=14,
+            axs_higher[0].spines['bottom'].set_color(self.border_color)
+            axs_higher[0].spines['top'].set_color(self.border_color)
+            axs_higher[0].spines['right'].set_color(self.border_color)
+            axs_higher[0].spines['left'].set_color(self.border_color)
+            # plot grid for the treand force
+            axs_higher[1].grid(which='both', linestyle='--', linewidth=0.3)
+            # set ticker color
+            axs_higher[1].tick_params(axis='x', colors=self.ticker_color)
+            axs_higher[1].tick_params(axis='y', colors=self.ticker_color)
+            # set background color
+            axs_higher[1].patch.set_facecolor(self.background_color)
+            # set border color
+            axs_higher[1].spines['bottom'].set_color(self.border_color)
+            axs_higher[1].spines['top'].set_color(self.border_color)
+            axs_higher[1].spines['right'].set_color(self.border_color)
+            axs_higher[1].spines['left'].set_color(self.border_color)
+            # plot titles
+            axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Тренд', fontsize=14,
                                     color=self.ticker_color)
+            axs_higher[1].set_title('Сила тренда', fontsize=14, color=self.ticker_color)
             # plot candles
-            mpf.plot(ohlc_higher, type='candle', ax=axs_higher, warn_too_much_data=1001, style='yahoo',
+            mpf.plot(ohlc_higher, type='candle', ax=axs_higher[0], warn_too_much_data=1001, style='yahoo',
                      ylabel='', returnfig=True)
 
             # workaround to show the last xtick for the higher timeframe candle plot
@@ -195,7 +212,7 @@ class Visualizer:
             newlabels = []
 
             # copy and format the existing xticks:
-            for xt in axs_higher.get_xticks():
+            for xt in axs_higher[0].get_xticks():
                 p = int(xt)
                 if 0 <= p < len(ohlc_higher):
                     ts = ohlc_higher.index[p]
@@ -207,14 +224,14 @@ class Visualizer:
             newlabels.append(ohlc_higher.index[len(ohlc_higher) - 1].strftime(format))
 
             # set the xticks and labels with the new ticks and labels:
-            axs_higher.set_xticks(newxticks)
-            axs_higher.set_xticklabels(newlabels)
+            axs_higher[1].set_xticks(newxticks)
+            axs_higher[1].set_xticklabels(newlabels, rotation=20)
         elif 'HighVolume' in indicator_list_tmp:
             subfigs_num = 2
-            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height/3, 0.01])
+            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[main_candleplot_ratio/3, 0.01])
         else:
             subfigs_num = 2
-            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[candles_height, 2.5])
+            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[main_candleplot_ratio, 2.5])
 
         # make subplots
         axs1 = subfigs[0].subplots(plot_num, 1, sharex=True)
@@ -271,10 +288,6 @@ class Visualizer:
         axs1_0.spines['right'].set_color(self.border_color)
         axs1_0.spines['left'].set_color(self.border_color)
 
-        # set x-labels
-        # axs1[-1].set_xlabel(f"\n{data['time'].iloc[-1].date()}\n", fontsize=14)
-        plt.xticks(rotation=30)
-
         # plot all subplots
         mpf.plot(ohlc, type='candle', ax=axs1_0, addplot=ap, warn_too_much_data=1001, style='yahoo',
                  ylabel='', returnfig=True, tz_localize=True)
@@ -298,7 +311,7 @@ class Visualizer:
 
         # set the xticks and labels with the new ticks and labels:
         axs1_0.set_xticks(newxticks)
-        axs1_0.set_xticklabels(newlabels)
+        axs1_0.set_xticklabels(newlabels, rotation=0)
 
         # plot titles
         price = df_working["close"].iloc[-1]
@@ -333,7 +346,8 @@ class Visualizer:
 
             # get previous mean percent of right forecasts and
             # check if pattern and trade type are in statistics dictionary
-            prev_mean_pct_right_forecast = self.get_prev_mean_pct_right_forecast(key, point_type, mean_pct_right_forecast)
+            prev_mean_pct_right_forecast = self.get_prev_mean_pct_right_forecast(key, point_type,
+                                                                                 mean_pct_right_forecast)
 
             # get change of statistics
             stat_change = self.statistics_change(prev_mean_pct_right_forecast, mean_pct_right_forecast)
@@ -380,7 +394,6 @@ class Visualizer:
 
             axs2[1].set_xticks(np.arange(1, 25, 2))
             axs2[1].set_xticklabels(xticklabels)
-            plt.xticks(rotation=30)
 
             # set x-labels
             axs2[1].set_xlabel(f"время после сигнала, в минутах", fontsize=12, color=self.ticker_color)

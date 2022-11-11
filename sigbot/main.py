@@ -5,7 +5,7 @@ from datetime import datetime
 from os import environ, remove
 
 # Set environment variable
-environ["ENV"] = "15m_4h"
+environ["ENV"] = "15m_1h"
 
 from bot.bot import SigBot
 from config.config import ConfigFactory

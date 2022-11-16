@@ -66,10 +66,14 @@ class STOCH(Indicator):
         super(STOCH, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        slowk, slowd = ta.STOCH(df['high'], df['low'],
-                                df['close'], **self.configs)
+        slowk, slowd = ta.STOCH(df['high'], df['low'], df['close'], **self.configs)
         df['stoch_slowk'] = slowk
         df['stoch_slowd'] = slowd
+        # add auxilary data
+        df['stoch_slowk_dir'] = df['stoch_slowk'].pct_change().rolling(3).mean()
+        df['stoch_slowd_dir'] = df['stoch_slowd'].pct_change().rolling(3).mean()
+        df['stoch_diff'] = df['stoch_slowk'] - df['stoch_slowd']
+        df['stoch_diff'] = df['stoch_diff'].rolling(3).mean()
         return df
 
 
@@ -100,7 +104,11 @@ class MACD(Indicator):
         macd, macdsignal, macdhist = ta.MACD(df['close'], **self.configs)
         df['macd'] = macd
         df['macdsignal'] = macdsignal
-        df['macdhist'] = macdhist
+        df['macdhist'] = macdhist  # macd - macdsignal
+        # add auxilary data
+        df['macd_dir'] = df['macd'].pct_change().rolling(3).mean()
+        df['macdsignal_dir'] = df['macdsignal'].pct_change().rolling(3).mean()
+        df['macdhist'] = df['macdhist'].rolling(3).mean()
         return df
 
 
@@ -245,6 +253,8 @@ class HighVolume(Indicator):
             # sort price values
             self.vol_stat = np.sort(self.vol_stat)
         # get volume quantile and save to the dataframe
+        if ticker == 'SCUSDT':
+            pass
         quantile_vol = np.quantile(self.vol_stat, self.high_volume_quantile / 1000)
         df['quantile_vol'] = quantile_vol
         # save volume statistics to file

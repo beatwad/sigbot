@@ -5,6 +5,7 @@ import threading
 from os import path, environ
 
 from config.config import ConfigFactory
+from logging.handlers import RotatingFileHandler
 
 
 # Get configs
@@ -20,7 +21,8 @@ def create_logger():
     # create the logging file handler
     basedir = path.abspath(path.dirname(__file__))
     log_path = configs['Log']['params']['log_path']
-    fh = logging.FileHandler(f'{basedir}/{log_path}')
+    logFile = f'{basedir}/{log_path}'
+    fh = RotatingFileHandler(logFile, mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding=None, delay=False)
     fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     formatter = logging.Formatter(fmt)
     fh.setFormatter(formatter)

@@ -161,19 +161,19 @@
     "buy": {
       "RSI": {
         "params": {
-          "timeperiod": 14
+          "timeperiod": 12
         }
       },
       "STOCH": {
         "params": {
-          "fastk_period": 14,
-          "slowk_period": 3,
+          "fastk_period": 9,
+          "slowk_period": 7,
           "slowd_period": 3
         }
       },
       "LinearReg": {
         "params": {
-          "timeperiod": 36
+          "timeperiod": 6
         }
       },
       "MACD": {
@@ -185,29 +185,38 @@
       },
       "PriceChange": {
         "params": {
-          "round_decimals": 4,
+          "round_decimals": 6,
+          "max_stat_size": 100000,
           "low_price_quantile": 10,
           "high_price_quantile": 990,
           "stat_file_path": "signal_stat/price_stat_buy.json"
+        }
+      },
+      "HighVolume": {
+        "params": {
+          "round_decimals": 6,
+          "max_stat_size": 100000,
+          "volume_quantile": 950,
+          "vol_stat_file_path": "signal_stat/vol_stat.npy"
         }
       }
     },
     "sell": {
       "RSI": {
         "params": {
-          "timeperiod": 14
+          "timeperiod": 12
         }
       },
       "STOCH": {
         "params": {
-          "fastk_period": 14,
-          "slowk_period": 3,
+          "fastk_period": 9,
+          "slowk_period": 7,
           "slowd_period": 3
         }
       },
       "LinearReg": {
         "params": {
-          "timeperiod": 36
+          "timeperiod": 6
         }
       },
       "MACD": {
@@ -219,10 +228,19 @@
       },
       "PriceChange": {
         "params": {
-          "round_decimals": 4,
-          "low_price_quantile": 10,
-          "high_price_quantile": 990,
+          "round_decimals": 6,
+          "max_stat_size": 100000,
+          "low_price_quantile": 6,
+          "high_price_quantile": 994,
           "stat_file_path": "signal_stat/price_stat_sell.json"
+        }
+      },
+      "HighVolume": {
+        "params": {
+          "round_decimals": 6,
+          "max_stat_size": 100000,
+          "volume_quantile": 950,
+          "vol_stat_file_path": "signal_stat/vol_stat_sell.json"
         }
       }
     }
@@ -231,26 +249,31 @@
     "STOCH",
     "RSI",
     "PriceChange",
+    "HighVolume",
+    "MACD",
     "LinearReg"
   ],
   "Indicator_signal": {
     "buy": {
       "RSI": {
         "params": {
-          "low_bound": 25,
-          "high_bound": 75
+          "low_bound": 30,
+          "high_bound": 70
         }
       },
       "STOCH": {
         "params": {
-          "low_bound": 15,
-          "high_bound": 85
+          "low_bound": 20,
+          "high_bound": 80
         }
       },
       "MACD": {
         "params": {}
       },
       "PriceChange": {
+        "params": {}
+      },
+      "HighVolume": {
         "params": {}
       },
       "LinearReg": {
@@ -324,6 +347,8 @@
       "test": 1,
       "stat_limit_hours": {
         "PriceChange" :  72,
+        "HighVolume": 72,
+        "MACD": 72,
         "PriceChange_LinearReg" :  72,
         "STOCH_RSI" :  72,
         "STOCH_RSI_LinearReg" :  72
@@ -344,7 +369,9 @@
         "STOCH_RSI": "-1001463253403",
         "STOCH_RSI_LinearReg": "-1001688789758",
         "PriceChange": "-1001700504878",
-        "PriceChange_LinearReg": "-1001691421580"
+        "PriceChange_LinearReg": "-1001691421580",
+        "HighVolume": "-1001752697158",
+        "MACD": "-1001752697158"
       },
       "prev_sig_minutes_limit": 25,
       "max_notifications_in_row": 3
@@ -357,7 +384,7 @@
   "Visualizer": {
     "params": {
       "plot_width": 30,
-      "image_path": "images",
+      "image_path": "visualizer/images",
       "level_indicators": [],
       "boundary_indicators": [
         "STOCH",
@@ -371,8 +398,14 @@
         "RSI": [
           "rsi"
         ],
-        "MACD": [],
-        "PriceChange": []
+        "MACD": [
+          "macd",
+          "macdsignal"
+        ],
+        "PriceChange": [],
+        "HighVolume": [
+          "volume"
+        ]
       }
     }
   }

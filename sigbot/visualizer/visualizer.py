@@ -142,6 +142,10 @@ class Visualizer:
             plot_num = len(indicator_list) + 1
             main_candleplot_ratio = 3
             plot_width_mult = 5
+        elif 'MACD' in indicator_list_tmp:
+            plot_num = len(indicator_list) + 1
+            main_candleplot_ratio = 1.5
+            plot_width_mult = 2.5
         else:
             plot_num = len(indicator_list) + 1
             main_candleplot_ratio = 3
@@ -153,10 +157,15 @@ class Visualizer:
         fig.patch.set_facecolor(self.background_color)
         # If linear regression is in indicator list - remove it from list and plot one more plot with higher timeframe
         # candles and linear regression indicator
-        if 'LinearReg' in indicator_list_tmp:
-            indicator_list.remove('LinearReg')
+        if 'LinearReg' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
             plot_num -= 1
             subfigs_num = 3
+            if 'LinearReg' in indicator_list_tmp:
+                indicator_tmp = 'LinearReg'
+            else:
+                indicator_tmp = 'MACD'
+            indicator_list.remove(indicator_tmp)
+
             subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[main_candleplot_ratio, 2.5, 2.5])
             # plot higher timeframe with linear regression
             subfigs[1].patch.set_facecolor(self.background_color)
@@ -165,15 +174,12 @@ class Visualizer:
             # get corresponding to signal_time index of dataframe with higher timeframe candles
             df_higher = df_higher.loc[max(df_higher.shape[0] - self.plot_width * 2, 0):].reset_index(drop=True)
             ohlc_higher = df_higher[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
-            # plot linear regression indicator
-            if point_type == 'buy':
-                axs_higher[1].plot(df_higher['linear_reg'], linewidth=2, color='green')
-                # m = mpf.make_addplot(df_higher['linear_reg'], panel=1, title='Сила Тренда', ax=axs_higher[1], width=2)
-            else:
-                axs_higher[1].plot(df_higher['linear_reg'], linewidth=2, color='red')
-                # m = mpf.make_addplot(df_higher['linear_reg'], panel=1, title='Сила Тренда', ax=axs_higher[1], width=2)
-            ap = list()
-            # ap.append(m)
+            # plot higher timeframe indicator
+            indicator_columns = self.indicator_dict[indicator_tmp]
+            for i_c in indicator_columns:
+                axs_higher[1].plot(df_higher[i_c], linewidth=2)
+                axs_higher[1].yaxis.set_label_position("right")
+                axs_higher[1].yaxis.tick_right()
             # plot grid for candles
             axs_higher[0].grid(which='both', linestyle='--', linewidth=0.3)
             # set ticker color
@@ -199,9 +205,14 @@ class Visualizer:
             axs_higher[1].spines['right'].set_color(self.border_color)
             axs_higher[1].spines['left'].set_color(self.border_color)
             # plot titles
-            axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Тренд', fontsize=14,
-                                    color=self.ticker_color)
-            axs_higher[1].set_title('Сила тренда', fontsize=14, color=self.ticker_color)
+            if indicator_tmp == 'LinearReg':
+                axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Тренд', fontsize=14,
+                                        color=self.ticker_color)
+                axs_higher[1].set_title('Сила тренда', fontsize=14, color=self.ticker_color)
+            elif indicator_tmp == 'MACD':
+                axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Тренд', fontsize=14,
+                                        color=self.ticker_color)
+                axs_higher[1].set_title('MACD', fontsize=14, color=self.ticker_color)
             # plot candles
             mpf.plot(ohlc_higher, type='candle', ax=axs_higher[0], warn_too_much_data=1001, style='yahoo',
                      ylabel='', returnfig=True)

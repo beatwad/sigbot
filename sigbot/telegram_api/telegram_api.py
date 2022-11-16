@@ -3,7 +3,7 @@ import time
 from os import environ, remove
 
 # Get configs
-# environ["ENV"] = "5m_1h"
+environ["ENV"] = "5m_1h"
 
 from log.log import exception
 from time import sleep

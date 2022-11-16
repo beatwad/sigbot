@@ -155,7 +155,8 @@
     ]
   },
   "Higher_TF_indicator_list": [
-    "LinearReg"
+    "LinearReg",
+    "MACD"
   ],
   "Indicator": {
     "buy": {
@@ -250,6 +251,7 @@
     "RSI",
     "PriceChange",
     "HighVolume",
+    "MACD",
     "LinearReg"
   ],
   "Indicator_signal": {
@@ -347,6 +349,7 @@
       "stat_limit_hours": {
         "PriceChange": 24,
         "HighVolume": 24,
+        "MACD": 125,
         "PriceChange_LinearReg": 48,
         "STOCH_RSI": 36,
         "STOCH_RSI_LinearReg": 168
@@ -368,7 +371,8 @@
         "STOCH_RSI_LinearReg": "-1001688789758",
         "PriceChange": "-1001700504878",
         "PriceChange_LinearReg": "-1001691421580",
-        "HighVolume": "-1001656085421"
+        "HighVolume": "-1001656085421",
+        "MACD": "-1001742813847"
       },
       "prev_sig_minutes_limit": 25,
       "max_notifications_in_row": 3
@@ -395,7 +399,13 @@
         "RSI": [
           "rsi"
         ],
-        "MACD": [],
+        "MACD": [
+          "macd",
+          "macdsignal"
+        ],
+        "LinearReg": [
+          "linear_reg"
+        ],
         "PriceChange": [],
         "HighVolume": [
           "volume"

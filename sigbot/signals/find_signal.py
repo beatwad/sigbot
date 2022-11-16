@@ -56,6 +56,25 @@ class SignalBase:
         return np.where(indicator_sum >= 2, 1, 0)
 
     @staticmethod
+    def crossed_lines(up: bool, indicator: pd.Series,
+                           indicator_lag_1: pd.Series, indicator_lag_2: pd.Series) -> np.ndarray:
+        """ Returns True if slowk and slowd lines of RSI has crossed """
+        if up:
+            indicator = np.where(indicator < 0, 1, 0)
+            indicator_lag_1 = np.where(indicator_lag_1 > 0, 1, 0)
+            indicator_lag_1 = np.array([indicator, indicator_lag_1]).sum(axis=0)
+            indicator_lag_2 = np.where(indicator_lag_2 > 0, 1, 0)
+            indicator_lag_2 = np.array([indicator, indicator_lag_2]).sum(axis=0)
+        else:
+            indicator = np.where(indicator > 0, 1, 0)
+            indicator_lag_1 = np.where(indicator_lag_1 < 0, 1, 0)
+            indicator_lag_1 = np.array([indicator, indicator_lag_1]).sum(axis=0)
+            indicator_lag_2 = np.where(indicator_lag_2 < 0, 1, 0)
+            indicator_lag_2 = np.array([indicator, indicator_lag_2]).sum(axis=0)
+        indicator = np.maximum(indicator_lag_1, indicator_lag_2)
+        return np.where(indicator > 1, 1, 0)
+
+    @staticmethod
     def lower_bound_robust(low_bound: float, indicator: pd.Series) -> np.ndarray:
         """ Returns True if indicator is lower than low bound """
         return np.where(indicator < low_bound, 1, 0)
@@ -85,25 +104,6 @@ class STOCHSignal(SignalBase):
         super(STOCHSignal, self).__init__(ttype, configs)
         self.low_bound = self.configs.get('low_bound', 20)
         self.high_bound = self.configs.get('high_bound', 80)
-
-    @staticmethod
-    def crossed_lines(up: bool, indicator: pd.Series,
-                           indicator_lag_1: pd.Series, indicator_lag_2: pd.Series) -> np.ndarray:
-        """ Returns True if slowk and slowd lines of RSI has crossed """
-        if up:
-            indicator = np.where(indicator < 0, 1, 0)
-            indicator_lag_1 = np.where(indicator_lag_1 > 0, 1, 0)
-            indicator_lag_1 = np.array([indicator, indicator_lag_1]).sum(axis=0)
-            indicator_lag_2 = np.where(indicator_lag_2 > 0, 1, 0)
-            indicator_lag_2 = np.array([indicator, indicator_lag_2]).sum(axis=0)
-        else:
-            indicator = np.where(indicator > 0, 1, 0)
-            indicator_lag_1 = np.where(indicator_lag_1 < 0, 1, 0)
-            indicator_lag_1 = np.array([indicator, indicator_lag_1]).sum(axis=0)
-            indicator_lag_2 = np.where(indicator_lag_2 < 0, 1, 0)
-            indicator_lag_2 = np.array([indicator, indicator_lag_2]).sum(axis=0)
-        indicator = np.maximum(indicator_lag_1, indicator_lag_2)
-        return np.where(indicator > 1, 1, 0)
 
     def find_signal(self, df: pd.DataFrame, *args) -> np.ndarray:
         """ 1 - Return true if Stochastic is lower than low bound, lines have crossed and look up (buy signal)
@@ -173,8 +173,7 @@ class LinearRegSignal(SignalBase):
         self.low_bound = self.configs.get('low_bound', 0)
         self.high_bound = self.configs.get('high_bound', 0)
 
-    def find_signal(self, df: pd.DataFrame, timeframe_ratio: int, working_df_len: int, points_shape: int,
-                    *args) -> np.ndarray:
+    def find_signal(self, df: pd.DataFrame, timeframe_ratio: int, working_df_len: int, *args) -> np.ndarray:
         """ 1 - Return true if trend is moving up (buy signal)
             2 - Return true if trend is moving down (sell signal)  """
         # According to difference between working timeframe and higher timeframe for every point on working timeframe
@@ -190,10 +189,6 @@ class LinearRegSignal(SignalBase):
             # and make size of the signal the same as size of working timeframe df
             lr_higher_bound = np.repeat(lr_higher_bound, timeframe_ratio)
             lr_higher_bound = lr_higher_bound[max(lr_higher_bound.shape[0] - working_df_len, 0):]
-            # If signal shape differs from point shape - bring them to one shape
-            if lr_higher_bound.shape[0] < points_shape:
-                diff = points_shape - lr_higher_bound.shape[0]
-                lr_higher_bound = np.concatenate([np.zeros(diff), lr_higher_bound])
             return lr_higher_bound
 
         # same for the sell trade
@@ -203,10 +198,6 @@ class LinearRegSignal(SignalBase):
         # and make size of the signal the same as size of working timeframe df
         lr_lower_bound = np.repeat(lr_lower_bound, timeframe_ratio)
         lr_lower_bound = lr_lower_bound[max(lr_lower_bound.shape[0] - working_df_len, 0):]
-        # If signal shape differs from point shape - bring them to one shape
-        if lr_lower_bound.shape[0] < points_shape:
-            diff = points_shape - lr_lower_bound.shape[0]
-            lr_lower_bound = np.concatenate([np.zeros(diff), lr_lower_bound])
         return lr_lower_bound
 
 
@@ -257,8 +248,24 @@ class MACDSignal(SignalBase):
         self.low_bound = self.configs.get('low_bound', 20)
         self.high_bound = self.configs.get('high_bound', 80)
 
-    def find_signal(self, *args, **kwargs):
-        return False, '', ()
+    def find_signal(self, df: pd.DataFrame) -> np.ndarray:
+        # Find MACD signal
+        macd_diff = df['macdhist']
+        macd_diff_lag_1 = df['macdhist'].shift(1)
+        macd_diff_lag_2 = df['macdhist'].shift(2)
+
+        if self.ttype == 'buy':
+            crossed_lines_down = self.crossed_lines(False, macd_diff, macd_diff_lag_1, macd_diff_lag_2)
+            up_direction_macd = self.up_direction(df['macd_dir'])
+            up_direction_macdsignal = self.up_direction(df['macdsignal_dir'])
+            macd_up = crossed_lines_down & up_direction_macd & up_direction_macdsignal
+            return macd_up
+
+        crossed_lines_up = self.crossed_lines(True, macd_diff, macd_diff_lag_1, macd_diff_lag_2)
+        down_direction_slowk = self.down_direction(df['macd_dir'])
+        down_direction_slowd = self.down_direction(df['macdsignal_dir'])
+        macd_down = crossed_lines_up & down_direction_slowk & down_direction_slowd
+        return macd_down
 
 
 class FindSignal:
@@ -273,23 +280,6 @@ class FindSignal:
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
-
-    def prepare_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-        """ Add all necessary indicator data to dataframe """
-        for i in self.indicator_list:
-            if i.startswith('STOCH'):
-                df['stoch_slowk_dir'] = df['stoch_slowk'].pct_change().rolling(3).mean()
-                df['stoch_slowd_dir'] = df['stoch_slowd'].pct_change().rolling(3).mean()
-                df['stoch_diff'] = df['stoch_slowk'] - df['stoch_slowd']
-                df['stoch_diff'] = df['stoch_diff'].rolling(3).mean()
-                break
-
-        for i in self.indicator_list:
-            if i.startswith('SUP_RES'):
-                df['high_roll'] = df['high'].rolling(3).mean()
-                df['low_roll'] = df['low'].rolling(3).mean()
-                break
-        return df
 
     def prepare_indicator_signals(self) -> list:
         """ Get all indicator signal classes """
@@ -316,7 +306,6 @@ class FindSignal:
         except KeyError:
             return points
 
-        df_work = self.prepare_dataframe(df_work)
         sig_patterns = [p.copy() for p in self.patterns]
 
         trade_points = pd.DataFrame()
@@ -328,9 +317,19 @@ class FindSignal:
                 # get time ratio between higher timeframe and working timeframe
                 timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] /
                                       self.timeframe_div[self.work_timeframe])
-                fs = indicator_signal.find_signal(df_higher, timeframe_ratio, df_work.shape[0], trade_points.shape[0])
+                fs = indicator_signal.find_signal(df_higher, timeframe_ratio, df_work.shape[0])
+            elif indicator_signal.name == "MACD":
+                fs = indicator_signal.find_signal(df_higher)
             else:
                 fs = indicator_signal.find_signal(df_work)
+
+            # if sizes of signal and signal dataframe differ - bring them to one size
+            if fs.shape[0] < trade_points.shape[0]:
+                diff = trade_points.shape[0] - fs.shape[0]
+                fs = np.concatenate([np.zeros(diff), fs])
+            elif fs.shape[0] > trade_points.shape[0]:
+                diff = fs.shape[0] - trade_points.shape[0]
+                fs = fs[diff:]
 
             trade_points[indicator_signal.name] = fs
 

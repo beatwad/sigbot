@@ -148,7 +148,10 @@ class SigBot:
         df = self.database.get(ticker, dict()).get(timeframe, dict()).get('data', pd.DataFrame()).get('buy',
                                                                                                       pd.DataFrame())
         # Write data to the dataframe
-        df, data_qty = exchange_api.get_data(df, ticker, timeframe)
+        try:
+            df, data_qty = exchange_api.get_data(df, ticker, timeframe)
+        except:
+            return df, 0
         return df, data_qty
 
     @staticmethod

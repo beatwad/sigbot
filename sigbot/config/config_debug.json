@@ -320,7 +320,7 @@
     "params": {
       "bot_cycle_length_sec": 20,
       "cycle_length_hours": 24,
-      "first_cycle_qty_miss": 1
+      "first_cycle_qty_miss": 0
     }
   },
   "Patterns": [
@@ -339,6 +339,9 @@
     [
       "PriceChange",
       "LinearReg"
+    ],
+    [
+      "MACD"
     ]
   ],
   "SignalStat": {
@@ -360,7 +363,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 1
+      "max_prev_candle_limit": 50
     }
   },
   "Telegram": {

@@ -470,10 +470,6 @@ class MonitorExchange(Thread):
                                     sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
                                                   f'{ticker}, timeframe is {timeframe}, type is {sig_point[3]}, ' \
                                                   f'pattern is {sig_point[5]}, time is {sig_point[4]}'
-                                    if sig_point[5] == 'HighVolume':
-                                        sig_message += f', total volume is {df["volume"].sum()}, '
-                                        sig_message += f'current volume is {df.iloc[-1]["volume"]} ,'
-                                        sig_message += f'volume ratio is {round(df.iloc[-1]["volume"]/df["volume"].sum(), 5)}'
                                     logger.info(sig_message)
                     # Save dataframe for further analysis
                     # self.save_dataframe(df, ticker, timeframe)

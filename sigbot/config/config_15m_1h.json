@@ -339,6 +339,9 @@
     [
       "PriceChange",
       "LinearReg"
+    ],
+    [
+      "MACD"
     ]
   ],
   "SignalStat": {

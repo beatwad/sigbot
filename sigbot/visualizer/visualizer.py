@@ -177,7 +177,11 @@ class Visualizer:
             # plot higher timeframe indicator
             indicator_columns = self.indicator_dict[indicator_tmp]
             for i_c in indicator_columns:
-                axs_higher[1].plot(df_higher[i_c], linewidth=2)
+                if i_c == 'macdhist':
+                    df_higher[i_c].plot(kind='bar', ax=axs_higher[1])
+                    plt.xticks(np.arange(min(df_higher.index), max(df_higher.index) + 1, 10))
+                else:
+                    axs_higher[1].plot(df_higher[i_c], linewidth=2)
                 axs_higher[1].yaxis.set_label_position("right")
                 axs_higher[1].yaxis.tick_right()
             # plot grid for candles
@@ -218,7 +222,7 @@ class Visualizer:
                      ylabel='', returnfig=True)
 
             # workaround to show the last xtick for the higher timeframe candle plot
-            format = '%b-%d-%H:%M'
+            format = '%m-%d-%H:%M'
             newxticks = []
             newlabels = []
 
@@ -236,7 +240,7 @@ class Visualizer:
 
             # set the xticks and labels with the new ticks and labels:
             axs_higher[1].set_xticks(newxticks)
-            axs_higher[1].set_xticklabels(newlabels, rotation=20)
+            axs_higher[1].set_xticklabels(newlabels, rotation=30)
         elif 'HighVolume' in indicator_list_tmp:
             subfigs_num = 2
             subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[main_candleplot_ratio/3, 0.01])

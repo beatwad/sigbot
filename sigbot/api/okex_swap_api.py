@@ -60,7 +60,6 @@ if __name__ == '__main__':
     dt1 = datetime.now()
 
     for ticker in tickers:
-        print(ticker)
         klines1 = okex.get_klines(ticker, '5m')
         klines2 = okex.get_klines(ticker, '3m')
 

@@ -150,7 +150,7 @@ class SigBot:
         # Write data to the dataframe
         try:
             df, data_qty = exchange_api.get_data(df, ticker, timeframe)
-        except:
+        except KeyError:
             return df, 0
         return df, data_qty
 

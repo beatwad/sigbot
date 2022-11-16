@@ -108,7 +108,6 @@ class MACD(Indicator):
         # add auxilary data
         df['macd_dir'] = df['macd'].pct_change().rolling(3).mean()
         df['macdsignal_dir'] = df['macdsignal'].pct_change().rolling(3).mean()
-        df['macdhist'] = df['macdhist'].rolling(3).mean()
         return df
 
 
@@ -253,8 +252,6 @@ class HighVolume(Indicator):
             # sort price values
             self.vol_stat = np.sort(self.vol_stat)
         # get volume quantile and save to the dataframe
-        if ticker == 'SCUSDT':
-            pass
         quantile_vol = np.quantile(self.vol_stat, self.high_volume_quantile / 1000)
         df['quantile_vol'] = quantile_vol
         # save volume statistics to file

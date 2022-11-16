@@ -403,6 +403,7 @@
           "rsi"
         ],
         "MACD": [
+          "macdhist",
           "macd",
           "macdsignal"
         ],

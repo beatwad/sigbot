@@ -357,7 +357,7 @@
         "STOCH_RSI": 36,
         "STOCH_RSI_LinearReg": 168
       },
-      "prev_sig_limit_minutes": 40,
+      "prev_sig_limit_minutes": 45,
       "stat_range": 24
     }
   },

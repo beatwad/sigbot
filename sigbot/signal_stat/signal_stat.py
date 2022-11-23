@@ -133,18 +133,19 @@ class SignalStat:
             result_statistics.append((pct_price_right_forecast, pct_price_diff_mean, pct_price_diff_std))
         return result_statistics, stat.shape[0]
 
-    def delete_close_trades(self, df: pd.DataFrame) -> pd.DataFrame:
-        """ Find adjacent in time trades for the same tickers and delete them """
-        patterns = df['pattern'].unique().tolist()
-        df = df.sort_values(['ticker', 'time'], ignore_index=True)
-        df['to_drop'] = False
-        for pattern in patterns:
-            tmp = df[df['pattern'] == pattern].copy()
-            tmp['time_diff'] = tmp['time'] - tmp['time'].shift(1)
-            tmp['ticker_shift'] = tmp['ticker'].shift(1)
-            drop_index = tmp[(tmp['ticker'] == tmp['ticker_shift']) & (tmp['time_diff'] >= pd.Timedelta(0, 's')) &
-                             (tmp['time_diff'] < pd.Timedelta(self.prev_sig_limit, 'm'))].index
-            df.loc[drop_index, 'to_drop'] = True
-        df = df[df['to_drop'] == False]
-        df = df.drop(['to_drop'], axis=1).reset_index(drop=True)
-        return df
+    def check_close_trades(self, df: pd.DataFrame, ticker: str, timeframe: str,
+                           point_time: pd.Timestamp, pattern: str) -> bool:
+        """ Check if signal point wasn't appeared not long time ago """
+        same_signal = df[(df['ticker'] == ticker) & (df['timeframe'] == timeframe) &
+                         (df['pattern'] == pattern) & (df['time'] == point_time)]
+        if same_signal.shape[0] > 0:
+            return False
+        same_signal_timestamps = df.loc[(df['ticker'] == ticker) & (df['timeframe'] == timeframe) &
+                                        (df['pattern'] == pattern), 'time']
+        # if can't find similar signals at all - that's good
+        if same_signal_timestamps.shape[0] == 0:
+            return True
+        last_signal_timestamp = same_signal_timestamps.max()
+        if point_time - last_signal_timestamp > pd.Timedelta(self.prev_sig_limit, 'm'):
+            return True
+        return False

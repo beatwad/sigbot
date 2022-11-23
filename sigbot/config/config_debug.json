@@ -320,7 +320,7 @@
     "params": {
       "bot_cycle_length_sec": 20,
       "cycle_length_hours": 24,
-      "first_cycle_qty_miss": 0
+      "first_cycle_qty_miss": 1
     }
   },
   "Patterns": [
@@ -357,13 +357,13 @@
         "STOCH_RSI": 36,
         "STOCH_RSI_LinearReg": 168
       },
-      "prev_sig_limit_minutes": 40,
+      "prev_sig_limit_minutes": 45,
       "stat_range": 24
     }
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 50
+      "max_prev_candle_limit": 2
     }
   },
   "Telegram": {

@@ -179,7 +179,7 @@ class Visualizer:
             for i_c in indicator_columns:
                 if i_c == 'macdhist':
                     df_higher[i_c].plot(kind='bar', ax=axs_higher[1])
-                    plt.xticks(np.arange(min(df_higher.index), max(df_higher.index), 10))
+                    plt.xticks(np.arange(min(df_higher.index), max(df_higher.index) + 1, 10))
                 else:
                     axs_higher[1].plot(df_higher[i_c], linewidth=2)
                 axs_higher[1].yaxis.set_label_position("right")

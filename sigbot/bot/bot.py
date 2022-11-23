@@ -202,38 +202,29 @@ class SigBot:
         sig_points_sell = self.find_signal_sell.find_signal(self.database, ticker, timeframe, data_qty)
         return sig_points_sell
 
-    @staticmethod
-    def filter_sig_points(sig_points: list) -> list:
+    def filter_sig_points(self, sig_points: list) -> list:
         """ Remove signals if earlier signal is already exists in the signal list """
         filtered_points = list()
-        signal_combination = list()
         for point in sig_points:
-            ticker, timeframe, point_index, pattern = point[0], point[1], point[2], point[5]
+            ticker, timeframe, ttype, timestamp, pattern = point[0], point[1], point[3], point[4], point[5]
             # pattern is PriceChange - we need only its name without settings
             if str(pattern[0][0]).startswith('PriceChange'):
                 pattern = str([pattern[0][0]] + pattern[1:])
             else:
                 pattern = str(pattern)
-
             # if earlier signal is already exists in the signal list - don't add one more
-            if (ticker, timeframe, point_index-1, pattern) in signal_combination or \
-                    (ticker, timeframe, point_index-2, pattern) in signal_combination or \
-                    (ticker, timeframe, point_index-3, pattern) in signal_combination or \
-                    (ticker, timeframe, point_index-4, pattern) in signal_combination or \
-                    (ticker, timeframe, point_index-5, pattern) in signal_combination:
-                continue
-            else:
-                signal_combination.append((ticker, timeframe, point_index, pattern))
+            if self.stat.check_close_trades(self.database['stat'][ttype], ticker, timeframe, timestamp, pattern):
                 filtered_points.append(point)
         return filtered_points
 
-    def filter_early_sig_points(self, sig_points: list, df: pd.DataFrame) -> list:
+    def filter_early_sig_points(self, sig_points: list) -> list:
         """ Remove signals that were sent too long time ago (more than 10-15 minutes) """
         filtered_points = list()
+        dt_now = datetime.now()
         for point in sig_points:
             point_time = point[4]
             # if too much time has passed after signal was found - skip it
-            if (datetime.now() - point_time).total_seconds() <= self.timeframe_div[self.work_timeframe] * \
+            if (dt_now - point_time).total_seconds() <= self.timeframe_div[self.work_timeframe] * \
                     self.max_prev_candle_limit:
                 filtered_points.append(point)
         return filtered_points
@@ -251,11 +242,6 @@ class SigBot:
             result_statistics, _ = self.stat.calculate_total_stat(self.database, sig_type, pattern)
             sig_point[8].append(result_statistics)
         return sig_points
-
-    def clean_statistics(self) -> None:
-        # delete trades for the same tickers that are too close to each other
-        self.database['stat']['buy'] = self.stat.delete_close_trades(self.database['stat']['buy'])
-        self.database['stat']['sell'] = self.stat.delete_close_trades(self.database['stat']['sell'])
 
     def get_exchange_list(self, ticker: str, sig_points: list) -> list:
         """ Add list of exchanges on which this ticker can be traded """
@@ -355,10 +341,6 @@ class MonitorExchange(Thread):
     def add_statistics(self, sig_points) -> None:
         self.sigbot.database = self.sigbot.add_statistics(sig_points)
 
-    @thread_lock
-    def clean_statistics(self) -> None:
-        self.sigbot.clean_statistics()
-
     def save_opt_dataframes(self) -> None:
         """ Save dataframe for every ticker for further indicator/signal optimization """
         exchange_api = self.exchange_data['API']
@@ -444,18 +426,14 @@ class MonitorExchange(Thread):
                         # Filter repeating signals
                         sig_buy_points = self.sigbot.filter_sig_points(sig_buy_points)
                         sig_sell_points = self.sigbot.filter_sig_points(sig_sell_points)
-                        # Add the signals to statistics
+                        # Add signals to statistics
                         self.add_statistics(sig_buy_points)
                         self.add_statistics(sig_sell_points)
-                        # Get signals only if they are fresh (not earlier than 10-15 min ago)
-                        df_buy = self.sigbot.database[ticker][timeframe]['data']['buy']
-                        sig_buy_points = self.sigbot.filter_early_sig_points(sig_buy_points, df_buy)
-                        df_sell = self.sigbot.database[ticker][timeframe]['data']['sell']
-                        sig_sell_points = self.sigbot.filter_early_sig_points(sig_sell_points, df_sell)
+                        # Send signals only if they are fresh (not earlier than 3-5 ticks ago)
+                        sig_buy_points = self.sigbot.filter_early_sig_points(sig_buy_points)
+                        sig_sell_points = self.sigbot.filter_early_sig_points(sig_sell_points)
                         sig_points = sig_buy_points + sig_sell_points
                         if sig_points:
-                            # Clean statistics dataframes from close signal points
-                            self.clean_statistics()
                             # Add list of exchanges where this ticker is available and has a good liquidity
                             sig_points = self.sigbot.get_exchange_list(ticker, sig_points)
                             # Add pattern and ticker statistics

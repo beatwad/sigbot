@@ -360,7 +360,6 @@ class MonitorExchange(Thread):
 
     def save_opt_statistics(self, ttype: str, opt_limit: int):
         """ Save statistics data for every ticker for further indicator/signal optimization """
-        exchange_api = self.exchange_data['API']
         tickers = self.exchange_data['tickers']
         for ticker in tickers:
             # For every timeframe get the data and find the signal

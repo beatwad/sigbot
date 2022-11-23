@@ -203,7 +203,7 @@ class SigBot:
         return sig_points_sell
 
     def filter_sig_points(self, sig_points: list) -> list:
-        """ Remove signals if earlier signal is already exists in the signal list """
+        """ Remove signals if earlier signal is already exists in the statistics dataframe """
         filtered_points = list()
         for point in sig_points:
             ticker, timeframe, ttype, timestamp, pattern = point[0], point[1], point[3], point[4], point[5]
@@ -423,32 +423,36 @@ class MonitorExchange(Thread):
                         # Get the signals
                         sig_buy_points = self.sigbot.get_buy_signals(ticker, timeframe, data_qty_buy)
                         sig_sell_points = self.sigbot.get_sell_signals(ticker, timeframe, data_qty_sell)
-                        # Filter repeating signals
+                        # If signal was added to stat dataframe not long time ago (3 ticks) - don't add it again
                         sig_buy_points = self.sigbot.filter_sig_points(sig_buy_points)
                         sig_sell_points = self.sigbot.filter_sig_points(sig_sell_points)
+                        if self.sigbot.main.cycle_number > 1:
+                            # Send signals in Telegram notification only if they are fresh
+                            # (not earlier than 3 ticks ago)
+                            sig_buy_points = self.sigbot.filter_early_sig_points(sig_buy_points)
+                            sig_sell_points = self.sigbot.filter_early_sig_points(sig_sell_points)
                         # Add signals to statistics
                         self.add_statistics(sig_buy_points)
                         self.add_statistics(sig_sell_points)
-                        # Send signals only if they are fresh (not earlier than 3-5 ticks ago)
-                        sig_buy_points = self.sigbot.filter_early_sig_points(sig_buy_points)
-                        sig_sell_points = self.sigbot.filter_early_sig_points(sig_sell_points)
+                        # Join buy and sell points into the one list
                         sig_points = sig_buy_points + sig_sell_points
-                        if sig_points:
+                        # If got signal points and bot cycle isn't first -
+                        # calculate statistics and send Telegram notification
+                        if sig_points and self.sigbot.main.cycle_number > self.sigbot.main.first_cycle_qty_miss:
                             # Add list of exchanges where this ticker is available and has a good liquidity
                             sig_points = self.sigbot.get_exchange_list(ticker, sig_points)
                             # Add pattern and ticker statistics
                             sig_points = self.sigbot.calc_statistics(sig_points)
                             # Send Telegram notification
                             t_print(self.exchange, [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
-                            if self.sigbot.main.cycle_number > self.sigbot.main.first_cycle_qty_miss:
-                                self.sigbot.telegram_bot.notification_list += sig_points
-                                self.sigbot.telegram_bot.update_bot.set()
-                                # Log the signals
-                                for sig_point in sig_points:
-                                    sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
-                                                  f'{ticker}, timeframe is {timeframe}, type is {sig_point[3]}, ' \
-                                                  f'pattern is {sig_point[5]}, time is {sig_point[4]}'
-                                    logger.info(sig_message)
+                            self.sigbot.telegram_bot.notification_list += sig_points
+                            self.sigbot.telegram_bot.update_bot.set()
+                            # Log the signals
+                            for sig_point in sig_points:
+                                sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
+                                              f'{ticker}, timeframe is {timeframe}, type is {sig_point[3]}, ' \
+                                              f'pattern is {sig_point[5]}, time is {sig_point[4]}'
+                                logger.info(sig_message)
                     # Save dataframe for further analysis
                     # self.save_dataframe(df, ticker, timeframe)
 

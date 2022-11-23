@@ -13,11 +13,14 @@ class SignalStat:
         self.stat_range = self.configs.get('stat_range', 24)
         self.test = self.configs.get('test', False)
         self.stat_limit_hours = self.configs.get('stat_limit_hours', 72)
-        self.prev_sig_limit = self.configs.get('prev_sig_limit_minutes', 40)
+        # Minimal number of candles that should pass from previous signal to add the new signal to statistics
+        self.min_prev_candle_limit = self.configs.get('min_prev_candle_limit', 3)
+        # dictionary that is used to determine too late signals according to current work_timeframe
+        self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
         # Get working and higher timeframes
-        working_timeframe = configs['Timeframes']['work_timeframe']
-        self.buy_stat_path = f'signal_stat/buy_stat_{working_timeframe}.pkl'
-        self.sell_stat_path = f'signal_stat/sell_stat_{working_timeframe}.pkl'
+        self.work_timeframe = configs['Timeframes']['work_timeframe']
+        self.buy_stat_path = f'signal_stat/buy_stat_{self.work_timeframe}.pkl'
+        self.sell_stat_path = f'signal_stat/sell_stat_{self.work_timeframe}.pkl'
 
     def write_stat(self, dfs: dict, signal_points: list) -> dict:
         """ Write signal statistics for every signal point for current ticker on current timeframe.
@@ -142,10 +145,11 @@ class SignalStat:
             return False
         same_signal_timestamps = df.loc[(df['ticker'] == ticker) & (df['timeframe'] == timeframe) &
                                         (df['pattern'] == pattern), 'time']
-        # if can't find similar signals at all - that's good
+        # if can't find similar signals at all - add this signal to statistics
         if same_signal_timestamps.shape[0] == 0:
             return True
         last_signal_timestamp = same_signal_timestamps.max()
-        if point_time - last_signal_timestamp > pd.Timedelta(self.prev_sig_limit, 'm'):
+        if (point_time - last_signal_timestamp).total_seconds() > self.timeframe_div[self.work_timeframe] * \
+                self.min_prev_candle_limit:
             return True
         return False

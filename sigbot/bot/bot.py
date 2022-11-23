@@ -203,7 +203,7 @@ class SigBot:
         return sig_points_sell
 
     def filter_sig_points(self, sig_points: list) -> list:
-        """ Remove signals if earlier signal is already exists in the statistics dataframe """
+        """ Don't add signal if relatively fresh similar signal was already added to the statistics dataframe before """
         filtered_points = list()
         for point in sig_points:
             ticker, timeframe, ttype, timestamp, pattern = point[0], point[1], point[3], point[4], point[5]
@@ -217,8 +217,8 @@ class SigBot:
                 filtered_points.append(point)
         return filtered_points
 
-    def filter_early_sig_points(self, sig_points: list) -> list:
-        """ Remove signals that were sent too long time ago (more than 10-15 minutes) """
+    def filter_old_signals(self, sig_points: list) -> list:
+        """ Don't send Telegram notification for the old signals (older than 1-2 candles ago) """
         filtered_points = list()
         dt_now = datetime.now()
         for point in sig_points:
@@ -423,14 +423,14 @@ class MonitorExchange(Thread):
                         # Get the signals
                         sig_buy_points = self.sigbot.get_buy_signals(ticker, timeframe, data_qty_buy)
                         sig_sell_points = self.sigbot.get_sell_signals(ticker, timeframe, data_qty_sell)
-                        # If signal was added to stat dataframe not long time ago (3 ticks) - don't add it again
+                        # If similar signal was added to stat dataframe not too long time ago (< 3 ticks) -
+                        # don't add it again
                         sig_buy_points = self.sigbot.filter_sig_points(sig_buy_points)
                         sig_sell_points = self.sigbot.filter_sig_points(sig_sell_points)
+                        # Send signals in Telegram notification only if they are fresh (not older than 1-2 ticks ago)
                         if self.sigbot.main.cycle_number > 1:
-                            # Send signals in Telegram notification only if they are fresh
-                            # (not earlier than 3 ticks ago)
-                            sig_buy_points = self.sigbot.filter_early_sig_points(sig_buy_points)
-                            sig_sell_points = self.sigbot.filter_early_sig_points(sig_sell_points)
+                            sig_buy_points = self.sigbot.filter_old_signals(sig_buy_points)
+                            sig_sell_points = self.sigbot.filter_old_signals(sig_sell_points)
                         # Add signals to statistics
                         self.add_statistics(sig_buy_points)
                         self.add_statistics(sig_sell_points)

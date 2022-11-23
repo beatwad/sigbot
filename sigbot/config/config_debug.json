@@ -357,13 +357,13 @@
         "STOCH_RSI": 36,
         "STOCH_RSI_LinearReg": 168
       },
-      "prev_sig_limit_minutes": 45,
+      "min_prev_candle_limit": 3,
       "stat_range": 24
     }
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 2
+      "max_prev_candle_limit": 1
     }
   },
   "Telegram": {

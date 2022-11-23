@@ -428,7 +428,7 @@ class MonitorExchange(Thread):
                         sig_buy_points = self.sigbot.filter_sig_points(sig_buy_points)
                         sig_sell_points = self.sigbot.filter_sig_points(sig_sell_points)
                         # Send signals in Telegram notification only if they are fresh (not older than 1-2 ticks ago)
-                        if self.sigbot.main.cycle_number > 1:
+                        if self.sigbot.main.cycle_number > self.sigbot.main.first_cycle_qty_miss:
                             sig_buy_points = self.sigbot.filter_old_signals(sig_buy_points)
                             sig_sell_points = self.sigbot.filter_old_signals(sig_sell_points)
                         # Add signals to statistics

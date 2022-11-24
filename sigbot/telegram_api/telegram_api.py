@@ -195,15 +195,14 @@ class TelegramBot(Thread):
         sig_type = message[3]
         sig_time = message[4]
         sig_pattern = message[5]
-        # get patterns
-        # get path to image
-        sig_img_path = self.add_plot(message)
         # get list of available exchanges
         sig_exchanges = message[7]
         # # get total and ticker statistics
         # result_statistics = message[8]
         # form message
         if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
+            # create image and return path to it
+            sig_img_path = self.add_plot(message)
             chat_id = self.chat_ids[sig_pattern]
             # Form text message
             text = f'{ticker} \n'

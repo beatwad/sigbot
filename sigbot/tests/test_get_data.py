@@ -191,8 +191,9 @@ def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
     data = gd.get_data(df.loc[:499], ticker, timeframe)[0]
     data_qty = 20
     res = gd.add_indicator_data(dfs, data, 'buy', indicators, ticker,
-                                timeframe, data_qty, configs)[ticker][timeframe]['data']['buy']
+                                timeframe, data_qty)[ticker][timeframe]['data']['buy']
     dfs[ticker][timeframe]['data']['buy'] = res
+
     assert res.equals(expected[0])
 
     # assert dfs[ticker][timeframe]['levels'] == expected[1]

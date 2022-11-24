@@ -51,7 +51,7 @@ def create_test_data():
                     indicators.append(ind_factory)
             # Write indicators to dataframe, update dataframe dict
             dfs = exchange_api.add_indicator_data(dfs, dfs[ticker][timeframe]['data']['buy'], 'buy', indicators, ticker,
-                                                      timeframe, data_qty, configs)
+                                                  timeframe, data_qty)
     return dfs
 
 
@@ -105,8 +105,8 @@ def test_lower_bound(mocker, timeframe, ticker, low_bound, expected):
     assert np.array_equal(indexes[0], expected)
 
 
-btc_expected = [np.array([24, 25, 26, 33, 34, 35, 36, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47])]
-eth_expected = [np.array([27, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 47, 48, 49])]
+btc_expected = [np.array([23, 24, 25, 26, 31, 32, 33, 34, 35, 36, 38, 39, 40, 41, 42, 43, 44, 45, 46])]
+eth_expected = [np.array([24, 25, 26, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 46, 47, 48, 49])]
 
 
 @pytest.mark.parametrize('ticker, timeframe, expected',
@@ -126,8 +126,8 @@ def test_up_direction(mocker, timeframe, ticker, expected):
     assert np.array_equal(indexes[0], expected)
 
 
-btc_expected = [np.array([22, 23, 27, 28, 29, 30, 31, 32, 37, 48, 49])]
-eth_expected = [np.array([22, 23, 24, 25, 26, 28, 29, 41, 42, 43, 44, 45, 46])]
+btc_expected = [np.array([20, 21, 22, 27, 28, 29, 30, 37, 47, 48, 49])]
+eth_expected = [np.array([20, 21, 22, 23, 27, 28, 29, 40, 41, 42, 43, 44, 45])]
 
 
 @pytest.mark.parametrize('ticker, timeframe, expected',
@@ -147,10 +147,10 @@ def test_down_direction(mocker, timeframe, ticker, expected):
     assert np.array_equal(indexes[0], expected)
 
 
-btc_expected = [np.array([27, 28, 48, 49, 66, 67, 91, 92]),
-                np.array([24, 25, 34, 35, 57, 58, 76, 77])]
-eth_expected = [np.array([41, 42, 58, 59, 83, 84, 98]),
-                np.array([31, 32, 48, 49, 67, 68, 92, 93, 99])]
+btc_expected = [np.array([27, 28, 37, 38, 47, 48, 65, 66, 79, 90, 91]),
+                np.array([24, 25, 32, 33, 39, 40, 55, 56, 76, 77, 80, 81, 99])]
+eth_expected = [np.array([27, 28, 40, 41, 57, 58, 70, 71, 82, 83, 97, 98]),
+                np.array([25, 26, 31, 32, 47, 48, 67, 68, 72, 73, 91, 92, 99])]
 
 
 @pytest.mark.parametrize('ticker, timeframe, up, expected',
@@ -175,10 +175,10 @@ def test_crossed_lines(mocker, timeframe, ticker, up, expected):
     assert np.array_equal(indexes[0], expected)
 
 
-btc_expected = [np.array([382, 643, 725, 826, 865]),
-                np.array([447, 667])]
-eth_expected = [np.array([68, 146, 374, 611, 612, 631, 632]),
-                np.array([83, 659, 995, 996])]
+btc_expected = [np.array([282, 381, 382, 506, 636, 643, 723, 725, 826, 865]),
+                np.array([91, 343, 447, 569, 655, 666])]
+eth_expected = [np.array([26,  31,  68,  72, 146, 153, 322, 370, 374, 590, 612, 629, 631, 632, 857, 868, 886]),
+                np.array([83, 547, 560, 657, 658, 916, 996])]
 
 
 @pytest.mark.parametrize('ticker, timeframe, expected',
@@ -212,10 +212,10 @@ def test_find_stoch_signal(mocker, timeframe, ticker, expected):
     assert np.array_equal(sell_indexes[0], expected[1])
 
 
-btc_expected = [np.array([19, 25, 26, 27, 28, 29, 46, 59, 71, 72, 73, 78, 91, 92, 93, 96]),
-                np.array([24, 80, 81, 87, 89, 90, 98, 99])]
-eth_expected = [np.array([3, 10, 17, 18, 19, 20, 21, 25, 38, 40, 44, 63, 64, 65, 70, 83, 84, 85, 88, 95, 96]),
-                np.array([2,  5, 16, 71, 72, 73, 80, 81, 82, 90, 91, 92])]
+btc_expected = [np.array([25, 27, 46, 59, 71, 73, 78, 91, 93, 96]),
+                np.array([24, 89])]
+eth_expected = [np.array([3, 10, 17, 25, 38, 40, 44, 63, 65, 70, 83, 85, 88, 95]),
+                np.array([2, 16, 71])]
 
 
 @pytest.mark.parametrize('ticker, timeframe, expected',
@@ -261,6 +261,7 @@ def test_find_linear_reg_signal(mocker, df_higher, df_working, expected):
     sell_points = linear_reg_sig_sell.find_signal(df_higher, 24, df_working.shape[0], df_btc_5m.shape[0])
     buy_indexes = np.where(buy_points == 1)
     sell_indexes = np.where(sell_points == 1)
+
     assert np.array_equal(buy_indexes, expected[0])
     assert np.array_equal(sell_indexes, expected[1])
 

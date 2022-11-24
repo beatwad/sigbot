@@ -155,25 +155,26 @@
     ]
   },
   "Higher_TF_indicator_list": [
-    "LinearReg"
+    "LinearReg",
+    "MACD"
   ],
   "Indicator": {
     "buy": {
       "RSI": {
         "params": {
-          "timeperiod": 14
+          "timeperiod": 12
         }
       },
       "STOCH": {
         "params": {
           "fastk_period": 9,
-          "slowk_period": 3,
-          "slowd_period": 7
+          "slowk_period": 7,
+          "slowd_period": 3
         }
       },
       "LinearReg": {
         "params": {
-          "timeperiod": 24
+          "timeperiod": 6
         }
       },
       "MACD": {
@@ -185,10 +186,19 @@
       },
       "PriceChange": {
         "params": {
-          "round_decimals": 4,
+          "round_decimals": 6,
+          "max_stat_size": 100000,
           "low_price_quantile": 10,
           "high_price_quantile": 990,
           "stat_file_path": "signal_stat/price_stat_buy.json"
+        }
+      },
+      "HighVolume": {
+        "params": {
+          "round_decimals": 6,
+          "max_stat_size": 100000,
+          "volume_quantile": 950,
+          "vol_stat_file_path": "signal_stat/vol_stat.npy"
         }
       }
     },
@@ -224,6 +234,14 @@
           "high_price_quantile": 990,
           "stat_file_path": "signal_stat/price_stat_sell.json"
         }
+      },
+      "HighVolume": {
+        "params": {
+          "round_decimals": 6,
+          "max_stat_size": 100000,
+          "volume_quantile": 950,
+          "vol_stat_file_path": "signal_stat/vol_stat_sell.json"
+        }
       }
     }
   },
@@ -231,6 +249,8 @@
     "STOCH",
     "RSI",
     "PriceChange",
+    "HighVolume",
+    "MACD",
     "LinearReg"
   ],
   "Indicator_signal": {
@@ -243,14 +263,17 @@
       },
       "STOCH": {
         "params": {
-          "low_bound": 15,
-          "high_bound": 85
+          "low_bound": 20,
+          "high_bound": 80
         }
       },
       "MACD": {
         "params": {}
       },
       "PriceChange": {
+        "params": {}
+      },
+      "HighVolume": {
         "params": {}
       },
       "LinearReg": {
@@ -263,14 +286,14 @@
     "sell": {
       "RSI": {
         "params": {
-          "low_bound": 30,
-          "high_bound": 70
+          "low_bound": 35,
+          "high_bound": 65
         }
       },
       "STOCH": {
         "params": {
-          "low_bound": 15,
-          "high_bound": 85
+          "low_bound": 30,
+          "high_bound": 70
         }
       },
       "MACD": {
@@ -294,8 +317,8 @@
   },
   "Main": {
     "params": {
-      "bot_cycle_length_sec": 60,
-      "cycle_length_hours": 168,
+      "bot_cycle_length_sec": 20,
+      "cycle_length_hours": 24,
       "first_cycle_qty_miss": 1
     }
   },
@@ -310,11 +333,14 @@
       "LinearReg"
     ],
     [
-      "PriceChange"
+      "HighVolume"
     ],
     [
       "PriceChange",
       "LinearReg"
+    ],
+    [
+      "MACD"
     ]
   ],
   "SignalStat": {
@@ -324,17 +350,19 @@
       "test": 0,
       "stat_limit_hours": {
         "PriceChange": 24,
+        "HighVolume": 24,
+        "MACD": 125,
         "PriceChange_LinearReg": 48,
         "STOCH_RSI": 36,
         "STOCH_RSI_LinearReg": 168
       },
-      "prev_sig_limit_minutes": 40,
+      "min_prev_candle_limit": 3,
       "stat_range": 24
     }
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 2
+      "max_prev_candle_limit": 1
     }
   },
   "Telegram": {
@@ -344,14 +372,16 @@
         "STOCH_RSI": "-1001463253403",
         "STOCH_RSI_LinearReg": "-1001688789758",
         "PriceChange": "-1001700504878",
-        "PriceChange_LinearReg": "-1001691421580"
+        "PriceChange_LinearReg": "-1001691421580",
+        "HighVolume": "-1001656085421",
+        "MACD": "-1001742813847"
       },
-      "prev_sig_minutes_limit": 25,
+      "min_prev_candle_limit": 3,
       "max_notifications_in_row": 3
     }
   },
   "Timeframes": {
-    "work_timeframe": "5m",
+    "work_timeframe": "15m",
     "higher_timeframe": "1h"
   },
   "Visualizer": {
@@ -371,8 +401,18 @@
         "RSI": [
           "rsi"
         ],
-        "MACD": [],
-        "PriceChange": []
+        "MACD": [
+          "macdhist",
+          "macd",
+          "macdsignal"
+        ],
+        "LinearReg": [
+          "linear_reg"
+        ],
+        "PriceChange": [],
+        "HighVolume": [
+          "volume"
+        ]
       }
     }
   }

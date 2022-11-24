@@ -107,6 +107,7 @@ class MACD(Indicator):
         df['macdhist'] = macdhist  # macd - macdsignal
         # add auxilary data
         df['macd_dir'] = df['macd'].pct_change().rolling(3).mean()
+        df.loc[(df['macd_dir'] > -0.1) & (df['macd_dir'] < 0.1), 'macd_dir'] = 0
         df['macdsignal_dir'] = df['macdsignal'].pct_change().rolling(3).mean()
         return df
 

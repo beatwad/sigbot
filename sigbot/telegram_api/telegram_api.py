@@ -197,9 +197,7 @@ class TelegramBot(Thread):
         sig_pattern = message[5]
         # get list of available exchanges
         sig_exchanges = message[7]
-        # # get total and ticker statistics
-        # result_statistics = message[8]
-        # form message
+        # Check if the same message wasn't send short time ago
         if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
             # create image and return path to it
             sig_img_path = self.add_plot(message)

@@ -229,7 +229,8 @@
       },
       "PriceChange": {
         "params": {
-          "round_decimals": 4,
+          "round_decimals": 6,
+          "max_stat_size": 100000,
           "low_price_quantile": 10,
           "high_price_quantile": 990,
           "stat_file_path": "signal_stat/price_stat_sell.json"

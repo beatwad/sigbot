@@ -18,23 +18,35 @@ class Main:
     type = 'Main'
 
     def __init__(self, load_tickers=True, **configs):
-        # initialize separate thread the Telegram bot, so it can work independently
-        # event for stopping bot thread
+        """ Initialize separate thread the Telegram bot, so it can work independently
+            event for stopping bot thread """
         self.cycle_number = 1
         self.bot_cycle_length = configs[self.type]['params']['bot_cycle_length_sec']
+        self.time_period = configs[self.type]['params']['time_period_minutes']
         self.cycle_length = configs[self.type]['params']['cycle_length_hours']
         self.first_cycle_qty_miss = configs[self.type]['params']['first_cycle_qty_miss']
         self.sigbot = SigBot(self, load_tickers=load_tickers, **configs)
 
+    @staticmethod
+    def check_time(dt, time_period):
+        """ Check if time in minutes is multiple of a period """
+        if dt.minute % time_period == 0:
+            return True
+        return False
+
     def cycle(self):
         try:
             dt1 = datetime.now()
-            self.sigbot.main_cycle()
-            dt2 = datetime.now()
-            dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
-            print(f'Cycle is {self.cycle_number}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
-            self.cycle_number += 1
-            sleep(self.bot_cycle_length)
+            if self.check_time(dt1, self.time_period) or self.cycle_number == 1:
+                self.sigbot.main_cycle()
+                dt2 = datetime.now()
+                dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
+                print(f'Cycle is {self.cycle_number}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}',
+                      flush=True)
+                self.cycle_number += 1
+                sleep(self.bot_cycle_length)
+            else:
+                sleep(1)
         except (KeyboardInterrupt, SystemExit):
             # stop all exchange monitors
             self.sigbot.stop_monitors()

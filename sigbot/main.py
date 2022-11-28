@@ -37,16 +37,16 @@ class Main:
     def cycle(self):
         try:
             dt1 = datetime.now()
-            if self.check_time(dt1, self.time_period) or self.cycle_number == 1:
-                self.sigbot.main_cycle()
-                dt2 = datetime.now()
-                dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
-                print(f'Cycle is {self.cycle_number}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}',
-                      flush=True)
-                self.cycle_number += 1
-                sleep(self.bot_cycle_length)
-            else:
-                sleep(1)
+            # if self.check_time(dt1, self.time_period) or self.cycle_number == 1:
+            self.sigbot.main_cycle()
+            dt2 = datetime.now()
+            dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
+            print(f'Cycle is {self.cycle_number}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}',
+                  flush=True)
+            self.cycle_number += 1
+            sleep(self.bot_cycle_length)
+            # else:
+            #     sleep(1)
         except (KeyboardInterrupt, SystemExit):
             # stop all exchange monitors
             self.sigbot.stop_monitors()

@@ -318,7 +318,7 @@
   },
   "Main": {
     "params": {
-      "bot_cycle_length_sec": 60,
+      "bot_cycle_length_sec": 20,
       "cycle_length_hours": 24,
       "time_period_minutes": 5,
       "first_cycle_qty_miss": 1

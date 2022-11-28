@@ -371,6 +371,7 @@
     "params": {
       "log_path": "telegram_log.txt",
       "chat_ids": {
+        "Errors": "-1001837009227",
         "STOCH_RSI": "-1001463253403",
         "STOCH_RSI_LinearReg": "-1001688789758",
         "PriceChange": "-1001700504878",

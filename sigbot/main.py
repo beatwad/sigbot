@@ -5,7 +5,7 @@ from datetime import datetime
 from os import environ, remove
 
 # Set environment variable
-environ["ENV"] = "debug"
+environ["ENV"] = "15m_1h"
 
 from bot.bot import SigBot
 from config.config import ConfigFactory
@@ -41,8 +41,7 @@ class Main:
             self.sigbot.main_cycle()
             dt2 = datetime.now()
             dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
-            print(f'Cycle is {self.cycle_number}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}',
-                  flush=True)
+            print(f'Cycle is {self.cycle_number}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
             self.cycle_number += 1
             sleep(self.bot_cycle_length)
             # else:
@@ -63,6 +62,7 @@ class Main:
 if __name__ == "__main__":
     load_tickers = True
     database, exchanges, tb_bot = None, None, None
+    error_notification_sent = False
 
     while True:
         main = Main(load_tickers, **configs)
@@ -79,11 +79,16 @@ if __name__ == "__main__":
             main.sigbot.exchanges = exchanges
             main.sigbot.telegram_bot = tb_bot
         # restart the bot every 24 hours
-        dt1 = datetime.now()
-        dt2 = datetime.now()
+        dt1 = dt2 = datetime.now()
         try:
             while int((dt2 - dt1).total_seconds() / 3600) <= main.cycle_length:
                 main.cycle()
                 dt2 = datetime.now()
+        except (KeyboardInterrupt, SystemExit):
+            pass
         except:
+            if not error_notification_sent:
+                text = f'Catch an exception: {sys.exc_info()[0]}'
+                main.sigbot.telegram_bot.send_message(main.sigbot.telegram_bot.chat_ids['Errors'], text)
+                error_notification_sent = True
             continue

@@ -403,20 +403,28 @@ class MonitorExchange(Thread):
                 8 - statistics for the current pattern """
         tickers = self.exchange_data['tickers']
         for ticker in tickers:
+            # flag that allows to pass the ticker in case of errors
+            pass_the_ticker = False
             # stop thread if stop flag is set
             if self.stopped.is_set():
                 break
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
+                if pass_the_ticker:
+                    continue
                 df, data_qty = self.sigbot.get_data(self.exchange_data['API'], ticker, timeframe)
                 if timeframe == self.sigbot.work_timeframe:
                     t_print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}, ticker {ticker}')
                 # If we get new data - create indicator list from search signal patterns list, if it has
                 # the new data and data is not from higher timeframe, else get only levels
                 if data_qty > 1:
-                    # Get indicators and quantity of data
-                    data_qty_buy = self.get_indicators(df, 'buy', ticker, timeframe, data_qty)
-                    data_qty_sell = self.get_indicators(df, 'sell', ticker, timeframe, data_qty)
+                    # Get indicators and quantity of data, if catch any exception - pass the ticker
+                    try:
+                        data_qty_buy = self.get_indicators(df, 'buy', ticker, timeframe, data_qty)
+                        data_qty_sell = self.get_indicators(df, 'sell', ticker, timeframe, data_qty)
+                    except:
+                        pass_the_ticker = True
+                        continue
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Get the signals

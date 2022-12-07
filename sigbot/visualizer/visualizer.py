@@ -91,35 +91,34 @@ class Visualizer:
 
     @staticmethod
     def get_statistics_dict_key(pattern: list) -> str:
-        """ Get previous percent of right forecast and save current percent to statistics dictionary """
+        """ Get previous avg E-ratio coefficient and save current E-ratio to statistics dictionary """
         if 'PriceChange' in str(pattern[0][0]):
             key = str([pattern[0][0]] + pattern[1:])
         else:
             key = str(pattern)
         return key
     
-    def get_prev_mean_pct_right_forecast(self, key: str, point_type: str, mean_pct_right_forecast: float) -> float:
-        """ Get previous mean percent of right forecasts and
-            fill the statistic dict by current value of percent of right forecasts """
+    def get_prev_avg_e_ratio_coef(self, key: str, point_type: str, avg_e_ratio_coef: float) -> float:
+        """ Get previous E-ratio coefficient and fill the statistic dict by current value of E-ratio """
         if key in self.prev_stat_dict:
-            prev_mean_pct_right_forecast = self.prev_stat_dict[key][point_type]
+            prev_avg_e_ratio_coef = self.prev_stat_dict[key][point_type]
         else:
-            prev_mean_pct_right_forecast = mean_pct_right_forecast
+            prev_avg_e_ratio_coef = avg_e_ratio_coef
             self.prev_stat_dict[key] = {'sell': None, 'buy': None}
 
-        self.prev_stat_dict[key][point_type] = mean_pct_right_forecast
-        return prev_mean_pct_right_forecast
+        self.prev_stat_dict[key][point_type] = avg_e_ratio_coef
+        return prev_avg_e_ratio_coef
 
     @staticmethod
-    def statistics_change(prev_mean_pct_right_forecast, mean_pct_right_forecast):
+    def statistics_change(prev_avg_e_ratio_coef, avg_e_ratio_coef):
         """ Measure statistics difference between previous signal and current signal """
-        if prev_mean_pct_right_forecast is None:
+        if prev_avg_e_ratio_coef is None:
             return '= без изменений'
-        stat_diff = round(mean_pct_right_forecast - prev_mean_pct_right_forecast, 2)
+        stat_diff = round(avg_e_ratio_coef - prev_avg_e_ratio_coef, 4)
         if stat_diff < 0:
-            return f'= уменьшилась на {abs(stat_diff)}%'
+            return f'= уменьшилcя на {abs(stat_diff)}'
         if stat_diff > 0:
-            return f'= выросла на {stat_diff}%'
+            return f'= вырос на {stat_diff}'
         return '= без изменений'
 
     def create_plot(self, dfs, point, levels):
@@ -354,24 +353,24 @@ class Visualizer:
             pct_price_diff_mean_minus_std = [a - b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
 
             # get previous percent of right forecast and save current percent to statistics dictionary
-            mean_pct_right_forecast = round(sum(pct_right_forecast)/len(pct_right_forecast), 2)
+            avg_e_ratio_coef = round(sum(pct_right_forecast)/len(pct_right_forecast), 2)
 
             # get key for statistics dict
             key = self.get_statistics_dict_key(pattern)
 
             # get previous mean percent of right forecasts and
             # check if pattern and trade type are in statistics dictionary
-            prev_mean_pct_right_forecast = self.get_prev_mean_pct_right_forecast(key, point_type,
-                                                                                 mean_pct_right_forecast)
+            prev_avg_e_ratio_coef = self.get_prev_avg_e_ratio_coef(key, point_type, avg_e_ratio_coef)
 
             # get change of statistics
-            stat_change = self.statistics_change(prev_mean_pct_right_forecast, mean_pct_right_forecast)
+            stat_change = self.statistics_change(prev_avg_e_ratio_coef, avg_e_ratio_coef)
 
             # make subplots
             axs2 = subfigs[-1].subplots(2, 1, sharex=True)
 
             # make plots
             axs2[0].plot(pct_right_forecast, linewidth=2, color=self.stat_color_1)
+            axs2[0].axhline(y=1, color='white', linestyle='--', linewidth=1.5)
             axs2[0].yaxis.set_label_position("right")
             axs2[0].yaxis.tick_right()
             axs2[1].plot(pct_price_diff_mean_plus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_1)
@@ -388,8 +387,9 @@ class Visualizer:
                 title = '\nСTATИСТИКА СИГНАЛА НА ПОКУПКУ'
             else:
                 title = '\nСTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
-            axs2[0].set_title(f'{title}\n\nВероятность правильного движения цены после сигнала\n'
-                              f'(в среднем - {mean_pct_right_forecast}% {stat_change})',
+            axs2[0].set_title(f'{title}\n\nЦеновой перевес (E-ratio) после сигнала \n'
+                              f'(E-ratio > 1 - покупка, E-ratio < 1 - продажа)\n '
+                              f'(в среднем - {avg_e_ratio_coef} {stat_change})',
                               fontsize=13, color=self.ticker_color)
             axs2[1].set_title('Средняя разница между текущей ценой актива\nи его ценой во время сигнала + '
                               'среднее отклонение цены', fontsize=13, color=self.ticker_color)
@@ -414,7 +414,7 @@ class Visualizer:
             axs2[1].set_xlabel(f"время после сигнала, в минутах", fontsize=12, color=self.ticker_color)
 
             # set y-labels
-            axs2[0].set_ylabel("вероятность, %", fontsize=9.5, color=self.ticker_color)
+            axs2[0].set_ylabel("E-ratio", fontsize=9.5, color=self.ticker_color)
             axs2[1].set_ylabel("разница цен %", fontsize=9.5, color=self.ticker_color)
 
             # set ticker color

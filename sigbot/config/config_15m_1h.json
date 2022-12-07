@@ -184,6 +184,11 @@
           "signalperiod": 9
         }
       },
+      "ATR": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
       "PriceChange": {
         "params": {
           "round_decimals": 6,
@@ -227,6 +232,11 @@
           "signalperiod": 9
         }
       },
+      "ATR": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
       "PriceChange": {
         "params": {
           "round_decimals": 6,
@@ -252,6 +262,7 @@
     "PriceChange",
     "HighVolume",
     "MACD",
+    "ATR",
     "LinearReg"
   ],
   "Indicator_signal": {

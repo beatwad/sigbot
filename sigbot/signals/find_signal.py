@@ -285,7 +285,7 @@ class FindSignal:
         """ Get all indicator signal classes """
         indicator_signals = list()
         for indicator in self.indicator_list:
-            if indicator == 'HighVolume' and self.ttype == 'sell':
+            if (indicator == 'HighVolume' and self.ttype == 'sell') or indicator == 'ATR':
                 continue
             indicator_signals.append(SignalFactory.factory(indicator, self.ttype, self.configs))
         return indicator_signals

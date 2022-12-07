@@ -183,6 +183,11 @@
           "signalperiod": 9
         }
       },
+      "ATR": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
       "PriceChange": {
         "params": {
           "round_decimals": 6,
@@ -226,6 +231,11 @@
           "signalperiod": 9
         }
       },
+      "ATR": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
       "PriceChange": {
         "params": {
           "round_decimals": 6,
@@ -249,6 +259,8 @@
     "STOCH",
     "RSI",
     "PriceChange",
+    "HighVolume",
+    "ATR",
     "LinearReg"
   ],
   "Indicator_signal": {
@@ -331,11 +343,14 @@
       "LinearReg"
     ],
     [
-      "PriceChange"
+      "HighVolume"
     ],
     [
       "PriceChange",
       "LinearReg"
+    ],
+    [
+      "MACD"
     ]
   ],
     "SignalStat": {
@@ -371,7 +386,7 @@
         "HighVolume": "-1001752697158",
         "MACD": "-1001752697158"
       },
-      "prev_sig_minutes_limit": 25,
+      "min_prev_candle_limit": 3,
       "max_notifications_in_row": 3
     }
   },
@@ -396,8 +411,18 @@
         "RSI": [
           "rsi"
         ],
-        "MACD": [],
-        "PriceChange": []
+        "MACD": [
+          "macdhist",
+          "macd",
+          "macdsignal"
+        ],
+        "LinearReg": [
+          "linear_reg"
+        ],
+        "PriceChange": [],
+        "HighVolume": [
+          "volume"
+        ]
       }
     }
   }

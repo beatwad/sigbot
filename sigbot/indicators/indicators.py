@@ -22,6 +22,8 @@ class IndicatorFactory(object):
             return LinearReg(ttype, configs)
         elif indicator.startswith('HighVolume'):
             return HighVolume(ttype, configs)
+        elif indicator.startswith('ATR'):
+            return ATR(ttype, configs)
 
 
 class Indicator:
@@ -110,6 +112,19 @@ class MACD(Indicator):
         df['macdsignal_dir'] = df['macdsignal'].pct_change().rolling(3).mean()
         # don't consider low diff speed macd signals
         df.loc[(df['macd_dir'] > -0.1) & (df['macd_dir'] < 0.1), 'macd_dir'] = 0
+        return df
+
+
+class ATR(Indicator):
+    """ ATR indicator, default settings: timeperiod: 24 """
+    name = 'ATR'
+
+    def __init__(self, ttype: str, configs: dict):
+        super(ATR, self).__init__(ttype, configs)
+
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        atr = ta.ATR(df['high'], df['low'], df['close'], **self.configs)
+        df['atr'] = atr
         return df
 
 

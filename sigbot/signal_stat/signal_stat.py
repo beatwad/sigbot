@@ -39,26 +39,26 @@ class SignalStat:
             if index < 50:
                 continue
             # Get statistics, process it and write into the database
-            result_prices = self.get_result_price_after_period(df, index, ttype)
-            dfs = self.process_statistics(dfs, point, signal_price, result_prices)
-
+            high_result_prices, low_result_prices, atr = self.get_result_price_after_period(df, index)
+            dfs = self.process_statistics(dfs, point, signal_price, high_result_prices, low_result_prices, atr)
         # Save trade statistics on disk
         if signal_points:
             self.save_statistics(dfs)
         return dfs
 
-    def get_result_price_after_period(self, df: pd.DataFrame, index: int, ttype: str) -> list:
-        """ Get result prices after every 5 minutes """
-        result_prices = list()
+    def get_result_price_after_period(self, df: pd.DataFrame, index: int) -> (list, list, float):
+        """ Get result prices after every T minutes """
+        high_result_prices = list()
+        low_result_prices = list()
+        atr = df['atr'].iloc[index]
         for t in range(1, self.stat_range + 1):
-            if ttype == 'buy':
-                result_prices.append(df['high'].iloc[index + t])
-            else:
-                result_prices.append(df['low'].iloc[index + t])
-        return result_prices
+            high_result_prices.append(df['high'].iloc[index + t])
+            low_result_prices.append(df['low'].iloc[index + t])
+        return high_result_prices, low_result_prices, atr
 
     @staticmethod
-    def process_statistics(dfs: dict, point: list, signal_price: float, result_prices: list) -> dict:
+    def process_statistics(dfs: dict, point: list, signal_price: float, high_result_prices: list,
+                           low_result_prices: list, atr: float) -> dict:
         """ Calculate statistics and write it to the stat dataframe if it's not presented in it """
         # get data
         ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
@@ -67,7 +67,6 @@ class SignalStat:
         tmp['time'] = [time]
         tmp['ticker'] = [ticker]
         tmp['timeframe'] = [timeframe]
-
         tmp['pattern'] = [pattern]
         # If current statistics is not in stat dataframe - write it
         if ttype == 'buy':
@@ -77,12 +76,22 @@ class SignalStat:
         if stat[(stat['time'] == time) & (stat['ticker'] == ticker) &
                 (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern)].shape[0] == 0:
             tmp['signal_price'] = [signal_price]
-            # write statistics after certain period of time
-            for t, v in enumerate(result_prices):
-                tmp[f'result_price_{t+1}'] = [v]
-                tmp[f'price_diff_{t+1}'] = tmp[f'result_price_{t+1}'] - tmp['signal_price']
-                tmp[f'pct_price_diff_{t+1}'] = tmp[f'price_diff_{t+1}'] / tmp['signal_price'] * 100
-                tmp = tmp.drop(f'result_price_{t+1}', axis=1)
+            # write result price, MFE and MAE, if MAE is too low - replace it with MFE/1000 to prevent zero division
+            for i in range(len(high_result_prices)):
+                if ttype == 'buy':
+                    tmp['result_price'] = [high_result_prices[i]]
+                    mfe = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
+                    tmp[f'mfe_{i+1}'] = [mfe]
+                    tmp[f'mae_{i+1}'] = max(signal_price - min(low_result_prices[:i+1]), mfe / 1e3) / atr
+                else:
+                    tmp['result_price'] = [low_result_prices[i]]
+                    mfe = max(signal_price - min(low_result_prices[:i+1]), 0) / atr
+                    tmp[f'mfe_{i+1}'] = [mfe]
+                    tmp[f'mae_{i+1}'] = max(max(high_result_prices[:i+1]) - signal_price, mfe / 1e3) / atr
+                tmp[f'price_diff_{i+1}'] = tmp[f'result_price'] - tmp['signal_price']
+                tmp[f'pct_price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'] / tmp['signal_price'] * 100
+                tmp = tmp.drop(['result_price', f'price_diff_{i+1}'], axis=1)
+
             stat = pd.concat([stat, tmp], ignore_index=True)
             # updata database with new stat data
             if ttype == 'buy':
@@ -117,7 +126,6 @@ class SignalStat:
     def calculate_total_stat(self, dfs: dict, ttype: str, pattern: str) -> (list, int):
         """ Calculate signal statistics for all found signals and all tickers  """
         stat = dfs['stat'][ttype]
-
         # get statistics by pattern
         stat = stat[stat['pattern'] == pattern]
         # get only last signals that has been created not earlier than N hours ago (depends on pattern)
@@ -125,15 +133,13 @@ class SignalStat:
         if stat.shape[0] == 0:
             return [(0, 0, 0) for _ in range(1, self.stat_range + 1)], stat.shape[0]
         result_statistics = list()
-        # calculate percent of right forecast
+        # calculate E-ratio (MFE/MAE), median and standard deviation of price movement
+        # for each time interval after signal
         for t in range(1, self.stat_range + 1):
-            if ttype == 'buy':
-                pct_price_right_forecast = round(stat[stat[f'price_diff_{t}'] > 0].shape[0] / stat.shape[0] * 100, 2)
-            else:
-                pct_price_right_forecast = round(stat[stat[f'price_diff_{t}'] < 0].shape[0] / stat.shape[0] * 100, 2)
+            e_ratio = round(sum(stat[f'mfe_{t}']) / sum(stat[f'mae_{t}']), 4)
             pct_price_diff_mean = round(stat[f'pct_price_diff_{t}'].median(), 2)
             pct_price_diff_std = round(stat[f'pct_price_diff_{t}'].std(), 2)
-            result_statistics.append((pct_price_right_forecast, pct_price_diff_mean, pct_price_diff_std))
+            result_statistics.append((e_ratio, pct_price_diff_mean, pct_price_diff_std))
         return result_statistics, stat.shape[0]
 
     def check_close_trades(self, df: pd.DataFrame, ticker: str, timeframe: str,

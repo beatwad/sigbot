@@ -184,6 +184,11 @@
           "signalperiod": 9
         }
       },
+      "ATR": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
       "PriceChange": {
         "params": {
           "round_decimals": 6,
@@ -227,6 +232,11 @@
           "signalperiod": 9
         }
       },
+      "ATR": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
       "PriceChange": {
         "params": {
           "round_decimals": 6,
@@ -252,6 +262,7 @@
     "PriceChange",
     "HighVolume",
     "MACD",
+    "ATR",
     "LinearReg"
   ],
   "Indicator_signal": {
@@ -320,8 +331,8 @@
     "params": {
       "bot_cycle_length_sec": 20,
       "cycle_length_hours": 24,
-      "time_period_minutes": 5,
-      "first_cycle_qty_miss": 1
+      "time_period_minutes": 15,
+      "first_cycle_qty_miss": 0
     }
   },
   "Patterns": [
@@ -364,7 +375,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 1
+      "max_prev_candle_limit": 30
     }
   },
   "Telegram": {
@@ -384,7 +395,7 @@
     }
   },
   "Timeframes": {
-    "work_timeframe": "5m",
+    "work_timeframe": "15m",
     "higher_timeframe": "1h"
   },
   "Visualizer": {

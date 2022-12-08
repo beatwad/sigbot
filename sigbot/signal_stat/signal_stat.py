@@ -82,12 +82,16 @@ class SignalStat:
                     tmp['result_price'] = [high_result_prices[i]]
                     mfe = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
                     tmp[f'mfe_{i+1}'] = [mfe]
-                    tmp[f'mae_{i+1}'] = max(signal_price - min(low_result_prices[:i+1]), mfe / 1e3) / atr
+                    tmp[f'mae_{i+1}'] = max(signal_price - min(low_result_prices[:i+1]), 0) / atr
+                    if max(signal_price - min(low_result_prices[:i+1]), 0) / atr > 1000:
+                        pass
                 else:
                     tmp['result_price'] = [low_result_prices[i]]
                     mfe = max(signal_price - min(low_result_prices[:i+1]), 0) / atr
                     tmp[f'mfe_{i+1}'] = [mfe]
-                    tmp[f'mae_{i+1}'] = max(max(high_result_prices[:i+1]) - signal_price, mfe / 1e3) / atr
+                    tmp[f'mae_{i+1}'] = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
+                    if max(max(high_result_prices[:i+1]) - signal_price, 0) / atr > 1000:
+                        pass
                 tmp[f'price_diff_{i+1}'] = tmp[f'result_price'] - tmp['signal_price']
                 tmp[f'pct_price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'] / tmp['signal_price'] * 100
                 tmp = tmp.drop(['result_price', f'price_diff_{i+1}'], axis=1)
@@ -136,7 +140,11 @@ class SignalStat:
         # calculate E-ratio (MFE/MAE), median and standard deviation of price movement
         # for each time interval after signal
         for t in range(1, self.stat_range + 1):
-            e_ratio = round(sum(stat[f'mfe_{t}']) / sum(stat[f'mae_{t}']), 4)
+            try:
+                e_ratio = round(sum(stat[f'mfe_{t}']) / sum(stat[f'mae_{t}']), 4)
+                e_ratio = min(e_ratio, 10)
+            except ZeroDivisionError:
+                e_ratio = 10
             pct_price_diff_mean = round(stat[f'pct_price_diff_{t}'].median(), 2)
             pct_price_diff_std = round(stat[f'pct_price_diff_{t}'].std(), 2)
             result_statistics.append((e_ratio, pct_price_diff_mean, pct_price_diff_std))

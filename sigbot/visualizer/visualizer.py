@@ -385,10 +385,14 @@ class Visualizer:
             # set title
             if point_type == 'buy':
                 title = '\nСTATИСТИКА СИГНАЛА НА ПОКУПКУ'
+                pro_trade = 'покупка'
+                counter_trade = 'продажа'
             else:
                 title = '\nСTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
+                pro_trade = 'продажа'
+                counter_trade = 'покупка'
             axs2[0].set_title(f'{title}\n\nЦеновой перевес (E-ratio) после сигнала \n'
-                              f'(E-ratio > 1 - покупка, E-ratio < 1 - продажа)\n '
+                              f'(E-ratio > 1 - {pro_trade}, E-ratio < 1 - {counter_trade})\n '
                               f'(в среднем - {avg_e_ratio_coef} {stat_change})',
                               fontsize=13, color=self.ticker_color)
             axs2[1].set_title('Средняя разница между текущей ценой актива\nи его ценой во время сигнала + '

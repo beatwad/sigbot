@@ -1,4 +1,3 @@
-import sys
 import functools
 import threading
 from threading import Thread, Event
@@ -13,9 +12,6 @@ from signal_stat.signal_stat import SignalStat
 from indicators.indicators import IndicatorFactory
 from telegram_api.telegram_api import TelegramBot
 from log.log import exception, logger
-
-sys.path.insert(0, '..')
-
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs

@@ -1,11 +1,8 @@
-import sys
 import glob
 import pandas as pd
 import itertools as it
 from tqdm import tqdm
 from os import environ, remove
-
-sys.path.insert(0, '..')
 
 # Set environment variable
 environ["ENV"] = "optimize"

@@ -184,6 +184,11 @@
           "signalperiod": 9
         }
       },
+      "ATR": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
       "PriceChange": {
         "params": {
           "round_decimals": 6,
@@ -227,9 +232,15 @@
           "signalperiod": 9
         }
       },
+      "ATR": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
       "PriceChange": {
         "params": {
-          "round_decimals": 4,
+          "round_decimals": 6,
+          "max_stat_size": 100000,
           "low_price_quantile": 10,
           "high_price_quantile": 990,
           "stat_file_path": "signal_stat/price_stat_sell.json"
@@ -251,6 +262,7 @@
     "PriceChange",
     "HighVolume",
     "MACD",
+    "ATR",
     "LinearReg"
   ],
   "Indicator_signal": {
@@ -319,6 +331,7 @@
     "params": {
       "bot_cycle_length_sec": 20,
       "cycle_length_hours": 24,
+      "time_period_minutes": 15,
       "first_cycle_qty_miss": 1
     }
   },
@@ -369,6 +382,7 @@
     "params": {
       "log_path": "telegram_log.txt",
       "chat_ids": {
+        "Errors": "-1001837009227",
         "STOCH_RSI": "-1001463253403",
         "STOCH_RSI_LinearReg": "-1001688789758",
         "PriceChange": "-1001700504878",

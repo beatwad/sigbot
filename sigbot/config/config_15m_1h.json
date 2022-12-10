@@ -162,7 +162,7 @@
     "buy": {
       "RSI": {
         "params": {
-          "timeperiod": 12
+          "timeperiod": 14
         }
       },
       "STOCH": {
@@ -241,8 +241,8 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "low_price_quantile": 10,
-          "high_price_quantile": 990,
+          "low_price_quantile": 20,
+          "high_price_quantile": 980,
           "stat_file_path": "signal_stat/price_stat_sell.json"
         }
       },
@@ -269,14 +269,14 @@
     "buy": {
       "RSI": {
         "params": {
-          "low_bound": 30,
-          "high_bound": 70
+          "low_bound": 35,
+          "high_bound": 65
         }
       },
       "STOCH": {
         "params": {
-          "low_bound": 30,
-          "high_bound": 70
+          "low_bound": 25,
+          "high_bound": 75
         }
       },
       "MACD": {
@@ -298,14 +298,14 @@
     "sell": {
       "RSI": {
         "params": {
-          "low_bound": 15,
-          "high_bound": 85
+          "low_bound": 35,
+          "high_bound": 65
         }
       },
       "STOCH": {
         "params": {
-          "low_bound": 15,
-          "high_bound": 85
+          "low_bound": 25,
+          "high_bound": 75
         }
       },
       "MACD": {

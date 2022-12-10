@@ -85,7 +85,7 @@ class Optimizer:
             if key == 'Patterns':
                 confs[key] = [self.pattern_list]
             elif key == 'Indicator_list':
-                confs[key] = self.pattern_list
+                confs[key] = self.pattern_list + ['ATR']
             elif key in ['Indicator', 'Indicator_signal']:
                 for indicator in prod_dict.keys():
                     prod_values = prod_dict[indicator]
@@ -181,11 +181,11 @@ class Optimizer:
             rs, fn = sb.stat.calculate_total_stat(sb.database, ttype, pattern)
             # create df to store statistics results
             tmp = pd.DataFrame(columns=['pattern'] + headers +
-                                       [f'pct_right_forecast_{lag + 1}' for lag in range(24)] +
+                                       [f'e_ratio_{lag + 1}' for lag in range(24)] +
                                        [f'pct_price_diff_{lag + 1}' for lag in range(24)] + ['forecasts_num'])
             tmp['pattern'] = [pattern]
             tmp[headers] = self.get_values_from_dict(prod_dict)
-            tmp[[f'pct_right_forecast_{lag + 1}' for lag in range(24)]] = [r[0] for r in rs]
+            tmp[[f'e_ratio_{lag + 1}' for lag in range(24)]] = [r[0] for r in rs]
             tmp[[f'pct_price_diff_{lag + 1}' for lag in range(24)]] = [r[1] for r in rs]
             tmp['forecasts_num'] = fn
             # add temp df to the result df

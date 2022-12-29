@@ -128,6 +128,28 @@ class ATR(Indicator):
         return df
 
 
+class PivotPoints(Indicator):
+    """ Pivot point indicator """
+    name = 'ATR'
+
+    def __init__(self, ttype: str, configs: dict):
+        super(PivotPoints, self).__init__(ttype, configs)
+
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        """ Add PP indicator to the dataframe """
+        PP = pd.Series((df['high'] + df['low'] + df['close']) / 3)
+        R1 = pd.Series(2 * PP - df['low'])
+        S1 = pd.Series(2 * PP - df['high'])
+        R2 = pd.Series(PP + df['high'] - df['low'])
+        S2 = pd.Series(PP - df['high'] + df['low'])
+        R3 = pd.Series(df['high'] + 2 * (PP - df['low']))
+        S3 = pd.Series(df['low'] - 2 * (df['high'] - PP))
+        psr = {'PP': PP, 'R1': R1, 'S1': S1, 'R2': R2, 'S2': S2, 'R3': R3, 'S3': S3}
+        PSR = pd.DataFrame(psr)
+        df = df.join(PSR)
+        return df
+
+
 class PriceChange(Indicator):
     """ Find big changes of price in both directions """
     name = 'PriceChange'

@@ -24,7 +24,8 @@ class OKEX(ApiBase):
 
     def get_ticker_names(self, min_volume) -> (list, list, list):
         """ Get tickers from spot, futures and swap OKEX exchanges and get tickers with big enough 24h volume """
-        tickers_spot = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=SPOT').json()['data'])
+        tickers_spot = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=SPOT',
+                                                 timeout=3).json()['data'])
         tickers_future = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=FUTURES').json()['data'])
         tickers_swap = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=SWAP').json()['data'])
 

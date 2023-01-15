@@ -64,7 +64,7 @@
     },
     "OKEX": {
       "params": {
-        "limit": 1000,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -107,7 +107,7 @@
     },
     "ByBitPerpetual": {
       "params": {
-        "limit": 1000,
+        "limit": 198,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -127,7 +127,7 @@
     },
     "OKEXFutures": {
       "params": {
-        "limit": 1000,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -156,7 +156,8 @@
   },
   "Higher_TF_indicator_list": [
     "LinearReg",
-    "MACD"
+    "MACD",
+    "Pattern"
   ],
   "Indicator": {
     "buy": {
@@ -182,6 +183,10 @@
           "fastperiod": 12,
           "slowperiod": 26,
           "signalperiod": 9
+        }
+      },
+      "Pattern": {
+        "params": {
         }
       },
       "ATR": {
@@ -232,6 +237,10 @@
           "signalperiod": 9
         }
       },
+      "Pattern": {
+        "params": {
+        }
+      },
       "ATR": {
         "params": {
           "timeperiod": 24
@@ -262,6 +271,7 @@
     "PriceChange",
     "HighVolume",
     "MACD",
+    "Pattern",
     "ATR",
     "LinearReg"
   ],
@@ -281,6 +291,11 @@
       },
       "MACD": {
         "params": {}
+      },
+      "Pattern": {
+        "params": {
+          "window": 30
+        }
       },
       "PriceChange": {
         "params": {}
@@ -311,6 +326,11 @@
       "MACD": {
         "params": {}
       },
+      "Pattern": {
+        "params": {
+          "window": 30
+        }
+      },
       "PriceChange": {
         "params": {}
       },
@@ -337,20 +357,7 @@
   },
   "Patterns": [
     [
-      "STOCH",
-      "RSI"
-    ],
-    [
-      "STOCH",
-      "RSI",
-      "LinearReg"
-    ],
-    [
-      "HighVolume"
-    ],
-    [
-      "PriceChange",
-      "LinearReg"
+      "Pattern"
     ],
     [
       "MACD"
@@ -365,6 +372,7 @@
         "PriceChange": 24,
         "HighVolume": 24,
         "MACD": 125,
+        "Pattern": 125,
         "PriceChange_LinearReg": 48,
         "STOCH_RSI": 36,
         "STOCH_RSI_LinearReg": 168
@@ -388,7 +396,8 @@
         "PriceChange": "-1001752697158",
         "PriceChange_LinearReg": "-1001752697158",
         "HighVolume": "-1001752697158",
-        "MACD": "-1001752697158"
+        "MACD": "-1001752697158",
+        "Pattern": "-1001752697158"
       },
       "min_prev_candle_limit": 3,
       "max_notifications_in_row": 3
@@ -420,6 +429,8 @@
           "macd",
           "macdsignal"
         ],
+        "Pattern":
+        [],
         "LinearReg": [
           "linear_reg"
         ],

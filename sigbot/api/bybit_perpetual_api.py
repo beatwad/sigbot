@@ -8,6 +8,7 @@ class ByBitPerpetual(ApiBase):
     client = ""
 
     def __init__(self, api_key="Key", api_secret="Secret"):
+        self.global_limit = 1000
         self.api_key = api_key
         self.api_secret = api_secret
         self.mainnet = 'https://api.bybit.com'
@@ -37,7 +38,7 @@ class ByBitPerpetual(ApiBase):
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)]
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
 
-        return tickers['symbol'].to_list(), tickers['volume'].to_list(), all_tickers
+        return tickers['symbol'].to_list(), tickers['volume_24h'].to_list(), all_tickers
 
     @staticmethod
     def convert_interval_to_secs(interval: str) -> int:
@@ -73,6 +74,23 @@ class ByBitPerpetual(ApiBase):
                                                        from_time=from_time, limit=limit)['result'])
         tickers = tickers.rename({'open_time': 'time'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
+
+    # def get_klines_agg(self, symbol: str, interval: str, limit: int) -> pd.DataFrame:
+    #     """ Save time, price and volume info to CryptoCurrency structure """
+    #     limit_mult = math.ceil(self.global_limit / limit)
+    #     tickers = None
+    #     interval_secs = self.convert_interval_to_secs(interval)
+    #     interval = self.convert_interval(interval)
+    #     for i in range(limit_mult):
+    #         from_time = (self.get_timestamp() - ((self.global_limit - limit * i) * interval_secs))
+    #         tmp = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval,
+    #                                                     from_time=from_time, limit=limit)['result'])
+    #         if tickers is None:
+    #             tickers = tmp.copy()
+    #         else:
+    #             tickers = pd.concat([tickers, tmp])
+    #     tickers = tickers.rename({'open_time': 'time'}, axis=1)
+    #     return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
 
 
 if __name__ == '__main__':

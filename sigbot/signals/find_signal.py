@@ -14,6 +14,8 @@ class SignalFactory(object):
             return STOCHSignal(ttype, **configs)
         elif indicator == 'MACD':
             return MACDSignal(ttype, **configs)
+        elif indicator == 'Pattern':
+            return PatternSignal(ttype, **configs)
         elif indicator == 'PriceChange':
             return PriceChangeSignal(ttype, **configs)
         elif indicator == 'LinearReg':
@@ -249,7 +251,7 @@ class MACDSignal(SignalBase):
         self.high_bound = self.configs.get('high_bound', 80)
 
     def find_signal(self, df: pd.DataFrame) -> np.ndarray:
-        # Find MACD signal
+        """ Find MACD signal """
         macd_diff = df['macdhist']
         macd_diff_lag_1 = df['macdhist'].shift(1)
         macd_diff_lag_2 = df['macdhist'].shift(2)
@@ -266,6 +268,210 @@ class MACDSignal(SignalBase):
         down_direction_slowd = self.down_direction(df['macdsignal_dir'])
         macd_down = crossed_lines_up & down_direction_slowk & down_direction_slowd
         return macd_down
+
+
+class PatternSignal(SignalBase):
+    type = 'Indicator_signal'
+    name = 'Pattern'
+
+    def __init__(self, ttype, **configs):
+        super(PatternSignal, self).__init__(ttype, configs)
+        self.ttype = ttype
+        self.window = self.configs.get('window', 30)
+
+    def get_high_max(self, df: pd.DataFrame) -> pd.Series:
+        """ Get maximum high prices """
+        df_high = df['high']
+        high_max = df_high[(df_high >= df_high.shift(1)) &
+                           (df_high >= df_high.shift(2)) &
+                           (df_high >= df_high.shift(-1)) &
+                           (df_high >= df_high.shift(-2))]
+        return high_max
+
+    def get_low_min(self, df: pd.DataFrame) -> pd.Series:
+        """ Get minimum low prices """
+        df_low = df['low']
+        low_min = df_low[(df_low <= df_low.shift(1)) &
+                           (df_low <= df_low.shift(2)) &
+                           (df_low <= df_low.shift(-1)) &
+                           (df_low <= df_low.shift(-2))]
+        return low_min
+
+    def shrink_max_min(self, df, high_max, low_min):
+        """ EM algorithm that allows to leave only important high and low extremums """
+        temp_high_max = list()
+        temp_low_min = list()
+        for i in range(len(low_min) + 1):
+            if i == 0:
+                interval = high_max[(0 < high_max) & (high_max < low_min[i])]
+            elif i == len(low_min):
+                interval = high_max[(low_min[i - 1] < high_max) & (high_max < np.inf)]
+            else:
+                interval = high_max[(low_min[i - 1] < high_max) & (high_max < low_min[i])]
+            if len(interval):
+                idx = df.loc[interval, 'high'].argmax()
+                temp_high_max.append(interval[idx])
+        for i in range(len(high_max) + 1):
+            if i == 0:
+                interval = low_min[(0 < low_min) & (low_min < high_max[i])]
+            elif i == len(high_max):
+                interval = low_min[(high_max[i - 1] < low_min) & (low_min < np.inf)]
+            else:
+                interval = low_min[(high_max[i - 1] < low_min) & (low_min < high_max[i])]
+            if len(interval):
+                idx = df.loc[interval, 'low'].argmin()
+                temp_low_min.append(interval[idx])
+        if len(temp_high_max) == len(high_max) and len(temp_low_min) == len(low_min):
+            if self.ttype == 'buy':
+                low_min = low_min[low_min > min(high_max)]
+            else:
+                high_max = high_max[high_max > min(low_min)]
+            return df.loc[high_max, 'high'], df.loc[low_min, 'low']
+        return self.shrink_max_min(df, np.array(temp_high_max), np.array(temp_low_min))
+
+    def get_min_max_indexes(self, df, gmax, gmin) -> (tuple, tuple):
+        if self.ttype == 'buy':  # find H&S
+            # find 3 last global maximum
+            ei = np.array(gmax.index)
+            ci = np.append(np.array(ei[0]), ei[:-1])
+            ai = np.append(np.array(ei[0:2]), ei[:-2])
+            # find 3 last global minimum
+            fi = np.array(gmin.index)
+            di = np.append(np.array(fi[0]), fi[:-1])
+            bi = np.append(np.array(fi[0:2]), fi[:-2])
+            # find according high/low values
+            aiv = df.loc[ai, 'high'].values
+            biv = df.loc[bi, 'low'].values
+            civ = df.loc[ci, 'high'].values
+            div = df.loc[di, 'low'].values
+            eiv = df.loc[ei, 'high'].values
+            fiv = df.loc[fi, 'low'].values
+        else:  # find inverted H&S
+            # find 3 last global minimum
+            ei = np.array(gmin.index)
+            ci = np.append(np.array(ei[0]), ei[:-1])
+            ai = np.append(np.array(ei[0:2]), ei[:-2])
+            # find 3 last global maximum
+            fi = np.array(gmax.index)
+            di = np.append(np.array(fi[0]), fi[:-1])
+            bi = np.append(np.array(fi[0:2]), fi[:-2])
+            # find according high/low values
+            aiv = df.loc[ai, 'low'].values
+            biv = df.loc[bi, 'high'].values
+            civ = df.loc[ci, 'low'].values
+            div = df.loc[di, 'high'].values
+            eiv = df.loc[ei, 'low'].values
+            fiv = df.loc[fi, 'high'].values
+        return (ai, bi, ci, di, ei, fi), (aiv, biv, civ, div, eiv, fiv)
+
+    def two_good_candles(self, df: pd.DataFrame) -> np.ndarray:
+        """ Get minimum low prices """
+        if self.ttype == 'buy':
+            first_candle = (df['close'] - df['low'])/(df['high'] - df['low'])
+            second_candle = (df['close'].shift(1) - df['low'].shift(1))/(df['high'].shift(1) - df['low'].shift(1))
+        else:
+            first_candle = (df['high'] - df['close']) / (df['high'] - df['low'])
+            second_candle = (df['high'].shift(1) - df['close'].shift(1)) / (df['high'].shift(1) - df['low'].shift(1))
+        return np.where((first_candle > 0.667) & (second_candle > 0.5), 1, 0)
+
+    @staticmethod
+    def create_pattern_vector(df: pd.DataFrame, res: np.ndarray):
+        """ Create vector that shows potential places where we can enter the trade after pattern appearance """
+        v = np.zeros(df.shape[0], dtype=int)
+        for i in range(1, 2):
+            try:
+                v[res[res > 0] + i] = 1
+            except IndexError:
+                break
+        return v
+
+    def head_and_shoulders(self, df: pd.DataFrame, min_max_idxs: tuple, min_max_vals: tuple,
+                           avg_gap: float) -> np.ndarray:
+        """ Find H&S/inverted H&S pattern """
+        ai, bi, ci, di, ei, fi = min_max_idxs
+        aiv, biv, civ, div, eiv, fiv = min_max_vals
+        if self.ttype == 'buy':  # inverted H&S
+            # find if global maximums and minimums make H&S pattern
+            res = np.where((1.005 * div < biv) & (1.005 * div < fiv), fi, 0)
+        else:  # H&S
+            # find if global maximums and minimums make inverted H&S pattern
+            res = np.where((div > 1.005 * biv) & (div > 1.005 * fiv), fi, 0)
+        v = self.create_pattern_vector(df, res)
+        return v
+
+    def hlh_lhl(self, df: pd.DataFrame, min_max_idxs: tuple, min_max_vals: tuple) -> np.ndarray:
+        """ Find HLH/LHL pattern """
+        _, __, ci, di, ei, fi = min_max_idxs
+        _, __, civ, div, eiv, fiv = min_max_vals
+        if self.ttype == 'buy':  # LHL
+            # find if global maximums and minimums make LHL pattern
+            res = np.where((1.005 * civ < eiv) & (1.005 * div < fiv), fi, 0)
+        else:  # find HLH
+            # find if global maximums and minimums make HLH pattern
+            res = np.where((civ > 1.005 * eiv) & (div > 1.005 * fiv), fi, 0)
+        v = self.create_pattern_vector(df, res)
+        return v
+
+    def dt_db(self, df: pd.DataFrame, min_max_idxs: tuple, min_max_vals: tuple) -> np.ndarray:
+        """ Find Double Top/Double Bottom pattern """
+        _, __, ci, di, ei, fi = min_max_idxs
+        _, __, civ, div, eiv, fiv = min_max_vals
+        if self.ttype == 'buy':  # LHL
+            # find if global maximums and minimums make DP pattern
+            res = np.where((civ > eiv) & (np.abs(div - fiv)/div < 0.001), fi, 0)
+        else:  # find HLH
+            # find if global maximums and minimums make DB pattern
+            res = np.where((civ < eiv) & (np.abs(div - fiv)/div < 0.001), fi, 0)
+        v = self.create_pattern_vector(df, res)
+        return v
+
+    def triangle(self, df: pd.DataFrame, min_max_idxs: tuple, min_max_vals: tuple) -> np.ndarray:
+        """ Find ascending/descending triangle pattern """
+        ai, bi, ci, di, ei, fi = min_max_idxs
+        aiv, biv, civ, div, eiv, fiv = min_max_vals
+        if self.ttype == 'buy':  # ascending triangle
+            # find if global maximums and minimums make ascending triangle pattern
+            res = np.where((biv < div) & (div < fiv) & (np.abs(aiv - civ) / aiv < 0.001)
+                           & (np.abs(civ - eiv) / civ < 0.001) & (np.abs(aiv - eiv) / aiv < 0.001), fi, 0)
+        else:  # descending triangle
+            # find if global maximums and minimums make descending triangle pattern
+            res = np.where((biv > div) & (div > fiv) & (np.abs(aiv - civ) / aiv < 0.001)
+                           & (np.abs(civ - eiv) / civ < 0.001) & (np.abs(aiv - eiv) / aiv < 0.001), fi, 0)
+        v = self.create_pattern_vector(df, res)
+        return v
+
+    def swing(self, df: pd.DataFrame, min_max_idxs: tuple, min_max_vals: tuple, avg_gap: float) -> np.ndarray:
+        """ Find swing patter """
+        ai, bi, ci, di, ei, fi = min_max_idxs
+        aiv, biv, civ, div, eiv, fiv = min_max_vals
+        res = np.where((np.abs(aiv - civ) / aiv < 0.0025) & (np.abs(civ - eiv) / civ < 0.0025) &
+                       (np.abs(aiv - eiv) / aiv < 0.0025) & (np.abs(biv - div) / biv < 0.0025) &
+                       (np.abs(div - fiv) / div < 0.0025) & (np.abs(biv - fiv) / biv < 0.0025) &
+                       (np.abs(aiv - fiv) <= avg_gap), fi, 0)
+        v = self.create_pattern_vector(df, res)
+        return v
+
+    def find_signal(self, df: pd.DataFrame) -> np.ndarray:
+        # Find one of TA patterns like H&S, HLH/LHL, DT/DB and good candles that confirm that pattern
+        high_max = self.get_high_max(df)
+        low_min = self.get_low_min(df)
+        avg_gap = (df['high'] - df['low']).mean()
+        try:
+            gmax, gmin = self.shrink_max_min(df, high_max.index, low_min.index)
+        except IndexError:
+            return np.zeros(df.shape[0])
+        # bring both extremum lists to one length
+        min_len = min(len(gmax), len(gmin))
+        gmax, gmin = gmax[:min_len], gmin[:min_len]
+        # find minimum and maximum indexes for patterns search
+        min_max_idxs, min_max_vals = self.get_min_max_indexes(df, gmax, gmin)
+        has = self.head_and_shoulders(df, min_max_idxs, min_max_vals, avg_gap)
+        hlh = self.hlh_lhl(df, min_max_idxs, min_max_vals)
+        dt = self.dt_db(df, min_max_idxs, min_max_vals)
+        tgc = self.two_good_candles(df)
+        sw = self.swing(df, min_max_idxs, min_max_vals, avg_gap)
+        pattern_signal = (has | hlh | dt | sw) & tgc
+        return pattern_signal
 
 
 class FindSignal:
@@ -318,7 +524,7 @@ class FindSignal:
                 timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] /
                                       self.timeframe_div[self.work_timeframe])
                 fs = indicator_signal.find_signal(df_higher, timeframe_ratio, df_work.shape[0])
-            elif indicator_signal.name == "MACD":
+            elif indicator_signal.name == "MACD" or indicator_signal.name == "Pattern":
                 fs = indicator_signal.find_signal(df_higher)
             else:
                 fs = indicator_signal.find_signal(df_work)

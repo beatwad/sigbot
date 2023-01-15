@@ -44,7 +44,7 @@ class GetData:
         self.api = None
 
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str) -> (pd.DataFrame, int):
-        """ Get data from Binance exchange """
+        """ Get data from exchange """
         limit = self.get_limit(df, ticker, timeframe)
         # get data from exchange only when there is at least one interval to get
         if limit > 1:
@@ -81,7 +81,10 @@ class GetData:
         klines[['open', 'high', 'low', 'close', 'volume']] = klines[['open', 'high', 'low',
                                                                      'close', 'volume']].astype(float).copy()
         # convert time to UTC+3
-        klines['time'] = pd.to_datetime(klines['time'], unit='ms')
+        if self.name == 'ByBitPerpetual':
+            klines['time'] = pd.to_datetime(klines['time'], unit='s')
+        else:
+            klines['time'] = pd.to_datetime(klines['time'], unit='ms')
         klines = self.add_utc_3(klines)
         # If dataframe is empty - fill it with the new data
         if df.shape[0] == 0:
@@ -173,7 +176,7 @@ class GetByBitData(GetData):
 
 
 class GetByBitPerpetualData(GetData):
-    name = 'ByBit'
+    name = 'ByBitPerpetual'
 
     def __init__(self, **configs):
         super(GetByBitPerpetualData, self).__init__(**configs)

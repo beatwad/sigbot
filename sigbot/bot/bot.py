@@ -84,7 +84,7 @@ class SigBot:
             # Start Telegram bot
             self.telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA',
                                             database=self.database, **configs)
-            self.telegram_bot.start()
+            # self.telegram_bot.run()
         else:
             buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
             sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
@@ -451,7 +451,8 @@ class MonitorExchange(Thread):
                                 t_print(self.exchange,
                                         [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
                                 self.sigbot.telegram_bot.notification_list += sig_points
-                                self.sigbot.telegram_bot.update_bot.set()
+                                # self.sigbot.telegram_bot.update_bot.set()
+                                self.sigbot.telegram_bot.check_notifications()
                             # Log the signals
                             for sig_point in sig_points:
                                 sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \

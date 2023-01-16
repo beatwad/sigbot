@@ -1,5 +1,6 @@
 import re
 import time
+import asyncio
 from os import environ, remove
 
 # Get configs
@@ -8,42 +9,37 @@ from os import environ, remove
 from log.log import exception
 from time import sleep
 import pandas as pd
-from threading import Thread, Event
 
 from config.config import ConfigFactory
 from visualizer.visualizer import Visualizer
 
 import telegram
-from telegram import Update
-from telegram.ext import Updater, CallbackContext, MessageHandler, Filters
+from telegram import Bot
+# from telegram import ForceReply, Update
+# from telegram.ext import CommandHandler, ContextTypes, MessageHandler, filters
 
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs
 
 
-class TelegramBot(Thread):
+class TelegramBot:
     type = 'Telegram'
 
     # constructor
     def __init__(self, token,  database, **configs):
-        # initialize separate thread the Telegram bot, so it can work independently
-        Thread.__init__(self)
-        # event for stopping bot thread
-        self.stopped = Event()
-        # event for updating bot thread
-        self.update_bot = Event()
         # ticker database
         self.database = database
         # visualizer class
         self.visualizer = Visualizer(**configs)
         # bot parameters
+        self.bot = Bot(token=token)
+        self.loop = asyncio.new_event_loop()
         self.configs = configs[self.type]['params']
         self.chat_ids = self.configs['chat_ids']
         self.min_prev_candle_limit = self.configs.get('min_prev_candle_limit', 3)
         self.max_notifications_in_row = self.configs.get('self.max_notifications_in_row', 3)
-        self.updater = Updater(token=token, use_context=True)
-        self.dispatcher = self.updater.dispatcher
+        # self.dispatcher = self.updater.dispatcher
         # list of notifications
         self.notification_list = list()
         # dataframe for storing of notification history
@@ -61,21 +57,25 @@ class TelegramBot(Thread):
         # on different commands - answer in Telegram
         # self.dispatcher.add_handler(CommandHandler('chat_id', self.get_chat_id))
         # on non command i.e. message - echo the message on Telegram
-        if __name__ == '__main__':
-            self.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, self.get_chat_id))
-            self.updater.start_polling()
+        # if __name__ == '__main__':
+        #     self.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, self.get_chat_id))
+        #     self.updater.start_polling()
 
-        while not self.stopped.wait(1):
-            if self.update_bot.is_set():
-                self.update_bot.clear()
-                self.check_notifications()
+        # while not self.stopped.wait(1):
+        #     if self.update_bot.is_set():
+        #         self.update_bot.clear()
+        #         self.check_notifications()
 
-    def get_chat_id(self, update: Update, context: CallbackContext) -> None:
-        """Send a message when the command /start is issued."""
-        # update.message.reply_text(update.message.text)
-        chat_id = update.effective_chat['id']
-        text = f'ID данного чата: {chat_id}'
-        self.send_message(chat_id=chat_id, text=text)
+        # while True:
+        #     self.check_notifications()
+        #     sleep(0.5)
+
+    # def get_chat_id(self, update: Update, context: CallbackContext) -> None:
+    #     """Send a message when the command /start is issued."""
+    #     # update.message.reply_text(update.message.text)
+    #     chat_id = update.effective_chat['id']
+    #     text = f'ID данного чата: {chat_id}'
+    #     self.send_message(chat_id=chat_id, text=text)
 
     @staticmethod
     def process_ticker(ticker: str) -> str:
@@ -229,19 +229,29 @@ class TelegramBot(Thread):
         self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.delete_images()
 
+    @staticmethod
+    async def bot_send_message(bot: Bot, chat_id: str, text: str) -> telegram.Message:
+        return await bot.send_message(chat_id=chat_id, text=text)
+
     def send_message(self, chat_id, text):
+        tasks = [self.loop.create_task(self.bot_send_message(self.bot, chat_id, text))]
         try:
-            self.updater.bot.send_message(chat_id=chat_id, text=text)
+            self.loop.run_until_complete(asyncio.wait(tasks))
         except (telegram.error.RetryAfter, telegram.error.NetworkError):
             sleep(30)
-            self.updater.bot.send_message(chat_id=chat_id, text=text)
+            self.loop.run_until_complete(asyncio.wait(tasks))
+
+    @staticmethod
+    async def bot_send_photo(bot: Bot, chat_id: str, img_path: str, text: str) -> telegram.Message:
+        return await bot.send_photo(chat_id=chat_id, photo=open(img_path, 'rb'), caption=text)
 
     def send_photo(self, chat_id, img_path, text):
+        tasks = [self.loop.create_task(self.bot_send_photo(self.bot, chat_id, img_path, text))]
         try:
-            self.updater.bot.send_photo(chat_id=chat_id, photo=open(img_path, 'rb'), caption=text)
+            self.loop.run_until_complete(asyncio.wait(tasks))
         except (telegram.error.RetryAfter, telegram.error.NetworkError):
             sleep(30)
-            self.updater.bot.send_photo(chat_id=chat_id, photo=open(img_path, 'rb'), caption=text)
+            self.loop.run_until_complete(asyncio.wait(tasks))
 
     def delete_images(self):
         """ Remove images after we send them, because we don't need them anymore """
@@ -257,4 +267,4 @@ if __name__ == '__main__':
     configs = ConfigFactory.factory(environ).configs
 
     telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', database=None, **configs)
-    telegram_bot.start()
+    # telegram_bot.start()

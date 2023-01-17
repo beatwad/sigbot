@@ -14,7 +14,7 @@ class SignalFactory(object):
             return STOCHSignal(ttype, **configs)
         elif indicator == 'MACD':
             return MACDSignal(ttype, **configs)
-        elif indicator == 'Pattern':
+        elif indicator == 'MinMaxExt':
             return PatternSignal(ttype, **configs)
         elif indicator == 'PriceChange':
             return PriceChangeSignal(ttype, **configs)
@@ -279,64 +279,15 @@ class PatternSignal(SignalBase):
         self.ttype = ttype
         self.window = self.configs.get('window', 30)
 
-    def get_high_max(self, df: pd.DataFrame) -> pd.Series:
-        """ Get maximum high prices """
-        df_high = df['high']
-        high_max = df_high[(df_high >= df_high.shift(1)) &
-                           (df_high >= df_high.shift(2)) &
-                           (df_high >= df_high.shift(-1)) &
-                           (df_high >= df_high.shift(-2))]
-        return high_max
-
-    def get_low_min(self, df: pd.DataFrame) -> pd.Series:
-        """ Get minimum low prices """
-        df_low = df['low']
-        low_min = df_low[(df_low <= df_low.shift(1)) &
-                           (df_low <= df_low.shift(2)) &
-                           (df_low <= df_low.shift(-1)) &
-                           (df_low <= df_low.shift(-2))]
-        return low_min
-
-    def shrink_max_min(self, df, high_max, low_min):
-        """ EM algorithm that allows to leave only important high and low extremums """
-        temp_high_max = list()
-        temp_low_min = list()
-        for i in range(len(low_min) + 1):
-            if i == 0:
-                interval = high_max[(0 < high_max) & (high_max < low_min[i])]
-            elif i == len(low_min):
-                interval = high_max[(low_min[i - 1] < high_max) & (high_max < np.inf)]
-            else:
-                interval = high_max[(low_min[i - 1] < high_max) & (high_max < low_min[i])]
-            if len(interval):
-                idx = df.loc[interval, 'high'].argmax()
-                temp_high_max.append(interval[idx])
-        for i in range(len(high_max) + 1):
-            if i == 0:
-                interval = low_min[(0 < low_min) & (low_min < high_max[i])]
-            elif i == len(high_max):
-                interval = low_min[(high_max[i - 1] < low_min) & (low_min < np.inf)]
-            else:
-                interval = low_min[(high_max[i - 1] < low_min) & (low_min < high_max[i])]
-            if len(interval):
-                idx = df.loc[interval, 'low'].argmin()
-                temp_low_min.append(interval[idx])
-        if len(temp_high_max) == len(high_max) and len(temp_low_min) == len(low_min):
-            if self.ttype == 'buy':
-                low_min = low_min[low_min > min(high_max)]
-            else:
-                high_max = high_max[high_max > min(low_min)]
-            return df.loc[high_max, 'high'], df.loc[low_min, 'low']
-        return self.shrink_max_min(df, np.array(temp_high_max), np.array(temp_low_min))
-
-    def get_min_max_indexes(self, df, gmax, gmin) -> (tuple, tuple):
+    def get_min_max_indexes(self, df: pd.DataFrame, gmax: pd.DataFrame.index,
+                            gmin: pd.DataFrame.index) -> (tuple, tuple):
         if self.ttype == 'buy':  # find H&S
             # find 3 last global maximum
-            ei = np.array(gmax.index)
+            ei = np.array(gmax)
             ci = np.append(np.array(ei[0]), ei[:-1])
             ai = np.append(np.array(ei[0:2]), ei[:-2])
             # find 3 last global minimum
-            fi = np.array(gmin.index)
+            fi = np.array(gmin)
             di = np.append(np.array(fi[0]), fi[:-1])
             bi = np.append(np.array(fi[0:2]), fi[:-2])
             # find according high/low values
@@ -348,11 +299,11 @@ class PatternSignal(SignalBase):
             fiv = df.loc[fi, 'low'].values
         else:  # find inverted H&S
             # find 3 last global minimum
-            ei = np.array(gmin.index)
+            ei = np.array(gmin)
             ci = np.append(np.array(ei[0]), ei[:-1])
             ai = np.append(np.array(ei[0:2]), ei[:-2])
             # find 3 last global maximum
-            fi = np.array(gmax.index)
+            fi = np.array(gmax)
             di = np.append(np.array(fi[0]), fi[:-1])
             bi = np.append(np.array(fi[0:2]), fi[:-2])
             # find according high/low values
@@ -453,13 +404,9 @@ class PatternSignal(SignalBase):
 
     def find_signal(self, df: pd.DataFrame) -> np.ndarray:
         # Find one of TA patterns like H&S, HLH/LHL, DT/DB and good candles that confirm that pattern
-        high_max = self.get_high_max(df)
-        low_min = self.get_low_min(df)
         avg_gap = (df['high'] - df['low']).mean()
-        try:
-            gmax, gmin = self.shrink_max_min(df, high_max.index, low_min.index)
-        except IndexError:
-            return np.zeros(df.shape[0])
+        gmax = df[df['high_max'] > 0].index
+        gmin = df[df['low_min'] > 0].index
         # bring both extremum lists to one length
         min_len = min(len(gmax), len(gmin))
         gmax, gmin = gmax[:min_len], gmin[:min_len]

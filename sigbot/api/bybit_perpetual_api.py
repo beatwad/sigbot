@@ -31,7 +31,7 @@ class ByBitPerpetual(ApiBase):
         all_tickers = tickers['symbol'].to_list()
 
         tickers = tickers[(tickers['symbol'].str.endswith('USDT'))]
-        tickers['volume_24h'] = tickers.loc[:, 'volume_24h'].astype(float)
+        tickers['volume_24h'] = tickers['volume_24h'].astype(float)
         tickers = tickers[tickers['volume_24h'] >= min_volume]
 
         filtered_symbols = self.check_symbols(tickers['symbol'])

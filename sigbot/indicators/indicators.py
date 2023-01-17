@@ -22,6 +22,8 @@ class IndicatorFactory(object):
             return LinearReg(ttype, configs)
         elif indicator.startswith('HighVolume'):
             return HighVolume(ttype, configs)
+        elif indicator.startswith('MinMaxExt'):
+            return MinMaxExt(ttype, configs)
         elif indicator.startswith('ATR'):
             return ATR(ttype, configs)
 
@@ -265,7 +267,7 @@ class HighVolume(Indicator):
         return df[f'normalized_vol'][max(df.shape[0] - data_qty + 1, 0):].values
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        """ Measure degree of ticker price change """
+        """ Measure degree of ticker volume change """
         # get frequency counter
         vol = self.get_volume(df, data_qty)
         # add price statistics, if statistics size is enough - add data to temp file to prevent high load of CPU
@@ -295,4 +297,79 @@ class HighVolume(Indicator):
         df['quantile_vol'] = quantile_vol
         # save volume statistics to file
         # self.save_vol_stat()
+        return df
+
+
+class MinMaxExt(Indicator):
+    """ Find the minimum and maximum extremums """
+    name = 'MinMaxExt'
+
+    def __init__(self, ttype: str, configs: dict):
+        super(MinMaxExt, self).__init__(ttype, configs)
+
+    @staticmethod
+    def get_high_max(df: pd.DataFrame) -> pd.Series:
+        """ Get maximum high prices """
+        df_high = df['high']
+        high_max = df_high[(df_high >= df_high.shift(1)) &
+                           (df_high >= df_high.shift(2)) &
+                           (df_high >= df_high.shift(-1)) &
+                           (df_high >= df_high.shift(-2))]
+        return high_max
+
+    @staticmethod
+    def get_low_min(df: pd.DataFrame) -> pd.Series:
+        """ Get minimum low prices """
+        df_low = df['low']
+        low_min = df_low[(df_low <= df_low.shift(1)) &
+                         (df_low <= df_low.shift(2)) &
+                         (df_low <= df_low.shift(-1)) &
+                         (df_low <= df_low.shift(-2))]
+        return low_min
+
+    def shrink_max_min(self, df: pd.DataFrame, high_max: pd.DataFrame.index,
+                       low_min: pd.DataFrame.index) -> (np.ndarray, np.ndarray):
+        """ EM algorithm that allows to leave only important high and low extremums """
+        temp_high_max = list()
+        temp_low_min = list()
+        for i in range(len(low_min) + 1):
+            if i == 0:
+                interval = high_max[(0 < high_max) & (high_max < low_min[i])]
+            elif i == len(low_min):
+                interval = high_max[(low_min[i - 1] < high_max) & (high_max < np.inf)]
+            else:
+                interval = high_max[(low_min[i - 1] < high_max) & (high_max < low_min[i])]
+            if len(interval):
+                idx = df.loc[interval, 'high'].argmax()
+                temp_high_max.append(interval[idx])
+        for i in range(len(high_max) + 1):
+            if i == 0:
+                interval = low_min[(0 < low_min) & (low_min < high_max[i])]
+            elif i == len(high_max):
+                interval = low_min[(high_max[i - 1] < low_min) & (low_min < np.inf)]
+            else:
+                interval = low_min[(high_max[i - 1] < low_min) & (low_min < high_max[i])]
+            if len(interval):
+                idx = df.loc[interval, 'low'].argmin()
+                temp_low_min.append(interval[idx])
+        if len(temp_high_max) == len(high_max) and len(temp_low_min) == len(low_min):
+            if self.ttype == 'buy':
+                low_min = low_min[low_min > min(high_max)]
+            else:
+                high_max = high_max[high_max > min(low_min)]
+            return high_max, low_min
+        return self.shrink_max_min(df, np.array(temp_high_max), np.array(temp_low_min))
+
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        """ Get main minimum and maximum extremums """
+        high_max = self.get_high_max(df)
+        low_min = self.get_low_min(df)
+        try:
+            high_max, low_min = self.shrink_max_min(df, high_max.index, low_min.index)
+        except IndexError:
+            high_max, low_min = np.ndarray([]), np.ndarray([])
+        df['high_max'] = 0
+        df.loc[high_max, 'high_max'] = 1
+        df['low_min'] = 0
+        df.loc[low_min, 'low_min'] = 1
         return df

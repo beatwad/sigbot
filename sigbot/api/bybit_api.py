@@ -35,7 +35,7 @@ class ByBit(ApiBase):
         all_tickers = tickers['symbol'].to_list()
 
         tickers = tickers[(tickers['symbol'].str.endswith('USDT')) | (tickers['symbol'].str.endswith('USDC'))]
-        tickers['quoteVolume'] = tickers.loc[:, 'quoteVolume'].astype(float)
+        tickers['quoteVolume'] = tickers['quoteVolume'].astype(float)
         tickers = tickers[tickers['quoteVolume'] >= min_volume]
 
         filtered_symbols = self.check_symbols(tickers['symbol'])

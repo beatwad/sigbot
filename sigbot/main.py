@@ -49,8 +49,6 @@ class Main:
         except (KeyboardInterrupt, SystemExit):
             # stop all exchange monitors
             self.sigbot.stop_monitors()
-            # on interruption or exit stop Telegram module thread
-            self.sigbot.telegram_bot.stopped.set()
             # delete everything in image directory on exit
             files = glob.glob('visualizer/images/*.png')
             for f in files:
@@ -89,6 +87,6 @@ if __name__ == "__main__":
         except:
             if not error_notification_sent:
                 text = f'Catch an exception: {sys.exc_info()[0]}'
-                main.sigbot.telegram_bot.send_message(main.sigbot.telegram_bot.chat_ids['Errors'], text)
+                main.sigbot.telegram_bot.send_message(main.sigbot.telegram_bot.chat_ids['Errors'], None, text)
                 error_notification_sent = True
             continue

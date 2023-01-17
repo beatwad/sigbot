@@ -253,6 +253,7 @@ class TelegramBot:
     @staticmethod
     async def bot_send_photo(bot: Bot, chat_id: str, message_thread_id: int,
                              img_path: str, text: str) -> telegram.Message:
+        # !!! add try except for telegram.error.BadRequest
         return await bot.send_photo(chat_id=chat_id, message_thread_id=message_thread_id,
                                     photo=open(img_path, 'rb'), caption=text)
 

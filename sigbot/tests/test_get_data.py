@@ -171,7 +171,7 @@ def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
     if timeframe == work_timeframe:
         indicator_list = configs['Indicator_list']
     else:
-        indicator_list = ['LinearReg']
+        indicator_list = ['LinearReg', 'MACD', 'Pattern']
 
     for indicator in indicator_list:
         ind_factory = IndicatorFactory.factory(indicator, 'buy', configs)
@@ -193,6 +193,5 @@ def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
     res = gd.add_indicator_data(dfs, data, 'buy', indicators, ticker,
                                 timeframe, data_qty)[ticker][timeframe]['data']['buy']
     dfs[ticker][timeframe]['data']['buy'] = res
+    # res.to_pickle('test_BTCUSDT_1h_indicators.pkl')
     assert res.equals(expected[0])
-
-    # assert dfs[ticker][timeframe]['levels'] == expected[1]

@@ -53,7 +53,7 @@ class Visualizer:
                     else:
                         axs[index + 1].axhline(y=indicator_params[1], color='r', linestyle='--', linewidth=1.5)
 
-    def plot_point(self, point_type: str, data: pd.DataFrame, ax: plt.axis, index=0) -> None:
+    def plot_point(self, point_type: str, data: pd.DataFrame, ax: plt.axis, index=0, higher=False) -> None:
         """ Plot trade point """
         if index > 0:
             color = 'blue'
@@ -61,10 +61,14 @@ class Visualizer:
             color = 'green'
         else:
             color = 'red'
-        if point_type == 'buy':
-            ax.scatter(self.plot_width-index, data['close'].iloc[-1-index], s=50, color=color)
+        if higher:
+            plot_width = self.plot_width * 2 - index - 1
         else:
-            ax.scatter(self.plot_width-index, data['close'].iloc[-1-index], s=50, color=color)
+            plot_width = self.plot_width - index
+        if point_type == 'buy':
+            ax.scatter(plot_width, data['close'].iloc[-1-index], s=50, color=color)
+        else:
+            ax.scatter(plot_width, data['close'].iloc[-1-index], s=50, color=color)
 
     @staticmethod
     def plot_levels(data: pd.DataFrame, levels: list, axs: plt.axis) -> None:
@@ -325,6 +329,9 @@ class Visualizer:
             # set the xticks and labels with the new ticks and labels:
             axs_higher.set_xticks(newxticks)
             axs_higher.set_xticklabels(newlabels, rotation=0)
+
+            # plot point of trade
+            self.plot_point(point_type, df_higher, axs_higher, higher=True)
         elif 'HighVolume' in indicator_list_tmp:
             subfigs_num = 2
             subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[main_candleplot_ratio/3, 0.01])

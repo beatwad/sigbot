@@ -21,7 +21,6 @@ expected = (['TRXUSDT', 'TTTUSDT'], [265, 10],
                           expected,
                           ], ids=repr)
 def test_filter_used_tickers(mocker, expected):
-    mocker.patch('telegram_api.telegram_api.TelegramBot.start', return_value=None)
     mocker.patch('telegram_api.telegram_api.TelegramBot.__init__', return_value=None)
     mocker.patch('signal_stat.signal_stat.SignalStat.__init__', return_value=None)
     mocker.patch('signal_stat.signal_stat.SignalStat.load_statistics', return_value=(None, None))

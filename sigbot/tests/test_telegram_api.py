@@ -1,4 +1,3 @@
-import sys
 import pytest
 from os import environ
 from config.config import ConfigFactory
@@ -75,8 +74,7 @@ buy_eth_df = pd.read_pickle('test_ETHUSDT_5m_telegram_notifications.pkl')
                           (points_eth, buy_eth_df)
                           ], ids=repr)
 def test_add_to_notification_history(mocker, signal_points, expected):
-    mocker.patch('telegram.ext.updater.Updater.__init__', return_value=None)
-    mocker.patch('telegram.ext.updater.Updater.__getattribute__', return_value=None)
+    mocker.patch('telegram.Bot.__init__', return_value=None)
     tb = TelegramBot('', database={}, **configs)
     for point in points_btc:
         ticker = point[0]
@@ -107,8 +105,7 @@ point4 = ('ETHUSDT', '5m', 45, 'sell', pd.to_datetime('2022-08-21 09:00:00'),
                           (buy_eth_df, points_eth, point4, False)
                           ], ids=repr)
 def test_check_previous_notifications(mocker, notification_df, points, point, expected):
-    mocker.patch('telegram.ext.updater.Updater.__init__', return_value=None)
-    mocker.patch('telegram.ext.updater.Updater.__getattribute__', return_value=None)
+    mocker.patch('telegram.Bot.__init__', return_value=None)
     tb = TelegramBot('', database={}, **configs)
     for p in points:
         ticker = p[0]
@@ -133,8 +130,7 @@ def test_check_previous_notifications(mocker, notification_df, points, point, ex
                           (buy_eth_df, points_eth, point4, False)
                           ], ids=repr)
 def test_check_notifications(mocker, notification_df, points, point, expected):
-    mocker.patch('telegram.ext.updater.Updater.__init__', return_value=None)
-    mocker.patch('telegram.ext.updater.Updater.__getattribute__', return_value=None)
+    mocker.patch('telegram.Bot.__init__', return_value=None)
     mocker.patch('telegram_api.telegram_api.TelegramBot.add_to_notification_history', return_value=None)
     mocker.patch('telegram_api.telegram_api.TelegramBot.send_notification', return_value=None)
     mocker.patch('telegram_api.telegram_api.TelegramBot.send_message', return_value=None)

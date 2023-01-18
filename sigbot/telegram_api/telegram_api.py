@@ -246,14 +246,13 @@ class TelegramBot:
         tasks = [self.loop.create_task(self.bot_send_message(self.bot, chat_id, message_thread_id, text))]
         try:
             self.loop.run_until_complete(asyncio.wait(tasks))
-        except (telegram.error.RetryAfter, telegram.error.NetworkError):
+        except (telegram.error.RetryAfter, telegram.error.NetworkError, telegram.error.BadRequest):
             sleep(30)
             self.loop.run_until_complete(asyncio.wait(tasks))
 
     @staticmethod
     async def bot_send_photo(bot: Bot, chat_id: str, message_thread_id: int,
                              img_path: str, text: str) -> telegram.Message:
-        # !!! add try except for telegram.error.BadRequest
         return await bot.send_photo(chat_id=chat_id, message_thread_id=message_thread_id,
                                     photo=open(img_path, 'rb'), caption=text)
 
@@ -261,7 +260,7 @@ class TelegramBot:
         tasks = [self.loop.create_task(self.bot_send_photo(self.bot, chat_id, message_thread_id, img_path, text))]
         try:
             self.loop.run_until_complete(asyncio.wait(tasks))
-        except (telegram.error.RetryAfter, telegram.error.NetworkError):
+        except (telegram.error.RetryAfter, telegram.error.NetworkError, telegram.error.BadRequest):
             sleep(30)
             self.loop.run_until_complete(asyncio.wait(tasks))
 

@@ -90,15 +90,15 @@ def test_get_prev_mean_pct_right_forecast(point, prev_stat_dict, expected):
     statistics = point[8]
 
     pct_right_forecast = [s[0] for s in statistics[0]]
-    mean_pct_right_forecast = round(sum(pct_right_forecast) / len(pct_right_forecast), 2)
+    avg_e_ratio_coef = round(sum(pct_right_forecast) / len(pct_right_forecast), 2)
 
     key = vis.get_statistics_dict_key(pattern)
-    assert vis.get_prev_mean_pct_right_forecast(key, point_type, mean_pct_right_forecast) == expected
+    assert vis.get_prev_avg_e_ratio_coef(key, point_type, avg_e_ratio_coef) == expected
 
 
 prev_mean_pct_right_forecasts = [None, 58.01, 34.20]
 mean_pct_right_forecasts = [20, 158.01, 24.20]
-stat_results = ['= без изменений', '= выросла на 100.0%', '= уменьшилась на 10.0%']
+stat_results = ['= без изменений', '= вырос на 100.0', '= уменьшилcя на 10.0']
 
 
 @pytest.mark.parametrize('prev_mean_pct_right_forecast, mean_pct_right_forecast, expected',

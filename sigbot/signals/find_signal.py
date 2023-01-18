@@ -318,18 +318,24 @@ class PatternSignal(SignalBase):
     def two_good_candles(self, df: pd.DataFrame) -> np.ndarray:
         """ Get minimum low prices """
         if self.ttype == 'buy':
-            first_candle = (df['close'] - df['low'])/(df['high'] - df['low'])
-            second_candle = (df['close'].shift(1) - df['low'].shift(1))/(df['high'].shift(1) - df['low'].shift(1))
+            sign = np.where(df['close'] > df['open'], 1, -1)
+            sign_shift = np.where(df['close'].shift(1) > df['open'].shift(1), 1, -1)
+            first_candle = (df['close'] - df['low'])/(df['high'] - df['low']) * sign
+            second_candle = (df['close'].shift(1) - df['low'].shift(1)) / \
+                            (df['high'].shift(1) - df['low'].shift(1)) * sign_shift
         else:
-            first_candle = (df['high'] - df['close']) / (df['high'] - df['low'])
-            second_candle = (df['high'].shift(1) - df['close'].shift(1)) / (df['high'].shift(1) - df['low'].shift(1))
+            sign = np.where(df['close'] < df['open'], 1, -1)
+            sign_shift = np.where(df['close'].shift(1) < df['open'].shift(1), 1, -1)
+            first_candle = (df['high'] - df['close']) / (df['high'] - df['low']) * sign
+            second_candle = (df['high'].shift(1) - df['close'].shift(1)) / \
+                            (df['high'].shift(1) - df['low'].shift(1)) * sign_shift
         return np.where((first_candle > 0.667) & (second_candle > 0.5), 1, 0)
 
     @staticmethod
     def create_pattern_vector(df: pd.DataFrame, res: np.ndarray):
         """ Create vector that shows potential places where we can enter the trade after pattern appearance """
         v = np.zeros(df.shape[0], dtype=int)
-        for i in range(1, 2):
+        for i in range(1, 6):
             try:
                 v[res[res > 0] + i] = 1
             except IndexError:

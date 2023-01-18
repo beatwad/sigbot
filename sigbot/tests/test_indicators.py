@@ -112,9 +112,9 @@ def test_high_volume(df, timeframe, ticker, expected):
 
 @pytest.mark.parametrize('df, ticker, timeframe, expected',
                          [
-                          # (df_btc_5m, 'BTC', '5m', [[0.00084, 0.00328],
-                          #                           [0.00415, 0.00328],
-                          #                           [0.00053, 0.00328]]),
+                          (df_btc_5m, 'BTC', '5m', [[0.00084, 0.00328],
+                                                    [0.00415, 0.00328],
+                                                    [0.00053, 0.00328]]),
                           (df_eth_5m, 'ETH', '5m', [[0.00082, 0.00438],
                                                     [0.00358, 0.00438],
                                                     [0.00095, 0.00438]]),
@@ -141,7 +141,3 @@ def test_min_max_ext(df, timeframe, ticker, expected):
         assert df.loc[168, 'low_min'] == 1
         assert df.loc[184, 'high_max'] == 1
         assert df.loc[186, 'low_min'] == 1
-    # assert round(df.loc[375, 'normalized_vol'], 5) == expected[1][0]
-    # assert round(df.loc[375, 'quantile_vol'], 5) == expected[1][1]
-    # assert round(df.loc[856, 'normalized_vol'], 5) == expected[2][0]
-    # assert round(df.loc[856, 'quantile_vol'], 5) == expected[2][1]

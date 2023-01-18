@@ -367,7 +367,7 @@ class MinMaxExt(Indicator):
         try:
             high_max, low_min = self.shrink_max_min(df, high_max.index, low_min.index)
         except IndexError:
-            high_max, low_min = np.ndarray([]), np.ndarray([])
+            high_max, low_min = [], []
         df['high_max'] = 0
         df.loc[high_max, 'high_max'] = 1
         df['low_min'] = 0

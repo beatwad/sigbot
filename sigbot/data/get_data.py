@@ -8,6 +8,7 @@ from api.bybit_api import ByBit
 from api.bybit_perpetual_api import ByBitPerpetual
 from datetime import datetime
 from json.decoder import JSONDecodeError
+from log.log import logger
 
 
 class DataFactory(object):
@@ -51,6 +52,7 @@ class GetData:
             try:
                 klines = self.api.get_klines(ticker, timeframe, limit + 2)
             except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout, JSONDecodeError):
+                logger.exception(f'Catch an exception while trying to get data. API is {self.api}')
                 return df, 0
             df = self.process_data(klines, df)
             # update timestamp for current timeframe

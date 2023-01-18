@@ -203,8 +203,9 @@ class TelegramBot:
         sig_exchanges = message[7]
         # Check if the same message wasn't send short time ago
         if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
-            x = set(sig_exchanges).intersection(set(self.allowed_exchanges))
-            if set(sig_exchanges).intersection(set(self.allowed_exchanges)):
+            # if we have a list of exchanges for that notifications are allowed - use it to filter ticker from
+            # not necessary exchanges
+            if len(self.allowed_exchanges) == 0 or set(sig_exchanges).intersection(set(self.allowed_exchanges)):
                 # create image and return path to it
                 sig_img_path = self.add_plot(message)
                 chat_id = self.chat_ids[sig_pattern]

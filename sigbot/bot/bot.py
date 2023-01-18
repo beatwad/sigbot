@@ -70,7 +70,7 @@ class SigBot:
                           'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'ByBitPerpetual': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}
+                          # 'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}
                           }
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
@@ -148,6 +148,7 @@ class SigBot:
         try:
             df, data_qty = exchange_api.get_data(df, ticker, timeframe)
         except KeyError:
+            logger.exception(f'Catch an exception while trying to get data')
             return df, 0
         return df, data_qty
 
@@ -420,6 +421,7 @@ class MonitorExchange(Thread):
                         data_qty_buy = self.get_indicators(df, 'buy', ticker, timeframe, data_qty)
                         data_qty_sell = self.get_indicators(df, 'sell', ticker, timeframe, data_qty)
                     except:
+                        logger.exception(f'Something bad has happened to ticker {ticker} on timeframe {timeframe}')
                         pass_the_ticker = True
                         continue
                     # If current timeframe is working timeframe

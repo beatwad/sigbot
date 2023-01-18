@@ -1,5 +1,4 @@
 import pytest
-import talib as ta
 import numpy as np
 import pandas as pd
 from os import environ
@@ -19,6 +18,7 @@ df_eth_5m = pd.read_pickle('test_ETHUSDT_5m.pkl')
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs
+
 
 def create_test_data():
     dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe']),

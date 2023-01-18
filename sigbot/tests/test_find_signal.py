@@ -330,5 +330,4 @@ def test_find_signal(mocker, ticker, timeframe, limit, expected):
     fs_sell = FindSignal('sell', configs)
     fs_buy.patterns = [['STOCH', 'RSI'], ['STOCH', 'RSI', 'LinearReg']]
     fs_sell.patterns = [['STOCH', 'RSI'], ['STOCH', 'RSI', 'LinearReg']]
-    res = fs_sell.find_signal(dfs, ticker, timeframe, limit)
     assert fs_sell.find_signal(dfs, ticker, timeframe, limit) == expected

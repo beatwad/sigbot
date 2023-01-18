@@ -108,3 +108,40 @@ def test_high_volume(df, timeframe, ticker, expected):
     assert round(df.loc[375, 'quantile_vol'], 5) == expected[1][1]
     assert round(df.loc[856, 'normalized_vol'], 5) == expected[2][0]
     assert round(df.loc[856, 'quantile_vol'], 5) == expected[2][1]
+
+
+@pytest.mark.parametrize('df, ticker, timeframe, expected',
+                         [
+                          # (df_btc_5m, 'BTC', '5m', [[0.00084, 0.00328],
+                          #                           [0.00415, 0.00328],
+                          #                           [0.00053, 0.00328]]),
+                          (df_eth_5m, 'ETH', '5m', [[0.00082, 0.00438],
+                                                    [0.00358, 0.00438],
+                                                    [0.00095, 0.00438]]),
+                          ], ids=repr)
+def test_min_max_ext(df, timeframe, ticker, expected):
+    indicator = IndicatorFactory.factory('MinMaxExt', 'buy', configs)
+    data_qty = 500
+    df = indicator.get_indicator(df, ticker, timeframe, data_qty)
+    if ticker == 'BTC':
+        assert df.loc[4, 'high_max'] == 1
+        assert df.loc[4, 'low_min'] == 0
+        assert df.loc[14, 'high_max'] == 1
+        assert df.loc[14, 'low_min'] == 0
+        assert df.loc[21, 'high_max'] == 0
+        assert df.loc[21, 'low_min'] == 1
+        assert df.loc[124, 'high_max'] == 1
+        assert df.loc[123, 'low_min'] == 1
+    elif ticker == 'ETH':
+        assert df.loc[5, 'high_max'] == 1
+        assert df.loc[5, 'low_min'] == 0
+        assert df.loc[37, 'high_max'] == 1
+        assert df.loc[37, 'low_min'] == 0
+        assert df.loc[168, 'high_max'] == 0
+        assert df.loc[168, 'low_min'] == 1
+        assert df.loc[184, 'high_max'] == 1
+        assert df.loc[186, 'low_min'] == 1
+    # assert round(df.loc[375, 'normalized_vol'], 5) == expected[1][0]
+    # assert round(df.loc[375, 'quantile_vol'], 5) == expected[1][1]
+    # assert round(df.loc[856, 'normalized_vol'], 5) == expected[2][0]
+    # assert round(df.loc[856, 'quantile_vol'], 5) == expected[2][1]

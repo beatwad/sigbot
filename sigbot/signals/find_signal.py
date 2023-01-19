@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from datetime import datetime
 from abc import abstractmethod
 
 
@@ -279,17 +280,50 @@ class PatternSignal(SignalBase):
         self.ttype = ttype
         self.window = self.configs.get('window', 30)
 
+    def shrink_max_min(self, df: pd.DataFrame, high_max: [pd.DataFrame.index, list],
+                       low_min: [pd.DataFrame.index, list]) -> (np.ndarray, np.ndarray):
+        """ EM algorithm that allows to leave only important high and low extremums """
+        temp_high_max = list()
+        temp_low_min = list()
+        for i in range(len(low_min) + 1):
+            if i == 0:
+                interval = high_max[(0 < high_max) & (high_max < low_min[i])]
+            elif i == len(low_min):
+                interval = high_max[(low_min[i - 1] < high_max) & (high_max < np.inf)]
+            else:
+                interval = high_max[(low_min[i - 1] < high_max) & (high_max < low_min[i])]
+            if len(interval):
+                idx = df.loc[interval, 'high'].argmax()
+                temp_high_max.append(interval[idx])
+        for i in range(len(high_max) + 1):
+            if i == 0:
+                interval = low_min[(0 < low_min) & (low_min < high_max[i])]
+            elif i == len(high_max):
+                interval = low_min[(high_max[i - 1] < low_min) & (low_min < np.inf)]
+            else:
+                interval = low_min[(high_max[i - 1] < low_min) & (low_min < high_max[i])]
+            if len(interval):
+                idx = df.loc[interval, 'low'].argmin()
+                temp_low_min.append(interval[idx])
+        if len(temp_high_max) == len(high_max) and len(temp_low_min) == len(low_min):
+            if self.ttype == 'buy':
+                low_min = low_min[low_min > min(high_max)]
+            else:
+                high_max = high_max[high_max > min(low_min)]
+            return high_max, low_min
+        return self.shrink_max_min(df, np.array(temp_high_max), np.array(temp_low_min))
+
     def get_min_max_indexes(self, df: pd.DataFrame, gmax: pd.DataFrame.index,
                             gmin: pd.DataFrame.index) -> (tuple, tuple):
         if self.ttype == 'buy':  # find H&S
             # find 3 last global maximum
-            ei = np.array(gmax)
-            ci = np.append(np.array(ei[0]), ei[:-1])
-            ai = np.append(np.array(ei[0:2]), ei[:-2])
+            ei = gmax
+            ci = np.append(ei[0], ei[:-1])
+            ai = np.append(ei[0:2], ei[:-2])
             # find 3 last global minimum
-            fi = np.array(gmin)
-            di = np.append(np.array(fi[0]), fi[:-1])
-            bi = np.append(np.array(fi[0:2]), fi[:-2])
+            fi = gmin
+            di = np.append(fi[0], fi[:-1])
+            bi = np.append(fi[0:2], fi[:-2])
             # find according high/low values
             aiv = df.loc[ai, 'high'].values
             biv = df.loc[bi, 'low'].values
@@ -299,13 +333,13 @@ class PatternSignal(SignalBase):
             fiv = df.loc[fi, 'low'].values
         else:  # find inverted H&S
             # find 3 last global minimum
-            ei = np.array(gmin)
-            ci = np.append(np.array(ei[0]), ei[:-1])
-            ai = np.append(np.array(ei[0:2]), ei[:-2])
+            ei = gmin
+            ci = np.append(ei[0], ei[:-1])
+            ai = np.append(ei[0:2], ei[:-2])
             # find 3 last global maximum
-            fi = np.array(gmax)
-            di = np.append(np.array(fi[0]), fi[:-1])
-            bi = np.append(np.array(fi[0:2]), fi[:-2])
+            fi = gmax
+            di = np.append(fi[0], fi[:-1])
+            bi = np.append(fi[0:2], fi[:-2])
             # find according high/low values
             aiv = df.loc[ai, 'low'].values
             biv = df.loc[bi, 'high'].values
@@ -411,11 +445,18 @@ class PatternSignal(SignalBase):
     def find_signal(self, df: pd.DataFrame) -> np.ndarray:
         # Find one of TA patterns like H&S, HLH/LHL, DT/DB and good candles that confirm that pattern
         avg_gap = (df['high'] - df['low']).mean()
-        gmax = df[df['high_max'] > 0].index
-        gmin = df[df['low_min'] > 0].index
-        # bring both extremum lists to one length
-        min_len = min(len(gmax), len(gmin))
-        gmax, gmin = gmax[:min_len], gmin[:min_len]
+        high_max = df[df['high_max'] > 0]
+        low_min = df[df['low_min'] > 0]
+        # Find global minimum and maximums
+        try:
+            high_max, low_min = self.shrink_max_min(df, high_max.index, low_min.index)
+        except IndexError:
+            high_max, low_min = [], []
+        # bring both global extremum lists to one length
+        min_len = min(len(high_max), len(low_min))
+        if min_len == 0:
+            return np.zeros(df.shape[0])
+        gmax, gmin = high_max[:min_len], low_min[:min_len]
         # find minimum and maximum indexes for patterns search
         min_max_idxs, min_max_vals = self.get_min_max_indexes(df, gmax, gmin)
         has = self.head_and_shoulders(df, min_max_idxs, min_max_vals, avg_gap)
@@ -439,6 +480,7 @@ class FindSignal:
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
+        self.hour = datetime.now().hour
 
     def prepare_indicator_signals(self) -> list:
         """ Get all indicator signal classes """
@@ -477,8 +519,15 @@ class FindSignal:
                 timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] /
                                       self.timeframe_div[self.work_timeframe])
                 fs = indicator_signal.find_signal(df_higher, timeframe_ratio, df_work.shape[0])
-            elif indicator_signal.name == "MACD" or indicator_signal.name == "Pattern":
+            elif indicator_signal.name == "MACD":
                 fs = indicator_signal.find_signal(df_higher)
+            elif indicator_signal.name == "Pattern":
+                # check pattern signals every hour
+                if self.hour != datetime.now().hour:
+                    fs = indicator_signal.find_signal(df_higher)
+                    self.hour = -1
+                else:
+                    fs = np.zeros(df_higher.shape[0])
             else:
                 fs = indicator_signal.find_signal(df_work)
 

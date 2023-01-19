@@ -362,12 +362,8 @@ class MinMaxExt(Indicator):
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
         """ Get main minimum and maximum extremums """
-        high_max = self.get_high_max(df)
-        low_min = self.get_low_min(df)
-        try:
-            high_max, low_min = self.shrink_max_min(df, high_max.index, low_min.index)
-        except IndexError:
-            high_max, low_min = [], []
+        high_max = self.get_high_max(df).index
+        low_min = self.get_low_min(df).index
         df['high_max'] = 0
         df.loc[high_max, 'high_max'] = 1
         df['low_min'] = 0

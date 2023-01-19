@@ -285,6 +285,13 @@ class SigBot:
         for monitor in self.fut_ex_monitor_list:
             monitor.save_opt_statistics(ttype, opt_limit)
 
+    def check_hour_period(self):
+        """ Used for signals that should be triggered every hour """
+        dt_now_hour = datetime.now().hour
+        if self.find_signal_buy.hour == -1 and self.main.cycle_number > 1:
+            self.find_signal_buy.hour = dt_now_hour
+            self.find_signal_sell.hour = dt_now_hour
+
     @exception
     def main_cycle(self):
         """ Create and run exchange monitors """
@@ -292,17 +299,11 @@ class SigBot:
         # start all spot exchange monitors
         for monitor in self.spot_ex_monitor_list:
             monitor.run_cycle()
-            # monitor.start()
-        # wait until spot monitor finish its work
-        # for monitor in self.spot_ex_monitor_list:
-        #     monitor.join()
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
             monitor.run_cycle()
-            # monitor.start()
-        # wait until futures monitor finish its work
-        # for monitor in self.fut_ex_monitor_list:
-        #     monitor.join()
+        self.check_hour_period()
+
 
     def stop_monitors(self):
         """ Stop all exchange monitors """

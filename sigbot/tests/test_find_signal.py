@@ -3,13 +3,16 @@ import numpy as np
 import pandas as pd
 from os import environ
 from datetime import datetime
+
+environ["ENV"] = "test"
+
 from data.get_data import DataFactory
 from config.config import ConfigFactory
 from signals.find_signal import SignalFactory
 from signals.find_signal import FindSignal
 from indicators.indicators import IndicatorFactory
 
-environ["ENV"] = "test"
+
 # Set dataframe dict
 df_btc_1h = pd.read_pickle('test_BTCUSDT_1h.pkl')
 df_btc_5m = pd.read_pickle('test_BTCUSDT_5m.pkl')
@@ -67,6 +70,7 @@ eth_expected = [np.array([18, 19])]
                           ], ids=repr)
 def test_higher_bound(mocker, timeframe, ticker, high_bound, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+    mocker.patch('log.log.create_logger')
     dfs = create_test_data()
     stoch_sig = SignalFactory().factory('STOCH', 'sell', configs)
 

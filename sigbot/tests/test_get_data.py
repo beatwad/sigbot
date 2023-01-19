@@ -3,13 +3,14 @@ import pytest
 import pandas as pd
 from os import environ
 from freezegun import freeze_time
+
+# Set environment variable
+environ["ENV"] = "test"
+
 from data.get_data import DataFactory
 from config.config import ConfigFactory
 from indicators.indicators import IndicatorFactory
 
-
-# Set environment variable
-environ["ENV"] = "test"
 
 configs = ConfigFactory.factory(environ).configs
 
@@ -193,5 +194,4 @@ def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
     res = gd.add_indicator_data(dfs, data, 'buy', indicators, ticker,
                                 timeframe, data_qty)[ticker][timeframe]['data']['buy']
     dfs[ticker][timeframe]['data']['buy'] = res
-    # res.to_pickle('test_BTCUSDT_1h_indicators.pkl')
     assert res.equals(expected[0])

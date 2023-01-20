@@ -114,7 +114,7 @@ class Visualizer:
         return prev_avg_e_ratio_coef
 
     @staticmethod
-    def statistics_change(prev_avg_e_ratio_coef, avg_e_ratio_coef):
+    def statistics_change(prev_avg_e_ratio_coef: [None, float], avg_e_ratio_coef: [None, float]) -> str:
         """ Measure statistics difference between previous signal and current signal """
         if prev_avg_e_ratio_coef is None:
             return '= без изменений'
@@ -124,6 +124,14 @@ class Visualizer:
         if stat_diff > 0:
             return f'= вырос на {stat_diff}'
         return '= без изменений'
+
+    def find_price(self, df: pd.DataFrame) -> float:
+        price = df["close"].iloc[-1]
+        if price > 1:
+            price = round(price, 3)
+        else:
+            price = round(price, 7)
+        return price
 
     def create_plot(self, dfs, point, levels):
         # get necessary info
@@ -286,7 +294,10 @@ class Visualizer:
             axs_higher.spines['right'].set_color(self.border_color)
             axs_higher.spines['left'].set_color(self.border_color)
             # plot titles
-            axs_higher.set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Паттерн', fontsize=14,
+            # plot titles
+            price = self.find_price(df_higher)
+            axs_higher.set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - {price} $ - '
+                                 f'{df_higher["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
                                  color=self.ticker_color)
             # plot candles
             mpf.plot(ohlc_higher, type='candle', ax=axs_higher, warn_too_much_data=1001, style='yahoo',
@@ -422,11 +433,7 @@ class Visualizer:
             axs1_0.set_xticklabels(newlabels, rotation=0)
 
             # plot titles
-            price = df_working["close"].iloc[-1]
-            if price > 1:
-                price = round(price, 3)
-            else:
-                price = round(price, 7)
+            price = self.find_price(df_working)
             axs1_0.set_title(f'{self.process_ticker(ticker)} - {timeframe} - {price} $ - '
                              f'{df_working["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
                              color=self.ticker_color)

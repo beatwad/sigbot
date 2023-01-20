@@ -44,9 +44,9 @@ class GetData:
         self.ticker_dict = dict()
         self.api = None
 
-    def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str) -> (pd.DataFrame, int):
+    def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str, dt_now: datetime) -> (pd.DataFrame, int):
         """ Get data from exchange """
-        limit = self.get_limit(df, ticker, timeframe)
+        limit = self.get_limit(df, ticker, timeframe, dt_now)
         # get data from exchange only when there is at least one interval to get
         if limit > 1:
             try:
@@ -55,8 +55,6 @@ class GetData:
                 logger.exception(f'Catch an exception while trying to get data. API is {self.api}')
                 return df, 0
             df = self.process_data(klines, df)
-            # update timestamp for current timeframe
-            self.ticker_dict[ticker][timeframe] = datetime.now()
         return df, limit
 
     def get_tickers(self) -> list:
@@ -66,11 +64,11 @@ class GetData:
 
     def fill_ticker_dict(self, tickers: str) -> None:
         """ For every ticker set timestamp of the current time """
-        dt = datetime.now()
+        # dt = datetime.now()
         for ticker in tickers:
             self.ticker_dict[ticker] = dict()
             for tf in self.timeframe_div.keys():
-                self.ticker_dict[ticker][tf] = dt
+                self.ticker_dict[ticker][tf] = -1
 
     @staticmethod
     def add_utc_3(df):
@@ -120,16 +118,37 @@ class GetData:
         dfs[ticker][timeframe]['levels'] = levels.copy()
         return dfs
 
-    def get_limit(self, df: pd.DataFrame, ticker: str, timeframe: str) -> int:
-        """ Get interval needed to download from exchange according to difference between current time and
-            time of previous download"""
+    @staticmethod
+    def get_time_label(dt_now: datetime, timeframe: str) -> int:
+        """ Define time label according to the timeframe """
+        if timeframe == '5m':
+            return int(dt_now.minute / 5)
+        elif timeframe == '15m':
+            return int(dt_now.minute / 15)
+        elif timeframe == '30m':
+            return int(dt_now.minute / 30)
+        elif timeframe == '1h':
+            return dt_now.hour
+        elif timeframe == '4h':
+            return int(dt_now.hour / 4)
+        elif timeframe == '12h':
+            return int(dt_now.hour / 12)
+        else:
+            return dt_now.day
+
+    def get_limit(self, df: pd.DataFrame, ticker: str, timeframe: str, dt_now: datetime) -> int:
+        """ Get interval needed to download from exchange according to time label """
+        dt_measure = self.get_time_label(dt_now, timeframe)
         if df.shape[0] == 0:
+            self.ticker_dict[ticker][timeframe] = dt_measure
             return self.limit
         else:
-            # get time passed from previous download and select appropriate interval
-            time_diff_sec = (datetime.now() - self.ticker_dict[ticker][timeframe]).total_seconds()
-            limit = int(time_diff_sec/self.timeframe_div[timeframe]) + 1
-            # if time passed more than one interval - get it
+            # if enough time has passed and time label has changed - increase the limit to update candle data
+            if dt_measure != self.ticker_dict[ticker][timeframe]:
+                limit = 2
+                self.ticker_dict[ticker][timeframe] = dt_measure
+            else:
+                limit = 1
             return min(self.limit, limit)
 
 

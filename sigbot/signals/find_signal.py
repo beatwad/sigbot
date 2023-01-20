@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from datetime import datetime
 from abc import abstractmethod
 
 
@@ -352,17 +351,19 @@ class PatternSignal(SignalBase):
     def two_good_candles(self, df: pd.DataFrame) -> np.ndarray:
         """ Get minimum low prices """
         if self.ttype == 'buy':
-            sign = np.where(df['close'] > df['open'], 1, -1)
-            sign_shift = np.where(df['close'].shift(1) > df['open'].shift(1), 1, -1)
-            first_candle = (df['close'] - df['low'])/(df['high'] - df['low']) * sign
-            second_candle = (df['close'].shift(1) - df['low'].shift(1)) / \
-                            (df['high'].shift(1) - df['low'].shift(1)) * sign_shift
+            sign_1 = np.where(df['close'].shift(1) > df['open'].shift(1), 1, -1)
+            sign_2 = np.where(df['close'].shift(2) > df['open'].shift(2), 1, -1)
+            first_candle = (df['close'].shift(1) - df['low'].shift(1)) / \
+                            (df['high'].shift(1) - df['low'].shift(1)) * sign_1
+            second_candle = (df['close'].shift(2) - df['low'].shift(2)) / \
+                             (df['high'].shift(2) - df['low'].shift(2)) * sign_2
         else:
-            sign = np.where(df['close'] < df['open'], 1, -1)
-            sign_shift = np.where(df['close'].shift(1) < df['open'].shift(1), 1, -1)
-            first_candle = (df['high'] - df['close']) / (df['high'] - df['low']) * sign
-            second_candle = (df['high'].shift(1) - df['close'].shift(1)) / \
-                            (df['high'].shift(1) - df['low'].shift(1)) * sign_shift
+            sign_1 = np.where(df['close'].shift(1) < df['open'].shift(1), 1, -1)
+            sign_2 = np.where(df['close'].shift(2) < df['open'].shift(2), 1, -1)
+            first_candle = (df['high'].shift(1) - df['close'].shift(1)) / \
+                            (df['high'].shift(1) - df['low'].shift(1)) * sign_1
+            second_candle = (df['high'].shift(2) - df['close'].shift(2)) / \
+                            (df['high'].shift(2) - df['low'].shift(2)) * sign_2
         return np.where((first_candle > 0.667) & (second_candle > 0.5), 1, 0)
 
     @staticmethod
@@ -442,7 +443,15 @@ class PatternSignal(SignalBase):
         v = self.create_pattern_vector(df, res)
         return v
 
-    def find_signal(self, df: pd.DataFrame) -> np.ndarray:
+    def update_dataframe(self, df: pd.DataFrame, high_max: np.ndarray, low_min: np.ndarray, dfs: dict,
+                         ticker: str, timeframe: str) -> None:
+        """ Update price extremums and save them to the dataframe """
+        df['high_max'], df['low_min'] = 0, 0
+        df.loc[high_max, 'high_max'] = 1
+        df.loc[low_min, 'low_min'] = 1
+        dfs[ticker][timeframe]['data'][self.ttype] = df
+
+    def find_signal(self, df: pd.DataFrame, dfs: dict, ticker: str, timeframe: str) -> np.ndarray:
         # Find one of TA patterns like H&S, HLH/LHL, DT/DB and good candles that confirm that pattern
         avg_gap = (df['high'] - df['low']).mean()
         high_max = df[df['high_max'] > 0]
@@ -452,6 +461,8 @@ class PatternSignal(SignalBase):
             high_max, low_min = self.shrink_max_min(df, high_max.index, low_min.index)
         except IndexError:
             high_max, low_min = [], []
+        # Update extremums of the dataframe
+        self.update_dataframe(df, high_max, low_min, dfs, ticker, timeframe)
         # bring both global extremum lists to one length
         min_len = min(len(high_max), len(low_min))
         if min_len == 0:
@@ -480,7 +491,6 @@ class FindSignal:
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
-        self.hour = datetime.now().hour
 
     def prepare_indicator_signals(self) -> list:
         """ Get all indicator signal classes """
@@ -523,11 +533,7 @@ class FindSignal:
                 fs = indicator_signal.find_signal(df_higher)
             elif indicator_signal.name == "Pattern":
                 # check pattern signals every hour
-                if self.hour != datetime.now().hour:
-                    fs = indicator_signal.find_signal(df_higher)
-                    self.hour = -1
-                else:
-                    fs = np.zeros(df_higher.shape[0])
+                fs = indicator_signal.find_signal(df_higher, dfs, ticker, self.higher_timeframe)
             else:
                 fs = indicator_signal.find_signal(df_work)
 

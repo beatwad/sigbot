@@ -140,13 +140,13 @@ class SigBot:
                 not_used_ticker_vols.append(ticker_vol)
         return not_used_tickers, not_used_ticker_vols
 
-    def get_data(self, exchange_api, ticker: str, timeframe: str) -> (pd.DataFrame, int):
+    def get_data(self, exchange_api, ticker: str, timeframe: str, dt_now: datetime) -> (pd.DataFrame, int):
         """ Check if new data appeared. If it is - return dataframe with the new data and amount of data """
         df = self.database.get(ticker, dict()).get(timeframe, dict()).get('data', pd.DataFrame()).get('buy',
                                                                                                       pd.DataFrame())
         # Write data to the dataframe
         try:
-            df, data_qty = exchange_api.get_data(df, ticker, timeframe)
+            df, data_qty = exchange_api.get_data(df, ticker, timeframe, dt_now)
         except KeyError:
             logger.exception(f'Catch an exception while trying to get data')
             return df, 0
@@ -285,13 +285,6 @@ class SigBot:
         for monitor in self.fut_ex_monitor_list:
             monitor.save_opt_statistics(ttype, opt_limit)
 
-    def check_hour_period(self):
-        """ Used for signals that should be triggered every hour """
-        dt_now_hour = datetime.now().hour
-        if self.find_signal_buy.hour == -1 and self.main.cycle_number > 1:
-            self.find_signal_buy.hour = dt_now_hour
-            self.find_signal_sell.hour = dt_now_hour
-
     @exception
     def main_cycle(self):
         """ Create and run exchange monitors """
@@ -302,8 +295,6 @@ class SigBot:
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
             monitor.run_cycle()
-        self.check_hour_period()
-
 
     def stop_monitors(self):
         """ Stop all exchange monitors """
@@ -401,6 +392,7 @@ class MonitorExchange(Thread):
                 7 - list of exchanges where ticker with this signal can be found
                 8 - statistics for the current pattern """
         tickers = self.exchange_data['tickers']
+        dt_now = datetime.now()
         for ticker in tickers:
             # flag that allows to pass the ticker in case of errors
             pass_the_ticker = False
@@ -411,7 +403,7 @@ class MonitorExchange(Thread):
             for timeframe in self.sigbot.timeframes:
                 if pass_the_ticker:
                     continue
-                df, data_qty = self.sigbot.get_data(self.exchange_data['API'], ticker, timeframe)
+                df, data_qty = self.sigbot.get_data(self.exchange_data['API'], ticker, timeframe, dt_now)
                 if timeframe == self.sigbot.work_timeframe:
                     t_print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}, ticker {ticker}')
                 # If we get new data - create indicator list from search signal patterns list, if it has

@@ -22,8 +22,8 @@ class IndicatorFactory(object):
             return LinearReg(ttype, configs)
         elif indicator.startswith('HighVolume'):
             return HighVolume(ttype, configs)
-        elif indicator.startswith('MinMaxExt'):
-            return MinMaxExt(ttype, configs)
+        elif indicator.startswith('Pattern'):
+            return Pattern(ttype, configs)
         elif indicator.startswith('ATR'):
             return ATR(ttype, configs)
 
@@ -300,12 +300,12 @@ class HighVolume(Indicator):
         return df
 
 
-class MinMaxExt(Indicator):
+class Pattern(Indicator):
     """ Find the minimum and maximum extremums """
-    name = 'MinMaxExt'
+    name = 'Pattern'
 
     def __init__(self, ttype: str, configs: dict):
-        super(MinMaxExt, self).__init__(ttype, configs)
+        super(Pattern, self).__init__(ttype, configs)
 
     @staticmethod
     def get_high_max(df: pd.DataFrame) -> pd.Series:

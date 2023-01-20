@@ -190,19 +190,20 @@ class SigBot:
             data_qty = self.stat_update_range
         return database, data_qty
 
-    def get_buy_signals(self, ticker: str, timeframe: str, data_qty: int) -> list:
+    def get_buy_signals(self, ticker: str, timeframe: str, data_qty: int, data_qty_higher: int) -> list:
         """ Try to find the signals and if succeed - return them and support/resistance levels """
-        sig_points_buy = self.find_signal_buy.find_signal(self.database, ticker, timeframe, data_qty)
+        sig_points_buy = self.find_signal_buy.find_signal(self.database, ticker, timeframe, data_qty, data_qty_higher)
         return sig_points_buy
 
-    def get_sell_signals(self, ticker: str, timeframe: str, data_qty: int) -> list:
+    def get_sell_signals(self, ticker: str, timeframe: str, data_qty: int, data_qty_higher: int) -> list:
         """ Try to find the signals and if succeed - return them and support/resistance levels """
-        sig_points_sell = self.find_signal_sell.find_signal(self.database, ticker, timeframe, data_qty)
+        sig_points_sell = self.find_signal_sell.find_signal(self.database, ticker, timeframe, data_qty, data_qty_higher)
         return sig_points_sell
 
     def filter_sig_points(self, sig_points: list) -> list:
         """ Don't add signal if relatively fresh similar signal was already added to the statistics dataframe before """
         filtered_points = list()
+        prev_point = (None, None, None)
         for point in sig_points:
             ticker, timeframe, ttype, timestamp, pattern = point[0], point[1], point[3], point[4], point[5]
             # pattern is PriceChange - we need only its name without settings
@@ -211,8 +212,10 @@ class SigBot:
             else:
                 pattern = str(pattern)
             # if earlier signal is already exists in the signal list - don't add one more
-            if self.stat.check_close_trades(self.database['stat'][ttype], ticker, timeframe, timestamp, pattern):
+            if self.stat.check_close_trades(self.database['stat'][ttype], ticker, timeframe, timestamp, pattern,
+                                            prev_point):
                 filtered_points.append(point)
+                prev_point = (ticker, timestamp, pattern)
         return filtered_points
 
     def filter_old_signals(self, sig_points: list) -> list:
@@ -321,14 +324,14 @@ class MonitorExchange(Thread):
         self.opt_limit = 1000
 
     @thread_lock
-    def get_indicators(self, df, ttype, ticker, timeframe, data_qty) -> int:
+    def get_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str, data_qty: int) -> int:
         """ Get indicators and quantity of data """
         self.sigbot.database, data_qty = self.sigbot.get_indicators(df, ttype, ticker, timeframe, self.exchange_data,
                                                                     data_qty)
         return data_qty
 
     @thread_lock
-    def add_statistics(self, sig_points) -> None:
+    def add_statistics(self, sig_points: list) -> None:
         self.sigbot.database = self.sigbot.add_statistics(sig_points)
 
     def save_opt_dataframes(self) -> None:
@@ -394,6 +397,7 @@ class MonitorExchange(Thread):
         tickers = self.exchange_data['tickers']
         dt_now = datetime.now()
         for ticker in tickers:
+            data_qty_higher = 0
             # flag that allows to pass the ticker in case of errors
             pass_the_ticker = False
             # stop thread if stop flag is set
@@ -406,6 +410,8 @@ class MonitorExchange(Thread):
                 df, data_qty = self.sigbot.get_data(self.exchange_data['API'], ticker, timeframe, dt_now)
                 if timeframe == self.sigbot.work_timeframe:
                     t_print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}, ticker {ticker}')
+                else:
+                    data_qty_higher = data_qty
                 # If we get new data - create indicator list from search signal patterns list, if it has
                 # the new data and data is not from higher timeframe, else get only levels
                 if data_qty > 1:
@@ -420,8 +426,9 @@ class MonitorExchange(Thread):
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Get the signals
-                        sig_buy_points = self.sigbot.get_buy_signals(ticker, timeframe, data_qty_buy)
-                        sig_sell_points = self.sigbot.get_sell_signals(ticker, timeframe, data_qty_sell)
+                        sig_buy_points = self.sigbot.get_buy_signals(ticker, timeframe, data_qty_buy, data_qty_higher)
+                        sig_sell_points = self.sigbot.get_sell_signals(ticker, timeframe, data_qty_sell,
+                                                                       data_qty_higher)
                         # If similar signal was added to stat dataframe not too long time ago (<= 3-5 ticks before) -
                         # don't add it again
                         sig_buy_points = self.sigbot.filter_sig_points(sig_buy_points)

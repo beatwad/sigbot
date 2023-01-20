@@ -14,7 +14,7 @@ class SignalFactory(object):
             return STOCHSignal(ttype, **configs)
         elif indicator == 'MACD':
             return MACDSignal(ttype, **configs)
-        elif indicator == 'MinMaxExt':
+        elif indicator == 'Pattern':
             return PatternSignal(ttype, **configs)
         elif indicator == 'PriceChange':
             return PriceChangeSignal(ttype, **configs)
@@ -364,7 +364,7 @@ class PatternSignal(SignalBase):
                             (df['high'].shift(1) - df['low'].shift(1)) * sign_1
             second_candle = (df['high'].shift(2) - df['close'].shift(2)) / \
                             (df['high'].shift(2) - df['low'].shift(2)) * sign_2
-        return np.where((first_candle > 0.667) & (second_candle > 0.5), 1, 0)
+        return np.where((first_candle > 0.667) & (second_candle >= 0.667), 1, 0)
 
     @staticmethod
     def create_pattern_vector(df: pd.DataFrame, res: np.ndarray):
@@ -501,7 +501,7 @@ class FindSignal:
             indicator_signals.append(SignalFactory.factory(indicator, self.ttype, self.configs))
         return indicator_signals
 
-    def find_signal(self, dfs: dict, ticker: str, timeframe: str, data_qty: int) -> list:
+    def find_signal(self, dfs: dict, ticker: str, timeframe: str, data_qty: int, data_qty_higher: int) -> list:
         """ Search for the signals through the dataframe, if found - add its index and trade type to the list.
             If dataset was updated - don't search through the whole dataset, only through updated part.
         """
@@ -533,7 +533,10 @@ class FindSignal:
                 fs = indicator_signal.find_signal(df_higher)
             elif indicator_signal.name == "Pattern":
                 # check pattern signals every hour
-                fs = indicator_signal.find_signal(df_higher, dfs, ticker, self.higher_timeframe)
+                if data_qty_higher > 1:
+                    fs = indicator_signal.find_signal(df_higher, dfs, ticker, self.higher_timeframe)
+                else:
+                    fs = np.zeros(df_higher.shape[0])
             else:
                 fs = indicator_signal.find_signal(df_work)
 

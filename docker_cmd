@@ -1,6 +1,6 @@
 docker build . -t sigbot
 
-sudo docker run -v ${PWD}/sigbot:/sigbot sigbot
+docker run -v ${PWD}/sigbot:/sigbot sigbot
 
-sudo docker stop $(sudo docker ps -q)
-sudo docker rm $(sudo docker ps -a -q)
+docker stop $(docker ps -q)
+docker rm $(docker ps -a -q)

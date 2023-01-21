@@ -49,7 +49,9 @@ class TelegramBot:
         # dictionary that is used to determine too late signals according to current work_timeframe
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
         # Get working and higher timeframes
+        self.higher_tf_patterns = configs['Higher_TF_indicator_list']
         self.work_timeframe = configs['Timeframes']['work_timeframe']
+        self.higher_timeframe = configs['Timeframes']['higher_timeframe']
 
     @staticmethod
     async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -111,9 +113,14 @@ class TelegramBot:
                                    ]
         if tmp.shape[0] > 0:
             latest_time = tmp['time'].max()
-            if (sig_time - latest_time).total_seconds() < self.timeframe_div[self.work_timeframe] * \
-                    self.min_prev_candle_limit:
-                return False
+            if pattern in self.higher_tf_patterns:
+                if (sig_time - latest_time).total_seconds() < self.timeframe_div[self.higher_timeframe] * \
+                        self.min_prev_candle_limit:
+                    return False
+            else:
+                if (sig_time - latest_time).total_seconds() < self.timeframe_div[self.work_timeframe] * \
+                        self.min_prev_candle_limit:
+                    return False
         return True
 
     def check_notifications(self):

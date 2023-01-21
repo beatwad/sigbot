@@ -18,5 +18,5 @@ Works with Binance API
 * pytest `7.1.2`
 * pytest-mock `3.8.2`
 * freezegun `1.2.2`
-* python-telegram-bot `13.14`
+* python-telegram-bot `20.0`
 * proplot `0.9.5`

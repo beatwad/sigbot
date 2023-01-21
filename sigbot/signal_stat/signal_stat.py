@@ -161,14 +161,16 @@ class SignalStat:
             return False
         same_signal_timestamps = df.loc[(df['ticker'] == ticker) & (df['timeframe'] == timeframe) &
                                         (df['pattern'] == pattern), 'time']
-        # if can't find similar signals at all - check previous added point
-        prev_ticker, prev_time, prev_pattern = prev_point
-        if same_signal_timestamps.shape[0] == 0:
-            if prev_time is None or ticker != prev_ticker or pattern != prev_pattern:
-                return True
-            last_signal_timestamp = prev_time
-        else:
+        # find the last timestamp when previous similar pattern appeared
+        if same_signal_timestamps.shape[0] > 0:
             last_signal_timestamp = same_signal_timestamps.max()
+        else:
+            last_signal_timestamp = pd.Timestamp(0)
+        # select the latest timestamp among similar signal from statistics and previous signal
+        prev_ticker, prev_time, prev_pattern = prev_point
+        if prev_time is not None and ticker == prev_ticker and pattern == prev_pattern:
+            prev_signal_timestamp = prev_time
+            last_signal_timestamp = max(prev_signal_timestamp, last_signal_timestamp)
         # check if point appeared too early after previous point
         if pattern in self.higher_tf_patterns:
             if (point_time - last_signal_timestamp).total_seconds() > self.timeframe_div[self.higher_timeframe] * \

@@ -364,7 +364,7 @@ class PatternSignal(SignalBase):
                             (df['high'].shift(1) - df['low'].shift(1)) * sign_1
             second_candle = (df['high'].shift(2) - df['close'].shift(2)) / \
                             (df['high'].shift(2) - df['low'].shift(2)) * sign_2
-        return np.where((first_candle > 0.667) & (second_candle >= 0.667), 1, 0)
+        return np.where((first_candle > 0.667) & (second_candle >= 0.5), 1, 0)
 
     @staticmethod
     def create_pattern_vector(df: pd.DataFrame, res: np.ndarray):

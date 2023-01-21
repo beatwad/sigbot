@@ -59,8 +59,10 @@ class SigBot:
         # Get working and higher timeframes
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
-        self.futures_exchanges = configs['Exchanges']['futures_exchanges']
         self.timeframes = [self.higher_timeframe, self.work_timeframe]
+        self.higher_tf_patterns = configs['Higher_TF_indicator_list']
+        # List of Futures Exchanges
+        self.futures_exchanges = configs['Exchanges']['futures_exchanges']
         # Create indicators
         self.higher_tf_indicators, self.work_tf_indicators = self.create_indicators(configs)
         # Set list of available exchanges, cryptocurrencies and tickers
@@ -224,10 +226,16 @@ class SigBot:
         dt_now = datetime.now()
         for point in sig_points:
             point_time = point[4]
+            pattern = point[5]
             # if too much time has passed after signal was found - skip it
-            if (dt_now - point_time).total_seconds() <= self.timeframe_div[self.work_timeframe] * \
-                    self.max_prev_candle_limit:
-                filtered_points.append(point)
+            if pattern in self.higher_tf_patterns:
+                if (dt_now - point_time).total_seconds() <= self.timeframe_div[self.higher_timeframe] * \
+                        self.max_prev_candle_limit:
+                    filtered_points.append(point)
+            else:
+                if (dt_now - point_time).total_seconds() <= self.timeframe_div[self.work_timeframe] * \
+                        self.max_prev_candle_limit:
+                    filtered_points.append(point)
         return filtered_points
 
     def add_statistics(self, sig_points: list) -> dict:

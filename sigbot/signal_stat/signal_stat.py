@@ -126,7 +126,7 @@ class SignalStat:
     def cut_stat_df(self, stat, pattern):
         """ Get only last signals that have been created not earlier than N hours ago (depends on pattern) """
         latest_time = stat['time'].max()
-        stat = stat[latest_time - stat['time'] < pd.Timedelta(self.stat_limit_hours[pattern], "h")]
+        stat = stat[latest_time - stat['time'] < pd.Timedelta(self.stat_limit_hours[pattern] + self.stat_range, "h")]
         return stat
 
     def calculate_total_stat(self, dfs: dict, ttype: str, pattern: str) -> (list, int):

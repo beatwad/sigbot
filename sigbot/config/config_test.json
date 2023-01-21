@@ -157,7 +157,7 @@
   "Higher_TF_indicator_list": [
     "LinearReg",
     "MACD",
-    "MinMaxExt"
+    "Pattern"
   ],
   "Indicator": {
     "buy": {
@@ -185,7 +185,7 @@
           "signalperiod": 9
         }
       },
-      "MinMaxExt": {
+      "Pattern": {
         "params": {
         }
       },
@@ -237,7 +237,7 @@
           "signalperiod": 9
         }
       },
-      "MinMaxExt": {
+      "Pattern": {
         "params": {
         }
       },
@@ -271,7 +271,7 @@
     "PriceChange",
     "HighVolume",
     "MACD",
-    "MinMaxExt",
+    "Pattern",
     "ATR",
     "LinearReg"
   ],
@@ -393,7 +393,7 @@
         "STOCH_RSI" :  72,
         "STOCH_RSI_LinearReg" :  72
       },
-      "prev_sig_limit_minutes": 40,
+      "min_prev_candle_limit": 3,
       "stat_range": 24
     }
   },
@@ -404,7 +404,9 @@
   },
   "Telegram": {
     "params": {
-      "allowed_exchanges": [],
+      "allowed_exchanges": [
+        "ByBitPerpetual"
+      ],
       "log_path": "telegram_log.txt",
       "chat_ids": {
         "Errors": "-1001837009227",

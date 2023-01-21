@@ -120,7 +120,7 @@ def test_high_volume(df, timeframe, ticker, expected):
                                                     [0.00095, 0.00438]]),
                           ], ids=repr)
 def test_min_max_ext(df, timeframe, ticker, expected):
-    indicator = IndicatorFactory.factory('MinMaxExt', 'buy', configs)
+    indicator = IndicatorFactory.factory('Pattern', 'buy', configs)
     data_qty = 500
     df = indicator.get_indicator(df, ticker, timeframe, data_qty)
     if ticker == 'BTC':

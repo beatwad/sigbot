@@ -32,10 +32,10 @@ work_timeframe = configs['Timeframes']['work_timeframe']
                          [
                           ('Binance', pd.DataFrame(columns=df_btc_5m.columns), 'BTCUSDT', '5m',
                            configs['Data']['Binance']['params']['limit']),
-                          ('Binance', df_btc_5m, 'BTCUSDT', '5m', 3),
+                          ('Binance', df_btc_5m, 'BTCUSDT', '5m', 2),
                           ('Binance', df_btc_5m, 'ETHUSDT', '1h', 2),
-                          ('Binance', df_btc_5m, 'ETHUSDT', '4h', 7),
-                          ('Binance', df_btc_5m, 'ETHUSDT', '1d', 5),
+                          ('Binance', df_btc_5m, 'ETHUSDT', '4h', 2),
+                          ('Binance', df_btc_5m, 'ETHUSDT', '1d', 2),
                           ], ids=repr)
 def test_get_limit(mocker, exchange, df, ticker, timeframe, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
@@ -51,7 +51,7 @@ def test_get_limit(mocker, exchange, df, ticker, timeframe, expected):
 
     @freeze_time("2022-08-24-15:11:00")
     def get_limit():
-        return gd.get_limit(df, ticker, timeframe)
+        return gd.get_limit(df, ticker, timeframe, datetime.datetime.now())
 
     limit = get_limit()
     assert limit == expected
@@ -118,7 +118,7 @@ def test_get_data_get_data(mocker, df, ticker, timeframe, index, limit, expected
     gd.limit = 500
     gd.fill_ticker_dict(tickers)
 
-    res = gd.get_data(df, ticker, timeframe)
+    res = gd.get_data(df, ticker, timeframe, datetime.datetime.now())
     assert res[0].equals(expected[0])
     assert res[1] == expected[1]
 
@@ -189,7 +189,7 @@ def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
     gd.limit = 500
     gd.fill_ticker_dict(tickers)
 
-    data = gd.get_data(df.loc[:499], ticker, timeframe)[0]
+    data = gd.get_data(df.loc[:499], ticker, timeframe, datetime.datetime.now())[0]
     data_qty = 20
     res = gd.add_indicator_data(dfs, data, 'buy', indicators, ticker,
                                 timeframe, data_qty)[ticker][timeframe]['data']['buy']

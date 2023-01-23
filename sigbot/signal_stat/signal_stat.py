@@ -12,7 +12,7 @@ class SignalStat:
         # the number of last candles for which statistics are calculated
         self.stat_range = self.configs.get('stat_range', 24)
         self.test = self.configs.get('test', False)
-        self.stat_limit_hours = self.configs.get('stat_limit_hours', 72)
+        self.stat_limit_hours = self.configs.get('stat_limit_hours', 48)
         # Minimal number of candles that should pass from previous signal to add the new signal to statistics
         self.min_prev_candle_limit = self.configs.get('min_prev_candle_limit', 3)
         # dictionary that is used to determine too late signals according to current work_timeframe
@@ -29,14 +29,12 @@ class SignalStat:
             Statistics for buy and sell trades is written separately """
         for point in signal_points:
             ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
+            # we don't write statistics for the High Volume pattern
+            if pattern == 'HighVolume':
+                continue
             df = dfs[ticker][timeframe]['data'][ttype]
             # array of prices after signal
             signal_price = df['close'].iloc[index]
-            # Try to get information about price movement after signal, if can't - continue
-            try:
-                _ = df['high'].iloc[index + int(self.stat_range)]
-            except IndexError:
-                continue
             # If index of point was found too early - we shouldn't use it
             if index < 50:
                 continue
@@ -54,8 +52,12 @@ class SignalStat:
         low_result_prices = list()
         atr = df['atr'].iloc[index]
         for t in range(1, self.stat_range + 1):
-            high_result_prices.append(df['high'].iloc[index + t])
-            low_result_prices.append(df['low'].iloc[index + t])
+            try:
+                high_result_prices.append(df['high'].iloc[index + t])
+                low_result_prices.append(df['low'].iloc[index + t])
+            except IndexError:
+                high_result_prices.append(df['close'].iloc[index])
+                low_result_prices.append(df['close'].iloc[index])
         return high_result_prices, low_result_prices, atr
 
     @staticmethod
@@ -75,35 +77,42 @@ class SignalStat:
             stat = dfs['stat']['buy']
         else:
             stat = dfs['stat']['sell']
+        tmp['signal_price'] = [signal_price]
+        # write result price, MFE and MAE, if MAE is too low - replace it with MFE/1000 to prevent zero division
+        for i in range(len(high_result_prices)):
+            if ttype == 'buy':
+                tmp['result_price'] = [high_result_prices[i]]
+                mfe = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
+                tmp[f'mfe_{i+1}'] = [mfe]
+                tmp[f'mae_{i+1}'] = max(signal_price - min(low_result_prices[:i+1]), 0) / atr
+            else:
+                tmp['result_price'] = [low_result_prices[i]]
+                mfe = max(signal_price - min(low_result_prices[:i+1]), 0) / atr
+                tmp[f'mfe_{i+1}'] = [mfe]
+                tmp[f'mae_{i+1}'] = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
+            tmp[f'price_diff_{i+1}'] = tmp[f'result_price'] - tmp['signal_price']
+            tmp[f'pct_price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'] / tmp['signal_price'] * 100
+            tmp = tmp.drop(['result_price', f'price_diff_{i+1}'], axis=1)
+        # if can't find similar statistics in the dataset - just add it to stat dataframe, else update stat columns
         if stat[(stat['time'] == time) & (stat['ticker'] == ticker) &
                 (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern)].shape[0] == 0:
-            tmp['signal_price'] = [signal_price]
-            # write result price, MFE and MAE, if MAE is too low - replace it with MFE/1000 to prevent zero division
-            for i in range(len(high_result_prices)):
-                if ttype == 'buy':
-                    tmp['result_price'] = [high_result_prices[i]]
-                    mfe = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
-                    tmp[f'mfe_{i+1}'] = [mfe]
-                    tmp[f'mae_{i+1}'] = max(signal_price - min(low_result_prices[:i+1]), 0) / atr
-                    if max(signal_price - min(low_result_prices[:i+1]), 0) / atr > 1000:
-                        pass
-                else:
-                    tmp['result_price'] = [low_result_prices[i]]
-                    mfe = max(signal_price - min(low_result_prices[:i+1]), 0) / atr
-                    tmp[f'mfe_{i+1}'] = [mfe]
-                    tmp[f'mae_{i+1}'] = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
-                    if max(max(high_result_prices[:i+1]) - signal_price, 0) / atr > 1000:
-                        pass
-                tmp[f'price_diff_{i+1}'] = tmp[f'result_price'] - tmp['signal_price']
-                tmp[f'pct_price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'] / tmp['signal_price'] * 100
-                tmp = tmp.drop(['result_price', f'price_diff_{i+1}'], axis=1)
-
             stat = pd.concat([stat, tmp], ignore_index=True)
-            # updata database with new stat data
-            if ttype == 'buy':
-                dfs['stat']['buy'] = stat
-            else:
-                dfs['stat']['sell'] = stat
+        else:
+            mfe_cols = [f'mfe_{i+1}' for i in range(len(high_result_prices))]
+            mae_cols = [f'mae_{i+1}' for i in range(len(high_result_prices))]
+            pct_price_diff_cols = [f'pct_price_diff_{i+1}' for i in range(len(high_result_prices))]
+            stat.loc[(stat['time'] == time) & (stat['ticker'] == ticker) &
+                     (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern), mfe_cols] = tmp[mfe_cols].values
+            stat.loc[(stat['time'] == time) & (stat['ticker'] == ticker) &
+                     (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern), mae_cols] = tmp[mae_cols].values
+            stat.loc[(stat['time'] == time) & (stat['ticker'] == ticker) &
+                     (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern), pct_price_diff_cols] = \
+                tmp[pct_price_diff_cols].values
+        # updata database with new stat data
+        if ttype == 'buy':
+            dfs['stat']['buy'] = stat
+        else:
+            dfs['stat']['sell'] = stat
         return dfs
 
     def save_statistics(self, dfs: dict) -> None:
@@ -126,7 +135,7 @@ class SignalStat:
     def cut_stat_df(self, stat, pattern):
         """ Get only last signals that have been created not earlier than N hours ago (depends on pattern) """
         latest_time = stat['time'].max()
-        stat = stat[latest_time - stat['time'] < pd.Timedelta(self.stat_limit_hours[pattern] + self.stat_range, "h")]
+        stat = stat[latest_time - stat['time'] < pd.Timedelta(self.stat_limit_hours[pattern], "h")]
         return stat
 
     def calculate_total_stat(self, dfs: dict, ttype: str, pattern: str) -> (list, int):
@@ -155,10 +164,12 @@ class SignalStat:
     def check_close_trades(self, df: pd.DataFrame, ticker: str, timeframe: str,
                            point_time: pd.Timestamp, pattern: str, prev_point: tuple) -> bool:
         """ Check if signal point wasn't appeared not long time ago """
+        # if the same signal is in dataframe - add it again to update statistics
         same_signal = df[(df['ticker'] == ticker) & (df['timeframe'] == timeframe) &
                          (df['pattern'] == pattern) & (df['time'] == point_time)]
         if same_signal.shape[0] > 0:
-            return False
+            return True
+        # else check the latest similar signal's time to prevent close signals
         same_signal_timestamps = df.loc[(df['ticker'] == ticker) & (df['timeframe'] == timeframe) &
                                         (df['pattern'] == pattern), 'time']
         # find the last timestamp when previous similar pattern appeared
@@ -166,12 +177,12 @@ class SignalStat:
             last_signal_timestamp = same_signal_timestamps.max()
         else:
             last_signal_timestamp = pd.Timestamp(0)
-        # select the latest timestamp among similar signal from statistics and previous signal
+        # select the latest timestamp among similar signals from statistics and previous signal
         prev_ticker, prev_time, prev_pattern = prev_point
         if prev_time is not None and ticker == prev_ticker and pattern == prev_pattern:
             prev_signal_timestamp = prev_time
             last_signal_timestamp = max(prev_signal_timestamp, last_signal_timestamp)
-        # check if point appeared too early after previous point
+        # check if signal appeared too early after previous signal
         if pattern in self.higher_tf_patterns:
             if (point_time - last_signal_timestamp).total_seconds() > self.timeframe_div[self.higher_timeframe] * \
                     self.min_prev_candle_limit:

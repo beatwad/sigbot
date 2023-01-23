@@ -391,7 +391,7 @@
         "Pattern": 48,
         "PriceChange_LinearReg": 48,
         "STOCH_RSI": 48,
-        "STOCH_RSI_LinearReg": 168
+        "STOCH_RSI_LinearReg": 48
       },
       "min_prev_candle_limit": 3,
       "stat_range": 24

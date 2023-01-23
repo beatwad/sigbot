@@ -454,7 +454,7 @@ class Visualizer:
             pct_price_diff_mean_minus_std = [a - b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
 
             # get previous percent of right forecast and save current percent to statistics dictionary
-            avg_e_ratio_coef = round(sum(pct_right_forecast)/len(pct_right_forecast), 2)
+            avg_e_ratio_coef = round(sum(pct_right_forecast)/len(pct_right_forecast), 4)
 
             # get key for statistics dict
             key = self.get_statistics_dict_key(pattern)

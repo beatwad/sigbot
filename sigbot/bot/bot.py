@@ -207,15 +207,17 @@ class SigBot:
         filtered_points = list()
         prev_point = (None, None, None)
         for point in sig_points:
-            ticker, timeframe, ttype, timestamp, pattern = point[0], point[1], point[3], point[4], point[5]
+            ticker, timeframe, index, ttype, timestamp, pattern = point[0], point[1], point[2], point[3], point[4], \
+                point[5]
             # pattern is PriceChange - we need only its name without settings
             if str(pattern[0][0]).startswith('PriceChange'):
                 pattern = str([pattern[0][0]] + pattern[1:])
             else:
                 pattern = str(pattern)
             # if earlier signal is already exists in the signal list - don't add one more
-            if self.stat.check_close_trades(self.database['stat'][ttype], ticker, timeframe, timestamp, pattern,
-                                            prev_point):
+            stat = self.database['stat'][ttype]
+            df_len = self.database[ticker][timeframe]['data'][ttype].shape[0]
+            if self.stat.check_close_trades(stat, df_len, ticker, timeframe, index, timestamp, pattern, prev_point):
                 filtered_points.append(point)
                 prev_point = (ticker, timestamp, pattern)
         return filtered_points

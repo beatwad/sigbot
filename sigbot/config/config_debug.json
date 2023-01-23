@@ -2,6 +2,7 @@
   "Data": {
     "Basic": {
       "params": {
+        "limit": 1000,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,

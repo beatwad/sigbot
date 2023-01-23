@@ -161,17 +161,20 @@ class SignalStat:
             result_statistics.append((e_ratio, pct_price_diff_mean, pct_price_diff_std))
         return result_statistics, stat.shape[0]
 
-    def check_close_trades(self, df: pd.DataFrame, ticker: str, timeframe: str,
+    def check_close_trades(self, stat: pd.DataFrame, df_len: int, ticker: str, timeframe: str, index: int,
                            point_time: pd.Timestamp, pattern: str, prev_point: tuple) -> bool:
         """ Check if signal point wasn't appeared not long time ago """
-        # if the same signal is in dataframe - add it again to update statistics
-        same_signal = df[(df['ticker'] == ticker) & (df['timeframe'] == timeframe) &
-                         (df['pattern'] == pattern) & (df['time'] == point_time)]
+        # if the same signal is in dataframe, and it appeared not too early - add it again to update statistics
+        same_signal = stat[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe) &
+                           (stat['pattern'] == pattern) & (stat['time'] == point_time)]
         if same_signal.shape[0] > 0:
+            # if signal appeared too early - don't consider it
+            if index < df_len - self.stat_range - 1:
+                return False
             return True
         # else check the latest similar signal's time to prevent close signals
-        same_signal_timestamps = df.loc[(df['ticker'] == ticker) & (df['timeframe'] == timeframe) &
-                                        (df['pattern'] == pattern), 'time']
+        same_signal_timestamps = stat.loc[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe) &
+                                          (stat['pattern'] == pattern), 'time']
         # find the last timestamp when previous similar pattern appeared
         if same_signal_timestamps.shape[0] > 0:
             last_signal_timestamp = same_signal_timestamps.max()

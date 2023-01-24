@@ -91,7 +91,7 @@ class SigBot:
             sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
             self.database = {'stat': {'buy': buy_stat, 'sell': sell_stat}}
         # Set candle range in which signal stat update can happen
-        self.stat_update_range = configs['SignalStat']['params']['stat_range'] * 2
+        self.stat_update_range = configs['SignalStat']['params']['stat_range'] + 1
         # Lists for storing exchange monitor threads (Spot and Futures)
         self.spot_ex_monitor_list = list()
         self.fut_ex_monitor_list = list()
@@ -228,16 +228,16 @@ class SigBot:
         dt_now = datetime.now()
         for point in sig_points:
             point_time = point[4]
-            pattern = point[5]
+            # pattern = point[5]
             # if too much time has passed after signal was found - skip it
-            if pattern in self.higher_tf_patterns:
-                if (dt_now - point_time).total_seconds() <= self.timeframe_div[self.higher_timeframe] * \
-                        self.max_prev_candle_limit:
-                    filtered_points.append(point)
-            else:
-                if (dt_now - point_time).total_seconds() <= self.timeframe_div[self.work_timeframe] * \
-                        self.max_prev_candle_limit:
-                    filtered_points.append(point)
+            # if pattern in self.higher_tf_patterns:
+            #     if (dt_now - point_time).total_seconds() <= self.timeframe_div[self.higher_timeframe] * \
+            #             self.max_prev_candle_limit:
+            #         filtered_points.append(point)
+            # else:
+            if (dt_now - point_time).total_seconds() <= self.timeframe_div[self.work_timeframe] * \
+                    self.max_prev_candle_limit:
+                filtered_points.append(point)
         return filtered_points
 
     def add_statistics(self, sig_points: list) -> dict:

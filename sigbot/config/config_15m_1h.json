@@ -2,6 +2,7 @@
   "Data": {
     "Basic": {
       "params": {
+        "limit": 1000,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -157,7 +158,7 @@
   "Higher_TF_indicator_list": [
     "LinearReg",
     "MACD",
-    "MinMaxExt"
+    "Pattern"
   ],
   "Indicator": {
     "buy": {
@@ -185,7 +186,7 @@
           "signalperiod": 9
         }
       },
-      "MinMaxExt": {
+      "Pattern": {
         "params": {
         }
       },
@@ -237,7 +238,7 @@
           "signalperiod": 9
         }
       },
-      "MinMaxExt": {
+      "Pattern": {
         "params": {
         }
       },
@@ -271,7 +272,7 @@
     "PriceChange",
     "HighVolume",
     "MACD",
-    "MinMaxExt",
+    "Pattern",
     "ATR",
     "LinearReg"
   ],
@@ -387,11 +388,11 @@
       "stat_limit_hours": {
         "PriceChange": 24,
         "HighVolume": 24,
-        "MACD": 125,
-        "Pattern": 125,
+        "MACD": 48,
+        "Pattern": 48,
         "PriceChange_LinearReg": 48,
-        "STOCH_RSI": 36,
-        "STOCH_RSI_LinearReg": 168
+        "STOCH_RSI": 48,
+        "STOCH_RSI_LinearReg": 48
       },
       "min_prev_candle_limit": 3,
       "stat_range": 24

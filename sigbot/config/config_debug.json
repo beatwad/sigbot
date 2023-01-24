@@ -269,9 +269,6 @@
   "Indicator_list": [
     "STOCH",
     "RSI",
-    "PriceChange",
-    "HighVolume",
-    "MACD",
     "Pattern",
     "ATR",
     "LinearReg"
@@ -359,22 +356,8 @@
   "Patterns": [
     [
       "STOCH",
-      "RSI"
-    ],
-    [
-      "STOCH",
       "RSI",
       "LinearReg"
-    ],
-    [
-      "HighVolume"
-    ],
-    [
-      "PriceChange",
-      "LinearReg"
-    ],
-    [
-      "MACD"
     ],
     [
       "Pattern"

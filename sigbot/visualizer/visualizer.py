@@ -320,23 +320,6 @@ class Visualizer:
             newxticks.append(len(ohlc_higher) - 1)
             newlabels.append(ohlc_higher.index[len(ohlc_higher) - 1].strftime(format))
 
-            # workaround to show the last xtick for the higher timeframe candle plot
-            format = '%H:%M'
-            newxticks = []
-            newlabels = []
-
-            # copy and format the existing xticks:
-            for xt in axs_higher.get_xticks():
-                p = int(xt)
-                if 0 <= p < len(ohlc_higher):
-                    ts = ohlc_higher.index[p]
-                    newxticks.append(p)
-                    newlabels.append(ts.strftime(format))
-
-            # here we create the final tick and tick label:
-            newxticks.append(len(ohlc_higher) - 1)
-            newlabels.append(ohlc_higher.index[len(ohlc_higher) - 1].strftime(format))
-
             # set the xticks and labels with the new ticks and labels:
             axs_higher.set_xticks(newxticks)
             axs_higher.set_xticklabels(newlabels, rotation=0)

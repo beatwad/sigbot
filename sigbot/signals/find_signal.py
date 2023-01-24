@@ -451,18 +451,11 @@ class PatternSignal(SignalBase):
         df.loc[low_min, 'low_min'] = 1
         dfs[ticker][timeframe]['data'][self.ttype] = df
 
-    def find_signal(self, df: pd.DataFrame, dfs: dict, ticker: str, timeframe: str) -> np.ndarray:
+    def find_signal(self, df: pd.DataFrame, ticker: str, timeframe: str) -> np.ndarray:
         # Find one of TA patterns like H&S, HLH/LHL, DT/DB and good candles that confirm that pattern
         avg_gap = (df['high'] - df['low']).mean()
-        high_max = df[df['high_max'] > 0]
-        low_min = df[df['low_min'] > 0]
-        # Find global minimum and maximums
-        try:
-            high_max, low_min = self.shrink_max_min(df, high_max.index, low_min.index)
-        except IndexError:
-            high_max, low_min = [], []
-        # Update extremums of the dataframe
-        self.update_dataframe(df, high_max, low_min, dfs, ticker, timeframe)
+        high_max = df[df['high_max'] > 0].index
+        low_min = df[df['low_min'] > 0].index
         # bring both global extremum lists to one length
         min_len = min(len(high_max), len(low_min))
         if min_len == 0:
@@ -534,7 +527,7 @@ class FindSignal:
             elif indicator_signal.name == "Pattern":
                 # check pattern signals every hour
                 if data_qty_higher > 1:
-                    fs = indicator_signal.find_signal(df_higher, dfs, ticker, self.higher_timeframe)
+                    fs = indicator_signal.find_signal(df_higher, ticker, self.higher_timeframe)
                 else:
                     fs = np.zeros(df_higher.shape[0])
             else:

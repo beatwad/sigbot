@@ -306,6 +306,8 @@ class Pattern(Indicator):
 
     def __init__(self, ttype: str, configs: dict):
         super(Pattern, self).__init__(ttype, configs)
+        # number of last candle's extremums that will be updated (to increase performance) on 2+ cycle
+        self.last_candles_ext_num = self.configs.get('number_last_ext', 100)
 
     @staticmethod
     def get_high_max(df: pd.DataFrame) -> pd.Series:
@@ -364,6 +366,16 @@ class Pattern(Indicator):
         """ Get main minimum and maximum extremums """
         high_max = self.get_high_max(df).index
         low_min = self.get_low_min(df).index
+        df_len = df.shape[0]
+        # on second and next cycles don't update all maximums and minimums to increase performance
+        if data_qty <= 100:
+            high_max = high_max[high_max >= df_len - self.last_candles_ext_num]
+            low_min = low_min[low_min >= df_len - self.last_candles_ext_num]
+        # leave only global maximums and minimums
+        try:
+            high_max, low_min = self.shrink_max_min(df, high_max, low_min)
+        except IndexError:
+            high_max, low_min = [], []
         df['high_max'] = 0
         df.loc[high_max, 'high_max'] = 1
         df['low_min'] = 0

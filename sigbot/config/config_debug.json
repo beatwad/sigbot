@@ -240,6 +240,7 @@
       },
       "Pattern": {
         "params": {
+          "number_last_ext": 100
         }
       },
       "ATR": {
@@ -270,7 +271,6 @@
     "STOCH",
     "RSI",
     "Pattern",
-    "ATR",
     "LinearReg"
   ],
   "Indicator_signal": {
@@ -291,9 +291,7 @@
         "params": {}
       },
       "Pattern": {
-        "params": {
-          "window": 30
-        }
+        "params": {}
       },
       "PriceChange": {
         "params": {}
@@ -378,6 +376,7 @@
         "STOCH_RSI_LinearReg": 48
       },
       "min_prev_candle_limit": 3,
+      "min_prev_candle_limit_higher": 2,
       "stat_range": 24
     }
   },
@@ -419,6 +418,7 @@
         "Pattern_sell": "102"
       },
       "min_prev_candle_limit": 3,
+      "min_prev_candle_limit_higher": 2,
       "max_notifications_in_row": 3
     }
   },

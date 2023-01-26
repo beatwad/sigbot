@@ -322,7 +322,7 @@ class Visualizer:
 
             # set the xticks and labels with the new ticks and labels:
             axs_higher.set_xticks(newxticks)
-            axs_higher.set_xticklabels(newlabels, rotation=0)
+            axs_higher.set_xticklabels(newlabels, rotation=30)
 
             # plot point of trade
             self.plot_point(point_type, df_higher, axs_higher, higher=True)

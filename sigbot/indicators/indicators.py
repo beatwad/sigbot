@@ -306,7 +306,7 @@ class Pattern(Indicator):
 
     def __init__(self, ttype: str, configs: dict):
         super(Pattern, self).__init__(ttype, configs)
-        # number of last candle's extremums that will be updated (to increase performance) on 2+ cycle
+        # number of last candle's extremums that will be updated (to increase performance) on second bot cycle and after
         self.last_candles_ext_num = self.configs.get('number_last_ext', 100)
 
     @staticmethod

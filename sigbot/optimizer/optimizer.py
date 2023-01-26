@@ -200,13 +200,24 @@ class Optimizer:
 
 if __name__ == '__main__':
     ttype = 'buy'
-    pattern = ['STOCH', 'RSI']
+    pattern = ['Pattern']
+    indicator_list = ['Pattern']
+    indicator_list_higher = ['Pattern']
+
     opt_limit = 100
     load = False
 
     optim_dict = {'RSI': {'timeperiod': [18], 'low_bound': [25]},
                   'STOCH': {'fastk_period': [5], 'slowk_period': [3, 4],
                             'slowd_period': [3], 'low_bound': [20]}}
+
+    work_timeframe = '15m'
+    higher_timeframe = '1h'
+
+    configs['Indicator_list'] = indicator_list
+    configs['Higher_TF_indicator_list'] = indicator_list_higher
+    configs['Timeframes']['work_timeframe'] = work_timeframe
+    configs['Timeframes']['higher_timeframe'] = higher_timeframe
 
     opt = Optimizer(pattern, optim_dict, **configs)
     rs = opt.optimize(pattern, ttype, opt_limit, load)

@@ -15,6 +15,7 @@ class SignalStat:
         self.stat_limit_hours = self.configs.get('stat_limit_hours', 48)
         # Minimal number of candles that should pass from previous signal to add the new signal to statistics
         self.min_prev_candle_limit = self.configs.get('min_prev_candle_limit', 3)
+        self.min_prev_candle_limit_higher = self.configs.get('min_prev_candle_limit_higher', 2)
         # dictionary that is used to determine too late signals according to current work_timeframe
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
         # Get working and higher timeframes
@@ -161,20 +162,18 @@ class SignalStat:
             result_statistics.append((e_ratio, pct_price_diff_mean, pct_price_diff_std))
         return result_statistics, stat.shape[0]
 
-    def check_close_trades(self, stat: pd.DataFrame, df_len: int, ticker: str, timeframe: str, index: int,
+    def check_close_trades(self, stat: pd.DataFrame, df_len: int, ticker: str, index: int,
                            point_time: pd.Timestamp, pattern: str, prev_point: tuple) -> bool:
         """ Check if signal point wasn't appeared not long time ago """
         # if the same signal is in dataframe, and it appeared not too early - add it again to update statistics
-        same_signal = stat[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe) &
-                           (stat['pattern'] == pattern) & (stat['time'] == point_time)]
+        same_signal = stat[(stat['ticker'] == ticker) & (stat['pattern'] == pattern) & (stat['time'] == point_time)]
         if same_signal.shape[0] > 0:
             # if signal appeared too early - don't consider it
             if index < df_len - self.stat_range - 1:
                 return False
             return True
         # else check the latest similar signal's time to prevent close signals
-        same_signal_timestamps = stat.loc[(stat['ticker'] == ticker) & (stat['timeframe'] == timeframe) &
-                                          (stat['pattern'] == pattern), 'time']
+        same_signal_timestamps = stat.loc[(stat['ticker'] == ticker) & (stat['pattern'] == pattern), 'time']
         # find the last timestamp when previous similar pattern appeared
         if same_signal_timestamps.shape[0] > 0:
             last_signal_timestamp = same_signal_timestamps.max()
@@ -188,7 +187,7 @@ class SignalStat:
         # check if signal appeared too early after previous signal
         if pattern in self.higher_tf_patterns:
             if (point_time - last_signal_timestamp).total_seconds() > self.timeframe_div[self.higher_timeframe] * \
-                    self.min_prev_candle_limit:
+                    self.min_prev_candle_limit_higher:
                 return True
         else:
             if (point_time - last_signal_timestamp).total_seconds() > self.timeframe_div[self.work_timeframe] * \

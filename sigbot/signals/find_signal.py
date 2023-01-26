@@ -277,7 +277,6 @@ class PatternSignal(SignalBase):
     def __init__(self, ttype, **configs):
         super(PatternSignal, self).__init__(ttype, configs)
         self.ttype = ttype
-        self.window = self.configs.get('window', 30)
 
     def shrink_max_min(self, df: pd.DataFrame, high_max: [pd.DataFrame.index, list],
                        low_min: [pd.DataFrame.index, list]) -> (np.ndarray, np.ndarray):
@@ -443,15 +442,7 @@ class PatternSignal(SignalBase):
         v = self.create_pattern_vector(df, res)
         return v
 
-    def update_dataframe(self, df: pd.DataFrame, high_max: np.ndarray, low_min: np.ndarray, dfs: dict,
-                         ticker: str, timeframe: str) -> None:
-        """ Update price extremums and save them to the dataframe """
-        df['high_max'], df['low_min'] = 0, 0
-        df.loc[high_max, 'high_max'] = 1
-        df.loc[low_min, 'low_min'] = 1
-        dfs[ticker][timeframe]['data'][self.ttype] = df
-
-    def find_signal(self, df: pd.DataFrame, ticker: str, timeframe: str) -> np.ndarray:
+    def find_signal(self, df: pd.DataFrame) -> np.ndarray:
         # Find one of TA patterns like H&S, HLH/LHL, DT/DB and good candles that confirm that pattern
         avg_gap = (df['high'] - df['low']).mean()
         high_max = df[df['high_max'] > 0].index
@@ -513,7 +504,9 @@ class FindSignal:
         sig_patterns = [p.copy() for p in self.patterns]
 
         trade_points = pd.DataFrame()
-        trade_points['time'] = df_work['time']
+        df_len = min(df_work.shape[0], df_higher.shape[0])
+        trade_points['time'] = df_work['time'][df_work.shape[0] - df_len:]
+        trade_points['time_higher'] = df_higher['time'][df_higher.shape[0] - df_len:]
 
         # Get signal points for each indicator
         for indicator_signal in self.indicator_signals:
@@ -522,12 +515,10 @@ class FindSignal:
                 timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] /
                                       self.timeframe_div[self.work_timeframe])
                 fs = indicator_signal.find_signal(df_higher, timeframe_ratio, df_work.shape[0])
-            elif indicator_signal.name == "MACD":
-                fs = indicator_signal.find_signal(df_higher)
-            elif indicator_signal.name == "Pattern":
+            elif indicator_signal.name == "MACD" or indicator_signal.name == "Pattern":
                 # check pattern signals every hour
                 if data_qty_higher > 1:
-                    fs = indicator_signal.find_signal(df_higher, ticker, self.higher_timeframe)
+                    fs = indicator_signal.find_signal(df_higher)
                 else:
                     fs = np.zeros(df_higher.shape[0])
             else:
@@ -554,7 +545,10 @@ class FindSignal:
             trade_indexes = pattern_points[pattern_points == max_shape].index
             trade_indexes = trade_indexes[df_work.shape[0] - trade_indexes < data_qty]
             sig_pattern = '_'.join(pattern)
-            points += [[ticker, timeframe, index, self.ttype, trade_points.loc[index, 'time'],
-                        sig_pattern, [], [], [], []] for index in trade_indexes]
-
+            if pattern == ['Pattern'] or pattern == ['MACD']:
+                points += [[ticker, self.higher_timeframe, index, self.ttype, trade_points.loc[index, 'time_higher'],
+                            sig_pattern, [], [], [], []] for index in trade_indexes]
+            else:
+                points += [[ticker, self.work_timeframe, index, self.ttype, trade_points.loc[index, 'time'],
+                            sig_pattern, [], [], [], []] for index in trade_indexes]
         return points

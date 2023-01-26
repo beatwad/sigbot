@@ -2,6 +2,7 @@
   "Data": {
     "Basic": {
       "params": {
+        "limit": 1000,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -64,7 +65,7 @@
     },
     "OKEX": {
       "params": {
-        "limit": 1000,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -107,7 +108,7 @@
     },
     "ByBitPerpetual": {
       "params": {
-        "limit": 1000,
+        "limit": 198,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -127,7 +128,7 @@
     },
     "OKEXFutures": {
       "params": {
-        "limit": 1000,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -155,8 +156,7 @@
     ]
   },
   "Higher_TF_indicator_list": [
-    "LinearReg",
-    "MACD"
+    "LinearReg"
   ],
   "Indicator": {
     "buy": {
@@ -182,6 +182,10 @@
           "fastperiod": 12,
           "slowperiod": 26,
           "signalperiod": 9
+        }
+      },
+      "Pattern": {
+        "params": {
         }
       },
       "ATR": {
@@ -232,6 +236,11 @@
           "signalperiod": 9
         }
       },
+      "Pattern": {
+        "params": {
+          "number_last_ext": 100
+        }
+      },
       "ATR": {
         "params": {
           "timeperiod": 24
@@ -259,6 +268,7 @@
   "Indicator_list": [
     "STOCH",
     "RSI",
+    "Pattern",
     "PriceChange",
     "HighVolume",
     "MACD",
@@ -280,6 +290,9 @@
         }
       },
       "MACD": {
+        "params": {}
+      },
+      "Pattern": {
         "params": {}
       },
       "PriceChange": {
@@ -310,6 +323,11 @@
       },
       "MACD": {
         "params": {}
+      },
+      "Pattern": {
+        "params": {
+          "window": 30
+        }
       },
       "PriceChange": {
         "params": {}
@@ -346,6 +364,9 @@
       "LinearReg"
     ],
     [
+      "Pattern"
+    ],
+    [
       "HighVolume"
     ],
     [
@@ -364,12 +385,14 @@
       "stat_limit_hours": {
         "PriceChange": 24,
         "HighVolume": 24,
-        "MACD": 125,
+        "MACD": 48,
+        "Pattern": 48,
         "PriceChange_LinearReg": 48,
-        "STOCH_RSI": 36,
-        "STOCH_RSI_LinearReg": 168
+        "STOCH_RSI": 48,
+        "STOCH_RSI_LinearReg": 48
       },
       "min_prev_candle_limit": 3,
+      "min_prev_candle_limit_higher": 2,
       "stat_range": 24
     }
   },
@@ -380,6 +403,9 @@
   },
   "Telegram": {
     "params": {
+      "allowed_exchanges": [
+        "ByBitPerpetual"
+      ],
       "log_path": "telegram_log.txt",
       "chat_ids": {
         "Errors": "-1001837009227",
@@ -390,7 +416,24 @@
         "HighVolume": "-1001656085421",
         "MACD": "-1001742813847"
       },
+      "message_thread_ids": {
+        "STOCH_RSI_buy": "54",
+        "STOCH_RSI_sell": "76",
+        "STOCH_RSI_LinearReg_buy": "61",
+        "STOCH_RSI_LinearReg_sell": "66",
+        "PriceChange_buy": "73",
+        "PriceChange_sell": "92",
+        "PriceChange_LinearReg_buy": "73",
+        "PriceChange_LinearReg_sell": "69",
+        "HighVolume_buy": "86",
+        "HighVolume_sell": "86",
+        "MACD_buy": "99",
+        "MACD_sell": "96",
+        "Pattern_buy": "105",
+        "Pattern_sell": "102"
+      },
       "min_prev_candle_limit": 3,
+      "min_prev_candle_limit_higher": 2,
       "max_notifications_in_row": 3
     }
   },
@@ -419,6 +462,10 @@
           "macdhist",
           "macd",
           "macdsignal"
+        ],
+        "Pattern": [
+          "high_max",
+          "low_min"
         ],
         "LinearReg": [
           "linear_reg"

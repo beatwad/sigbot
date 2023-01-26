@@ -38,6 +38,7 @@ class TelegramBot:
         self.chat_ids = self.configs['chat_ids']
         self.message_thread_ids = self.configs['message_thread_ids']
         self.min_prev_candle_limit = self.configs.get('min_prev_candle_limit', 3)
+        self.min_prev_candle_limit_higher = self.configs.get('min_prev_candle_limit_higher', 2)
         self.max_notifications_in_row = self.configs.get('self.max_notifications_in_row', 3)
         # self.dispatcher = self.updater.dispatcher
         # list of notifications
@@ -115,7 +116,7 @@ class TelegramBot:
             latest_time = tmp['time'].max()
             if pattern in self.higher_tf_patterns:
                 if (sig_time - latest_time).total_seconds() < self.timeframe_div[self.higher_timeframe] * \
-                        self.min_prev_candle_limit:
+                        self.min_prev_candle_limit_higher:
                     return False
             else:
                 if (sig_time - latest_time).total_seconds() < self.timeframe_div[self.work_timeframe] * \

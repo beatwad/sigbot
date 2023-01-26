@@ -156,13 +156,17 @@ class SigBot:
 
     @staticmethod
     def create_indicators(configs) -> (list, list):
-        """ Create indicators list for higher and working timeframe """
+        """ Create indicators list for higher and working timeframes """
         higher_tf_indicators = list()
         working_tf_indicators = list()
         higher_tf_indicator_list = configs['Higher_TF_indicator_list']
         indicator_list = configs['Indicator_list']
         # get indicators for higher timeframe
         for ttype in ['buy', 'sell']:
+            ind_factory = IndicatorFactory.factory('ATR', ttype, configs)
+            higher_tf_indicators.append(ind_factory)
+            working_tf_indicators.append(ind_factory)
+
             for indicator in higher_tf_indicator_list:
                 ind_factory = IndicatorFactory.factory(indicator, ttype, configs)
                 if ind_factory:
@@ -217,7 +221,7 @@ class SigBot:
             # if earlier signal is already exists in the signal list - don't add one more
             stat = self.database['stat'][ttype]
             df_len = self.database[ticker][timeframe]['data'][ttype].shape[0]
-            if self.stat.check_close_trades(stat, df_len, ticker, timeframe, index, timestamp, pattern, prev_point):
+            if self.stat.check_close_trades(stat, df_len, ticker, index, timestamp, pattern, prev_point):
                 filtered_points.append(point)
                 prev_point = (ticker, timestamp, pattern)
         return filtered_points
@@ -228,13 +232,6 @@ class SigBot:
         dt_now = datetime.now()
         for point in sig_points:
             point_time = point[4]
-            # pattern = point[5]
-            # if too much time has passed after signal was found - skip it
-            # if pattern in self.higher_tf_patterns:
-            #     if (dt_now - point_time).total_seconds() <= self.timeframe_div[self.higher_timeframe] * \
-            #             self.max_prev_candle_limit:
-            #         filtered_points.append(point)
-            # else:
             if (dt_now - point_time).total_seconds() <= self.timeframe_div[self.work_timeframe] * \
                     self.max_prev_candle_limit:
                 filtered_points.append(point)
@@ -279,14 +276,15 @@ class SigBot:
     def save_opt_dataframes(self, load=False) -> None:
         """ Save all ticker dataframes for further indicator/signal optimization """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
+        dt_now = datetime.now()
         if load:
             print('\nLoad the datasets...')
             # start all spot exchange monitors
             for monitor in self.spot_ex_monitor_list:
-                monitor.save_opt_dataframes()
+                monitor.save_opt_dataframes(dt_now)
             # start all futures exchange monitors
             for monitor in self.fut_ex_monitor_list:
-                monitor.save_opt_dataframes()
+                monitor.save_opt_dataframes(dt_now)
 
     def save_opt_statistics(self, ttype: str, opt_limit: int) -> None:
         """ Save statistics in program memory for further indicator/signal optimization """
@@ -344,7 +342,7 @@ class MonitorExchange(Thread):
     def add_statistics(self, sig_points: list) -> None:
         self.sigbot.database = self.sigbot.add_statistics(sig_points)
 
-    def save_opt_dataframes(self) -> None:
+    def save_opt_dataframes(self, dt_now: datetime) -> None:
         """ Save dataframe for every ticker for further indicator/signal optimization """
         exchange_api = self.exchange_data['API']
         tickers = self.exchange_data['tickers']
@@ -352,7 +350,7 @@ class MonitorExchange(Thread):
         for ticker in tickers:
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
-                df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe)
+                df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now)
                 # Save dataframe to the disk
                 try:
                     open(f'ticker_dataframes/{ticker}_{timeframe}.pkl', 'w').close()
@@ -381,10 +379,10 @@ class MonitorExchange(Thread):
                     # Get the signals
                     if ttype == 'buy':
                         sig_points = self.sigbot.find_signal_buy.find_signal(self.sigbot.database, ticker, timeframe,
-                                                                             opt_limit)
+                                                                             opt_limit, data_qty_higher=2)
                     else:
                         sig_points = self.sigbot.find_signal_sell.find_signal(self.sigbot.database, ticker, timeframe,
-                                                                              opt_limit)
+                                                                              opt_limit, data_qty_higher=2)
                     # Filter repeating signals
                     sig_points = self.sigbot.filter_sig_points(sig_points)
                     # Add the signals to statistics

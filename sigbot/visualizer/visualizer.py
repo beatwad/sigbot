@@ -483,7 +483,10 @@ class Visualizer:
                               'среднее отклонение цены', fontsize=13, color=self.ticker_color)
 
             # set x-ticks
-            xticklabels = ['30', '60', '90', '120', '150', '180', '210', '240', '270', '300', '330', '360']
+            if 'Pattern' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
+                xticklabels = ['2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24']
+            else:
+                xticklabels = ['30', '60', '90', '120', '150', '180', '210', '240', '270', '300', '330', '360']
             # set ticker color
             axs2[0].tick_params(axis='x', colors=self.ticker_color)
             axs2[0].tick_params(axis='y', colors=self.ticker_color)
@@ -499,7 +502,11 @@ class Visualizer:
             axs2[1].set_xticklabels(xticklabels)
 
             # set x-labels
-            axs2[1].set_xlabel(f"время после сигнала, в минутах", fontsize=12, color=self.ticker_color)
+
+            if 'Pattern' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
+                axs2[1].set_xlabel(f"время после сигнала, в часах", fontsize=12, color=self.ticker_color)
+            else:
+                axs2[1].set_xlabel(f"время после сигнала, в минутах", fontsize=12, color=self.ticker_color)
 
             # set y-labels
             axs2[0].set_ylabel("E-ratio", fontsize=9.5, color=self.ticker_color)

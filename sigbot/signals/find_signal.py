@@ -31,7 +31,8 @@ class SignalBase:
 
     def __init__(self, ttype, configs):
         self.ttype = ttype
-        self.configs = configs[self.type][self.ttype][self.name]['params']
+        x = configs[self.type][self.ttype]
+        self.configs = configs[self.type][self.ttype]
 
     @abstractmethod
     def find_signal(self, *args, **kwargs):
@@ -104,6 +105,7 @@ class STOCHSignal(SignalBase):
 
     def __init__(self, ttype: str, **configs):
         super(STOCHSignal, self).__init__(ttype, configs)
+        self.configs = self.configs[self.name]['params']
         self.low_bound = self.configs.get('low_bound', 20)
         self.high_bound = self.configs.get('high_bound', 80)
 
@@ -148,6 +150,7 @@ class RSISignal(SignalBase):
 
     def __init__(self, ttype: str, **configs):
         super(RSISignal, self).__init__(ttype, configs)
+        self.configs = self.configs[self.name]['params']
         self.low_bound = self.configs.get('low_bound', 25)
         self.high_bound = self.configs.get('high_bound', 75)
 
@@ -172,6 +175,7 @@ class LinearRegSignal(SignalBase):
 
     def __init__(self, ttype, **configs):
         super(LinearRegSignal, self).__init__(ttype, configs)
+        self.configs = self.configs[self.name]['params']
         self.low_bound = self.configs.get('low_bound', 0)
         self.high_bound = self.configs.get('high_bound', 0)
 
@@ -247,6 +251,7 @@ class MACDSignal(SignalBase):
 
     def __init__(self, ttype, **configs):
         super(MACDSignal, self).__init__(ttype, configs)
+        self.configs = self.configs[self.name]['params']
         self.low_bound = self.configs.get('low_bound', 20)
         self.high_bound = self.configs.get('high_bound', 80)
 
@@ -277,6 +282,11 @@ class PatternSignal(SignalBase):
     def __init__(self, ttype, **configs):
         super(PatternSignal, self).__init__(ttype, configs)
         self.ttype = ttype
+        self.configs = self.configs[self.name]['params']
+        self.window_low_bound = self.configs.get('window_low_bound', 1)
+        self.window_high_bound = self.configs.get('window_high_bound', 6)
+        self.first_candle = self.configs.get('first_candle', 0.667)
+        self.second_candle = self.configs.get('second_candle', 0.5)
 
     def shrink_max_min(self, df: pd.DataFrame, high_max: [pd.DataFrame.index, list],
                        low_min: [pd.DataFrame.index, list]) -> (np.ndarray, np.ndarray):
@@ -363,13 +373,12 @@ class PatternSignal(SignalBase):
                             (df['high'].shift(1) - df['low'].shift(1)) * sign_1
             second_candle = (df['high'].shift(2) - df['close'].shift(2)) / \
                             (df['high'].shift(2) - df['low'].shift(2)) * sign_2
-        return np.where((first_candle > 0.667) & (second_candle >= 0.5), 1, 0)
+        return np.where((first_candle > self.first_candle) & (second_candle >= self.second_candle), 1, 0)
 
-    @staticmethod
-    def create_pattern_vector(df: pd.DataFrame, res: np.ndarray):
+    def create_pattern_vector(self, df: pd.DataFrame, res: np.ndarray):
         """ Create vector that shows potential places where we can enter the trade after pattern appearance """
         v = np.zeros(df.shape[0], dtype=int)
-        for i in range(1, 6):
+        for i in range(self.window_low_bound, self.window_high_bound):
             try:
                 v[res[res > 0] + i] = 1
             except IndexError:

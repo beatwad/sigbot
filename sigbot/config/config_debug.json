@@ -176,7 +176,7 @@
       },
       "LinearReg": {
         "params": {
-          "timeperiod": 8
+          "timeperiod": 3
         }
       },
       "MACD": {
@@ -187,8 +187,7 @@
         }
       },
       "Pattern": {
-        "params": {
-        }
+        "params": {}
       },
       "ATR": {
         "params": {
@@ -228,7 +227,7 @@
       },
       "LinearReg": {
         "params": {
-          "timeperiod": 8
+          "timeperiod": 3
         }
       },
       "MACD": {
@@ -291,7 +290,12 @@
         "params": {}
       },
       "Pattern": {
-        "params": {}
+        "params": {
+          "window_low_bound": 1,
+          "window_high_bound": 3,
+          "first_candle": 0.8,
+          "second_candle": 0.5
+        }
       },
       "PriceChange": {
         "params": {}
@@ -324,7 +328,10 @@
       },
       "Pattern": {
         "params": {
-          "window": 30
+          "window_low_bound": 2,
+          "window_high_bound": 5,
+          "first_candle": 0.6,
+          "second_candle": 0.8
         }
       },
       "PriceChange": {
@@ -373,7 +380,8 @@
         "Pattern": 48,
         "PriceChange_LinearReg": 48,
         "STOCH_RSI": 48,
-        "STOCH_RSI_LinearReg": 48
+        "STOCH_RSI_LinearReg": 48,
+        "Pattern_LinearReg": 48
       },
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,
@@ -399,7 +407,8 @@
         "PriceChange_LinearReg": "-1001757652380",
         "HighVolume": "-1001757652380",
         "MACD": "-1001757652380",
-        "Pattern": "-1001757652380"
+        "Pattern": "-1001757652380",
+        "Pattern_LinearReg": "-1001757652380"
       },
       "message_thread_ids": {
         "STOCH_RSI_buy": "54",

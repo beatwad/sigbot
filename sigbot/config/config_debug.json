@@ -365,7 +365,8 @@
       "LinearReg"
     ],
     [
-      "Pattern"
+      "Pattern",
+      "LinearReg"
     ]
   ],
   "SignalStat": {

@@ -159,7 +159,7 @@ class Visualizer:
             plot_width_mult = 2.5
         elif 'Pattern' in indicator_list_tmp:
             plot_num = len(indicator_list) + 1
-            main_candleplot_ratio = 1.25
+            main_candleplot_ratio = 1.5
             plot_width_mult = 2.5
         else:
             plot_num = len(indicator_list) + 1
@@ -172,7 +172,94 @@ class Visualizer:
         fig.patch.set_facecolor(self.background_color)
         # If linear regression is in indicator list - remove it from list and plot one more plot with higher timeframe
         # candles and linear regression indicator
-        if 'LinearReg' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
+        if 'Pattern' in indicator_list_tmp:
+            indicator_columns = list()
+            for indicator in indicator_list:
+                indicator_columns += self.indicator_dict[indicator]
+            plot_num -= 1
+            subfigs_num = 2
+            # indicator_tmp = 'Pattern'
+            # indicator_list.remove(indicator_tmp)
+            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[2, 2])
+
+            # plot higher timeframe with linear regression
+            subfigs[0].patch.set_facecolor(self.background_color)
+            axs_higher = subfigs[0].subplots(2, 1, sharex=True)
+            df_higher = dfs[ticker][self.higher_timeframe]['data'][point_type]
+            # get corresponding to signal_time index of dataframe with higher timeframe candles
+            df_higher = df_higher.loc[max(df_higher.shape[0] - self.plot_width * 2, 0):].reset_index(drop=True)
+            ohlc_higher = df_higher[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
+            # plot higher timeframe indicator
+            # indicator_columns = self.indicator_dict[indicator_tmp]
+            for i_c in indicator_columns:
+                if i_c == 'high_max':
+                    point_max = df_higher.loc[df_higher['high_max'] > 0, 'high']
+                    axs_higher[0].scatter(point_max.index, point_max.values, s=30, color='blue')
+                elif i_c == 'low_min':
+                    point_min = df_higher.loc[df_higher['low_min'] > 0, 'low']
+                    axs_higher[0].scatter(point_min.index, point_min.values, s=30, color='orange')
+                else:
+                    axs_higher[1].plot(df_higher[i_c], linewidth=2)
+                    axs_higher[1].yaxis.set_label_position("right")
+                    axs_higher[1].yaxis.tick_right()
+            # plot grid for candles
+            axs_higher[0].grid(which='both', linestyle='--', linewidth=0.3)
+            # set ticker color
+            axs_higher[0].tick_params(axis='x', colors=self.ticker_color)
+            axs_higher[0].tick_params(axis='y', colors=self.ticker_color)
+            # set background color
+            axs_higher[0].patch.set_facecolor(self.background_color)
+            # set border color
+            axs_higher[0].spines['bottom'].set_color(self.border_color)
+            axs_higher[0].spines['top'].set_color(self.border_color)
+            axs_higher[0].spines['right'].set_color(self.border_color)
+            axs_higher[0].spines['left'].set_color(self.border_color)
+            # plot grid for the trend force
+            axs_higher[1].grid(which='both', linestyle='--', linewidth=0.3)
+            # set ticker color
+            axs_higher[1].tick_params(axis='x', colors=self.ticker_color)
+            axs_higher[1].tick_params(axis='y', colors=self.ticker_color)
+            # set background color
+            axs_higher[1].patch.set_facecolor(self.background_color)
+            # set border color
+            axs_higher[1].spines['bottom'].set_color(self.border_color)
+            axs_higher[1].spines['top'].set_color(self.border_color)
+            axs_higher[1].spines['right'].set_color(self.border_color)
+            axs_higher[1].spines['left'].set_color(self.border_color)
+            # plot titles
+            price = self.find_price(df_higher)
+            axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - {price} $ - '
+                                    f'{df_higher["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
+                                    color=self.ticker_color)
+            axs_higher[1].set_title('Сила тренда', fontsize=14, color=self.ticker_color)
+            # plot candles
+            mpf.plot(ohlc_higher, type='candle', ax=axs_higher[0], warn_too_much_data=1001, style='yahoo',
+                     ylabel='', returnfig=True)
+
+            # workaround to show the last xtick for the higher timeframe candle plot
+            format = '%m-%d-%H:%M'
+            newxticks = []
+            newlabels = []
+
+            # copy and format the existing xticks:
+            for xt in axs_higher[0].get_xticks():
+                p = int(xt)
+                if 0 <= p < len(ohlc_higher):
+                    ts = ohlc_higher.index[p]
+                    newxticks.append(p)
+                    newlabels.append(ts.strftime(format))
+
+            # Here we create the final tick and tick label:
+            newxticks.append(len(ohlc_higher) - 1)
+            newlabels.append(ohlc_higher.index[len(ohlc_higher) - 1].strftime(format))
+
+            # set the xticks and labels with the new ticks and labels:
+            axs_higher[1].set_xticks(newxticks)
+            axs_higher[1].set_xticklabels(newlabels, rotation=30)
+
+            # plot point of trade
+            self.plot_point(point_type, df_higher, axs_higher[0], higher=True)
+        elif 'LinearReg' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
             plot_num -= 1
             subfigs_num = 3
             if 'LinearReg' in indicator_list_tmp:
@@ -258,74 +345,6 @@ class Visualizer:
             # set the xticks and labels with the new ticks and labels:
             axs_higher[1].set_xticks(newxticks)
             axs_higher[1].set_xticklabels(newlabels, rotation=30)
-        elif 'Pattern' in indicator_list_tmp:
-            plot_num -= 1
-            subfigs_num = 2
-            indicator_tmp = 'Pattern'
-            indicator_list.remove(indicator_tmp)
-            subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[2, 2])
-
-            # plot higher timeframe with linear regression
-            subfigs[0].patch.set_facecolor(self.background_color)
-            axs_higher = subfigs[0].subplots(1, 1)
-            df_higher = dfs[ticker][self.higher_timeframe]['data'][point_type]
-            # get corresponding to signal_time index of dataframe with higher timeframe candles
-            df_higher = df_higher.loc[max(df_higher.shape[0] - self.plot_width * 2, 0):].reset_index(drop=True)
-            ohlc_higher = df_higher[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
-            # plot higher timeframe indicator
-            indicator_columns = self.indicator_dict[indicator_tmp]
-            for i_c in indicator_columns:
-                if i_c == 'high_max':
-                    point_max = df_higher.loc[df_higher['high_max'] > 0, 'high']
-                    axs_higher.scatter(point_max.index, point_max.values, s=30, color='blue')
-                elif i_c == 'low_min':
-                    point_min = df_higher.loc[df_higher['low_min'] > 0, 'low']
-                    axs_higher.scatter(point_min.index, point_min.values, s=30, color='orange')
-            # plot grid for candles
-            axs_higher.grid(which='both', linestyle='--', linewidth=0.3)
-            # set ticker color
-            axs_higher.tick_params(axis='x', colors=self.ticker_color)
-            axs_higher.tick_params(axis='y', colors=self.ticker_color)
-            # set background color
-            axs_higher.patch.set_facecolor(self.background_color)
-            # set border color
-            axs_higher.spines['bottom'].set_color(self.border_color)
-            axs_higher.spines['top'].set_color(self.border_color)
-            axs_higher.spines['right'].set_color(self.border_color)
-            axs_higher.spines['left'].set_color(self.border_color)
-            # plot titles
-            # plot titles
-            price = self.find_price(df_higher)
-            axs_higher.set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - {price} $ - '
-                                 f'{df_higher["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
-                                 color=self.ticker_color)
-            # plot candles
-            mpf.plot(ohlc_higher, type='candle', ax=axs_higher, warn_too_much_data=1001, style='yahoo',
-                     ylabel='', returnfig=True)
-
-            # workaround to show the last xtick for the higher timeframe candle plot
-            format = '%m-%d-%H:%M'
-            newxticks = []
-            newlabels = []
-
-            # copy and format the existing xticks:
-            for xt in axs_higher.get_xticks():
-                p = int(xt)
-                if 0 <= p < len(ohlc_higher):
-                    ts = ohlc_higher.index[p]
-                    newxticks.append(p)
-                    newlabels.append(ts.strftime(format))
-
-            # Here we create the final tick and tick label:
-            newxticks.append(len(ohlc_higher) - 1)
-            newlabels.append(ohlc_higher.index[len(ohlc_higher) - 1].strftime(format))
-
-            # set the xticks and labels with the new ticks and labels:
-            axs_higher.set_xticks(newxticks)
-            axs_higher.set_xticklabels(newlabels, rotation=30)
-
-            # plot point of trade
-            self.plot_point(point_type, df_higher, axs_higher, higher=True)
         elif 'HighVolume' in indicator_list_tmp:
             subfigs_num = 2
             subfigs = fig.subfigures(subfigs_num, 1, wspace=0, height_ratios=[main_candleplot_ratio/3, 0.01])

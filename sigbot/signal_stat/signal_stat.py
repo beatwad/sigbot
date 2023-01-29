@@ -185,7 +185,7 @@ class SignalStat:
             prev_signal_timestamp = prev_time
             last_signal_timestamp = max(prev_signal_timestamp, last_signal_timestamp)
         # check if signal appeared too early after previous signal
-        if pattern in self.higher_tf_patterns:
+        if set(pattern.split('_')).intersection(set(self.higher_tf_patterns)):
             if (point_time - last_signal_timestamp).total_seconds() > self.timeframe_div[self.higher_timeframe] * \
                     self.min_prev_candle_limit_higher:
                 return True

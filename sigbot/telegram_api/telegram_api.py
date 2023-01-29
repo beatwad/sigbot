@@ -114,7 +114,7 @@ class TelegramBot:
                                    ]
         if tmp.shape[0] > 0:
             latest_time = tmp['time'].max()
-            if pattern in self.higher_tf_patterns:
+            if set(pattern.split('_')).intersection(set(self.higher_tf_patterns)):
                 if (sig_time - latest_time).total_seconds() < self.timeframe_div[self.higher_timeframe] * \
                         self.min_prev_candle_limit_higher:
                     return False

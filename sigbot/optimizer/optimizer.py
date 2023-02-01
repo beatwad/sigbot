@@ -173,7 +173,7 @@ class Optimizer:
                 sb.exchanges = exchanges
             # load candle data from exchanges only at first time
             if load:
-                self.clean_prev_tickers_dfs()
+                # self.clean_prev_tickers_dfs()
                 sb.save_opt_dataframes(ttype)
                 load = False
             sb.save_opt_statistics(ttype, opt_limit)
@@ -205,7 +205,7 @@ if __name__ == '__main__':
     indicator_list_higher = pattern
 
     opt_limit = 100
-    load = False
+    load = True
 
     optim_dict = {
         'Pattern': {'use_vol': [-1], 'window_low_bound': [1], 'window_high_bound': [6],

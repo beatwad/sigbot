@@ -358,11 +358,15 @@ class MonitorExchange(Thread):
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
                 df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now)
-                # Save dataframe to the disk
+                # If we previously download this dataframe to the disk - update it with new data
                 try:
-                    open(f'ticker_dataframes/{ticker}_{timeframe}.pkl', 'w').close()
+                    tmp = pd.read_pickle(f'ticker_dataframes/{ticker}_{timeframe}.pkl')
                 except FileNotFoundError:
                     pass
+                else:
+                    last_time = tmp['time'].max()
+                    df = df[df['time'] > last_time]
+                    df = pd.concat([tmp, df])
                 df_path = f'ticker_dataframes/{ticker}_{timeframe}.pkl'
                 df.to_pickle(df_path)
 

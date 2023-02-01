@@ -291,10 +291,12 @@
       },
       "Pattern": {
         "params": {
+          "use_vol": 0,
           "window_low_bound": 1,
           "window_high_bound": 6,
           "first_candle": 0.5,
-          "second_candle": 0.5
+          "second_candle": 0.5,
+          "third_candle": 0.5
         }
       },
       "PriceChange": {
@@ -328,10 +330,12 @@
       },
       "Pattern": {
         "params": {
+          "use_vol": 0,
           "window_low_bound": 2,
           "window_high_bound": 5,
           "first_candle": 0.6,
-          "second_candle": 0.8
+          "second_candle": 0.8,
+          "third_candle": 0.5
         }
       },
       "PriceChange": {

@@ -193,7 +193,7 @@ class SigBot:
         database = exchange_api.add_indicator_data(self.database, df, ttype, indicators, ticker, timeframe, data_qty)
         # If enough time has passed - update statistics
         if data_qty > 1 and self.main.cycle_number > 1 and timeframe == self.work_timeframe:
-            data_qty = self.stat_update_range
+            data_qty = self.stat_update_range * 1.5
         return database, data_qty
 
     def get_buy_signals(self, ticker: str, timeframe: str, data_qty: int, data_qty_higher: int) -> list:
@@ -241,6 +241,9 @@ class SigBot:
         """ Get statistics and write it to the database """
         database = self.stat.write_stat(self.database, sig_points)
         return database
+
+    def save_statistics(self) -> None:
+        self.stat.save_statistics(self.database)
 
     def calc_statistics(self, sig_points: list) -> list:
         """ Calculate statistics and write it for every signal """
@@ -341,6 +344,10 @@ class MonitorExchange(Thread):
     @thread_lock
     def add_statistics(self, sig_points: list) -> None:
         self.sigbot.database = self.sigbot.add_statistics(sig_points)
+
+    @thread_lock
+    def save_statistics(self) -> None:
+        self.sigbot.save_statistics()
 
     def save_opt_dataframes(self, dt_now: datetime) -> None:
         """ Save dataframe for every ticker for further indicator/signal optimization """
@@ -468,8 +475,10 @@ class MonitorExchange(Thread):
                                               f'{ticker}, timeframe is {timeframe}, type is {sig_point[3]}, ' \
                                               f'pattern is {sig_point[5]}, time is {sig_point[4]}'
                                 logger.info(sig_message)
-                    # Save dataframe for further analysis
-                    # self.save_dataframe(df, ticker, timeframe)
+                # Save dataframe for further analysis
+                # self.save_dataframe(df, ticker, timeframe)
+        # save buy and sell statistics to files
+        self.save_statistics()
 
 
 # if __name__ == "__main__":

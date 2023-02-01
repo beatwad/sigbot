@@ -43,8 +43,8 @@ class SignalStat:
             high_result_prices, low_result_prices, atr = self.get_result_price_after_period(df, index)
             dfs = self.process_statistics(dfs, point, signal_price, high_result_prices, low_result_prices, atr)
         # Save trade statistics on disk
-        if signal_points:
-            self.save_statistics(dfs)
+        # if signal_points:
+        #     self.save_statistics(dfs)
         return dfs
 
     def get_result_price_after_period(self, df: pd.DataFrame, index: int) -> (list, list, float):
@@ -169,7 +169,7 @@ class SignalStat:
         same_signal = stat[(stat['ticker'] == ticker) & (stat['pattern'] == pattern) & (stat['time'] == point_time)]
         if same_signal.shape[0] > 0:
             # if signal appeared too early - don't consider it
-            if index < df_len - self.stat_range - 1:
+            if index < df_len - self.stat_range * 1.5 - 1:
                 return False
             return True
         # else check the latest similar signal's time to prevent close signals

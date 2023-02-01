@@ -29,9 +29,9 @@ class Optimizer:
         self.remove_path = optim_dict
 
     @staticmethod
-    def clean_prev_stat():
+    def clean_prev_stat(ttype):
         """ Clean previous statistics files """
-        files = glob.glob('signal_stat/*.pkl')
+        files = glob.glob(f'signal_stat/{ttype}_stat*.pkl')
         for f in files:
             remove(f)
 
@@ -147,7 +147,7 @@ class Optimizer:
 
     def optimize(self, pattern, ttype, opt_limit, load):
         main = Main()
-        self.clean_prev_stat()
+        self.clean_prev_stat(ttype)
         # set pattern string
         pattern = '_'.join(pattern)
         # get list of config dicts with all possible combinations of pattern settings
@@ -200,16 +200,19 @@ class Optimizer:
 
 if __name__ == '__main__':
     ttype = 'buy'
-    pattern = ['Pattern']
-    indicator_list = ['Pattern']
-    indicator_list_higher = ['Pattern']
+    pattern = ['Pattern', 'LinearReg']
+    indicator_list = pattern
+    indicator_list_higher = pattern
 
     opt_limit = 100
     load = False
 
-    optim_dict = {'RSI': {'timeperiod': [18], 'low_bound': [25]},
-                  'STOCH': {'fastk_period': [5], 'slowk_period': [3, 4],
-                            'slowd_period': [3], 'low_bound': [20]}}
+    optim_dict = {
+        'Pattern': {'use_vol': [-1], 'window_low_bound': [1], 'window_high_bound': [6],
+                    'first_candle': [0.8], 'second_candle': [0.7],
+                    'third_candle': [0.5]},
+        'LinearReg': {'timeperiod': [8], 'low_bound': [0]}
+        }
 
     work_timeframe = '15m'
     higher_timeframe = '1h'
@@ -221,3 +224,4 @@ if __name__ == '__main__':
 
     opt = Optimizer(pattern, optim_dict, **configs)
     rs = opt.optimize(pattern, ttype, opt_limit, load)
+    print('')

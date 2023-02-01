@@ -283,10 +283,12 @@ class PatternSignal(SignalBase):
         super(PatternSignal, self).__init__(ttype, configs)
         self.ttype = ttype
         self.configs = self.configs[self.name]['params']
+        self.use_vol = self.configs.get('use_vol', 0)
         self.window_low_bound = self.configs.get('window_low_bound', 1)
         self.window_high_bound = self.configs.get('window_high_bound', 6)
         self.first_candle = self.configs.get('first_candle', 0.667)
         self.second_candle = self.configs.get('second_candle', 0.5)
+        self.third_candle = self.configs.get('third_candle', 0.5)
 
     def shrink_max_min(self, df: pd.DataFrame, high_max: [pd.DataFrame.index, list],
                        low_min: [pd.DataFrame.index, list]) -> (np.ndarray, np.ndarray):
@@ -358,26 +360,50 @@ class PatternSignal(SignalBase):
         return (ai, bi, ci, di, ei, fi), (aiv, biv, civ, div, eiv, fiv)
 
     def two_good_candles(self, df: pd.DataFrame) -> np.ndarray:
-        """ Get minimum low prices """
-        # vol_avg = df['volume'].mean()
-        # first_candle_vol = df['volume'].shift(1)
-        # second_candle_vol = df['volume'].shift(2)
-        if self.ttype == 'buy':
-            sign_1 = np.where(df['close'].shift(1) > df['open'].shift(1), 1, -1)
-            sign_2 = np.where(df['close'].shift(2) > df['open'].shift(2), 1, -1)
-            first_candle = (df['close'].shift(1) - df['low'].shift(1)) / \
-                            (df['high'].shift(1) - df['low'].shift(1)) * sign_1
-            second_candle = (df['close'].shift(2) - df['low'].shift(2)) / \
-                             (df['high'].shift(2) - df['low'].shift(2)) * sign_2
+        """ Get two candles that confirm pattern movement """
+        # use high/low volume to confirm pattern
+        if self.use_vol:
+            vol_avg = df['volume'].mean()
+            first_candle_vol = df['volume'].shift(1)
+            second_candle_vol = df['volume'].shift(2)
+            # third_candle_vol = df['volume'].shift(3)
         else:
-            sign_1 = np.where(df['close'].shift(1) < df['open'].shift(1), 1, -1)
-            sign_2 = np.where(df['close'].shift(2) < df['open'].shift(2), 1, -1)
-            first_candle = (df['high'].shift(1) - df['close'].shift(1)) / \
-                            (df['high'].shift(1) - df['low'].shift(1)) * sign_1
-            second_candle = (df['high'].shift(2) - df['close'].shift(2)) / \
-                            (df['high'].shift(2) - df['low'].shift(2)) * sign_2
-        return np.where((first_candle > self.first_candle) & (second_candle >= self.second_candle), 1, 0)  # &
-                        #  (first_candle_vol <= vol_avg) & (second_candle_vol <= vol_avg), 1, 0)
+            vol_avg, first_candle_vol, second_candle_vol, third_candle_vol = None, None, None, None
+        # find two candles
+        if self.ttype == 'buy':
+            sign_1 = np.where(df['close'].shift(2) > df['open'].shift(2), 1, -1)
+            sign_2 = np.where(df['close'].shift(1) > df['open'].shift(1), 1, -1)
+            # sign_3 = np.where(df['close'].shift(3) > df['open'].shift(3), 1, -1)
+            first_candle = (df['close'].shift(2) - df['low'].shift(2)) / \
+                           (df['high'].shift(2) - df['low'].shift(2)) * sign_1
+            second_candle = (df['close'].shift(1) - df['low'].shift(1)) / \
+                            (df['high'].shift(1) - df['low'].shift(1)) * sign_2
+            # third_candle = (df['close'].shift(3) - df['low'].shift(3)) / \
+            #                 (df['high'].shift(3) - df['low'].shift(3)) * sign_3
+            if self.use_vol == 1:
+                return np.where((first_candle >= self.first_candle) & (first_candle_vol >= vol_avg) &
+                                (second_candle >= self.second_candle) & (second_candle_vol >= vol_avg), 1, 0)
+            elif self.use_vol == -1:
+                return np.where((first_candle >= self.first_candle) & (first_candle_vol <= vol_avg) &
+                                (second_candle >= self.second_candle) & (second_candle_vol <= vol_avg), 1, 0)
+        else:
+            sign_1 = np.where(df['close'].shift(2) < df['open'].shift(2), 1, -1)
+            sign_2 = np.where(df['close'].shift(1) < df['open'].shift(1), 1, -1)
+            # sign_3 = np.where(df['close'].shift(3) < df['open'].shift(3), 1, -1)
+            first_candle = (df['high'].shift(2) - df['close'].shift(2)) / \
+                           (df['high'].shift(2) - df['low'].shift(2)) * sign_1
+            second_candle = (df['high'].shift(1) - df['close'].shift(1)) / \
+                            (df['high'].shift(1) - df['low'].shift(1)) * sign_2
+            # third_candle = (df['high'].shift(3) - df['close'].shift(3)) / \
+            #                 (df['high'].shift(3) - df['low'].shift(3)) * sign_3
+            if self.use_vol == 1:
+                return np.where((first_candle >= self.first_candle) & (first_candle_vol >= vol_avg) &
+                                (second_candle <= self.second_candle) & (second_candle_vol >= vol_avg), 1, 0)
+            elif self.use_vol == -1:
+                return np.where((first_candle >= self.first_candle) & (first_candle_vol <= vol_avg) &
+                                (second_candle >= self.second_candle) & (second_candle_vol <= vol_avg), 1, 0)
+        return np.where((first_candle >= self.first_candle) &
+                        (second_candle >= self.second_candle), 1, 0)
 
     def create_pattern_vector(self, df: pd.DataFrame, res: np.ndarray):
         """ Create vector that shows potential places where we can enter the trade after pattern appearance """
@@ -558,7 +584,7 @@ class FindSignal:
             trade_indexes = pattern_points[pattern_points == max_shape].index
             trade_indexes = trade_indexes[df_work.shape[0] - trade_indexes < data_qty]
             sig_pattern = '_'.join(pattern)
-            if pattern == ['Pattern'] or pattern == ['MACD']:
+            if sig_pattern == 'Pattern_LinearReg' or sig_pattern == 'MACD':
                 points += [[ticker, self.higher_timeframe, index, self.ttype, trade_points.loc[index, 'time_higher'],
                             sig_pattern, [], [], [], []] for index in trade_indexes]
             else:

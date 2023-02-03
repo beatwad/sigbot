@@ -94,9 +94,7 @@ class SigBot:
         self.stat_update_range = configs['SignalStat']['params']['stat_range'] + 1
         # Lists for storing exchange monitor threads (Spot and Futures)
         self.spot_ex_monitor_list = list()
-        self.fut_ex_monitor_list = list()
-        # dataframe storage for optimization
-        self.opt_dfs = dict()
+        self.fut_ex_monitor_list = list
         # dictionary that is used to determine too late signals according to current work_timeframe
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
 
@@ -181,7 +179,7 @@ class SigBot:
         return higher_tf_indicators, working_tf_indicators
 
     def get_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str,
-                       exchange_data: dict, data_qty: int) -> (dict, int):
+                       exchange_data: dict, data_qty: int, opt_flag: bool = False) -> (dict, int):
         """ Create indicator list from search signal patterns list, if it has the new data and
             data is not from higher timeframe, else get only levels """
         if timeframe == self.work_timeframe:
@@ -190,7 +188,8 @@ class SigBot:
             indicators = self.higher_tf_indicators
         # Write indicators to the dataframe, update dataframe dict
         exchange_api = exchange_data['API']
-        database = exchange_api.add_indicator_data(self.database, df, ttype, indicators, ticker, timeframe, data_qty)
+        database = exchange_api.add_indicator_data(self.database, df, ttype, indicators, ticker, timeframe, data_qty,
+                                                   opt_flag)
         # If enough time has passed - update statistics
         if data_qty > 1 and self.main.cycle_number > 1 and timeframe == self.work_timeframe:
             data_qty = self.stat_update_range * 1.5
@@ -289,15 +288,15 @@ class SigBot:
             for monitor in self.fut_ex_monitor_list:
                 monitor.save_opt_dataframes(dt_now)
 
-    def save_opt_statistics(self, ttype: str, opt_limit: int) -> None:
+    def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool) -> None:
         """ Save statistics in program memory for further indicator/signal optimization """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
         # start all spot exchange monitors
         for monitor in self.spot_ex_monitor_list:
-            monitor.save_opt_statistics(ttype, opt_limit)
+            monitor.save_opt_statistics(ttype, opt_limit, opt_flag)
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
-            monitor.save_opt_statistics(ttype, opt_limit)
+            monitor.save_opt_statistics(ttype, opt_limit, opt_flag)
 
     @exception
     def main_cycle(self):
@@ -335,10 +334,11 @@ class MonitorExchange(Thread):
         self.opt_limit = 1000
 
     @thread_lock
-    def get_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str, data_qty: int) -> int:
+    def get_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str, data_qty: int,
+                       opt_flag: bool = False) -> int:
         """ Get indicators and quantity of data """
         self.sigbot.database, data_qty = self.sigbot.get_indicators(df, ttype, ticker, timeframe, self.exchange_data,
-                                                                    data_qty)
+                                                                    data_qty, opt_flag)
         return data_qty
 
     @thread_lock
@@ -366,25 +366,24 @@ class MonitorExchange(Thread):
                 else:
                     last_time = tmp['time'].max()
                     df = df[df['time'] > last_time]
-                    df = pd.concat([tmp, df])
+                    df = pd.concat([tmp, df], ignore_index=True)
                 df_path = f'ticker_dataframes/{ticker}_{timeframe}.pkl'
                 df.to_pickle(df_path)
 
-    def save_opt_statistics(self, ttype: str, opt_limit: int):
+    def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool):
         """ Save statistics data for every ticker for further indicator/signal optimization """
         tickers = self.exchange_data['tickers']
         for ticker in tickers:
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
-                if f'{ticker}_{timeframe}' not in self.sigbot.opt_dfs:
+                if ticker not in self.sigbot.database or timeframe not in self.sigbot.database[ticker]:
                     try:
                         df = pd.read_pickle(f'ticker_dataframes/{ticker}_{timeframe}.pkl')
-                        self.sigbot.opt_dfs[f'{ticker}_{timeframe}'] = df.copy()
                     except FileNotFoundError:
                         continue
                 else:
-                    df = self.sigbot.opt_dfs[f'{ticker}_{timeframe}'].copy()
-                self.get_indicators(df, ttype, ticker, timeframe, 1000)
+                    df = self.sigbot.database[ticker][timeframe]['data'][ttype].copy()
+                self.get_indicators(df, ttype, ticker, timeframe, 1000, opt_flag)
                 # If current timeframe is working timeframe
                 if timeframe == self.sigbot.work_timeframe:
                     # Get the signals

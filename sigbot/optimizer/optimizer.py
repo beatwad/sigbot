@@ -1,4 +1,5 @@
 import glob
+import copy
 import pandas as pd
 import itertools as it
 from tqdm import tqdm
@@ -156,27 +157,30 @@ class Optimizer:
         # get pattern headers
         headers = self.get_headers_from_dict(product_dicts[0])
         result_statistics = None
-        # flag that helps to prevent not necessary exchange data loading
-        load_tickers, exchanges, opt_dfs = True, None, None
+        # flag that helps to prevent not necessary exchange data and indicator loading
+        load_tickers, exchanges, database = True, None, None
         # if load flag set to True - load fresh data from exchanges, else get data from dist
         for prod_dict in tqdm(product_dicts):
             # load data
             confs = self.set_configs(prod_dict, ttype)
             sb = SigBot(main, load_tickers=load_tickers, **confs)
-            # load ticker data from exchange only at first time
-            if load_tickers:
-                exchanges = sb.exchanges
-                opt_dfs = sb.opt_dfs
-                load_tickers = False
-            else:
-                sb.opt_dfs = opt_dfs
-                sb.exchanges = exchanges
+            # save database with indicators at the first time
+            if not load_tickers:
+                sb.exchanges = copy.deepcopy(exchanges)
+                sb.database = copy.deepcopy(database)
             # load candle data from exchanges only at first time
             if load:
                 # self.clean_prev_tickers_dfs()
                 sb.save_opt_dataframes(ttype)
                 load = False
-            sb.save_opt_statistics(ttype, opt_limit)
+            sb.save_opt_statistics(ttype, opt_limit, not load_tickers)
+            # save candle data from exchanges only second and next times
+            if load_tickers:
+                exchanges = copy.deepcopy(sb.exchanges)
+                database = copy.deepcopy(sb.database)
+                database['stat']['buy'] = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
+                database['stat']['sell'] = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
+                load_tickers = False
             # calculate statistic
             rs, fn = sb.stat.calculate_total_stat(sb.database, ttype, pattern)
             # create df to store statistics results
@@ -204,14 +208,14 @@ if __name__ == '__main__':
     indicator_list = pattern
     indicator_list_higher = pattern
 
-    opt_limit = 100
-    load = True
+    opt_limit = 1000
+    load = False
 
     optim_dict = {
-        'Pattern': {'use_vol': [-1], 'window_low_bound': [1], 'window_high_bound': [6],
+        'Pattern': {'use_vol': [0], 'window_low_bound': [1], 'window_high_bound': [6],
                     'first_candle': [0.8], 'second_candle': [0.7],
                     'third_candle': [0.5]},
-        'LinearReg': {'timeperiod': [8], 'low_bound': [0]}
+        'LinearReg': {'timeperiod': [6, 8, 10], 'low_bound': [0]}
         }
 
     work_timeframe = '15m'

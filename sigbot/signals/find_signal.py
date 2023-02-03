@@ -398,7 +398,7 @@ class PatternSignal(SignalBase):
             #                 (df['high'].shift(3) - df['low'].shift(3)) * sign_3
             if self.use_vol == 1:
                 return np.where((first_candle >= self.first_candle) & (first_candle_vol >= vol_avg) &
-                                (second_candle <= self.second_candle) & (second_candle_vol >= vol_avg), 1, 0)
+                                (second_candle >= self.second_candle) & (second_candle_vol >= vol_avg), 1, 0)
             elif self.use_vol == -1:
                 return np.where((first_candle >= self.first_candle) & (first_candle_vol <= vol_avg) &
                                 (second_candle >= self.second_candle) & (second_candle_vol <= vol_avg), 1, 0)

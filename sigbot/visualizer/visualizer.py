@@ -35,7 +35,8 @@ class Visualizer:
         # Max number of previous candles for which signal can be searched for
         self.max_prev_candle_limit = self.configs.get('max_prev_candle_limit', 0)
         # dict for storing previous statistics values
-        self.prev_stat_dict = dict()
+        self.prev_e_ratio_stat_dict = dict()
+        self.prev_mar_stat_dict = dict()
         # list of indicator parameters that can be plotted
         self.indicator_params = configs['Indicator_signal']
         self.indicators_to_plot = ['RSI', 'STOCH']
@@ -104,21 +105,30 @@ class Visualizer:
     
     def get_prev_avg_e_ratio_coef(self, key: str, point_type: str, avg_e_ratio_coef: float) -> float:
         """ Get previous E-ratio coefficient and fill the statistic dict by current value of E-ratio """
-        if key in self.prev_stat_dict:
-            prev_avg_e_ratio_coef = self.prev_stat_dict[key][point_type]
+        if key in self.prev_e_ratio_stat_dict:
+            prev_avg_e_ratio_coef = self.prev_e_ratio_stat_dict[key][point_type]
         else:
             prev_avg_e_ratio_coef = avg_e_ratio_coef
-            self.prev_stat_dict[key] = {'sell': None, 'buy': None}
-
-        self.prev_stat_dict[key][point_type] = avg_e_ratio_coef
+            self.prev_e_ratio_stat_dict[key] = {'sell': None, 'buy': None}
+        self.prev_e_ratio_stat_dict[key][point_type] = avg_e_ratio_coef
         return prev_avg_e_ratio_coef
 
+    def get_prev_avg_mar_coef(self, key: str, point_type: str, avg_mar_coef: float) -> float:
+        """ Get previous E-ratio coefficient and fill the statistic dict by current value of E-ratio """
+        if key in self.prev_mar_stat_dict:
+            prev_avg_mar_coef = self.prev_mar_stat_dict[key][point_type]
+        else:
+            prev_avg_mar_coef = avg_mar_coef
+            self.prev_mar_stat_dict[key] = {'sell': None, 'buy': None}
+        self.prev_mar_stat_dict[key][point_type] = avg_mar_coef
+        return prev_avg_mar_coef
+
     @staticmethod
-    def statistics_change(prev_avg_e_ratio_coef: [None, float], avg_e_ratio_coef: [None, float]) -> str:
+    def statistics_change(prev_avg_coef: [None, float], avg_coef: [None, float]) -> str:
         """ Measure statistics difference between previous signal and current signal """
-        if prev_avg_e_ratio_coef is None:
+        if prev_avg_coef is None:
             return '= без изменений'
-        stat_diff = round(avg_e_ratio_coef - prev_avg_e_ratio_coef, 4)
+        stat_diff = round(avg_coef - prev_avg_coef, 4)
         if stat_diff < 0:
             return f'= уменьшилcя на {abs(stat_diff)}'
         if stat_diff > 0:
@@ -449,14 +459,15 @@ class Visualizer:
 
         # Plot signal statistics
         if 'HighVolume' not in indicator_list_tmp:
-            pct_right_forecast = [s[0] for s in statistics[0]]
-            pct_price_diff_mean = [s[1] for s in statistics[0]]
-            pct_price_diff_std = [s[2] for s in statistics[0]]
-            pct_price_diff_mean_plus_std = [a + b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
-            pct_price_diff_mean_minus_std = [a - b for a, b in zip(pct_price_diff_mean, pct_price_diff_std)]
+            e_ratio_coef = [s[0] for s in statistics[0]]
+            mar_coef = [s[1] for s in statistics[0]]
+            # mar_coef_std = [s[2] for s in statistics[0]]
+            # mar_coef_plus_std = [a + b for a, b in zip(mar_coef, pct_price_diff_std)]
+            # mar_coef_minus_std = [a - b for a, b in zip(mar_coef, pct_price_diff_std)]
 
             # get previous percent of right forecast and save current percent to statistics dictionary
-            avg_e_ratio_coef = round(sum(pct_right_forecast)/len(pct_right_forecast), 4)
+            avg_e_ratio_coef = round(sum(e_ratio_coef)/len(e_ratio_coef), 4)
+            avg_mar_coef = round(sum(mar_coef)/len(mar_coef), 4)
 
             # get key for statistics dict
             key = self.get_statistics_dict_key(pattern)
@@ -464,21 +475,24 @@ class Visualizer:
             # get previous mean percent of right forecasts and
             # check if pattern and trade type are in statistics dictionary
             prev_avg_e_ratio_coef = self.get_prev_avg_e_ratio_coef(key, point_type, avg_e_ratio_coef)
+            prev_avg_mar_coef = self.get_prev_avg_mar_coef(key, point_type, avg_mar_coef)
 
             # get change of statistics
-            stat_change = self.statistics_change(prev_avg_e_ratio_coef, avg_e_ratio_coef)
+            e_ratio_stat_change = self.statistics_change(prev_avg_e_ratio_coef, avg_e_ratio_coef)
+            mar_stat_change = self.statistics_change(prev_avg_mar_coef, avg_mar_coef)
 
             # make subplots
             axs2 = subfigs[-1].subplots(2, 1, sharex=True)
 
             # make plots
-            axs2[0].plot(pct_right_forecast, linewidth=2, color=self.stat_color_1)
+            axs2[0].plot(e_ratio_coef, linewidth=2, color=self.stat_color_1)
             axs2[0].axhline(y=1, color='white', linestyle='--', linewidth=1.5)
             axs2[0].yaxis.set_label_position("right")
             axs2[0].yaxis.tick_right()
-            axs2[1].plot(pct_price_diff_mean_plus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_1)
-            axs2[1].plot(pct_price_diff_mean_minus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_2)
-            axs2[1].plot(pct_price_diff_mean, linewidth=2, color=self.stat_color_2)
+            # axs2[1].plot(mar_coef_plus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_1)
+            # axs2[1].plot(mar_coef_minus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_2)
+            axs2[1].plot(mar_coef, linewidth=2, color=self.stat_color_2)
+            axs2[1].axhline(y=0, color='white', linestyle='--', linewidth=1.5)
             axs2[1].yaxis.set_label_position("right")
             axs2[1].yaxis.tick_right()
             # plot grid
@@ -494,12 +508,16 @@ class Visualizer:
                 title = '\nСTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
                 pro_trade = 'продажа'
                 counter_trade = 'покупка'
-            axs2[0].set_title(f'{title}\n\nЦеновой перевес (E-ratio) после сигнала \n'
-                              f'(E-ratio > 1 - {pro_trade}, E-ratio < 1 - {counter_trade})\n '
-                              f'(в среднем - {avg_e_ratio_coef} {stat_change})',
+            axs2[0].set_title(f'{title}\n\nСреднее отношение между максимальным отклонением цены в сторону сделки\n'
+                              'и максимальным отклонением цены в противоположную сделке сторону\n'
+                              f'(коэффициент E-ratio, E-ratio > 1 - {pro_trade}, E-ratio < 1 - {counter_trade})\n '
+                              f'в среднем - {avg_e_ratio_coef} {e_ratio_stat_change}',
                               fontsize=13, color=self.ticker_color)
-            axs2[1].set_title('Средняя разница между текущей ценой актива\nи его ценой во время сигнала + '
-                              'среднее отклонение цены', fontsize=13, color=self.ticker_color)
+            axs2[1].set_title('Среднее отношение между разницой текущей цены актива и его цены во время сигнала\n'
+                              'и максимальным отклонением цены в противоположную сделке сторону\n'
+                              f'(коэффициент MAR, MAR > 0 - {pro_trade}, MAR < 0 - {counter_trade})\n '
+                              f'в среднем - {avg_mar_coef} {mar_stat_change}',
+                              fontsize=13, color=self.ticker_color)
 
             # set x-ticks
             if 'Pattern' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
@@ -529,7 +547,7 @@ class Visualizer:
 
             # set y-labels
             axs2[0].set_ylabel("E-ratio", fontsize=9.5, color=self.ticker_color)
-            axs2[1].set_ylabel("разница цен %", fontsize=9.5, color=self.ticker_color)
+            axs2[1].set_ylabel("MAR", fontsize=9.5, color=self.ticker_color)
 
             # set ticker color
             axs2[1].tick_params(axis='x', colors=self.ticker_color)

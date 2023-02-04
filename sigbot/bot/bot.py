@@ -94,7 +94,7 @@ class SigBot:
         self.stat_update_range = configs['SignalStat']['params']['stat_range'] + 1
         # Lists for storing exchange monitor threads (Spot and Futures)
         self.spot_ex_monitor_list = list()
-        self.fut_ex_monitor_list = list
+        self.fut_ex_monitor_list = list()
         # dictionary that is used to determine too late signals according to current work_timeframe
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
 
@@ -383,6 +383,7 @@ class MonitorExchange(Thread):
                         continue
                 else:
                     df = self.sigbot.database[ticker][timeframe]['data'][ttype].copy()
+                # Add indicators
                 self.get_indicators(df, ttype, ticker, timeframe, 1000, opt_flag)
                 # If current timeframe is working timeframe
                 if timeframe == self.sigbot.work_timeframe:

@@ -83,7 +83,7 @@ prev_mean_pct_right_forecasts = [25, 10, 58.91, None, 15, 40, 15]
                           ], ids=repr)
 def test_get_prev_mean_pct_right_forecast(point, prev_stat_dict, expected):
     vis = Visualizer(**configs)
-    vis.prev_stat_dict = prev_stat_dict
+    vis.prev_e_ratio_stat_dict = prev_stat_dict
 
     point_type = point[3]
     pattern = point[5]

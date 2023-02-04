@@ -176,7 +176,7 @@
       },
       "LinearReg": {
         "params": {
-          "timeperiod": 3
+          "timeperiod": 60
         }
       },
       "MACD": {
@@ -227,7 +227,7 @@
       },
       "LinearReg": {
         "params": {
-          "timeperiod": 3
+          "timeperiod": 60
         }
       },
       "MACD": {
@@ -295,11 +295,12 @@
       },
       "Pattern": {
         "params": {
-          "use_vol": 0,
+          "use_vol": -1,
           "window_low_bound": 1,
-          "window_high_bound": 6,
-          "first_candle": 0.5,
-          "second_candle": 0.5
+          "window_high_bound": 5,
+          "first_candle": 0.55,
+          "second_candle": 0.5,
+          "third_candle": 0.5
         }
       },
       "PriceChange": {
@@ -334,10 +335,11 @@
       "Pattern": {
         "params": {
           "use_vol": 1,
-          "window_low_bound": 2,
+          "window_low_bound": 1,
           "window_high_bound": 5,
-          "first_candle": 0.6,
-          "second_candle": 0.8
+          "first_candle": 0.65,
+          "second_candle": 0.6,
+          "third_candle": 0.5
         }
       },
       "PriceChange": {
@@ -440,8 +442,8 @@
         "HighVolume_sell": "86",
         "MACD_buy": "99",
         "MACD_sell": "96",
-        "Pattern_buy": "105",
-        "Pattern_sell": "102"
+        "Pattern_LinearReg_buy": "105",
+        "Pattern_LinearReg_sell": "102"
       },
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,

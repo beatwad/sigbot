@@ -36,39 +36,38 @@ class SignalStat:
             df = dfs[ticker][timeframe]['data'][ttype]
             # array of prices after signal
             signal_price = df['close'].iloc[index]
+            signal_smooth_price = df['close_smooth'].iloc[index]
             # If index of point was found too early - we shouldn't use it
             if index < 50:
                 continue
             # Get statistics, process it and write into the database
-            high_result_prices, low_result_prices, close_result_prices, atr = self.get_result_price_after_period(df,
+            high_result_prices, low_result_prices, close_smooth_prices, atr = self.get_result_price_after_period(df,
                                                                                                                  index)
-            dfs = self.process_statistics(dfs, point, signal_price, high_result_prices, low_result_prices,
-                                          close_result_prices, atr)
-        # Save trade statistics on disk
-        # if signal_points:
-        #     self.save_statistics(dfs)
+            dfs = self.process_statistics(dfs, point, signal_price, signal_smooth_price, high_result_prices,
+                                          low_result_prices, close_smooth_prices, atr)
         return dfs
 
     def get_result_price_after_period(self, df: pd.DataFrame, index: int) -> (list, list, float):
         """ Get result prices after every T minutes """
         high_result_prices = list()
         low_result_prices = list()
-        close_result_prices = list()
+        close_smooth_prices = list()
         atr = df['atr'].iloc[index]
         for t in range(1, self.stat_range + 1):
             try:
                 high_result_prices.append(df['high'].iloc[index + t])
                 low_result_prices.append(df['low'].iloc[index + t])
-                close_result_prices.append(df['close'].iloc[index + t])
+                close_smooth_prices.append(df['close_smooth'].iloc[index + t])
             except IndexError:
                 high_result_prices.append(df['close'].iloc[index])
                 low_result_prices.append(df['close'].iloc[index])
-                close_result_prices.append(df['close'].iloc[index])
-        return high_result_prices, low_result_prices, close_result_prices, atr
+                close_smooth_prices.append(df['close_smooth'].iloc[index])
+        return high_result_prices, low_result_prices, close_smooth_prices, atr
 
     @staticmethod
-    def process_statistics(dfs: dict, point: list, signal_price: float, high_result_prices: list,
-                           low_result_prices: list, close_result_prices: list, atr: float) -> dict:
+    def process_statistics(dfs: dict, point: list, signal_price: float, signal_smooth_price: float,
+                           high_result_prices: list, low_result_prices: list, close_smooth_prices: list,
+                           atr: float) -> dict:
         """ Calculate statistics and write it to the stat dataframe if it's not presented in it """
         # get data
         ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
@@ -84,17 +83,18 @@ class SignalStat:
         else:
             stat = dfs['stat']['sell']
         tmp['signal_price'] = [signal_price]
+        tmp['signal_smooth_price'] = [signal_smooth_price]
         # write result price, MFE and MAE, if MAE is too low - replace it with MFE/1000 to prevent zero division
         for i in range(len(high_result_prices)):
-            tmp['close_price'] = [close_result_prices[i]]
+            tmp['close_smooth_price'] = [close_smooth_prices[i]]
             if ttype == 'buy':
                 tmp['result_price'] = [high_result_prices[i]]
                 # calculater MFE and MAE
                 mfe = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
                 tmp[f'mfe_{i+1}'] = [mfe]
                 tmp[f'mae_{i+1}'] = max(signal_price - min(low_result_prices[:i+1]), 0)
-                # calculate (close_price - signal_price) / (signal_price - MAE)
-                tmp[f'price_diff_{i+1}'] = tmp[f'close_price'] - tmp['signal_price']
+                # calculate (close_smoothed_price - signal_price) / (signal_price - MAE)
+                tmp[f'price_diff_{i+1}'] = tmp[f'close_smooth_price'] - tmp['signal_smooth_price']
                 tmp[f'price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'] / tmp[f'mae_{i+1}']
             else:
                 tmp['result_price'] = [low_result_prices[i]]
@@ -102,16 +102,16 @@ class SignalStat:
                 mfe = max(signal_price - min(low_result_prices[:i+1]), 0) / atr
                 tmp[f'mfe_{i+1}'] = [mfe]
                 tmp[f'mae_{i+1}'] = max(max(high_result_prices[:i+1]) - signal_price, 0)
-                # calculate (close_price - signal_price) / (signal_price - MAE)
-                tmp[f'price_diff_{i+1}'] = tmp['signal_price'] - tmp[f'close_price']
+                # calculate (close_smooth_price - signal_price) / (signal_price - MAE)
+                tmp[f'price_diff_{i+1}'] = tmp['signal_smooth_price'] - tmp[f'close_smooth_price']
                 tmp[f'price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'] / tmp[f'mae_{i+1}']
             tmp[f'mae_{i+1}'] /= atr
-            # replace nans and cap huge numbers
-            tmp[f'pct_price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'].fillna(10)
+            # replace nans with zeros and cap huge numbers
+            tmp[f'pct_price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'].fillna(0)
             tmp.loc[tmp[f'pct_price_diff_{i+1}'] > 10, f'pct_price_diff_{i+1}'] = 10
             tmp.loc[tmp[f'pct_price_diff_{i+1}'] < -10, f'pct_price_diff_{i+1}'] = -10
             # drop unnecessary columns
-            tmp = tmp.drop(['result_price', 'close_price', f'price_diff_{i+1}'], axis=1)
+            tmp = tmp.drop(['result_price', 'close_smooth_price', f'price_diff_{i+1}'], axis=1)
         # if can't find similar statistics in the dataset - just add it to stat dataframe, else update stat columns
         if stat[(stat['time'] == time) & (stat['ticker'] == ticker) &
                 (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern)].shape[0] == 0:
@@ -174,7 +174,10 @@ class SignalStat:
                 e_ratio = round(sum(stat[f'mfe_{t}']) / sum(stat[f'mae_{t}']), 4)
                 e_ratio = min(e_ratio, 10)
             except ZeroDivisionError:
-                e_ratio = 10
+                if sum(stat[f'mfe_{t}']) > 0:
+                    e_ratio = 10
+                else:
+                    e_ratio = 1
             pct_price_diff_mean = round(stat.loc[stat[f'pct_price_diff_{t}'] > 0, f'pct_price_diff_{t}'].mean(), 2)
             # check if price diff mean is not NaN value
             if pct_price_diff_mean != pct_price_diff_mean:

@@ -104,7 +104,7 @@ class GetData:
         """ Add indicator data to cryptocurrency dataframe """
         levels = list()
         indicators = [i for i in indicators if i.ttype == ttype]
-
+        # Add indicators
         for indicator in indicators:
             if opt_flag and indicator.name == 'Pattern':
                 continue

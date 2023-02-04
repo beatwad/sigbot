@@ -515,7 +515,7 @@ class Visualizer:
                               fontsize=13, color=self.ticker_color)
             axs2[1].set_title('Среднее отношение между разницой текущей цены актива и его цены во время сигнала\n'
                               'и максимальным отклонением цены в противоположную сделке сторону\n'
-                              f'(коэффициент MAR, MAR > 0 - {pro_trade}, MAR < 0 - {counter_trade})\n '
+                              f'(коэффициент MAR, MAR > 0 - покупка, MAR < 0 - продажа)\n '
                               f'в среднем - {avg_mar_coef} {mar_stat_change}',
                               fontsize=13, color=self.ticker_color)
 

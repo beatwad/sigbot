@@ -186,8 +186,8 @@ get_result_price_after_period_2 = [
 
 @pytest.mark.parametrize('df, point, signal_price, signal_smooth_price, expected',
                          [
-                             # (df_btc, ['BTCUSDT', '5m', 458, 'buy', pd.Timestamp('2022-08-22 17:55:00'), 'STOCH_RSI',
-                             #           '', '',  [], []], 21201, 21232, get_result_price_after_period_1),
+                             (df_btc, ['BTCUSDT', '5m', 458, 'buy', pd.Timestamp('2022-08-22 17:55:00'), 'STOCH_RSI',
+                                       '', '',  [], []], 21201, 21232, get_result_price_after_period_1),
                              (df_eth, ['ETHUSDT', '5m', 150, 'buy', pd.Timestamp('2022-08-22 22:30:00'), 'Pattern',
                                        '', '',  [], []], 1500, 1510, get_result_price_after_period_2),
                          ], ids=repr)

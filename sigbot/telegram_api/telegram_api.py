@@ -222,25 +222,22 @@ class TelegramBot:
                 if message_thread_id is not None:
                     message_thread_id = int(message_thread_id)
                 # Form text message
-                text = f'{ticker} \n'
+                clean_ticker = self.clean_ticker(ticker)
+                text = f'#{clean_ticker[:-4]} \n'
                 if sig_pattern == 'HighVolume':
                     pass
                 elif sig_type == 'buy':
-                    text += 'Покупка \n'
+                    text += 'Buy / Покупка \n'
                 else:
-                    text += 'Продажа \n'
-                text += 'Продается на биржах: \n'
+                    text += 'Sell / Продажа \n'
+                text += 'Exchanges / Биржи: \n'
                 for exchange in sig_exchanges:
                     text += f' • {exchange}\n'
-                text += 'Ссылка на TradingView: \n'
-                clean_ticker = self.clean_ticker(ticker)
-                text += f"https://ru.tradingview.com/symbols/{clean_ticker}\n"
-                # text += f"https://ru.tradingview.com/chart/?symbol={sig_exchanges[0]}%3A{self.clean_ticker(ticker)}\n"
+                text += 'TradingView: \n'
+                text += f"https://tradingview.com/symbols/{clean_ticker}\n"
                 if clean_ticker[:-4] != 'BTC':
-                    text += 'Ссылка на график с BTC: \n'
+                    text += f'{clean_ticker[:-4]}/BTC: \n'
                     text += f"https://ru.tradingview.com/symbols/{clean_ticker[:-4]}BTC"
-                    # text += f"https://ru.tradingview.com/chart/" \
-                    #         f"?symbol={sig_exchanges[0]}%3A{self.clean_ticker(ticker)[:-4]}BTC"
                 # Send message + image
                 if sig_img_path:
                     self.send_photo(chat_id, message_thread_id, sig_img_path, text)

@@ -269,6 +269,9 @@
   "Indicator_list": [
     "STOCH",
     "RSI",
+    "PriceChange",
+    "HighVolume",
+    "MACD",
     "Pattern",
     "LinearReg"
   ],
@@ -365,8 +368,22 @@
   "Patterns": [
     [
       "STOCH",
+      "RSI"
+    ],
+    [
+      "STOCH",
       "RSI",
       "LinearReg"
+    ],
+    [
+      "HighVolume"
+    ],
+    [
+      "PriceChange",
+      "LinearReg"
+    ],
+    [
+      "MACD"
     ],
     [
       "Pattern",
@@ -400,9 +417,7 @@
   },
   "Telegram": {
     "params": {
-      "allowed_exchanges": [
-        "ByBitPerpetual"
-      ],
+      "allowed_exchanges": [],
       "log_path": "telegram_log.txt",
       "chat_ids": {
         "Errors": "-1001837009227",

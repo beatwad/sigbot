@@ -127,13 +127,13 @@ class Visualizer:
     def statistics_change(prev_avg_coef: [None, float], avg_coef: [None, float]) -> str:
         """ Measure statistics difference between previous signal and current signal """
         if prev_avg_coef is None:
-            return '= без изменений'
+            return '= no change / без изменений'
         stat_diff = round(avg_coef - prev_avg_coef, 4)
         if stat_diff < 0:
-            return f'= уменьшилcя на {abs(stat_diff)}'
+            return f'= decreased on / уменьшилcя на {abs(stat_diff)}'
         if stat_diff > 0:
-            return f'= вырос на {stat_diff}'
-        return '= без изменений'
+            return f'= increased on / вырос на {stat_diff}'
+        return '= no change / без изменений'
 
     def find_price(self, df: pd.DataFrame) -> float:
         price = df["close"].iloc[-1]
@@ -241,7 +241,7 @@ class Visualizer:
             axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - {price} $ - '
                                     f'{df_higher["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
                                     color=self.ticker_color)
-            axs_higher[1].set_title('Сила тренда', fontsize=14, color=self.ticker_color)
+            axs_higher[1].set_title('Trend Force / Сила тренда', fontsize=14, color=self.ticker_color)
             # plot candles
             mpf.plot(ohlc_higher, type='candle', ax=axs_higher[0], warn_too_much_data=1001, style='yahoo',
                      ylabel='', returnfig=True)
@@ -501,22 +501,20 @@ class Visualizer:
 
             # set title
             if point_type == 'buy':
-                title = '\nСTATИСТИКА СИГНАЛА НА ПОКУПКУ'
-                pro_trade = 'покупка'
-                counter_trade = 'продажа'
+                title = '\nBUY SIGNAL STATISTICS / СTATИСТИКА СИГНАЛА НА ПОКУПКУ'
+                pro_trade = 'buy / покупка'
+                counter_trade = 'sell / продажа'
             else:
-                title = '\nСTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
-                pro_trade = 'продажа'
-                counter_trade = 'покупка'
-            axs2[0].set_title(f'{title}\n\nСреднее отношение между максимальным отклонением цены в сторону сделки\n'
-                              'и максимальным отклонением цены в противоположную сделке сторону\n'
-                              f'(коэффициент E-ratio, E-ratio > 1 - {pro_trade}, E-ratio < 1 - {counter_trade})\n '
-                              f'в среднем - {avg_e_ratio_coef} {e_ratio_stat_change}',
+                title = '\nSELL SIGNAL STATISTIC / СTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
+                pro_trade = 'sell / продажа'
+                counter_trade = 'buy / покупка'
+            axs2[0].set_title(f'{title}\n\nE-ratio coefficient / Коэффициент E-ratio\n '
+                              f'E-ratio > 1 - {pro_trade}, E-ratio < 1 - {counter_trade}\n '
+                              f'average / в среднем - {avg_e_ratio_coef} {e_ratio_stat_change}',
                               fontsize=13, color=self.ticker_color)
-            axs2[1].set_title('Среднее отношение между разницой текущей цены актива и его цены во время сигнала\n'
-                              'и максимальным отклонением цены в противоположную сделке сторону\n'
-                              f'(коэффициент MAR, MAR > 0 - покупка, MAR < 0 - продажа)\n '
-                              f'в среднем - {avg_mar_coef} {mar_stat_change}',
+            axs2[1].set_title('MoR coefficient / Коэффициент MoR\n '
+                              'MoR > 0 - buy / покупка, MoR < 0 - sell / продажа\n '
+                              f'average / в среднем - {avg_mar_coef} {mar_stat_change}',
                               fontsize=13, color=self.ticker_color)
 
             # set x-ticks
@@ -541,9 +539,11 @@ class Visualizer:
             # set x-labels
 
             if 'Pattern' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
-                axs2[1].set_xlabel(f"время после сигнала, в часах", fontsize=12, color=self.ticker_color)
+                axs2[1].set_xlabel(f"time after signal, hours / время после сигнала, в часах",
+                                   fontsize=12, color=self.ticker_color)
             else:
-                axs2[1].set_xlabel(f"время после сигнала, в минутах", fontsize=12, color=self.ticker_color)
+                axs2[1].set_xlabel(f"time after signal, minutes / время после сигнала, в минутах",
+                                   fontsize=12, color=self.ticker_color)
 
             # set y-labels
             axs2[0].set_ylabel("E-ratio", fontsize=9.5, color=self.ticker_color)

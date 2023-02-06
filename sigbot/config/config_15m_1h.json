@@ -387,7 +387,8 @@
       "MACD"
     ],
     [
-      "Pattern"
+      "Pattern",
+      "LinearReg"
     ]
   ],
   "SignalStat": {

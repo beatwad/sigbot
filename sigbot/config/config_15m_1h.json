@@ -421,13 +421,14 @@
       "log_path": "telegram_log.txt",
       "chat_ids": {
         "Errors": "-1001837009227",
-        "STOCH_RSI": "-1001463253403",
-        "STOCH_RSI_LinearReg": "-1001688789758",
-        "PriceChange": "-1001700504878",
-        "PriceChange_LinearReg": "-1001691421580",
-        "HighVolume": "-1001656085421",
-        "MACD": "-1001742813847",
-        "Pattern": "-1001742813847"
+        "STOCH_RSI": "-1001757652380",
+        "STOCH_RSI_LinearReg": "-1001757652380",
+        "PriceChange": "-1001757652380",
+        "PriceChange_LinearReg": "-1001757652380",
+        "HighVolume": "-1001757652380",
+        "MACD": "-1001757652380",
+        "Pattern": "-1001757652380",
+        "Pattern_LinearReg": "-1001757652380"
       },
       "message_thread_ids": {
         "STOCH_RSI_buy": "54",

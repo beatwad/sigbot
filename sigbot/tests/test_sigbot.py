@@ -25,7 +25,7 @@ def test_filter_used_tickers(mocker, expected):
     mocker.patch('signal_stat.signal_stat.SignalStat.__init__', return_value=None)
     mocker.patch('signal_stat.signal_stat.SignalStat.load_statistics', return_value=(None, None))
     mocker.patch('data.get_data.GetData.__init__', return_value=None)
-    mocker.patch('data.get_data.GetData.get_tickers', return_value=([], []))
+    mocker.patch('data.get_data.GetData.get_tickers', return_value=([], [], []))
     mocker.patch('data.get_data.GetBinanceData.__init__', return_value=None)
     mocker.patch('data.get_data.GetBinanceData.fill_ticker_dict', return_value=None)
     mocker.patch('data.get_data.GetOKEXData.__init__', return_value=None)

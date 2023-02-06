@@ -107,6 +107,7 @@ class SigBot:
             self.exchanges[ex]['API'] = exchange_api
             # get ticker list
             try:
+                res = self.exchanges[ex]['API'].get_tickers()
                 tickers, ticker_vols, all_tickers = self.exchanges[ex]['API'].get_tickers()
             except:
                 del self.exchanges[ex]

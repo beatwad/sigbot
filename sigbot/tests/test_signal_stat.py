@@ -163,6 +163,66 @@ def test_calculate_total_stat(ttype, pattern, expected):
     assert result == expected
 
 
+get_result_price_after_period_1 = [
+    [21269.31, 21280.5, 21268.08, 21300.0, 21299.03, 21296.85, 21290.94, 21309.82, 21364.07, 21373.32, 21444.72,
+     21420.0, 21548.71, 21438.98, 21390.38, 21387.68, 21406.93, 21379.96, 21367.05, 21371.89, 21369.1, 21350.14,
+     21361.22, 21343.7],
+    [21193.12, 21222.02, 21211.22, 21253.0, 21270.5, 21251.49, 21239.08, 21255.87, 21275.71, 21314.63, 21340.05,
+     21381.65, 21398.59, 21352.22, 21337.38, 21340.93, 21354.97, 21323.08, 21325.13, 21334.9, 21330.1, 21315.12,
+     21318.0, 21316.22],
+    [21263.08, 21253.28, 21256.95, 21281.0, 21293.67, 21252.9, 21283.87, 21277.82, 21329.56, 21340.16, 21407.62,
+     21400.47, 21426.86, 21368.32, 21345.76, 21359.89, 21376.86, 21344.57, 21336.13, 21365.37, 21334.55, 21340.79,
+     21337.0, 21331.57]
+]
+get_result_price_after_period_2 = [
+    [1614.0, 1608.87, 1609.8, 1617.46, 1615.63, 1616.0, 1614.85, 1620.94, 1621.52, 1618.72, 1618.08, 1618.14, 1619.3,
+     1618.0, 1619.17, 1623.56, 1622.23, 1619.82, 1617.31, 1618.47, 1621.3, 1620.44, 1620.49, 1621.82],
+    [1607.42, 1600.4, 1605.29, 1606.65, 1610.5, 1611.4, 1610.01, 1611.11, 1617.09, 1616.2, 1613.8, 1615.2, 1616.1,
+     1615.88, 1617.27, 1618.23, 1619.13, 1611.28, 1614.18, 1615.19, 1617.82, 1616.32, 1617.53, 1617.47],
+    [1608.28, 1606.11, 1608.16, 1613.27, 1614.69, 1612.38, 1611.97, 1620.76, 1617.63, 1618.07, 1615.44, 1617.43,
+     1616.37, 1617.66, 1618.6, 1619.62, 1619.17, 1614.4, 1615.67, 1618.28, 1620.44, 1618.34, 1617.54, 1621.12]
+]
+
+
+@pytest.mark.parametrize('df, point, signal_price, signal_smooth_price, expected',
+                         [
+                             # (df_btc, ['BTCUSDT', '5m', 458, 'buy', pd.Timestamp('2022-08-22 17:55:00'), 'STOCH_RSI',
+                             #           '', '',  [], []], 21201, 21232, get_result_price_after_period_1),
+                             (df_eth, ['ETHUSDT', '5m', 150, 'buy', pd.Timestamp('2022-08-22 22:30:00'), 'Pattern',
+                                       '', '',  [], []], 1500, 1510, get_result_price_after_period_2),
+                         ], ids=repr)
+def test_get_result_price_after_period(df, point, signal_price, signal_smooth_price, expected):
+    ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
+    ss = SignalStat(**configs)
+    high_result_prices, low_result_prices, close_smooth_prices, atr = ss.get_result_price_after_period(df, index)
+    assert expected[0] == high_result_prices
+    assert expected[1] == low_result_prices
+    assert expected[2] == close_smooth_prices
+
+
+process_stat_1 = pd.read_pickle('test_btc_process_stat.pkl')
+process_stat_2 = pd.read_pickle('test_eth_process_stat.pkl')
+
+
+@pytest.mark.parametrize('df, point, signal_price, signal_smooth_price, expected',
+                         [
+                             (df_btc, ['BTCUSDT', '5m', 458, 'buy', pd.Timestamp('2022-08-22 17:55:00'), 'STOCH_RSI',
+                                       '', '',  [], []], 21201, 21232, process_stat_1),
+                             (df_eth, ['ETHUSDT', '5m', 150, 'buy', pd.Timestamp('2022-08-22 22:30:00'), 'Pattern',
+                                       '', '',  [], []], 1500, 1510, process_stat_2),
+                         ], ids=repr)
+def test_process_statistics(df, point, signal_price, signal_smooth_price, expected):
+    ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
+    ss = SignalStat(**configs)
+    dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern']),
+                    'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])}}
+    high_result_prices, low_result_prices, close_smooth_prices, atr = ss.get_result_price_after_period(df, index)
+    result = ss.process_statistics(dfs, point, signal_price, signal_smooth_price, high_result_prices, low_result_prices,
+                                   close_smooth_prices, atr)
+    result['stat'][ttype].to_pickle('test_eth_process_stat.pkl')
+    assert result['stat'][ttype].equals(expected)
+
+
 @pytest.mark.parametrize('ticker, index, point_time, pattern, prev_point, expected',
                          [
                              ('BTCUSDT', 90, pd.Timestamp('2022-08-22 22:30:00'), 'STOCH_RSI', (None, None, None),

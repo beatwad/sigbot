@@ -176,7 +176,7 @@
       },
       "LinearReg": {
         "params": {
-          "timeperiod": 60
+          "timeperiod": 28
         }
       },
       "MACD": {
@@ -273,7 +273,6 @@
     "HighVolume",
     "MACD",
     "Pattern",
-    "ATR",
     "LinearReg"
   ],
   "Indicator_signal": {
@@ -298,8 +297,8 @@
           "use_vol": -1,
           "window_low_bound": 1,
           "window_high_bound": 5,
-          "first_candle": 0.55,
-          "second_candle": 0.5,
+          "first_candle": 0.6,
+          "second_candle": 0.55,
           "third_candle": 0.5
         }
       },
@@ -418,7 +417,13 @@
   },
   "Telegram": {
     "params": {
-      "allowed_exchanges": [],
+      "favorite_exchanges": [
+        "ByBitPerpetual"
+      ],
+      "favorite_patterns": [
+        "STOCH_RSI_LinearReg",
+        "Pattern_LinearReg"
+      ],
       "log_path": "telegram_log.txt",
       "chat_ids": {
         "Errors": "-1001837009227",
@@ -446,6 +451,16 @@
         "MACD_sell": "96",
         "Pattern_LinearReg_buy": "105",
         "Pattern_LinearReg_sell": "102"
+      },
+      "favorite_chat_ids": {
+        "STOCH_RSI_LinearReg": "-1001840430020",
+        "Pattern_LinearReg": "-1001840430020"
+      },
+      "favorite_message_thread_ids": {
+        "STOCH_RSI_LinearReg_buy": "6",
+        "STOCH_RSI_LinearReg_sell": "2",
+        "Pattern_LinearReg_buy": "9",
+        "Pattern_LinearReg_sell": "12"
       },
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,

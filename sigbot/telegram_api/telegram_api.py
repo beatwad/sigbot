@@ -4,7 +4,7 @@ import asyncio
 from os import environ, remove
 
 # Get configs
-# environ["ENV"] = "5m_1h"
+environ["ENV"] = "15m_1h"
 
 from log.log import exception
 from time import sleep
@@ -34,9 +34,12 @@ class TelegramBot:
         self.bot = Bot(token=token)
         self.loop = asyncio.new_event_loop()
         self.configs = configs[self.type]['params']
-        self.allowed_exchanges = self.configs['allowed_exchanges']
+        self.favorite_exchanges = self.configs['favorite_exchanges']
+        self.favorite_patterns = self.configs['favorite_patterns']
         self.chat_ids = self.configs['chat_ids']
+        self.favorite_chat_ids = self.configs['favorite_chat_ids']
         self.message_thread_ids = self.configs['message_thread_ids']
+        self.favorite_message_thread_ids = self.configs['favorite_message_thread_ids']
         self.min_prev_candle_limit = self.configs.get('min_prev_candle_limit', 3)
         self.min_prev_candle_limit_higher = self.configs.get('min_prev_candle_limit_higher', 2)
         self.max_notifications_in_row = self.configs.get('self.max_notifications_in_row', 3)
@@ -212,36 +215,43 @@ class TelegramBot:
         sig_exchanges = message[7]
         # Check if the same message wasn't send short time ago
         if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
-            # if we have a list of exchanges for that notifications are allowed - use it to filter ticker from
-            # not necessary exchanges
-            if len(self.allowed_exchanges) == 0 or set(sig_exchanges).intersection(set(self.allowed_exchanges)):
-                # create image and return path to it
-                sig_img_path = self.add_plot(message)
-                chat_id = self.chat_ids[sig_pattern]
-                message_thread_id = self.message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
-                if message_thread_id is not None:
-                    message_thread_id = int(message_thread_id)
-                # Form text message
-                clean_ticker = self.clean_ticker(ticker)
-                text = f'#{clean_ticker[:-4]} \n'
-                if sig_pattern == 'HighVolume':
-                    pass
-                elif sig_type == 'buy':
-                    text += 'Buy / Покупка \n'
-                else:
-                    text += 'Sell / Продажа \n'
-                text += 'Exchanges / Биржи: \n'
-                for exchange in sig_exchanges:
-                    text += f' • {exchange}\n'
-                text += 'TradingView: \n'
-                text += f"https://tradingview.com/symbols/{clean_ticker}\n"
-                if clean_ticker[:-4] != 'BTC':
-                    text += f'{clean_ticker[:-4]}/BTC: \n'
-                    text += f"https://ru.tradingview.com/symbols/{clean_ticker[:-4]}BTC"
-                # Send message + image
-                if sig_img_path:
-                    self.send_photo(chat_id, message_thread_id, sig_img_path, text)
-                time.sleep(0.5)
+            # create image and return path to it
+            sig_img_path = self.add_plot(message)
+            chat_id = self.chat_ids[sig_pattern]
+            message_thread_id = self.message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
+            if message_thread_id is not None:
+                message_thread_id = int(message_thread_id)
+            # Form text message
+            clean_ticker = self.clean_ticker(ticker)
+            text = f'#{clean_ticker[:-4]} \n'
+            if sig_pattern == 'HighVolume':
+                pass
+            elif sig_type == 'buy':
+                text += 'Buy / Покупка \n'
+            else:
+                text += 'Sell / Продажа \n'
+            text += 'Exchanges / Биржи: \n'
+            for exchange in sig_exchanges:
+                text += f' • {exchange}\n'
+            text += 'TradingView: \n'
+            text += f"https://tradingview.com/symbols/{clean_ticker}\n"
+            if clean_ticker[:-4] != 'BTC':
+                text += f'{clean_ticker[:-4]}/BTC: \n'
+                text += f"https://ru.tradingview.com/symbols/{clean_ticker[:-4]}BTC"
+            # Send message + image
+            if sig_img_path:
+                # if exchange is in the list of favorite exchanges and pattern is in list of your favorite patterns
+                # send the signal to special group
+                if set(sig_exchanges).intersection(set(self.favorite_exchanges)) and \
+                        sig_pattern in self.favorite_patterns:
+                    favorite_chat_id = self.favorite_chat_ids[sig_pattern]
+                    favorite_message_thread_id = self.favorite_message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
+                    if favorite_message_thread_id is not None:
+                        favorite_message_thread_id = int(favorite_message_thread_id)
+                    self.send_photo(favorite_chat_id, favorite_message_thread_id, sig_img_path, text)
+                self.send_photo(chat_id, message_thread_id, sig_img_path, text)
+            time.sleep(0.5)
+
         self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.delete_images()
 

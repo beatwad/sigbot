@@ -88,22 +88,20 @@ class SignalStat:
         for i in range(len(high_result_prices)):
             # calculate price diff : (close_smooth_price - signal_price) / close_smooth_price
             tmp['close_smooth_price'] = [close_smooth_prices[i]]
-            tmp[f'price_diff_{i+1}'] = tmp['signal_smooth_price'] - tmp[f'close_smooth_price']
-            tmp[f'pct_price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'] / tmp[f'close_smooth_price'] * 100
+            tmp[f'pct_price_diff_{i+1}'] = (tmp[f'close_smooth_price'] - tmp['signal_smooth_price']) / \
+                                           tmp[f'close_smooth_price'] * 100
             if ttype == 'buy':
-                tmp['result_price'] = [high_result_prices[i]]
                 # calculater MFE and MAE
                 mfe = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
                 tmp[f'mfe_{i+1}'] = [mfe]
                 tmp[f'mae_{i+1}'] = max(signal_price - min(low_result_prices[:i+1]), 0) / atr
             else:
-                tmp['result_price'] = [low_result_prices[i]]
                 # calculater MFE and MAE
                 mfe = max(signal_price - min(low_result_prices[:i+1]), 0) / atr
                 tmp[f'mfe_{i+1}'] = [mfe]
                 tmp[f'mae_{i+1}'] = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
             # drop unnecessary columns
-            tmp = tmp.drop(['result_price', 'close_smooth_price', f'price_diff_{i+1}'], axis=1)
+            tmp = tmp.drop(['close_smooth_price'], axis=1)
         # if can't find similar statistics in the dataset - just add it to stat dataframe, else update stat columns
         if stat[(stat['time'] == time) & (stat['ticker'] == ticker) &
                 (stat['timeframe'] == timeframe) & (stat['pattern'] == pattern)].shape[0] == 0:

@@ -20,13 +20,13 @@ points_btc = [('BTCUSDT', '5m', 0, 'buy', pd.to_datetime('2022-08-21 3:45:00'),
                'STOCH_RSI', [], [], [], []
                ),
               ('BTCUSDT', '5m', 513, 'buy', pd.to_datetime('2022-08-22 22:30:00'),
-               'STOCH_RSI_LinearReg', [], [], [], []
+               'STOCH_RSI_Trend', [], [], [], []
                ),
               ('BTCUSDT', '5m', 576, 'sell', pd.to_datetime('2022-08-23 03:45:00'),
                'STOCH_RSI', [], [], [], []
                ),
               ('BTCUSDT', '5m', 673, 'sell', pd.to_datetime('2022-08-23 11:50:00'),
-               'STOCH_RSI_LinearReg', [], [], [], []
+               'STOCH_RSI_Trend', [], [], [], []
                ),
               ('BTCUSDT', '5m', 745, 'buy', pd.to_datetime('2022-08-23 17:50:00'),
                'STOCH_RSI', [], [], [], []
@@ -57,10 +57,10 @@ points_eth = [('ETHUSDT', '5m', 45, 'sell', pd.to_datetime('2022-08-21 09:00:00'
                'STOCH_RSI', [], [], [], []
                ),
               ('ETHUSDT', '5m', 985, 'sell', pd.to_datetime('2022-08-24 12:00:00'),
-               'STOCH_RSI_LinearReg', [], [], [], []
+               'STOCH_RSI_Trend', [], [], [], []
                ),
               ('ETHUSDT', '5m', 990, 'buy', pd.to_datetime('2022-08-24 12:25:00'),
-               'STOCH_RSI_LinearReg', [], [], [], []
+               'STOCH_RSI_Trend', [], [], [], []
                )
               ]
 
@@ -83,7 +83,6 @@ def test_add_to_notification_history(mocker, signal_points, expected):
         sig_time = point[4]
         pattern = point[5]
         tb.add_to_notification_history(sig_time, sig_type, ticker, timeframe, pattern)
-    res = tb.notification_df
     assert tb.notification_df.equals(expected)
 
 

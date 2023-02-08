@@ -172,7 +172,7 @@ def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
     if timeframe == work_timeframe:
         indicator_list = configs['Indicator_list']
     else:
-        indicator_list = ['LinearReg', 'MACD', 'Pattern']
+        indicator_list = ['Trend', 'MACD', 'Pattern']
 
     for indicator in indicator_list:
         ind_factory = IndicatorFactory.factory(indicator, 'buy', configs)

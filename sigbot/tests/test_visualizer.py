@@ -22,7 +22,7 @@ point1 = ['BNBUSDT', '5m', 816, 'sell', pd.to_datetime('2022-09-27 07:05:00'),
             (0.0, 0.51, 0.03), (0.0, 0.64, 0.1), (0.0, 0.73, 0.18)]], []]
 
 point2 = ['BNBUSDT', '5m', 966, 'buy', pd.to_datetime('2022-09-27 19:35:00'),
-          [('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())], [],
+          [('STOCH', (15, 85)), ('RSI', (25, 75)), ('Trend', ())], [],
           ['Binance', 'BinanceFutures'],
           [[(82.76, 0.21, 0.25), (72.41, 0.23, 0.47), (70.69, 0.24, 0.68),
             (70.69, 0.25, 1.13), (63.79, 0.21, 1.06), (60.34, 0.32, 0.85),
@@ -34,7 +34,7 @@ point2 = ['BNBUSDT', '5m', 966, 'buy', pd.to_datetime('2022-09-27 19:35:00'),
             (51.72, 0.08, 1.56), (58.62, 0.19, 1.53), (53.45, 0.08, 1.53)]], []]
 
 point3 = ['BNBUSDT', '5m', 980, 'buy', pd.to_datetime('2022-09-27 20:45:00'),
-          [('PumpDump', ()), ('LinearReg', ())], [],
+          [('PumpDump', ()), ('Trend', ())], [],
           ['Binance', 'BinanceFutures'],
           [[(82.76, 0.21, 0.25), (72.41, 0.23, 0.47), (70.69, 0.24, 0.68),
             (70.69, 0.25, 1.13), (63.79, 0.21, 1.06), (60.34, 0.32, 0.85),
@@ -47,8 +47,8 @@ point3 = ['BNBUSDT', '5m', 980, 'buy', pd.to_datetime('2022-09-27 20:45:00'),
 
 points = [point1, point2, point3]
 keys = ["[('STOCH', (15, 85)), ('RSI', (25, 75))]",
-        "[('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())]",
-        "['PumpDump', ('LinearReg', ())]"]
+        "[('STOCH', (15, 85)), ('RSI', (25, 75)), ('Trend', ())]",
+        "['PumpDump', ('Trend', ())]"]
 
 
 @pytest.mark.parametrize('point, expected',
@@ -65,9 +65,9 @@ def test_get_statistics_dict_key(point, expected):
 
 prev_stat_dicts = [dict(),
                    {"[('STOCH', (15, 85)), ('RSI', (25, 75))]": {'sell': 10.0, 'buy': 15},
-                    "['PumpDump', ('LinearReg', ())]": {'sell': 50.0, 'buy': 40}},
-                   {"[('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())]": {'sell': 10.0, 'buy': None}},
-                   {"['PumpDump', ('LinearReg', ())]": {'sell': 10.0, 'buy': 15}},
+                    "['PumpDump', ('Trend', ())]": {'sell': 50.0, 'buy': 40}},
+                   {"[('STOCH', (15, 85)), ('RSI', (25, 75)), ('Trend', ())]": {'sell': 10.0, 'buy': None}},
+                   {"['PumpDump', ('Trend', ())]": {'sell': 10.0, 'buy': 15}},
                    dict()]
 prev_mean_pct_right_forecasts = [25, 10, 58.91, None, 15, 40, 15]
 

@@ -21,7 +21,7 @@ points_btc = [('BTCUSDT', '5m', 0, 'buy', pd.to_datetime('2022-08-21 3:45:00'),
                'STOCH_RSI', [], [], [], []
                ),
               ('BTCUSDT', '5m', 513, 'buy', pd.to_datetime('2022-08-22 22:30:00'),
-               'STOCH_RSI_LinearReg', [], [], [], []
+               'STOCH_RSI_Trend', [], [], [], []
                ),
               ('BTCUSDT', '5m', 576, 'sell', pd.to_datetime('2022-08-23 03:45:00'),
                'STOCH_RSI', [], [], [], []
@@ -36,7 +36,7 @@ points_btc = [('BTCUSDT', '5m', 0, 'buy', pd.to_datetime('2022-08-21 3:45:00'),
                'STOCH_RSI', [], [], [], []
                ),
               ('BTCUSDT', '5m', 995, 'buy', pd.to_datetime('2022-08-24 14:40:00'),
-               'STOCH_RSI_LinearReg', [], [], [], []
+               'STOCH_RSI_Trend', [], [], [], []
                )]
 
 points_eth = [('ETHUSDT', '5m', 45, 'sell', pd.to_datetime('2022-08-21 09:00:00'),
@@ -46,7 +46,7 @@ points_eth = [('ETHUSDT', '5m', 45, 'sell', pd.to_datetime('2022-08-21 09:00:00'
                'STOCH_RSI', [], [], [], []
                ),
               ('ETHUSDT', '5m', 97, 'sell', pd.to_datetime('2022-08-21 12:30:00'),
-               'STOCH_RSI_LinearReg', [], [], [], []
+               'STOCH_RSI_Trend', [], [], [], []
                ),
               ('ETHUSDT', '5m', 512, 'buy', pd.to_datetime('2022-08-22 23:05:00'),
                'STOCH_RSI', [], [], [], []
@@ -61,7 +61,7 @@ points_eth = [('ETHUSDT', '5m', 45, 'sell', pd.to_datetime('2022-08-21 09:00:00'
                'STOCH_RSI', [], [], [], []
                ),
               ('ETHUSDT', '5m', 990, 'buy', pd.to_datetime('2022-08-24 12:25:00'),
-               'STOCH_RSI_LinearReg', [], [], [], []
+               'STOCH_RSI_Trend', [], [], [], []
                )
               ]
 
@@ -150,7 +150,7 @@ expected2 = ([(1.3246, 3.11, 4.65),
 
 @pytest.mark.parametrize('ttype, pattern, expected',
                          [
-                          ('buy', 'STOCH_RSI_LinearReg',
+                          ('buy', 'STOCH_RSI_Trend',
                            ([(0, 0, 0) for _ in range(24)], 0)),
                           ('buy', 'STOCH_RSI', expected1),
                           ('sell', 'STOCH_RSI', expected2)

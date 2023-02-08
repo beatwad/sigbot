@@ -18,8 +18,8 @@ class SignalFactory(object):
             return PatternSignal(ttype, **configs)
         elif indicator == 'PumpDump':
             return PumpDumpSignal(ttype, **configs)
-        elif indicator == 'LinearReg':
-            return LinearRegSignal(ttype, **configs)
+        elif indicator == 'Trend':
+            return TrendSignal(ttype, **configs)
         elif indicator == 'HighVolume':
             return HighVolumeSignal(ttype, **configs)
 
@@ -168,13 +168,13 @@ class RSISignal(SignalBase):
         return rsi_higher
 
 
-class LinearRegSignal(SignalBase):
+class TrendSignal(SignalBase):
     """ Check trend using linear regression indicator """
     type = 'Indicator_signal'
-    name = "LinearReg"
+    name = "Trend"
 
     def __init__(self, ttype, **configs):
-        super(LinearRegSignal, self).__init__(ttype, configs)
+        super(TrendSignal, self).__init__(ttype, configs)
         self.configs = self.configs[self.name]['params']
         self.low_bound = self.configs.get('low_bound', 0)
         self.high_bound = self.configs.get('high_bound', 0)
@@ -549,7 +549,7 @@ class FindSignal:
 
         # Get signal points for each indicator
         for indicator_signal in self.indicator_signals:
-            if indicator_signal.name == "LinearReg":
+            if indicator_signal.name == "Trend":
                 # get time ratio between higher timeframe and working timeframe
                 timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] /
                                       self.timeframe_div[self.work_timeframe])
@@ -584,7 +584,7 @@ class FindSignal:
             trade_indexes = pattern_points[pattern_points == max_shape].index
             trade_indexes = trade_indexes[df_work.shape[0] - trade_indexes < data_qty]
             sig_pattern = '_'.join(pattern)
-            if sig_pattern == 'Pattern_LinearReg' or sig_pattern == 'MACD':
+            if sig_pattern == 'Pattern_Trend' or sig_pattern == 'MACD':
                 points += [[ticker, self.higher_timeframe, index, self.ttype, trade_points.loc[index, 'time_higher'],
                             sig_pattern, [], [], [], []] for index in trade_indexes]
             else:

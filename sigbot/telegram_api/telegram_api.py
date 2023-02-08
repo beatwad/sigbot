@@ -223,8 +223,8 @@ class TelegramBot:
                 message_thread_id = int(message_thread_id)
             # Form text message
             clean_ticker = self.clean_ticker(ticker)
-            # text =
-            text = f'#{clean_ticker[:-4]} \n'
+            text = ' + '.join(sig_pattern.split('_')) + f' {sig_type}\n'
+            text += f'#{clean_ticker[:-4]} \n'
             if sig_pattern == 'HighVolume':
                 pass
             elif sig_type == 'buy':

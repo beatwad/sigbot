@@ -94,7 +94,7 @@ class Optimizer:
                     for k, v in conf_values.items():
                         if k in prod_values:
                             conf_values[k] = prod_values[k]
-                    if indicator != 'LinearReg':
+                    if indicator != 'Trend':
                         if 'high_bound' in conf_values:
                             conf_values['high_bound'] = 100 - conf_values['low_bound']
                         elif 'high_price_quantile' in conf_values:
@@ -111,7 +111,7 @@ class Optimizer:
                     for k, v in conf_values.items():
                         if k in prod_values:
                             conf_values[k] = prod_values[k]
-                    if indicator != 'LinearReg':
+                    if indicator != 'Trend':
                         if 'high_bound' in conf_values:
                             conf_values['high_bound'] = 100 - conf_values['low_bound']
                         elif 'high_price_quantile' in conf_values:
@@ -204,7 +204,7 @@ class Optimizer:
 
 if __name__ == '__main__':
     ttype = 'buy'
-    pattern = ['Pattern', 'LinearReg']
+    pattern = ['Pattern', 'Trend']
     indicator_list = pattern
     indicator_list_higher = pattern
 
@@ -215,7 +215,7 @@ if __name__ == '__main__':
         'Pattern': {'use_vol': [0], 'window_low_bound': [1], 'window_high_bound': [6],
                     'first_candle': [0.8], 'second_candle': [0.7],
                     'third_candle': [0.5]},
-        'LinearReg': {'timeperiod': [6, 8, 10], 'low_bound': [0]}
+        'Trend': {'timeperiod': [6, 8, 10], 'low_bound': [0]}
         }
 
     work_timeframe = '15m'

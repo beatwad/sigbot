@@ -156,7 +156,7 @@
     ]
   },
   "Higher_TF_indicator_list": [
-    "LinearReg",
+    "Trend",
     "MACD",
     "Pattern"
   ],
@@ -174,7 +174,7 @@
           "slowd_period": 3
         }
       },
-      "LinearReg": {
+      "Trend": {
         "params": {
           "timeperiod": 36
         }
@@ -226,7 +226,7 @@
           "slowd_period": 3
         }
       },
-      "LinearReg": {
+      "Trend": {
         "params": {
           "timeperiod": 36
         }
@@ -274,7 +274,7 @@
     "HighVolume",
     "MACD",
     "Pattern",
-    "LinearReg"
+    "Trend"
   ],
   "Indicator_signal": {
     "buy": {
@@ -309,7 +309,7 @@
       "HighVolume": {
         "params": {}
       },
-      "LinearReg": {
+      "Trend": {
         "params": {
            "low_bound": -0.1,
            "high_bound": 0.1
@@ -345,7 +345,7 @@
       "PumpDump": {
         "params": {}
       },
-      "LinearReg": {
+      "Trend": {
         "params": {
            "low_bound": -0.1,
            "high_bound": 0.1
@@ -374,21 +374,21 @@
     [
       "STOCH",
       "RSI",
-      "LinearReg"
+      "Trend"
     ],
     [
       "HighVolume"
     ],
     [
       "PumpDump",
-      "LinearReg"
+      "Trend"
     ],
     [
       "MACD"
     ],
     [
       "Pattern",
-      "LinearReg"
+      "Trend"
     ]
   ],
   "SignalStat": {
@@ -401,9 +401,9 @@
         "HighVolume": 72,
         "MACD": 72,
         "Pattern": 72,
-        "PumpDump_LinearReg" :  72,
+        "PumpDump_Trend" :  72,
         "STOCH_RSI" :  72,
-        "STOCH_RSI_LinearReg" :  72
+        "STOCH_RSI_Trend" :  72
       },
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,
@@ -418,14 +418,14 @@
   "Telegram": {
     "params": {
       "favorite_exchanges": ["ByBitPerpetual"],
-      "favorite_patterns": ["STOCH_RSI_LinearReg", "Pattern_LinearReg"],
+      "favorite_patterns": ["STOCH_RSI_Trend", "Pattern_Trend"],
       "log_path": "telegram_log.txt",
       "chat_ids": {
         "Errors": "-1001837009227",
         "STOCH_RSI": "-1001757652380",
-        "STOCH_RSI_LinearReg": "-1001757652380",
+        "STOCH_RSI_Trend": "-1001757652380",
         "PumpDump": "-1001757652380",
-        "PumpDump_LinearReg": "-1001757652380",
+        "PumpDump_Trend": "-1001757652380",
         "HighVolume": "-1001757652380",
         "MACD": "-1001757652380",
         "Pattern": "-1001757652380"
@@ -433,28 +433,28 @@
       "message_thread_ids": {
         "STOCH_RSI_buy": "54",
         "STOCH_RSI_sell": "76",
-        "STOCH_RSI_LinearReg_buy": "61",
-        "STOCH_RSI_LinearReg_sell": "66",
+        "STOCH_RSI_Trend_buy": "61",
+        "STOCH_RSI_Trend_sell": "66",
         "PumpDump_buy": "73",
         "PumpDump_sell": "92",
-        "PumpDump_LinearReg_buy": "73",
-        "PumpDump_LinearReg_sell": "69",
+        "PumpDump_Trend_buy": "73",
+        "PumpDump_Trend_sell": "69",
         "HighVolume_buy": "86",
         "HighVolume_sell": "86",
         "MACD_buy": "99",
         "MACD_sell": "96",
-        "Pattern_LinearReg_buy": "105",
-        "Pattern_LinearReg_sell": "102"
+        "Pattern_Trend_buy": "105",
+        "Pattern_Trend_sell": "102"
       },
       "favorite_chat_ids": {
-        "STOCH_RSI_LinearReg": "-1001840430020",
-        "Pattern_LinearReg": "-1001840430020"
+        "STOCH_RSI_Trend": "-1001840430020",
+        "Pattern_Trend": "-1001840430020"
       },
       "favorite_message_thread_ids": {
-        "STOCH_RSI_LinearReg_buy": "6",
-        "STOCH_RSI_LinearReg_sell": "2",
-        "Pattern_LinearReg_buy": "9",
-        "Pattern_LinearReg_sell": "12"
+        "STOCH_RSI_Trend_buy": "6",
+        "STOCH_RSI_Trend_sell": "2",
+        "Pattern_Trend_buy": "9",
+        "Pattern_Trend_sell": "12"
       },
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,
@@ -491,7 +491,7 @@
           "high_max",
           "low_min"
         ],
-        "LinearReg": [
+        "Trend": [
           "linear_reg"
         ],
         "PumpDump": [],

@@ -18,8 +18,8 @@ class IndicatorFactory(object):
             return MACD(ttype, configs)
         elif indicator.startswith('PumpDump'):
             return PumpDump(ttype, configs)
-        elif indicator.startswith('LinearReg'):
-            return LinearReg(ttype, configs)
+        elif indicator.startswith('Trend'):
+            return Trend(ttype, configs)
         elif indicator.startswith('HighVolume'):
             return HighVolume(ttype, configs)
         elif indicator.startswith('Pattern'):
@@ -81,12 +81,12 @@ class STOCH(Indicator):
         return df
 
 
-class LinearReg(Indicator):
+class Trend(Indicator):
     """ Indicator of linear regression and its angle indicators, default settings: timeperiod: 14 """
-    name = 'LinearReg'
+    name = 'Trend'
 
     def __init__(self, ttype: str, configs: dict):
-        super(LinearReg, self).__init__(ttype, configs)
+        super(Trend, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
         adx = ta.ADX(df['high'], df['low'], df['close'], **self.configs)

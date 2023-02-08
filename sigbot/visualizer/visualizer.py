@@ -269,11 +269,11 @@ class Visualizer:
 
             # plot point of trade
             self.plot_point(point_type, df_higher, axs_higher[0], higher=True)
-        elif 'LinearReg' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
+        elif 'Trend' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
             plot_num -= 1
             subfigs_num = 3
-            if 'LinearReg' in indicator_list_tmp:
-                indicator_tmp = 'LinearReg'
+            if 'Trend' in indicator_list_tmp:
+                indicator_tmp = 'Trend'
             else:
                 indicator_tmp = 'MACD'
             indicator_list.remove(indicator_tmp)
@@ -323,7 +323,7 @@ class Visualizer:
             axs_higher[1].spines['right'].set_color(self.border_color)
             axs_higher[1].spines['left'].set_color(self.border_color)
             # plot titles
-            if indicator_tmp == 'LinearReg':
+            if indicator_tmp == 'Trend':
                 axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Тренд', fontsize=14,
                                         color=self.ticker_color)
                 axs_higher[1].set_title('Сила тренда', fontsize=14, color=self.ticker_color)

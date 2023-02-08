@@ -86,30 +86,22 @@ class SignalStat:
         tmp['signal_smooth_price'] = [signal_smooth_price]
         # write result price, MFE and MAE, if MAE is too low - replace it with MFE/1000 to prevent zero division
         for i in range(len(high_result_prices)):
+            # calculate price diff : (close_smooth_price - signal_price) / close_smooth_price
             tmp['close_smooth_price'] = [close_smooth_prices[i]]
+            tmp[f'price_diff_{i+1}'] = tmp['signal_smooth_price'] - tmp[f'close_smooth_price']
+            tmp[f'pct_price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'] / tmp[f'close_smooth_price'] * 100
             if ttype == 'buy':
                 tmp['result_price'] = [high_result_prices[i]]
                 # calculater MFE and MAE
                 mfe = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
                 tmp[f'mfe_{i+1}'] = [mfe]
                 tmp[f'mae_{i+1}'] = max(signal_price - min(low_result_prices[:i+1]), 0)
-                # calculate (close_smoothed_price - signal_price) / (signal_price - MAE)
-                tmp[f'price_diff_{i+1}'] = tmp[f'close_smooth_price'] - tmp['signal_smooth_price']
-                tmp[f'price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'] / tmp[f'mae_{i+1}']
             else:
                 tmp['result_price'] = [low_result_prices[i]]
                 # calculater MFE and MAE
                 mfe = max(signal_price - min(low_result_prices[:i+1]), 0) / atr
                 tmp[f'mfe_{i+1}'] = [mfe]
-                tmp[f'mae_{i+1}'] = max(max(high_result_prices[:i+1]) - signal_price, 0)
-                # calculate (close_smooth_price - signal_price) / (signal_price - MAE)
-                tmp[f'price_diff_{i+1}'] = tmp['signal_smooth_price'] - tmp[f'close_smooth_price']
-                tmp[f'price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'] / tmp[f'mae_{i+1}']
-            tmp[f'mae_{i+1}'] /= atr
-            # replace nans with zeros and cap huge numbers
-            tmp[f'pct_price_diff_{i+1}'] = tmp[f'price_diff_{i+1}'].fillna(0)
-            tmp.loc[tmp[f'pct_price_diff_{i+1}'] > 10, f'pct_price_diff_{i+1}'] = 10
-            tmp.loc[tmp[f'pct_price_diff_{i+1}'] < -10, f'pct_price_diff_{i+1}'] = -10
+                tmp[f'mae_{i+1}'] = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
             # drop unnecessary columns
             tmp = tmp.drop(['result_price', 'close_smooth_price', f'price_diff_{i+1}'], axis=1)
         # if can't find similar statistics in the dataset - just add it to stat dataframe, else update stat columns

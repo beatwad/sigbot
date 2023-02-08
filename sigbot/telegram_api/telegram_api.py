@@ -223,21 +223,21 @@ class TelegramBot:
                 message_thread_id = int(message_thread_id)
             # Form text message
             clean_ticker = self.clean_ticker(ticker)
-            text = ' + '.join(sig_pattern.split('_')) + f' {sig_type}\n'
-            text += f'#{clean_ticker[:-4]} \n'
+            text = ' + '.join(sig_pattern.split('_')) + '\n'
             if sig_pattern == 'HighVolume':
                 pass
             elif sig_type == 'buy':
-                text += 'Buy / Покупка \n'
+                text += ' Buy / Покупка\n'
             else:
-                text += 'Sell / Продажа \n'
-            text += 'Exchanges / Биржи: \n'
+                text += ' Sell / Продажа\n'
+            text += f'#{clean_ticker[:-4]}\n'
+            text += 'Exchanges / Биржи:\n'
             for exchange in sig_exchanges:
                 text += f' • {exchange}\n'
-            text += 'TradingView: \n'
+            text += 'TradingView:\n'
             text += f"https://tradingview.com/symbols/{clean_ticker}\n"
             if clean_ticker[:-4] != 'BTC':
-                text += f'{clean_ticker[:-4]}/BTC: \n'
+                text += f'{clean_ticker[:-4]}/BTC:\n'
                 text += f"https://ru.tradingview.com/symbols/{clean_ticker[:-4]}BTC"
             # Send message + image
             if sig_img_path:

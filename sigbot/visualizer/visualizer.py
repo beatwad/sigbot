@@ -547,7 +547,7 @@ class Visualizer:
 
             # set y-labels
             axs2[0].set_ylabel("E-ratio", fontsize=9.5, color=self.ticker_color)
-            axs2[1].set_ylabel("MAR", fontsize=9.5, color=self.ticker_color)
+            axs2[1].set_ylabel("MoR, %", fontsize=9.5, color=self.ticker_color)
 
             # set ticker color
             axs2[1].tick_params(axis='x', colors=self.ticker_color)

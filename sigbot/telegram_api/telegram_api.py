@@ -4,7 +4,7 @@ import asyncio
 from os import environ, remove
 
 # Get configs
-environ["ENV"] = "15m_1h"
+# environ["ENV"] = "15m_1h"
 
 from log.log import exception
 from time import sleep
@@ -223,6 +223,7 @@ class TelegramBot:
                 message_thread_id = int(message_thread_id)
             # Form text message
             clean_ticker = self.clean_ticker(ticker)
+            # text =
             text = f'#{clean_ticker[:-4]} \n'
             if sig_pattern == 'HighVolume':
                 pass

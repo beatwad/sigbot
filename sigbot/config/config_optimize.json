@@ -194,7 +194,7 @@
           "timeperiod": 24
         }
       },
-      "PriceChange": {
+      "PumpDump": {
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
@@ -247,7 +247,7 @@
           "timeperiod": 24
         }
       },
-      "PriceChange": {
+      "PumpDump": {
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
@@ -269,7 +269,7 @@
   "Indicator_list": [
     "STOCH",
     "RSI",
-    "PriceChange",
+    "PumpDump",
     "HighVolume",
     "MACD",
     "Pattern",
@@ -302,7 +302,7 @@
           "third_candle": 0.5
         }
       },
-      "PriceChange": {
+      "PumpDump": {
         "params": {}
       },
       "HighVolume": {
@@ -341,7 +341,7 @@
           "third_candle": 0.5
         }
       },
-      "PriceChange": {
+      "PumpDump": {
         "params": {}
       },
       "LinearReg": {
@@ -379,7 +379,7 @@
       "HighVolume"
     ],
     [
-      "PriceChange",
+      "PumpDump",
       "LinearReg"
     ],
     [
@@ -396,11 +396,11 @@
       "stop_loss_multiplier": 2,
       "test": 0,
       "stat_limit_hours": {
-        "PriceChange": 10000,
+        "PumpDump": 10000,
         "HighVolume": 10000,
         "MACD": 10000,
         "Pattern": 10000,
-        "PriceChange_LinearReg": 10000,
+        "PumpDump_LinearReg": 10000,
         "STOCH_RSI": 10000,
         "STOCH_RSI_LinearReg": 10000,
         "Pattern_LinearReg": 10000
@@ -424,8 +424,8 @@
         "Errors": "-1001837009227",
         "STOCH_RSI": "-1001463253403",
         "STOCH_RSI_LinearReg": "-1001688789758",
-        "PriceChange": "-1001700504878",
-        "PriceChange_LinearReg": "-1001691421580",
+        "PumpDump": "-1001700504878",
+        "PumpDump_LinearReg": "-1001691421580",
         "HighVolume": "-1001656085421",
         "MACD": "-1001742813847",
         "Pattern": "-1001742813847",
@@ -436,10 +436,10 @@
         "STOCH_RSI_sell": "76",
         "STOCH_RSI_LinearReg_buy": "61",
         "STOCH_RSI_LinearReg_sell": "66",
-        "PriceChange_buy": "73",
-        "PriceChange_sell": "92",
-        "PriceChange_LinearReg_buy": "73",
-        "PriceChange_LinearReg_sell": "69",
+        "PumpDump_buy": "73",
+        "PumpDump_sell": "92",
+        "PumpDump_LinearReg_buy": "73",
+        "PumpDump_LinearReg_sell": "69",
         "HighVolume_buy": "86",
         "HighVolume_sell": "86",
         "MACD_buy": "99",
@@ -495,7 +495,7 @@
         "LinearReg": [
           "linear_reg"
         ],
-        "PriceChange": [],
+        "PumpDump": [],
         "HighVolume": [
           "volume"
         ]

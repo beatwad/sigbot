@@ -75,7 +75,7 @@ def test_stoch(df, timeframe, ticker, expected):
                                                      -0.79934, 1.11272, -0.99277, 1.37686]]),
                           ], ids=repr)
 def test_price_change(df, timeframe, ticker, expected):
-    indicator = IndicatorFactory.factory('PriceChange', 'buy', configs)
+    indicator = IndicatorFactory.factory('PumpDump', 'buy', configs)
     data_qty = 500
     df = indicator.get_indicator(df, ticker, timeframe, data_qty)
     assert round(df.loc[223, 'close_price_change_lag_1'], 5) == expected[0][0]

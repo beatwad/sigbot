@@ -230,8 +230,8 @@ eth_expected = [np.array([3, 10, 17, 25, 38, 40, 44, 63, 65, 70, 83, 85, 88, 95]
 def test_find_price_change_signal(mocker, ticker, timeframe, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
     dfs = create_test_data()
-    price_change_sig_buy = SignalFactory().factory('PriceChange', 'buy', configs)
-    price_change_sig_sell = SignalFactory().factory('PriceChange', 'sell', configs)
+    price_change_sig_buy = SignalFactory().factory('PumpDump', 'buy', configs)
+    price_change_sig_sell = SignalFactory().factory('PumpDump', 'sell', configs)
     buy_points = price_change_sig_buy.find_signal(dfs[ticker][timeframe]['data']['buy'][:100])
     sell_points = price_change_sig_sell.find_signal(dfs[ticker][timeframe]['data']['buy'][:100])
     buy_indexes = np.where(buy_points == 1)
@@ -274,8 +274,6 @@ points1 = [['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
             'STOCH_RSI', [], [], [], []],
            ['BTCUSDT', '5m', 506, 'buy', datetime(2022, 8, 22, 21, 55),
             'STOCH_RSI_LinearReg', [], [], [], []],
-           ['BTCUSDT', '1h', 624, 'buy', datetime(2022, 8, 9),
-            'Pattern_LinearReg', [], [], [], []],
            ['BTCUSDT', '1h', 749, 'buy', datetime(2022, 8, 14, 5),
             'Pattern_LinearReg', [], [], [], []],
            ['BTCUSDT', '1h', 750, 'buy', datetime(2022, 8, 14, 6),
@@ -319,28 +317,12 @@ points1 = [
             'STOCH_RSI', [], [], [], []],
            ['BTCUSDT', '5m', 91, 'sell', datetime(2022, 8, 21, 11, 20),
             'STOCH_RSI_LinearReg', [], [], [], []],
-           ['BTCUSDT', '1h', 58, 'sell', datetime(2022, 7, 16, 10),
-            'Pattern_LinearReg', [], [], [], []],
-           ['BTCUSDT', '1h', 89, 'sell', datetime(2022, 7, 17, 17),
-            'Pattern_LinearReg', [], [], [], []],
            ['BTCUSDT', '1h', 168, 'sell', datetime(2022, 7, 21),
-            'Pattern_LinearReg', [], [], [], []],
-           ['BTCUSDT', '1h', 171, 'sell', datetime(2022, 7, 21, 3),
-            'Pattern_LinearReg', [], [], [], []],
-           ['BTCUSDT', '1h', 174, 'sell', datetime(2022, 7, 21, 6),
-            'Pattern_LinearReg', [], [], [], []],
-           ['BTCUSDT', '1h', 183, 'sell', datetime(2022, 7, 21, 15),
-            'Pattern_LinearReg', [], [], [], []],
-           ['BTCUSDT', '1h', 299, 'sell', datetime(2022, 7, 26, 11),
-            'Pattern_LinearReg', [], [], [], []],
-           ['BTCUSDT', '1h', 946, 'sell', datetime(2022, 8, 22, 10),
             'Pattern_LinearReg', [], [], [], []],
            ]
 points2 = [
            ['BTCUSDT', '5m', 569, 'sell', datetime(2022, 8, 23, 3, 10),
-            'STOCH_RSI', [], [], [], []],
-           ['BTCUSDT', '1h', 946, 'sell', datetime(2022, 8, 22, 10),
-            'Pattern_LinearReg', [], [], [], []]
+            'STOCH_RSI', [], [], [], []]
            ]
 points3 = [
            ['ETHUSDT', '5m', 83, 'sell', datetime(2022, 8, 21, 11, 20),
@@ -349,44 +331,12 @@ points3 = [
             'STOCH_RSI_LinearReg', [], [], [], []],
            ['ETHUSDT', '1h', 58, 'sell', datetime(2022, 7, 16, 10),
             'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 59, 'sell', datetime(2022, 7, 16, 11),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 168, 'sell', datetime(2022, 7, 21),
-            'Pattern_LinearReg', [], [], [], []],
            ['ETHUSDT', '1h', 175, 'sell', datetime(2022, 7, 21, 7),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 198, 'sell', datetime(2022, 7, 22, 6),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 199, 'sell', datetime(2022, 7, 22, 7),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 286, 'sell', datetime(2022, 7, 25, 22),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 310, 'sell', datetime(2022, 7, 26, 22),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 311, 'sell', datetime(2022, 7, 26, 23),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 375, 'sell', datetime(2022, 7, 29, 15),
             'Pattern_LinearReg', [], [], [], []],
            ['ETHUSDT', '1h', 376, 'sell', datetime(2022, 7, 29, 16),
             'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 397, 'sell', datetime(2022, 7, 30, 13),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 398, 'sell', datetime(2022, 7, 30, 14),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 414, 'sell', datetime(2022, 7, 31, 6),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 415, 'sell', datetime(2022, 7, 31, 7),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 462, 'sell', datetime(2022, 8, 2, 6),
-            'Pattern_LinearReg', [], [], [], []],
            ['ETHUSDT', '1h', 463, 'sell', datetime(2022, 8, 2, 7),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 483, 'sell', datetime(2022, 8, 3, 3),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 484, 'sell', datetime(2022, 8, 3, 4),
-            'Pattern_LinearReg', [], [], [], []],
-           ['ETHUSDT', '1h', 504, 'sell', datetime(2022, 8, 4),
-            'Pattern_LinearReg', [], [], [], []],
+            'Pattern_LinearReg', [], [], [], []]
            ]
 points4 = []
 expected_sell = [points1, points2, points3]

@@ -97,7 +97,7 @@ class Visualizer:
     @staticmethod
     def get_statistics_dict_key(pattern: list) -> str:
         """ Get previous avg E-ratio coefficient and save current E-ratio to statistics dictionary """
-        if 'PriceChange' in str(pattern[0][0]):
+        if 'PumpDump' in str(pattern[0][0]):
             key = str([pattern[0][0]] + pattern[1:])
         else:
             key = str(pattern)
@@ -153,10 +153,10 @@ class Visualizer:
         indicator_list = [p for p in pattern.split('_') if p[0] not in self.level_indicators]
         indicator_list_tmp = indicator_list.copy()
 
-        # check if PriceChange indicator is in indicator list to make a special plot
-        if 'PriceChange' in indicator_list_tmp:
+        # check if PumpDump indicator is in indicator list to make a special plot
+        if 'PumpDump' in indicator_list_tmp:
             plot_num = len(indicator_list)
-            indicator_list.remove('PriceChange')
+            indicator_list.remove('PumpDump')
             main_candleplot_ratio = 1.5
             plot_width_mult = 2.5
         elif 'HighVolume' in indicator_list_tmp:

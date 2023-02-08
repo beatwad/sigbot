@@ -16,8 +16,8 @@ class IndicatorFactory(object):
             return STOCH(ttype, configs)
         elif indicator.startswith('MACD'):
             return MACD(ttype, configs)
-        elif indicator.startswith('PriceChange'):
-            return PriceChange(ttype, configs)
+        elif indicator.startswith('PumpDump'):
+            return PumpDump(ttype, configs)
         elif indicator.startswith('LinearReg'):
             return LinearReg(ttype, configs)
         elif indicator.startswith('HighVolume'):
@@ -154,12 +154,12 @@ class PivotPoints(Indicator):
         return df
 
 
-class PriceChange(Indicator):
+class PumpDump(Indicator):
     """ Find big changes of price in both directions """
-    name = 'PriceChange'
+    name = 'PumpDump'
 
     def __init__(self, ttype: str, configs: dict):
-        super(PriceChange, self).__init__(ttype, configs)
+        super(PumpDump, self).__init__(ttype, configs)
         self.low_price_quantile = self.configs.get('low_price_quantile', 5)
         self.high_price_quantile = self.configs.get('high_price_quantile', 95)
         self.max_stat_size = self.configs.get('max_stat_size', 100000)

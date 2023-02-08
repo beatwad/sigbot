@@ -16,8 +16,8 @@ class SignalFactory(object):
             return MACDSignal(ttype, **configs)
         elif indicator == 'Pattern':
             return PatternSignal(ttype, **configs)
-        elif indicator == 'PriceChange':
-            return PriceChangeSignal(ttype, **configs)
+        elif indicator == 'PumpDump':
+            return PumpDumpSignal(ttype, **configs)
         elif indicator == 'LinearReg':
             return LinearRegSignal(ttype, **configs)
         elif indicator == 'HighVolume':
@@ -207,12 +207,12 @@ class LinearRegSignal(SignalBase):
         return lr_lower_bound
 
 
-class PriceChangeSignal(SignalBase):
+class PumpDumpSignal(SignalBase):
     type = 'Indicator_signal'
-    name = 'PriceChange'
+    name = 'PumpDump'
 
     def __init__(self, ttype, **configs):
-        super(PriceChangeSignal, self).__init__(ttype, configs)
+        super(PumpDumpSignal, self).__init__(ttype, configs)
 
     def find_signal(self, df: pd.DataFrame) -> np.ndarray:
         """ 1 - Price rapidly moves down in one candle (buy signal)

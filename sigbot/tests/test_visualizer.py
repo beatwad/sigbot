@@ -34,7 +34,7 @@ point2 = ['BNBUSDT', '5m', 966, 'buy', pd.to_datetime('2022-09-27 19:35:00'),
             (51.72, 0.08, 1.56), (58.62, 0.19, 1.53), (53.45, 0.08, 1.53)]], []]
 
 point3 = ['BNBUSDT', '5m', 980, 'buy', pd.to_datetime('2022-09-27 20:45:00'),
-          [('PriceChange', ()), ('LinearReg', ())], [],
+          [('PumpDump', ()), ('LinearReg', ())], [],
           ['Binance', 'BinanceFutures'],
           [[(82.76, 0.21, 0.25), (72.41, 0.23, 0.47), (70.69, 0.24, 0.68),
             (70.69, 0.25, 1.13), (63.79, 0.21, 1.06), (60.34, 0.32, 0.85),
@@ -48,7 +48,7 @@ point3 = ['BNBUSDT', '5m', 980, 'buy', pd.to_datetime('2022-09-27 20:45:00'),
 points = [point1, point2, point3]
 keys = ["[('STOCH', (15, 85)), ('RSI', (25, 75))]",
         "[('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())]",
-        "['PriceChange', ('LinearReg', ())]"]
+        "['PumpDump', ('LinearReg', ())]"]
 
 
 @pytest.mark.parametrize('point, expected',
@@ -65,9 +65,9 @@ def test_get_statistics_dict_key(point, expected):
 
 prev_stat_dicts = [dict(),
                    {"[('STOCH', (15, 85)), ('RSI', (25, 75))]": {'sell': 10.0, 'buy': 15},
-                    "['PriceChange', ('LinearReg', ())]": {'sell': 50.0, 'buy': 40}},
+                    "['PumpDump', ('LinearReg', ())]": {'sell': 50.0, 'buy': 40}},
                    {"[('STOCH', (15, 85)), ('RSI', (25, 75)), ('LinearReg', ())]": {'sell': 10.0, 'buy': None}},
-                   {"['PriceChange', ('LinearReg', ())]": {'sell': 10.0, 'buy': 15}},
+                   {"['PumpDump', ('LinearReg', ())]": {'sell': 10.0, 'buy': 15}},
                    dict()]
 prev_mean_pct_right_forecasts = [25, 10, 58.91, None, 15, 40, 15]
 
@@ -98,7 +98,7 @@ def test_get_prev_mean_pct_right_forecast(point, prev_stat_dict, expected):
 
 prev_mean_pct_right_forecasts = [None, 58.01, 34.20]
 mean_pct_right_forecasts = [20, 158.01, 24.20]
-stat_results = ['= без изменений', '= вырос на 100.0', '= уменьшилcя на 10.0']
+stat_results = ['= no change / без изменений', '= increased on / вырос на 100.0', '= decreased on / уменьшилcя на 10.0']
 
 
 @pytest.mark.parametrize('prev_mean_pct_right_forecast, mean_pct_right_forecast, expected',

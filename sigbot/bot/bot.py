@@ -107,7 +107,6 @@ class SigBot:
             self.exchanges[ex]['API'] = exchange_api
             # get ticker list
             try:
-                res = self.exchanges[ex]['API'].get_tickers()
                 tickers, ticker_vols, all_tickers = self.exchanges[ex]['API'].get_tickers()
             except:
                 del self.exchanges[ex]
@@ -213,8 +212,8 @@ class SigBot:
         for point in sig_points:
             ticker, timeframe, index, ttype, timestamp, pattern = point[0], point[1], point[2], point[3], point[4], \
                 point[5]
-            # pattern is PriceChange - we need only its name without settings
-            if str(pattern[0][0]).startswith('PriceChange'):
+            # pattern is PumpDump - we need only its name without settings
+            if str(pattern[0][0]).startswith('PumpDump'):
                 pattern = str([pattern[0][0]] + pattern[1:])
             else:
                 pattern = str(pattern)

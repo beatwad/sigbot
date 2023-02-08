@@ -95,7 +95,7 @@ class SignalStat:
                 # calculater MFE and MAE
                 mfe = max(max(high_result_prices[:i+1]) - signal_price, 0) / atr
                 tmp[f'mfe_{i+1}'] = [mfe]
-                tmp[f'mae_{i+1}'] = max(signal_price - min(low_result_prices[:i+1]), 0)
+                tmp[f'mae_{i+1}'] = max(signal_price - min(low_result_prices[:i+1]), 0) / atr
             else:
                 tmp['result_price'] = [low_result_prices[i]]
                 # calculater MFE and MAE
@@ -170,14 +170,8 @@ class SignalStat:
                     e_ratio = 10
                 else:
                     e_ratio = 1
-            pct_price_diff_mean = round(stat.loc[stat[f'pct_price_diff_{t}'] > 0, f'pct_price_diff_{t}'].mean(), 2)
-            # check if price diff mean is not NaN value
-            if pct_price_diff_mean != pct_price_diff_mean:
-                pct_price_diff_mean = 0
-            pct_price_diff_std = round(stat.loc[stat[f'pct_price_diff_{t}'] > 0, f'pct_price_diff_{t}'].std(), 2)
-            # check if price diff std is not NaN value
-            if pct_price_diff_std != pct_price_diff_std:
-                pct_price_diff_std = 0
+            pct_price_diff_mean = round(stat[f'pct_price_diff_{t}'].mean(), 2)
+            pct_price_diff_std = round(stat[f'pct_price_diff_{t}'].std(), 2)
             result_statistics.append((e_ratio, pct_price_diff_mean, pct_price_diff_std))
         return result_statistics, stat.shape[0]
 

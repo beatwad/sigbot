@@ -223,14 +223,14 @@ class TelegramBot:
                 message_thread_id = int(message_thread_id)
             # Form text message
             clean_ticker = self.clean_ticker(ticker)
-            text = ' + '.join(sig_pattern.split('_')) + '\n'
+            text = f'#{clean_ticker[:-4]}\n'
+            text += ' + '.join(sig_pattern.split('_')) + '\n'
             if sig_pattern == 'HighVolume':
                 pass
             elif sig_type == 'buy':
-                text += ' Buy / Покупка\n'
+                text += 'Buy / Покупка\n'
             else:
-                text += ' Sell / Продажа\n'
-            text += f'#{clean_ticker[:-4]}\n'
+                text += 'Sell / Продажа\n'
             text += 'Exchanges / Биржи:\n'
             for exchange in sig_exchanges:
                 text += f' • {exchange}\n'

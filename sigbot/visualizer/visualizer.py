@@ -492,8 +492,8 @@ class Visualizer:
             axs2[0].axhline(y=1, color='white', linestyle='--', linewidth=1.5)
             axs2[0].yaxis.set_label_position("right")
             axs2[0].yaxis.tick_right()
-            axs2[1].plot(mar_coef_plus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_1)
-            axs2[1].plot(mar_coef_minus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_2)
+            axs2[1].plot(mar_coef_plus_std, linewidth=1.5, linestyle='dotted', color=self.stat_std_color_1)
+            axs2[1].plot(mar_coef_minus_std, linewidth=1.5, linestyle='dotted', color=self.stat_std_color_2)
             axs2[1].plot(mar_coef, linewidth=2, color=self.stat_color_2)
             axs2[1].axhline(y=0, color='white', linestyle='--', linewidth=1.5)
             axs2[1].yaxis.set_label_position("right")
@@ -515,11 +515,11 @@ class Visualizer:
                 counter_trade = 'buy / покупка'
             axs2[0].set_title(f'{title}\n\nE-ratio coefficient / Коэффициент E-ratio\n '
                               f'E-ratio > 1 - {pro_trade}, E-ratio < 1 - {counter_trade}\n '
-                              f'average / в среднем - {avg_e_ratio_coef} {e_ratio_stat_change}',
+                              f'average / в среднем: {avg_e_ratio_coef} {e_ratio_stat_change}',
                               fontsize=13, color=self.ticker_color)
             axs2[1].set_title('MoR coefficient / Коэффициент MoR\n '
                               'MoR > 0 - buy / покупка, MoR < 0 - sell / продажа\n '
-                              f'average / в среднем - {avg_mar_coef} {mar_stat_change}',
+                              f'average / в среднем: {avg_mar_coef} {mar_stat_change}',
                               fontsize=13, color=self.ticker_color)
 
             # set x-ticks

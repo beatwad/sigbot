@@ -168,8 +168,8 @@ class SignalStat:
                     e_ratio = 10
                 else:
                     e_ratio = 1
-            pct_price_diff_mean = round(stat[f'pct_price_diff_{t}'].mean(), 2)
-            pct_price_diff_std = round(stat[f'pct_price_diff_{t}'].std(), 2)
+            pct_price_diff_mean = round(stat.loc[stat[f'pct_price_diff_{t}'] != 0, f'pct_price_diff_{t}'].mean(), 2)
+            pct_price_diff_std = round(stat.loc[stat[f'pct_price_diff_{t}'] != 0, f'pct_price_diff_{t}'].std(), 2)
             result_statistics.append((e_ratio, pct_price_diff_mean, pct_price_diff_std))
         return result_statistics, stat.shape[0]
 

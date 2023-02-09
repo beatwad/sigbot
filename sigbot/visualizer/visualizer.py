@@ -155,10 +155,10 @@ class Visualizer:
 
         # check if PumpDump indicator is in indicator list to make a special plot
         if 'PumpDump' in indicator_list_tmp:
-            plot_num = len(indicator_list)
+            plot_num = len(indicator_list) + 1
             indicator_list.remove('PumpDump')
-            main_candleplot_ratio = 1.5
-            plot_width_mult = 2.5
+            main_candleplot_ratio = 1
+            plot_width_mult = 2
         elif 'HighVolume' in indicator_list_tmp:
             plot_num = len(indicator_list) + 1
             main_candleplot_ratio = 3
@@ -180,6 +180,9 @@ class Visualizer:
         # make subfigs
         fig = plt.figure(constrained_layout=True, figsize=(plot_width_mult * (plot_num + 1), 3 * (plot_num + 1)))
         fig.patch.set_facecolor(self.background_color)
+        # add this to fix incorrect aspect ratio for Pump-Dump + Trend signal
+        if 'PumpDump' in indicator_list_tmp:
+            plot_num -= 1
         # If linear regression is in indicator list - remove it from list and plot one more plot with higher timeframe
         # candles and linear regression indicator
         if 'Pattern' in indicator_list_tmp:
@@ -461,9 +464,9 @@ class Visualizer:
         if 'HighVolume' not in indicator_list_tmp:
             e_ratio_coef = [s[0] for s in statistics[0]]
             mar_coef = [s[1] for s in statistics[0]]
-            # mar_coef_std = [s[2] for s in statistics[0]]
-            # mar_coef_plus_std = [a + b for a, b in zip(mar_coef, pct_price_diff_std)]
-            # mar_coef_minus_std = [a - b for a, b in zip(mar_coef, pct_price_diff_std)]
+            mar_coef_std = [s[2] for s in statistics[0]]
+            mar_coef_plus_std = [a + b for a, b in zip(mar_coef, mar_coef_std)]
+            mar_coef_minus_std = [a - b for a, b in zip(mar_coef, mar_coef_std)]
 
             # get previous percent of right forecast and save current percent to statistics dictionary
             avg_e_ratio_coef = round(sum(e_ratio_coef)/len(e_ratio_coef), 4)
@@ -489,8 +492,8 @@ class Visualizer:
             axs2[0].axhline(y=1, color='white', linestyle='--', linewidth=1.5)
             axs2[0].yaxis.set_label_position("right")
             axs2[0].yaxis.tick_right()
-            # axs2[1].plot(mar_coef_plus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_1)
-            # axs2[1].plot(mar_coef_minus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_2)
+            axs2[1].plot(mar_coef_plus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_1)
+            axs2[1].plot(mar_coef_minus_std, linewidth=1.5, linestyle='--', color=self.stat_std_color_2)
             axs2[1].plot(mar_coef, linewidth=2, color=self.stat_color_2)
             axs2[1].axhline(y=0, color='white', linestyle='--', linewidth=1.5)
             axs2[1].yaxis.set_label_position("right")

@@ -164,8 +164,8 @@ class Visualizer:
             main_candleplot_ratio = 3
             plot_width_mult = 5
         elif 'MACD' in indicator_list_tmp:
-            plot_num = len(indicator_list) + 1
-            main_candleplot_ratio = 1.5
+            plot_num = len(indicator_list) + 2
+            main_candleplot_ratio = 1
             plot_width_mult = 2.5
         elif 'Pattern' in indicator_list_tmp:
             plot_num = len(indicator_list) + 1
@@ -181,7 +181,7 @@ class Visualizer:
         fig = plt.figure(constrained_layout=True, figsize=(plot_width_mult * (plot_num + 1), 3 * (plot_num + 1)))
         fig.patch.set_facecolor(self.background_color)
         # add this to fix incorrect aspect ratio for Pump-Dump + Trend signal
-        if 'PumpDump' in indicator_list_tmp:
+        if 'PumpDump' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
             plot_num -= 1
         # If linear regression is in indicator list - remove it from list and plot one more plot with higher timeframe
         # candles and linear regression indicator

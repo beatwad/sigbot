@@ -330,8 +330,6 @@ class MonitorExchange(Thread):
         self.exchange = exchange
         # exchange data
         self.exchange_data = exchange_data
-        # limit of candles for use in optimization statistics
-        self.opt_limit = 1000
 
     @thread_lock
     def get_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str, data_qty: int,

@@ -2,7 +2,7 @@
   "Data": {
     "Basic": {
       "params": {
-        "limit": 1000,
+        "limit": 200,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -23,7 +23,7 @@
     },
     "Binance": {
       "params": {
-        "limit": 1000,
+        "limit": 200,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -45,7 +45,7 @@
     },
     "ByBit": {
       "params": {
-        "limit": 1000,
+        "limit": 200,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -65,7 +65,7 @@
     },
     "OKEX": {
       "params": {
-        "limit": 300,
+        "limit": 200,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -86,7 +86,7 @@
     },
     "BinanceFutures": {
       "params": {
-        "limit": 1000,
+        "limit": 200,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -128,7 +128,7 @@
     },
     "OKEXFutures": {
       "params": {
-        "limit": 300,
+        "limit": 200,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,

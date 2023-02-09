@@ -501,11 +501,13 @@ class Visualizer:
 
             # set title
             if point_type == 'buy':
-                title = '\nBUY SIGNAL STATISTICS / СTATИСТИКА СИГНАЛА НА ПОКУПКУ'
+                title = '\nBUY SIGNAL STATISTICS / СTATИСТИКА СИГНАЛА НА ПОКУПКУ ' \
+                        '\n(last 48 hours / за последние 48 часов)'
                 pro_trade = 'buy / покупка'
                 counter_trade = 'sell / продажа'
             else:
-                title = '\nSELL SIGNAL STATISTIC / СTATИСТИКА СИГНАЛА НА ПРОДАЖУ'
+                title = '\nSELL SIGNAL STATISTIC / СTATИСТИКА СИГНАЛА НА ПРОДАЖУ ' \
+                        '\n(last 48 hours / за последние 48 часов)'
                 pro_trade = 'sell / продажа'
                 counter_trade = 'buy / покупка'
             axs2[0].set_title(f'{title}\n\nE-ratio coefficient / Коэффициент E-ratio\n '

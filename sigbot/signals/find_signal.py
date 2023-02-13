@@ -366,20 +366,16 @@ class PatternSignal(SignalBase):
             vol_avg = df['volume'].mean()
             first_candle_vol = df['volume'].shift(1)
             second_candle_vol = df['volume'].shift(2)
-            # third_candle_vol = df['volume'].shift(3)
         else:
             vol_avg, first_candle_vol, second_candle_vol, third_candle_vol = None, None, None, None
         # find two candles
         if self.ttype == 'buy':
             sign_1 = np.where(df['close'].shift(2) > df['open'].shift(2), 1, -1)
             sign_2 = np.where(df['close'].shift(1) > df['open'].shift(1), 1, -1)
-            # sign_3 = np.where(df['close'].shift(3) > df['open'].shift(3), 1, -1)
             first_candle = (df['close'].shift(2) - df['low'].shift(2)) / \
                            (df['high'].shift(2) - df['low'].shift(2)) * sign_1
             second_candle = (df['close'].shift(1) - df['low'].shift(1)) / \
                             (df['high'].shift(1) - df['low'].shift(1)) * sign_2
-            # third_candle = (df['close'].shift(3) - df['low'].shift(3)) / \
-            #                 (df['high'].shift(3) - df['low'].shift(3)) * sign_3
             if self.use_vol == 1:
                 return np.where((first_candle >= self.first_candle) & (first_candle_vol >= vol_avg) &
                                 (second_candle >= self.second_candle) & (second_candle_vol >= vol_avg), 1, 0)
@@ -389,13 +385,10 @@ class PatternSignal(SignalBase):
         else:
             sign_1 = np.where(df['close'].shift(2) < df['open'].shift(2), 1, -1)
             sign_2 = np.where(df['close'].shift(1) < df['open'].shift(1), 1, -1)
-            # sign_3 = np.where(df['close'].shift(3) < df['open'].shift(3), 1, -1)
             first_candle = (df['high'].shift(2) - df['close'].shift(2)) / \
                            (df['high'].shift(2) - df['low'].shift(2)) * sign_1
             second_candle = (df['high'].shift(1) - df['close'].shift(1)) / \
                             (df['high'].shift(1) - df['low'].shift(1)) * sign_2
-            # third_candle = (df['high'].shift(3) - df['close'].shift(3)) / \
-            #                 (df['high'].shift(3) - df['low'].shift(3)) * sign_3
             if self.use_vol == 1:
                 return np.where((first_candle >= self.first_candle) & (first_candle_vol >= vol_avg) &
                                 (second_candle >= self.second_candle) & (second_candle_vol >= vol_avg), 1, 0)

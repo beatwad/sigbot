@@ -176,7 +176,7 @@
       },
       "Trend": {
         "params": {
-          "timeperiod": 90
+          "timeperiod": 48
         }
       },
       "MACD": {
@@ -227,7 +227,7 @@
       },
       "Trend": {
         "params": {
-          "timeperiod": 90
+          "timeperiod": 48
         }
       },
       "MACD": {

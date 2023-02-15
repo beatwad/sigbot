@@ -294,10 +294,11 @@
       },
       "Pattern": {
         "params": {
-          "use_vol": 0,
+          "vol_q_high": 0.75,
+          "vol_q_low": 0.25,
           "window_low_bound": 1,
           "window_high_bound": 5,
-          "first_candle": 0.667,
+          "first_candle": 0.5,
           "second_candle": 0.5,
           "third_candle": 0.5
         }
@@ -333,11 +334,12 @@
       },
       "Pattern": {
         "params": {
-          "use_vol": 1,
-          "window_low_bound": 2,
+          "vol_q_high": 0.75,
+          "vol_q_low": 0.25,
+          "window_low_bound": 1,
           "window_high_bound": 5,
-          "first_candle": 0.667,
-          "second_candle": 0.5,
+          "first_candle": 0.9,
+          "second_candle": 0.9,
           "third_candle": 0.5
         }
       },

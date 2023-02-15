@@ -176,7 +176,7 @@
       },
       "Trend": {
         "params": {
-          "timeperiod": 48
+          "timeperiod": 16
         }
       },
       "MACD": {
@@ -227,7 +227,7 @@
       },
       "Trend": {
         "params": {
-          "timeperiod": 48
+          "timeperiod": 16
         }
       },
       "MACD": {
@@ -294,10 +294,11 @@
       },
       "Pattern": {
         "params": {
-          "use_vol": 0,
+          "vol_q_high": 0.9,
+          "vol_q_low": 0.2,
           "window_low_bound": 1,
-          "window_high_bound": 5,
-          "first_candle": 0.5,
+          "window_high_bound": 6,
+          "first_candle": 0.8,
           "second_candle": 0.5,
           "third_candle": 0.5
         }
@@ -333,11 +334,12 @@
       },
       "Pattern": {
         "params": {
-          "use_vol": 0,
-          "window_low_bound": 1,
-          "window_high_bound": 5,
-          "first_candle": 0.9,
-          "second_candle": 0.9,
+          "vol_q_high": 0.75,
+          "vol_q_low": 0.1,
+          "window_low_bound": 2,
+          "window_high_bound": 7,
+          "first_candle": 0.8,
+          "second_candle": 0.5,
           "third_candle": 0.5
         }
       },

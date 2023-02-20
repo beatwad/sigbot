@@ -294,6 +294,7 @@
       },
       "Pattern": {
         "params": {
+          "vol_window": 48,
           "vol_q_high": 0.75,
           "vol_q_low": 0.25,
           "window_low_bound": 1,
@@ -334,6 +335,7 @@
       },
       "Pattern": {
         "params": {
+          "vol_window": 48,
           "vol_q_high": 0.75,
           "vol_q_low": 0.25,
           "window_low_bound": 1,

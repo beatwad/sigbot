@@ -285,6 +285,7 @@ class PatternSignal(SignalBase):
         self.configs = self.configs[self.name]['params']
         self.vol_q_high = self.configs.get('vol_q_high', 0.75)
         self.vol_q_low = self.configs.get('vol_q_low', 0.25)
+        self.vol_window = self.configs.get('vol_window', 48)
         self.window_low_bound = self.configs.get('window_low_bound', 1)
         self.window_high_bound = self.configs.get('window_high_bound', 6)
         self.first_candle = self.configs.get('first_candle', 0.667)
@@ -363,8 +364,8 @@ class PatternSignal(SignalBase):
     def two_good_candles(self, df: pd.DataFrame) -> np.ndarray:
         """ Get two candles that confirm pattern movement """
         # use high/low volume to confirm pattern
-        vol_q_high = df['volume'].quantile(q=self.vol_q_high)
-        vol_q_low = df['volume'].quantile(q=self.vol_q_low)
+        vol_q_high = df['volume'].rolling(self.vol_window).quantile(self.vol_q_high)
+        vol_q_low = df['volume'].rolling(self.vol_window).quantile(self.vol_q_low)
         first_candle_vol = df['volume'].shift(1)
         second_candle_vol = df['volume'].shift(2)
         # find two candles
@@ -382,10 +383,12 @@ class PatternSignal(SignalBase):
                            (df['high'].shift(2) - df['low'].shift(2)) * sign_1
             second_candle = (df['high'].shift(1) - df['close'].shift(1)) / \
                             (df['high'].shift(1) - df['low'].shift(1)) * sign_2
-        return np.where((first_candle >= self.first_candle) &
-                        ((first_candle_vol >= vol_q_high) | (first_candle_vol <= vol_q_low)) &
-                        (second_candle >= self.second_candle) &
-                        ((second_candle_vol >= vol_q_high) | (second_candle_vol <= vol_q_low)), 1, 0)
+        return np.where(
+                        (first_candle >= self.first_candle) &
+                        (((first_candle_vol >= vol_q_high) & (second_candle_vol >= vol_q_high)) |
+                         ((first_candle_vol <= vol_q_low) & (second_candle_vol <= vol_q_low))) &
+                        (second_candle >= self.second_candle),
+                        1, 0)
 
     def create_pattern_vector(self, df: pd.DataFrame, res: np.ndarray):
         """ Create vector that shows potential places where we can enter the trade after pattern appearance """

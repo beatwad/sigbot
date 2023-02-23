@@ -31,8 +31,12 @@ class SignalBase:
 
     def __init__(self, ttype, configs):
         self.ttype = ttype
-        x = configs[self.type][self.ttype]
         self.configs = configs[self.type][self.ttype]
+        self.vol_q_high = 0
+        self.vol_q_low = 0
+        self.vol_window = 0
+        self.first_candle = 0
+        self.second_candle = 0
 
     @abstractmethod
     def find_signal(self, *args, **kwargs):
@@ -97,6 +101,35 @@ class SignalBase:
         """ Return True if indicator values are moving down """
         return np.where(indicator < 0, 1, 0)
 
+    def two_good_candles(self, df: pd.DataFrame, ttype: str) -> np.ndarray:
+        """ Get two candles that confirm pattern movement """
+        # use high/low volume to confirm pattern
+        vol_q_high = df['volume'].rolling(self.vol_window).quantile(self.vol_q_high)
+        vol_q_low = df['volume'].rolling(self.vol_window).quantile(self.vol_q_low)
+        first_candle_vol = df['volume'].shift(1)
+        second_candle_vol = df['volume'].shift(2)
+        # find two candles
+        if ttype == 'buy':
+            sign_1 = np.where(df['close'].shift(2) > df['open'].shift(2), 1, -1)
+            sign_2 = np.where(df['close'].shift(1) > df['open'].shift(1), 1, -1)
+            first_candle = (df['close'].shift(2) - df['low'].shift(2)) / \
+                           (df['high'].shift(2) - df['low'].shift(2)) * sign_1
+            second_candle = (df['close'].shift(1) - df['low'].shift(1)) / \
+                            (df['high'].shift(1) - df['low'].shift(1)) * sign_2
+        else:
+            sign_1 = np.where(df['close'].shift(2) < df['open'].shift(2), 1, -1)
+            sign_2 = np.where(df['close'].shift(1) < df['open'].shift(1), 1, -1)
+            first_candle = (df['high'].shift(2) - df['close'].shift(2)) / \
+                           (df['high'].shift(2) - df['low'].shift(2)) * sign_1
+            second_candle = (df['high'].shift(1) - df['close'].shift(1)) / \
+                            (df['high'].shift(1) - df['low'].shift(1)) * sign_2
+        return np.where(
+                        (first_candle >= self.first_candle) &
+                        (((first_candle_vol >= vol_q_high) & (second_candle_vol >= vol_q_high)) |
+                         ((first_candle_vol <= vol_q_low) & (second_candle_vol <= vol_q_low))) &
+                        (second_candle >= self.second_candle),
+                        1, 0)
+
 
 class STOCHSignal(SignalBase):
     """ Check if STOCH is in overbuy/oversell zone and is going to change its direction to opposite """
@@ -123,7 +156,7 @@ class STOCHSignal(SignalBase):
         stoch_diff_lag_1 = df['stoch_diff'].shift(1)
         stoch_diff_lag_2 = df['stoch_diff'].shift(2)
 
-        if self.ttype == 'buy':
+        if self.ttype == 'sell':
             lower_bound_slowk = self.lower_bound(self.low_bound, stoch_slowk, stoch_slowk_lag_1, stoch_slowk_lag_2)
             lower_bound_slowd = self.lower_bound(self.low_bound, stoch_slowd, stoch_slowd_lag_1, stoch_slowd_lag_2)
             crossed_lines_down = self.crossed_lines(False, stoch_diff, stoch_diff_lag_1, stoch_diff_lag_2)
@@ -153,6 +186,11 @@ class RSISignal(SignalBase):
         self.configs = self.configs[self.name]['params']
         self.low_bound = self.configs.get('low_bound', 25)
         self.high_bound = self.configs.get('high_bound', 75)
+        self.vol_q_high = self.configs.get('vol_q_high', 0.75)
+        self.vol_q_low = self.configs.get('vol_q_low', 0.25)
+        self.vol_window = self.configs.get('vol_window', 48)
+        self.first_candle = self.configs.get('first_candle', 0.667)
+        self.second_candle = self.configs.get('second_candle', 0.5)
 
     def find_signal(self, df: pd.DataFrame, *args) -> np.ndarray:
         """ 1 - Return true if RSI is lower than low bound (buy signal)
@@ -161,11 +199,13 @@ class RSISignal(SignalBase):
         rsi = df['rsi']
         rsi_lag_1 = df['rsi'].shift(1)
         rsi_lag_2 = df['rsi'].shift(2)
-        if self.ttype == 'buy':
+        if self.ttype == 'sell':
+            tgc = self.two_good_candles(df, 'buy')
             rsi_lower = self.lower_bound(self.low_bound, rsi, rsi_lag_1, rsi_lag_2)
-            return rsi_lower
+            return rsi_lower & tgc
+        tgc = self.two_good_candles(df, 'sell')
         rsi_higher = self.higher_bound(self.high_bound, rsi, rsi_lag_1, rsi_lag_2)
-        return rsi_higher
+        return rsi_higher & tgc
 
 
 class TrendSignal(SignalBase):
@@ -290,7 +330,6 @@ class PatternSignal(SignalBase):
         self.window_high_bound = self.configs.get('window_high_bound', 6)
         self.first_candle = self.configs.get('first_candle', 0.667)
         self.second_candle = self.configs.get('second_candle', 0.5)
-        self.third_candle = self.configs.get('third_candle', 0.5)
 
     def shrink_max_min(self, df: pd.DataFrame, high_max: [pd.DataFrame.index, list],
                        low_min: [pd.DataFrame.index, list]) -> (np.ndarray, np.ndarray):
@@ -360,35 +399,6 @@ class PatternSignal(SignalBase):
             eiv = df.loc[ei, 'low'].values
             fiv = df.loc[fi, 'high'].values
         return (ai, bi, ci, di, ei, fi), (aiv, biv, civ, div, eiv, fiv)
-
-    def two_good_candles(self, df: pd.DataFrame) -> np.ndarray:
-        """ Get two candles that confirm pattern movement """
-        # use high/low volume to confirm pattern
-        vol_q_high = df['volume'].rolling(self.vol_window).quantile(self.vol_q_high)
-        vol_q_low = df['volume'].rolling(self.vol_window).quantile(self.vol_q_low)
-        first_candle_vol = df['volume'].shift(1)
-        second_candle_vol = df['volume'].shift(2)
-        # find two candles
-        if self.ttype == 'buy':
-            sign_1 = np.where(df['close'].shift(2) > df['open'].shift(2), 1, -1)
-            sign_2 = np.where(df['close'].shift(1) > df['open'].shift(1), 1, -1)
-            first_candle = (df['close'].shift(2) - df['low'].shift(2)) / \
-                           (df['high'].shift(2) - df['low'].shift(2)) * sign_1
-            second_candle = (df['close'].shift(1) - df['low'].shift(1)) / \
-                            (df['high'].shift(1) - df['low'].shift(1)) * sign_2
-        else:
-            sign_1 = np.where(df['close'].shift(2) < df['open'].shift(2), 1, -1)
-            sign_2 = np.where(df['close'].shift(1) < df['open'].shift(1), 1, -1)
-            first_candle = (df['high'].shift(2) - df['close'].shift(2)) / \
-                           (df['high'].shift(2) - df['low'].shift(2)) * sign_1
-            second_candle = (df['high'].shift(1) - df['close'].shift(1)) / \
-                            (df['high'].shift(1) - df['low'].shift(1)) * sign_2
-        return np.where(
-                        (first_candle >= self.first_candle) &
-                        (((first_candle_vol >= vol_q_high) & (second_candle_vol >= vol_q_high)) |
-                         ((first_candle_vol <= vol_q_low) & (second_candle_vol <= vol_q_low))) &
-                        (second_candle >= self.second_candle),
-                        1, 0)
 
     def create_pattern_vector(self, df: pd.DataFrame, res: np.ndarray):
         """ Create vector that shows potential places where we can enter the trade after pattern appearance """
@@ -481,7 +491,7 @@ class PatternSignal(SignalBase):
         has = self.head_and_shoulders(df, min_max_idxs, min_max_vals, avg_gap)
         hlh = self.hlh_lhl(df, min_max_idxs, min_max_vals)
         dt = self.dt_db(df, min_max_idxs, min_max_vals)
-        tgc = self.two_good_candles(df)
+        tgc = self.two_good_candles(df, self.ttype)
         sw = self.swing(df, min_max_idxs, min_max_vals, avg_gap)
         pattern_signal = (has | hlh | dt | sw) & tgc
         return pattern_signal

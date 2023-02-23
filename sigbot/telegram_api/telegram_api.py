@@ -107,17 +107,17 @@ class TelegramBot:
         return sig_img_path
 
     def check_previous_notifications(self, sig_time: pd.Timestamp, sig_type: str, ticker: str,
-                                     timeframe: str, pattern: str) -> bool:
+                                     timeframe: str, sig_pattern: str) -> bool:
         """ Check if previous notifications wasn't send short time before """
         tmp = self.notification_df[
                                     (self.notification_df['sig_type'] == sig_type) &
                                     (self.notification_df['ticker'] == ticker) &
                                     (self.notification_df['timeframe'] == timeframe) &
-                                    (self.notification_df['pattern'] == pattern)
+                                    (self.notification_df['pattern'] == sig_pattern)
                                    ]
         if tmp.shape[0] > 0:
             latest_time = tmp['time'].max()
-            if set(pattern.split('_')).intersection(set(self.higher_tf_patterns)):
+            if set(sig_pattern.split('_')).intersection(set(self.higher_tf_patterns)):
                 if (sig_time - latest_time).total_seconds() < self.timeframe_div[self.higher_timeframe] * \
                         self.min_prev_candle_limit_higher:
                     return False
@@ -126,6 +126,25 @@ class TelegramBot:
                         self.min_prev_candle_limit:
                     return False
         return True
+
+    def check_multiple_notifications(self, sig_time: pd.Timestamp, sig_type: str, ticker: str,
+                                     sig_pattern: str) -> list:
+        """ Check if signals from different patterns appeared not too long time ago """
+        if self.notification_df.shape[0] > 0:
+            tmp = self.notification_df[
+                                        (self.notification_df['sig_type'] == sig_type) &
+                                        (self.notification_df['ticker'] == ticker)
+                                       ]
+            # find time difference between current signal and previous signals
+            tmp['time_diff_sec'] = (sig_time - tmp['time']).dt.total_seconds()
+            tmp = tmp[(tmp['time_diff_sec'] > 0) &
+                      (tmp['time_diff_sec'] < self.timeframe_div[self.higher_timeframe] * 1.5)]
+            if tmp.shape[0] > 0:
+                patterns = tmp['pattern'].to_list()
+                # if signals from different patterns appeared not so much time ago - send the list of these patterns
+                if set(patterns).difference({sig_pattern}):
+                    return list(set(patterns + [sig_pattern]))
+        return []
 
     def check_notifications(self):
         """ Check if we can send each notification separately or there are too many of them,
@@ -142,57 +161,10 @@ class TelegramBot:
             message_dict[sig_pattern][sig_type].append([i, message])
         for pattern in self.chat_ids.keys():
             for ttype in ['buy', 'sell']:
-                # send too long notification list in one message
-                if len(message_dict[pattern][ttype]) > self.max_notifications_in_row:
-                    self.send_notifications_in_list(message_dict[pattern][ttype], pattern)
-                else:
-                    # send each message from short notification list separately
-                    for i, message in message_dict[pattern][ttype]:
-                        self.send_notification(message)
+                for i, message in message_dict[pattern][ttype]:
+                    self.send_notification(message)
         # clear all sent notifications
         self.notification_list[:n_len] = []
-
-    def send_notifications_in_list(self, message_list: list, pattern: str) -> None:
-        """ Send list notifications at once """
-        chat_id = self.chat_ids[pattern]
-        # Form text message
-        text_buy = f'Новые сигналы:\n'
-        text_sell = f'Новые сигналы:\n'
-        # flag that lets message sending only if there are new tickers
-        send_flag_buy = send_flag_sell = False
-        # list to filter duplicate messages
-        message_list_tmp = list()
-        for _message in message_list:
-            _, message = _message
-            # Get info from signal
-            ticker = self.process_ticker(message[0])
-            timeframe = message[1]
-            sig_type = message[3]
-            sig_time = message[4]
-            sig_pattern = message[5]
-            # if ticker and trade type aren't in message list already - add them
-            if [ticker, sig_type] not in message_list_tmp:
-                message_list_tmp.append([ticker, sig_type])
-                # add ticker info to notification list
-                if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
-                    if sig_type == 'buy':
-                        text_buy += f' • {ticker} \n'
-                        send_flag_buy = True
-                    else:
-                        text_sell += f' • {ticker} \n'
-                        send_flag_sell = True
-                self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
-
-        if send_flag_buy:
-            message_thread_id = self.message_thread_ids.get(f'{pattern}_buy', None)
-            self.send_message(chat_id, message_thread_id, text_buy)
-
-        if send_flag_buy:
-            message_thread_id = self.message_thread_ids.get(f'{pattern}_sell', None)
-            self.send_message(chat_id, message_thread_id, text_sell)
-
-        if send_flag_buy or send_flag_sell:
-            self.delete_images()
 
     @staticmethod
     def clean_ticker(ticker: str) -> str:
@@ -213,14 +185,15 @@ class TelegramBot:
         sig_pattern = message[5]
         # get list of available exchanges
         sig_exchanges = message[7]
+        # get chat and thread ids
+        chat_id = self.chat_ids[sig_pattern]
+        message_thread_id = self.message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
+        if message_thread_id is not None:
+            message_thread_id = int(message_thread_id)
         # Check if the same message wasn't send short time ago
         if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
             # create image and return path to it
             sig_img_path = self.add_plot(message)
-            chat_id = self.chat_ids[sig_pattern]
-            message_thread_id = self.message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
-            if message_thread_id is not None:
-                message_thread_id = int(message_thread_id)
             # Form text message
             clean_ticker = self.clean_ticker(ticker)
             text = f'#{clean_ticker[:-4]}\n'
@@ -253,8 +226,40 @@ class TelegramBot:
                 self.send_photo(chat_id, message_thread_id, sig_img_path, text)
             time.sleep(0.5)
 
+        patterns = self.check_multiple_notifications(sig_time, sig_type, ticker, sig_pattern)
+        if patterns:
+            text = self.send_notification_for_multiple_signals(sig_type, ticker, sig_exchanges, patterns)
+            self.send_message(chat_id, message_thread_id, text)
+            # if exchange is in the list of favorite exchanges and one of patterns is in list of your favorite patterns
+            # send the signal to special group
+            if set(sig_exchanges).intersection(set(self.favorite_exchanges)) and \
+                    set(patterns).intersection(set(self.favorite_patterns)):
+                favorite_chat_id = self.favorite_chat_ids['Multiple_Patterns']
+                favorite_message_thread_id = self.favorite_message_thread_ids.get('Multiple_Patterns', None)
+                self.send_message(favorite_chat_id, favorite_message_thread_id, text)
+
         self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.delete_images()
+
+    def send_notification_for_multiple_signals(self, sig_type, ticker, sig_exchanges, patterns):
+        clean_ticker = self.clean_ticker(ticker)
+        text = f'#{clean_ticker[:-4]}\n'
+        if sig_type == 'buy':
+            text += 'Buy / Покупка\n'
+        else:
+            text += 'Sell / Продажа\n'
+        text += 'Patterns / Паттерны:\n'
+        for pattern in patterns:
+            text += f' • {pattern}\n'
+        text += 'Exchanges / Биржи:\n'
+        for exchange in sig_exchanges:
+            text += f' • {exchange}\n'
+        text += 'TradingView:\n'
+        text += f"https://tradingview.com/symbols/{clean_ticker}\n"
+        if clean_ticker[:-4] != 'BTC':
+            text += f'{clean_ticker[:-4]}/BTC:\n'
+            text += f"https://ru.tradingview.com/symbols/{clean_ticker[:-4]}BTC"
+        return text
 
     @staticmethod
     async def bot_send_message(bot: Bot, chat_id: str, message_thread_id: int, text: str) -> telegram.Message:

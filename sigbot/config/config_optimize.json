@@ -164,7 +164,7 @@
     "buy": {
       "RSI": {
         "params": {
-          "timeperiod": 12
+          "timeperiod": 14
         }
       },
       "STOCH": {
@@ -176,7 +176,7 @@
       },
       "Trend": {
         "params": {
-          "timeperiod": 6
+          "timeperiod": 16
         }
       },
       "MACD": {
@@ -198,8 +198,8 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "low_price_quantile": 10,
-          "high_price_quantile": 990,
+          "low_price_quantile": 20,
+          "high_price_quantile": 980,
           "stat_file_path": "signal_stat/price_stat_buy.json"
         }
       },
@@ -221,13 +221,13 @@
       "STOCH": {
         "params": {
           "fastk_period": 9,
-          "slowk_period": 3,
-          "slowd_period": 7
+          "slowk_period": 7,
+          "slowd_period": 3
         }
       },
       "Trend": {
         "params": {
-          "timeperiod": 24
+          "timeperiod": 48
         }
       },
       "MACD": {
@@ -251,8 +251,8 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "low_price_quantile": 10,
-          "high_price_quantile": 990,
+          "low_price_quantile": 20,
+          "high_price_quantile": 980,
           "stat_file_path": "signal_stat/price_stat_sell.json"
         }
       },
@@ -279,14 +279,19 @@
     "buy": {
       "RSI": {
         "params": {
-          "low_bound": 30,
-          "high_bound": 70
+          "low_bound": 35,
+          "high_bound": 65,
+          "vol_window": 48,
+          "vol_q_high": 0.8,
+          "vol_q_low": 0.15,
+          "first_candle": 0.5,
+          "second_candle": 0
         }
       },
       "STOCH": {
         "params": {
-          "low_bound": 20,
-          "high_bound": 80
+          "low_bound": 25,
+          "high_bound": 75
         }
       },
       "MACD": {
@@ -296,12 +301,11 @@
         "params": {
           "vol_window": 48,
           "vol_q_high": 0.75,
-          "vol_q_low": 0.25,
+          "vol_q_low": 0.2,
           "window_low_bound": 1,
-          "window_high_bound": 5,
+          "window_high_bound": 7,
           "first_candle": 0.5,
-          "second_candle": 0.5,
-          "third_candle": 0.5
+          "second_candle": 0
         }
       },
       "PumpDump": {
@@ -321,13 +325,18 @@
       "RSI": {
         "params": {
           "low_bound": 35,
-          "high_bound": 65
+          "high_bound": 65,
+          "vol_window": 48,
+          "vol_q_high": 0.8,
+          "vol_q_low": 0.15,
+          "first_candle": 0.5,
+          "second_candle": 0
         }
       },
       "STOCH": {
         "params": {
-          "low_bound": 30,
-          "high_bound": 70
+          "low_bound": 25,
+          "high_bound": 75
         }
       },
       "MACD": {
@@ -336,13 +345,12 @@
       "Pattern": {
         "params": {
           "vol_window": 48,
-          "vol_q_high": 0.75,
-          "vol_q_low": 0.25,
+          "vol_q_high": 0.8,
+          "vol_q_low": 0.15,
           "window_low_bound": 1,
-          "window_high_bound": 5,
-          "first_candle": 0.9,
-          "second_candle": 0.9,
-          "third_candle": 0.5
+          "window_high_bound": 7,
+          "first_candle": 0.5,
+          "second_candle": 0
         }
       },
       "PumpDump": {

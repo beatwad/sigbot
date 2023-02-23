@@ -176,7 +176,7 @@
       },
       "Trend": {
         "params": {
-          "timeperiod": 16
+          "timeperiod": 48
         }
       },
       "MACD": {
@@ -280,7 +280,12 @@
       "RSI": {
         "params": {
           "low_bound": 35,
-          "high_bound": 65
+          "high_bound": 65,
+          "vol_window": 48,
+          "vol_q_high": 0.2,
+          "vol_q_low": 0.8,
+          "first_candle": 0.8,
+          "second_candle": 0.5
         }
       },
       "STOCH": {
@@ -300,8 +305,7 @@
           "window_low_bound": 1,
           "window_high_bound": 7,
           "first_candle": 0.5,
-          "second_candle": 0,
-          "third_candle": 0.5
+          "second_candle": 0
         }
       },
       "PumpDump": {
@@ -321,7 +325,12 @@
       "RSI": {
         "params": {
           "low_bound": 35,
-          "high_bound": 65
+          "high_bound": 65,
+          "vol_window": 48,
+          "vol_q_high": 0.25,
+          "vol_q_low": 0.9,
+          "first_candle": 0.55,
+          "second_candle": 0.75
         }
       },
       "STOCH": {
@@ -341,8 +350,7 @@
           "window_low_bound": 1,
           "window_high_bound": 7,
           "first_candle": 0.5,
-          "second_candle": 0,
-          "third_candle": 0.5
+          "second_candle": 0
         }
       },
       "PumpDump": {
@@ -438,7 +446,8 @@
         "HighVolume": "-1001757652380",
         "MACD": "-1001757652380",
         "Pattern": "-1001757652380",
-        "Pattern_Trend": "-1001757652380"
+        "Pattern_Trend": "-1001757652380",
+        "Multiple_Patterns": "-1001757652380"
       },
       "message_thread_ids": {
         "STOCH_RSI_buy": "54",
@@ -454,17 +463,20 @@
         "MACD_buy": "99",
         "MACD_sell": "96",
         "Pattern_Trend_buy": "105",
-        "Pattern_Trend_sell": "102"
+        "Pattern_Trend_sell": "102",
+        "Multiple_Patterns": "12100"
       },
       "favorite_chat_ids": {
         "STOCH_RSI_Trend": "-1001840430020",
-        "Pattern_Trend": "-1001840430020"
+        "Pattern_Trend": "-1001840430020",
+        "Multiple_Patterns": "-1001840430020"
       },
       "favorite_message_thread_ids": {
         "STOCH_RSI_Trend_buy": "6",
         "STOCH_RSI_Trend_sell": "2",
         "Pattern_Trend_buy": "9",
-        "Pattern_Trend_sell": "12"
+        "Pattern_Trend_sell": "12",
+        "Multiple_Patterns": "883"
       },
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,

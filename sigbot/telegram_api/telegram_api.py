@@ -143,7 +143,9 @@ class TelegramBot:
                 patterns = tmp['pattern'].to_list()
                 # if signals from different patterns appeared not so much time ago - send the list of these patterns
                 if set(patterns).difference({sig_pattern}):
-                    return list(set(patterns + [sig_pattern]))
+                    res = sorted(list(set(patterns + [sig_pattern])))
+                    if res != ['STOCH_RSI', 'STOCH_RSI_Trend']:
+                        return res
         return []
 
     def check_notifications(self):

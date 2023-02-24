@@ -137,5 +137,53 @@ def test_check_notifications(mocker, notification_df, points, point, expected):
     for p in points:
         tb.notification_list.append(p)
     tb.check_notifications()
-    res = tb.notification_list
     assert tb.notification_list == []
+
+
+point_m1 = ('BTCUSDT', '5m', 0, 'buy', pd.to_datetime('2022-08-24 14:45:00'),
+            'Pattern', [], [], [], [])
+point_m2 = ('BTCUSDT', '5m', 0, 'buy', pd.to_datetime('2022-08-24 16:45:00'),
+            'Pattern', [], [], [], [])
+point_m3 = ('ETHUSDT', '5m', 45, 'sell', pd.to_datetime('2022-08-24 14:45:00'),
+            'STOCH_RSI', [], [], [], [])
+point_m4 = ('ETHUSDT', '5m', 45, 'sell', pd.to_datetime('2022-08-24 15:45:00'),
+            '', [], [], [], [])
+point_m5 = ('BTCUSDT', '5m', 45, 'buy', pd.to_datetime('2022-08-22 22:40:00'),
+            'Pump_Dump', [], [], [], [])
+point_m6 = ('BTCUSDT', '5m', 45, 'buy', pd.to_datetime('2022-08-23 00:00:00'),
+            'Pump_Dump', [], [], [], [])
+point_m7 = ('BTCUSDT', '5m', 45, 'buy', pd.to_datetime('2022-08-22 23:59:00'),
+            'Pump_Dump', [], [], [], [])
+point_m8 = ('BTCUSDT', '5m', 45, 'sell', pd.to_datetime('2022-08-22 23:59:00'),
+            'Pump_Dump', [], [], [], [])
+point_m9 = ('BTCUSDT', '15m', 45, 'buy', pd.to_datetime('2022-08-22 23:59:00'),
+            'Pump_Dump', [], [], [], [])
+point_m10 = ('BTCUSDT', '15m', 45, 'buy', pd.to_datetime('2022-08-22 23:59:00'),
+            'STOCH_RSI', [], [], [], [])
+
+
+@pytest.mark.parametrize('notification_df, points, point, expected',
+                         [
+                          (buy_btc_df, points_btc, point_m1, ['Pattern', 'STOCH_RSI']),
+                          (buy_btc_df, points_btc, point_m2, []),
+                          (buy_eth_df, points_eth, point_m3, []),
+                          (buy_eth_df, points_eth, point_m4, []),
+                          (buy_eth_df, points_eth, point_m5, ['Pump_Dump', 'STOCH_RSI_Trend']),
+                          (buy_eth_df, points_eth, point_m6, []),
+                          (buy_eth_df, points_eth, point_m7, ['Pump_Dump', 'STOCH_RSI_Trend']),
+                          (buy_eth_df, points_eth, point_m8, []),
+                          (buy_eth_df, points_eth, point_m9, ['Pump_Dump', 'STOCH_RSI_Trend']),
+                          (buy_eth_df, points_eth, point_m10, [])
+                          ], ids=repr)
+def test_check_multiple_notifications(mocker, notification_df, points, point, expected):
+    mocker.patch('telegram.Bot.__init__', return_value=None)
+    mocker.patch('telegram_api.telegram_api.TelegramBot.send_notification', return_value=None)
+    mocker.patch('telegram_api.telegram_api.TelegramBot.send_message', return_value=None)
+    tb = TelegramBot('', database={}, **configs)
+    tb.notification_df = notification_df
+    ticker = point[0]
+    sig_type = point[3]
+    sig_time = point[4]
+    sig_pattern = str(point[5])
+    tb.check_multiple_notifications(sig_time, sig_type, ticker, sig_pattern)
+    assert tb.check_multiple_notifications(sig_time, sig_type, ticker, sig_pattern) == expected

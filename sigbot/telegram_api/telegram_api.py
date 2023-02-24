@@ -136,9 +136,9 @@ class TelegramBot:
                                         (self.notification_df['ticker'] == ticker)
                                        ]
             # find time difference between current signal and previous signals
-            tmp['time_diff_sec'] = (sig_time - tmp['time']).dt.total_seconds()
+            tmp.loc[:, 'time_diff_sec'] = (sig_time - tmp['time']).dt.total_seconds()
             tmp = tmp[(tmp['time_diff_sec'] > 0) &
-                      (tmp['time_diff_sec'] < self.timeframe_div[self.higher_timeframe] * 1.5)]
+                      (tmp['time_diff_sec'] <= self.timeframe_div[self.higher_timeframe] * 1.5)]
             if tmp.shape[0] > 0:
                 patterns = tmp['pattern'].to_list()
                 # if signals from different patterns appeared not so much time ago - send the list of these patterns

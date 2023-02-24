@@ -150,7 +150,7 @@ point_m4 = ('ETHUSDT', '5m', 45, 'sell', pd.to_datetime('2022-08-24 15:45:00'),
             '', [], [], [], [])
 point_m5 = ('BTCUSDT', '5m', 45, 'buy', pd.to_datetime('2022-08-22 22:40:00'),
             'Pump_Dump', [], [], [], [])
-point_m6 = ('BTCUSDT', '5m', 45, 'buy', pd.to_datetime('2022-08-23 00:00:00'),
+point_m6 = ('BTCUSDT', '5m', 45, 'buy', pd.to_datetime('2022-08-22 00:00:01'),
             'Pump_Dump', [], [], [], [])
 point_m7 = ('BTCUSDT', '5m', 45, 'buy', pd.to_datetime('2022-08-22 23:59:00'),
             'Pump_Dump', [], [], [], [])
@@ -159,7 +159,9 @@ point_m8 = ('BTCUSDT', '5m', 45, 'sell', pd.to_datetime('2022-08-22 23:59:00'),
 point_m9 = ('BTCUSDT', '15m', 45, 'buy', pd.to_datetime('2022-08-22 23:59:00'),
             'Pump_Dump', [], [], [], [])
 point_m10 = ('BTCUSDT', '15m', 45, 'buy', pd.to_datetime('2022-08-22 23:59:00'),
-            'STOCH_RSI', [], [], [], [])
+             'STOCH_RSI', [], [], [], [])
+point_m11 = ('ETHUSDT', '15m', 45, 'buy', pd.to_datetime('2022-08-23 00:30:00'),
+             'Pump_Dump', [], [], [], [])
 
 
 @pytest.mark.parametrize('notification_df, points, point, expected',
@@ -173,7 +175,8 @@ point_m10 = ('BTCUSDT', '15m', 45, 'buy', pd.to_datetime('2022-08-22 23:59:00'),
                           (buy_eth_df, points_eth, point_m7, ['Pump_Dump', 'STOCH_RSI_Trend']),
                           (buy_eth_df, points_eth, point_m8, []),
                           (buy_eth_df, points_eth, point_m9, ['Pump_Dump', 'STOCH_RSI_Trend']),
-                          (buy_eth_df, points_eth, point_m10, [])
+                          (buy_eth_df, points_eth, point_m10, []),
+                          (buy_eth_df, points_eth, point_m11, ['Pattern', 'Pump_Dump', 'RSI_STOCH'])
                           ], ids=repr)
 def test_check_multiple_notifications(mocker, notification_df, points, point, expected):
     mocker.patch('telegram.Bot.__init__', return_value=None)
@@ -181,6 +184,8 @@ def test_check_multiple_notifications(mocker, notification_df, points, point, ex
     mocker.patch('telegram_api.telegram_api.TelegramBot.send_message', return_value=None)
     tb = TelegramBot('', database={}, **configs)
     tb.notification_df = notification_df
+    tb.add_to_notification_history(pd.to_datetime('2022-08-22 23:58:00'), 'buy', 'ETHUSDT', '1h', 'Pattern')
+    tb.add_to_notification_history(pd.to_datetime('2022-08-22 23:01:00'), 'buy', 'ETHUSDT', '5m', 'RSI_STOCH')
     ticker = point[0]
     sig_type = point[3]
     sig_time = point[4]

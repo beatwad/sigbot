@@ -279,13 +279,8 @@
     "buy": {
       "RSI": {
         "params": {
-          "low_bound": 35,
-          "high_bound": 65,
-          "vol_window": 48,
-          "vol_q_high": 0.2,
-          "vol_q_low": 0.8,
-          "first_candle": 0.8,
-          "second_candle": 0.5
+          "low_bound": 20,
+          "high_bound": 80
         }
       },
       "STOCH": {
@@ -324,13 +319,8 @@
     "sell": {
       "RSI": {
         "params": {
-          "low_bound": 35,
-          "high_bound": 65,
-          "vol_window": 48,
-          "vol_q_high": 0.25,
-          "vol_q_low": 0.9,
-          "first_candle": 0.55,
-          "second_candle": 0.75
+          "low_bound": 20,
+          "high_bound": 80
         }
       },
       "STOCH": {

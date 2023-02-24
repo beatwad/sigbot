@@ -186,11 +186,6 @@ class RSISignal(SignalBase):
         self.configs = self.configs[self.name]['params']
         self.low_bound = self.configs.get('low_bound', 25)
         self.high_bound = self.configs.get('high_bound', 75)
-        self.vol_q_high = self.configs.get('vol_q_high', 0.75)
-        self.vol_q_low = self.configs.get('vol_q_low', 0.25)
-        self.vol_window = self.configs.get('vol_window', 48)
-        self.first_candle = self.configs.get('first_candle', 0.667)
-        self.second_candle = self.configs.get('second_candle', 0.5)
 
     def find_signal(self, df: pd.DataFrame, *args) -> np.ndarray:
         """ 1 - Return true if RSI is lower than low bound (buy signal)
@@ -200,12 +195,10 @@ class RSISignal(SignalBase):
         rsi_lag_1 = df['rsi'].shift(1)
         rsi_lag_2 = df['rsi'].shift(2)
         if self.ttype == 'sell':
-            tgc = self.two_good_candles(df, 'buy')
             rsi_lower = self.lower_bound(self.low_bound, rsi, rsi_lag_1, rsi_lag_2)
-            return rsi_lower & tgc
-        tgc = self.two_good_candles(df, 'sell')
+            return rsi_lower
         rsi_higher = self.higher_bound(self.high_bound, rsi, rsi_lag_1, rsi_lag_2)
-        return rsi_higher & tgc
+        return rsi_higher
 
 
 class TrendSignal(SignalBase):

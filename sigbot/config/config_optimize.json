@@ -280,12 +280,7 @@
       "RSI": {
         "params": {
           "low_bound": 35,
-          "high_bound": 65,
-          "vol_window": 48,
-          "vol_q_high": 0.8,
-          "vol_q_low": 0.15,
-          "first_candle": 0.5,
-          "second_candle": 0
+          "high_bound": 65
         }
       },
       "STOCH": {
@@ -325,12 +320,7 @@
       "RSI": {
         "params": {
           "low_bound": 35,
-          "high_bound": 65,
-          "vol_window": 48,
-          "vol_q_high": 0.8,
-          "vol_q_low": 0.15,
-          "first_candle": 0.5,
-          "second_candle": 0
+          "high_bound": 65
         }
       },
       "STOCH": {

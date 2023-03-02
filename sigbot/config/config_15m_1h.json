@@ -279,8 +279,8 @@
     "buy": {
       "RSI": {
         "params": {
-          "low_bound": 20,
-          "high_bound": 80
+          "low_bound": 35,
+          "high_bound": 65
         }
       },
       "STOCH": {
@@ -319,8 +319,8 @@
     "sell": {
       "RSI": {
         "params": {
-          "low_bound": 20,
-          "high_bound": 80
+          "low_bound": 35,
+          "high_bound": 65
         }
       },
       "STOCH": {

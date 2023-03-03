@@ -4,7 +4,7 @@ import asyncio
 from os import environ, remove
 
 # Get configs
-# environ["ENV"] = "15m_1h"
+environ["ENV"] = "15m_1h"
 
 from log.log import exception
 from time import sleep
@@ -231,6 +231,8 @@ class TelegramBot:
         patterns = self.check_multiple_notifications(sig_time, sig_type, ticker, sig_pattern)
         if patterns:
             text = self.send_notification_for_multiple_signals(sig_type, ticker, sig_exchanges, patterns)
+            chat_id = self.chat_ids['Multiple_Patterns']
+            message_thread_id = self.message_thread_ids.get('Multiple_Patterns', None)
             self.send_message(chat_id, message_thread_id, text)
             # if exchange is in the list of favorite exchanges and one of patterns is in list of your favorite patterns
             # send the signal to special group

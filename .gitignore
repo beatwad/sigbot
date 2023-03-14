@@ -7,3 +7,4 @@ config/.env
 .ipynb_checkpoints/
 sigbot/__pycache__/
 sigbot/*/__pycache__/*
+sigbot/constants/*

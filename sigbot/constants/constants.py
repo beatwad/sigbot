@@ -1,6 +1,0 @@
-binance_key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
-binance_secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
-binance_perp_key = "QD5nRIFvOXYBdVsnkfWf5G8D91CKTVgZXqReyO6PqL70r9PjP8SbbVh3bYlJc9cy"
-binance_perp_secret = "ht5hw25DzKOvfaU2rTqpSsy0CDTsKfYsb2JSQLSCbrz7zoLrnnKWi9SBh7NYFSZD"
-
-telegram_token = "5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA"

@@ -12,6 +12,7 @@ from signal_stat.signal_stat import SignalStat
 from indicators.indicators import IndicatorFactory
 from telegram_api.telegram_api import TelegramBot
 from log.log import exception, logger
+from constants.constants import telegram_token
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs
@@ -83,7 +84,7 @@ class SigBot:
             # Load tickers
             self.get_api_and_tickers()
             # Start Telegram bot
-            self.telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA',
+            self.telegram_bot = TelegramBot(token=telegram_token,
                                             database=self.database, **configs)
             # self.telegram_bot.run()
         else:

@@ -241,7 +241,7 @@ class Visualizer:
             axs_higher[1].spines['left'].set_color(self.border_color)
             # plot titles
             price = self.find_price(df_higher)
-            axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - {price} $ - '
+            axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - ${price} - '
                                     f'{df_higher["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
                                     color=self.ticker_color)
             axs_higher[1].set_title('Trend Force / Сила тренда', fontsize=14, color=self.ticker_color)
@@ -449,7 +449,7 @@ class Visualizer:
 
             # plot titles
             price = self.find_price(df_working)
-            axs1_0.set_title(f'{self.process_ticker(ticker)} - {timeframe} - {price} $ - '
+            axs1_0.set_title(f'{self.process_ticker(ticker)} - {timeframe} - ${price} - '
                              f'{df_working["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
                              color=self.ticker_color)
             for index, indicator in enumerate(indicator_list):

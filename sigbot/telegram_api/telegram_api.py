@@ -227,10 +227,11 @@ class TelegramBot:
                     self.send_photo(favorite_chat_id, favorite_message_thread_id, sig_img_path, text)
                 self.send_photo(chat_id, message_thread_id, sig_img_path, text)
             time.sleep(0.5)
-
         patterns = self.check_multiple_notifications(sig_time, sig_type, ticker, sig_pattern)
         if patterns:
-            text = self.send_notification_for_multiple_signals(sig_type, ticker, sig_exchanges, patterns)
+            price = self.database[message[0]][timeframe]['data'][sig_type]['close'].iloc[-1]
+            price = self.round_price(price)
+            text = self.send_notification_for_multiple_signals(sig_type, ticker, sig_exchanges, patterns, price)
             chat_id = self.chat_ids['Multiple_Patterns']
             message_thread_id = self.message_thread_ids.get('Multiple_Patterns', None)
             self.send_message(chat_id, message_thread_id, text)
@@ -245,9 +246,21 @@ class TelegramBot:
         self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.delete_images()
 
-    def send_notification_for_multiple_signals(self, sig_type, ticker, sig_exchanges, patterns):
+    def round_price(self, price: float) -> float:
+        """ Function for price rounding """
+        if price > 1:
+            price = round(price, 3)
+        else:
+            price = round(price, 7)
+        return price
+
+    def send_notification_for_multiple_signals(self, sig_type: str, ticker: str, sig_exchanges: list, patterns: list,
+                                               price: float):
+        """ Send notifications in case of multiple signals from different patterns
+            but for the same ticker and trade type """
         clean_ticker = self.clean_ticker(ticker)
         text = f'#{clean_ticker[:-4]}\n'
+        text += f'Price / Цена: ${price}\n'
         if sig_type == 'buy':
             text += 'Buy / Покупка\n'
         else:

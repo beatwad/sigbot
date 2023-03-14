@@ -9,6 +9,7 @@ from api.bybit_perpetual_api import ByBitPerpetual
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from log.log import logger
+from constants.constants import binance_key, binance_secret, binance_perp_key, binance_perp_secret
 
 
 class DataFactory(object):
@@ -159,8 +160,8 @@ class GetBinanceData(GetData):
 
     def __init__(self, **configs):
         super(GetBinanceData, self).__init__(**configs)
-        self.key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
-        self.secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
+        self.key = binance_key
+        self.secret = binance_secret
         self.api = Binance(self.key, self.secret)
 
 
@@ -169,8 +170,8 @@ class GetBinanceFuturesData(GetData):
 
     def __init__(self, **configs):
         super(GetBinanceFuturesData, self).__init__(**configs)
-        self.key = "QD5nRIFvOXYBdVsnkfWf5G8D91CKTVgZXqReyO6PqL70r9PjP8SbbVh3bYlJc9cy"
-        self.secret = "ht5hw25DzKOvfaU2rTqpSsy0CDTsKfYsb2JSQLSCbrz7zoLrnnKWi9SBh7NYFSZD"
+        self.key = binance_perp_key
+        self.secret = binance_perp_secret
         self.api = BinanceFutures(self.key, self.secret)
 
 

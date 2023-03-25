@@ -2,6 +2,7 @@ import re
 import time
 import asyncio
 from os import environ, remove
+from constants.constants import telegram_token
 
 # Get configs
 # environ["ENV"] = "15m_1h"
@@ -31,7 +32,8 @@ class TelegramBot:
         # visualizer class
         self.visualizer = Visualizer(**configs)
         # bot parameters
-        self.bot = Bot(token=token)
+        self.token = token
+        self.bot = Bot(token=self.token)
         self.loop = asyncio.new_event_loop()
         self.configs = configs[self.type]['params']
         self.favorite_exchanges = self.configs['favorite_exchanges']
@@ -71,7 +73,7 @@ class TelegramBot:
         """ Start the bot polling """
         if __name__ == '__main__':
             # Create the Application and pass it your bot's token.
-            application = Application.builder().token('5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA').build()
+            application = Application.builder().token(self.token).build()
             # on non command i.e. message - echo the message on Telegram
             application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.get_chat_id))
             # Run the bot until the user presses Ctrl-C
@@ -317,5 +319,5 @@ class TelegramBot:
 if __name__ == '__main__':
     configs = ConfigFactory.factory(environ).configs
 
-    telegram_bot = TelegramBot(token='5770186369:AAFrHs_te6bfjlHeD6mZDVgwvxGQ5TatiZA', database=None, **configs)
+    telegram_bot = TelegramBot(token=telegram_token, database=None, **configs)
     telegram_bot.polling()

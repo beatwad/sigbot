@@ -3,4 +3,4 @@ docker build . -t sigbot
 docker run -v ${PWD}/sigbot:/sigbot sigbot
 
 docker stop $(docker ps -q --filter ancestor=sigbot)
-docker rm $(docker ps -q --filter ancestor=sigbot)
+docker rm $(docker ps -a --filter ancestor=sigbot)

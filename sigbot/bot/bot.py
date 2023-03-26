@@ -73,7 +73,7 @@ class SigBot:
                           'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'ByBitPerpetual': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          # 'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}
+                          'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}
                           }
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list

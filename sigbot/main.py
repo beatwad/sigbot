@@ -86,7 +86,7 @@ if __name__ == "__main__":
             pass
         except:
             if not error_notification_sent:
-                text = f'Catch an exception: {sys.exc_info()[0]}'
+                text = f'Catch an exception: {sys.exc_info()[1]}'
                 main.sigbot.telegram_bot.send_message(main.sigbot.telegram_bot.chat_ids['Errors'], None, text)
                 error_notification_sent = True
             continue

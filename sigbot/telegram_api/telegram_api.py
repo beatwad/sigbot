@@ -173,7 +173,7 @@ class TelegramBot:
     @staticmethod
     def clean_ticker(ticker: str) -> str:
         """ Clean ticker of not necessary symbols (2U, 1000, 10000, SWAP, -, etc.) """
-        if ticker not in ['1INCH']:
+        if ticker not in ['1INCH', 'API3']:
             ticker = re.sub(r'\b\d+', '', ticker)
         ticker = re.sub('SWAP', '', ticker)
         ticker = re.sub('-', '', ticker)

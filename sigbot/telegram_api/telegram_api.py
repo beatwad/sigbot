@@ -173,7 +173,7 @@ class TelegramBot:
     @staticmethod
     def clean_ticker(ticker: str) -> str:
         """ Clean ticker of not necessary symbols (2U, 1000, 10000, SWAP, -, etc.) """
-        if ticker not in ['1INCH', 'API3']:
+        if not ticker.startswith('1INCH'):
             ticker = re.sub(r'\b\d+', '', ticker)
         ticker = re.sub('SWAP', '', ticker)
         ticker = re.sub('-', '', ticker)
@@ -199,8 +199,8 @@ class TelegramBot:
             # create image and return path to it
             sig_img_path = self.add_plot(message)
             # Form text message
-            clean_ticker = self.clean_ticker(ticker)
-            text = f'#{clean_ticker[:-4]}\n'
+            cleaned_ticker = self.clean_ticker(ticker)
+            text = f'#{cleaned_ticker[:-4]}\n'
             text += ' + '.join(sig_pattern.split('_')) + '\n'
             if sig_pattern == 'HighVolume':
                 pass
@@ -212,10 +212,10 @@ class TelegramBot:
             for exchange in sig_exchanges:
                 text += f' • {exchange}\n'
             text += 'TradingView:\n'
-            text += f"https://tradingview.com/symbols/{clean_ticker}\n"
-            if clean_ticker[:-4] != 'BTC':
-                text += f'{clean_ticker[:-4]}/BTC:\n'
-                text += f"https://ru.tradingview.com/symbols/{clean_ticker[:-4]}BTC"
+            text += f"https://tradingview.com/symbols/{cleaned_ticker}\n"
+            if cleaned_ticker[:-4] != 'BTC':
+                text += f'{cleaned_ticker[:-4]}/BTC:\n'
+                text += f"https://ru.tradingview.com/symbols/{cleaned_ticker[:-4]}BTC"
             # Send message + image
             if sig_img_path:
                 # if exchange is in the list of favorite exchanges and pattern is in list of your favorite patterns
@@ -260,8 +260,8 @@ class TelegramBot:
                                                price: float):
         """ Send notifications in case of multiple signals from different patterns
             but for the same ticker and trade type """
-        clean_ticker = self.clean_ticker(ticker)
-        text = f'#{clean_ticker[:-4]}\n'
+        cleaned_ticker = self.clean_ticker(ticker)
+        text = f'#{cleaned_ticker[:-4]}\n'
         text += f'Price / Цена: ${price}\n'
         if sig_type == 'buy':
             text += 'Buy / Покупка\n'
@@ -274,10 +274,10 @@ class TelegramBot:
         for exchange in sig_exchanges:
             text += f' • {exchange}\n'
         text += 'TradingView:\n'
-        text += f"https://tradingview.com/symbols/{clean_ticker}\n"
-        if clean_ticker[:-4] != 'BTC':
-            text += f'{clean_ticker[:-4]}/BTC:\n'
-            text += f"https://ru.tradingview.com/symbols/{clean_ticker[:-4]}BTC"
+        text += f"https://tradingview.com/symbols/{cleaned_ticker}\n"
+        if cleaned_ticker[:-4] != 'BTC':
+            text += f'{cleaned_ticker[:-4]}/BTC:\n'
+            text += f"https://ru.tradingview.com/symbols/{cleaned_ticker[:-4]}BTC"
         return text
 
     @staticmethod

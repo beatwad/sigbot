@@ -194,6 +194,8 @@ class TelegramBot:
         message_thread_id = self.message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
         if message_thread_id is not None:
             message_thread_id = int(message_thread_id)
+        price = self.database[message[0]][timeframe]['data'][sig_type]['close'].iloc[-1]
+        price = self.round_price(price)
         # Check if the same message wasn't send short time ago
         if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
             # create image and return path to it
@@ -202,6 +204,7 @@ class TelegramBot:
             cleaned_ticker = self.clean_ticker(ticker)
             text = f'#{cleaned_ticker[:-4]}\n'
             text += ' + '.join(sig_pattern.split('_')) + '\n'
+            text += f'Price / Цена: ${price}\n'
             if sig_pattern == 'HighVolume':
                 pass
             elif sig_type == 'buy':
@@ -231,8 +234,6 @@ class TelegramBot:
             time.sleep(0.5)
         patterns = self.check_multiple_notifications(sig_time, sig_type, ticker, sig_pattern)
         if patterns:
-            price = self.database[message[0]][timeframe]['data'][sig_type]['close'].iloc[-1]
-            price = self.round_price(price)
             text = self.send_notification_for_multiple_signals(sig_type, ticker, sig_exchanges, patterns, price)
             chat_id = self.chat_ids['Multiple_Patterns']
             message_thread_id = self.message_thread_ids.get('Multiple_Patterns', None)

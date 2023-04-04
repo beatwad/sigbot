@@ -14,21 +14,6 @@ class ByBit(ApiBase):
     def connect_to_api(self, api_key, api_secret):
         self.client = spot.HTTP(api_key=api_key, api_secret=api_secret)
 
-    @staticmethod
-    def delete_duplicate_symbols(symbols) -> list:
-        """ If for pair with USDT exists pair with BUSD - delete it  """
-        filtered_symbols = list()
-        symbols = symbols.to_list()
-
-        for symbol in symbols:
-            if symbol.endswith('USDC'):
-                prefix = symbol[:-4]
-                if prefix + 'USDT' not in symbols:
-                    filtered_symbols.append(symbol)
-            else:
-                filtered_symbols.append(symbol)
-        return filtered_symbols
-
     def get_ticker_names(self, min_volume) -> (list, list, list):
         tickers = pd.DataFrame(self.client.latest_information_for_symbol()['result'])
 

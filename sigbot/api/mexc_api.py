@@ -1,0 +1,46 @@
+import requests
+import pandas as pd
+from api.api_base import ApiBase
+
+
+class MEXC(ApiBase):
+    URL = 'https://api.mexc.com/api/v3'
+
+    def get_ticker_names(self, min_volume) -> (list, list, list):  # ok
+        """ Get tickers from spot, futures and swap OKEX exchanges and get tickers with big enough 24h volume """
+        tickers = pd.DataFrame(requests.get(self.URL + '/ticker/24hr', timeout=3).json())
+        tickers = tickers[(tickers['symbol'].str.endswith('USDT')) | (tickers['symbol'].str.endswith('USDC'))]
+
+        all_tickers = tickers['symbol'].to_list()
+
+        tickers['quoteVolume'] = tickers['quoteVolume'].astype(float)
+        tickers = tickers[tickers['quoteVolume'] >= min_volume]
+
+        filtered_symbols = self.check_symbols(tickers['symbol'])
+        tickers = tickers[tickers['symbol'].isin(filtered_symbols)]
+        filtered_symbols = self.delete_duplicate_symbols(tickers['symbol'])
+        tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
+
+        return tickers['symbol'].to_list(), tickers['volume'].to_list(), all_tickers
+
+    def get_klines(self, symbol, interval, limit=300) -> pd.DataFrame:
+        """ Save time, price and volume info to CryptoCurrency structure """
+        if interval == '1h':
+            interval = '60m'
+        params = {'symbol': symbol, 'interval': interval, 'limit': limit}
+        tickers = pd.DataFrame(requests.get(self.URL + '/klines', params=params).json())
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'asset_volume',
+                                  6: 'close_time', 7: 'volume'}, axis=1)
+        tickers = tickers.sort_values('time', ignore_index=True)
+        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
+
+
+if __name__ == '__main__':
+    mexc = MEXC()
+    tickers = mexc.get_ticker_names(5e5)[0]
+
+    for ticker in tickers:
+        klines1 = mexc.get_klines('BTCUSDT', '5m')
+        klines2 = mexc.get_klines('BTCUSDT', '1h')
+
+

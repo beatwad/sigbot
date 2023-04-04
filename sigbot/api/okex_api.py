@@ -6,30 +6,10 @@ from api.api_base import ApiBase
 class OKEX(ApiBase):
     URL = 'https://www.okex.com'
 
-    @staticmethod
-    def delete_duplicate_symbols(symbols) -> list:
-        """ If for pair with USDT exists pair with BUSD - delete it  """
-        filtered_symbols = list()
-        symbols = symbols.to_list()
-
-        for symbol in symbols:
-            if symbol.endswith('USDC'):
-                prefix = symbol[:-4]
-                if prefix + 'USDT' not in symbols:
-                    filtered_symbols.append(symbol)
-            else:
-                filtered_symbols.append(symbol)
-
-        return filtered_symbols
-
     def get_ticker_names(self, min_volume) -> (list, list, list):
         """ Get tickers from spot, futures and swap OKEX exchanges and get tickers with big enough 24h volume """
-        tickers_spot = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=SPOT',
-                                                 timeout=3).json()['data'])
-        tickers_future = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=FUTURES').json()['data'])
-        tickers_swap = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=SWAP').json()['data'])
-
-        tickers = pd.concat([tickers_spot, tickers_future, tickers_swap])
+        tickers = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=SPOT',
+                                            timeout=3).json()['data'])
         tickers['symbol'] = tickers['instId'].str.replace('-', '')
         all_tickers = tickers['symbol'].to_list()
 

@@ -133,7 +133,7 @@ class SigBot:
         not_used_ticker_vols = list()
         for ticker, ticker_vol in zip(tickers, ticker_vols):
             orig_ticker = ticker
-            ticker = ticker.replace('-', '').replace('/', '').replace('SWAP', '')[:-4]
+            ticker = ticker.replace('-', '').replace('_', '').replace('/', '').replace('SWAP', '')[:-4]
             # if tickers is not used - add it to current exchange list
             if ticker not in self.used_tickers:
                 self.used_tickers.append(ticker)
@@ -260,6 +260,7 @@ class SigBot:
             for exchange, exchange_data in self.exchanges.items():
                 ticker = ticker.replace('SWAP', '')
                 if ticker in exchange_data['all_tickers'] or ticker.replace('-', '') in exchange_data['all_tickers'] \
+                        or ticker.replace('_', '') in exchange_data['all_tickers'] \
                         or ticker.replace('/', '') in exchange_data['all_tickers']:
                     sig_point[7].append(exchange)
         return sig_points

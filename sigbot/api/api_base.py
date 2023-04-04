@@ -4,6 +4,22 @@ from abc import ABCMeta
 
 class ApiBase(metaclass=ABCMeta):
     @staticmethod
+    def delete_duplicate_symbols(symbols) -> list:
+        """ If for pair with USDT exists pair with USDC - delete it  """
+        filtered_symbols = list()
+        symbols = symbols.to_list()
+
+        for symbol in symbols:
+            if symbol.endswith('USDC'):
+                prefix = symbol[:-4]
+                if prefix + 'USDT' not in symbols:
+                    filtered_symbols.append(symbol)
+            else:
+                filtered_symbols.append(symbol)
+
+        return filtered_symbols
+
+    @staticmethod
     def check_symbols(symbols: list) -> list:
         """ Check if ticker is not pair with fiat currency or stablecoin or ticker is not a leverage type """
         filtered_symbols = list()

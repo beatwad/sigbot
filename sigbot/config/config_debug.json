@@ -84,6 +84,21 @@
         "min_volume": 1000000.0
       }
     },
+    "MEXC": {
+      "params": {
+        "limit": 300,
+        "timeframe_div": {
+          "1m": 60,
+          "5m": 300,
+          "15m": 900,
+          "30m": 1800,
+          "1h": 3600,
+          "4h": 14400,
+          "1d": 86400
+        },
+        "min_volume": 500000.0
+      }
+    },
     "BinanceFutures": {
       "params": {
         "limit": 1000,

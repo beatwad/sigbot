@@ -6,6 +6,8 @@ from api.okex_api import OKEX
 from api.okex_swap_api import OKEXSwap
 from api.bybit_api import ByBit
 from api.bybit_perpetual_api import ByBitPerpetual
+from api.mexc_api import MEXC
+from api.mexc_futures_api import MEXCFutures
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from log.log import logger
@@ -27,6 +29,10 @@ class DataFactory(object):
             return GetByBitData(**configs)
         elif exchange == 'ByBitPerpetual':
             return GetByBitPerpetualData(**configs)
+        elif exchange == 'MEXC':
+            return GetMEXCData(**configs)
+        elif exchange == 'MEXCFutures':
+            return GetMEXCFuturesData(**configs)
 
 
 class GetData:
@@ -205,3 +211,19 @@ class GetByBitPerpetualData(GetData):
     def __init__(self, **configs):
         super(GetByBitPerpetualData, self).__init__(**configs)
         self.api = ByBitPerpetual()
+
+
+class GetMEXCData(GetData):
+    name = 'MEXC'
+
+    def __init__(self, **configs):
+        super(GetMEXCData, self).__init__(**configs)
+        self.api = MEXC()
+
+
+class GetMEXCFuturesData(GetData):
+    name = 'MEXCFutures'
+
+    def __init__(self, **configs):
+        super(GetMEXCFuturesData, self).__init__(**configs)
+        self.api = MEXCFutures()

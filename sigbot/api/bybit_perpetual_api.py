@@ -1,7 +1,6 @@
 import pandas as pd
 from api.api_base import ApiBase
 from pybit import usdt_perpetual
-from datetime import datetime
 
 
 class ByBitPerpetual(ApiBase):
@@ -18,13 +17,6 @@ class ByBitPerpetual(ApiBase):
     def connect_to_api(self, api_key, api_secret):
         self.client = usdt_perpetual.HTTP(self.mainnet, api_key=api_key, api_secret=api_secret)
 
-    @staticmethod
-    def get_timestamp():
-        today_now = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        dt = datetime.strptime(today_now, '%Y-%m-%d %H:%M:%S')
-        in_secods_now = int(dt.timestamp())
-        return in_secods_now
-
     def get_ticker_names(self, min_volume) -> (list, list, list):
         tickers = pd.DataFrame(self.client.latest_information_for_symbol()['result'])
 
@@ -39,30 +31,6 @@ class ByBitPerpetual(ApiBase):
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
 
         return tickers['symbol'].to_list(), tickers['volume_24h'].to_list(), all_tickers
-
-    @staticmethod
-    def convert_interval_to_secs(interval: str) -> int:
-        if interval[-1] == 'h':
-            interval = int(interval[:-1]) * 60 * 60
-        elif interval[-1] == 'd':
-            interval = int(interval[:-1]) * 60 * 60 * 24
-        elif interval[-1] == 'w':
-            interval = int(interval[:-1]) * 60 * 60 * 24 * 7
-        else:
-            interval = int(interval[:-1]) * 60
-        return interval
-
-    @staticmethod
-    def convert_interval(interval: str) -> str:
-        if interval[-1] == 'h':
-            interval = str(int(interval[:-1]) * 60)
-        elif interval[-1] == 'd':
-            interval = 'D'
-        elif interval[-1] == 'w':
-            interval = 'W'
-        else:
-            interval = interval[:-1]
-        return interval
 
     def get_klines(self, symbol: str, interval: str, limit: int) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """

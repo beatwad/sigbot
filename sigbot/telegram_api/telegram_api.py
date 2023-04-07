@@ -20,6 +20,8 @@ from telegram.ext import Application, ContextTypes, MessageHandler, filters
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs
+# Disable SettingWithCopyWarning because it's not necessary here
+pd.options.mode.chained_assignment = None
 
 
 class TelegramBot:

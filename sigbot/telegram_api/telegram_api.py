@@ -255,7 +255,7 @@ class TelegramBot:
         if price > 1:
             price = round(price, 3)
         else:
-            price = round(price, 7)
+            price = round(price, 9)
         return price
 
     def send_notification_for_multiple_signals(self, sig_type: str, ticker: str, sig_exchanges: list, patterns: list,

@@ -20,6 +20,8 @@ from telegram.ext import Application, ContextTypes, MessageHandler, filters
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs
+# Disable SettingWithCopyWarning because it's not necessary here
+pd.options.mode.chained_assignment = None
 
 
 class TelegramBot:
@@ -255,7 +257,7 @@ class TelegramBot:
         if price > 1:
             price = round(price, 3)
         else:
-            price = round(price, 7)
+            price = round(price, 9)
         return price
 
     def send_notification_for_multiple_signals(self, sig_type: str, ticker: str, sig_exchanges: list, patterns: list,

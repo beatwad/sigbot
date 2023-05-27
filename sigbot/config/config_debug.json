@@ -141,7 +141,7 @@
         "min_volume": 500000.0
       }
     },
-    "OKEXFutures": {
+    "OKEXSwap": {
       "params": {
         "limit": 300,
         "timeframe_div": {
@@ -161,13 +161,31 @@
         },
         "min_volume": 1000000.0
       }
+    },
+     "MEXCFutures": {
+      "params": {
+        "limit": 300,
+        "timeframe_div": {
+          "1m": 60,
+          "5m": 300,
+          "15m": 900,
+          "30m": 1800,
+          "1h": 3600,
+          "4h": 14400,
+          "8h": 28800,
+          "1d": 86400,
+          "1w": 604800
+        },
+        "min_volume": 1000000.0
+      }
     }
   },
   "Exchanges": {
     "futures_exchanges": [
       "BinanceFutures",
       "ByBitPerpetual",
-      "OKEXSwap"
+      "OKEXSwap",
+      "MEXCFurures"
     ]
   },
   "Higher_TF_indicator_list": [
@@ -429,7 +447,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 1000
+      "max_prev_candle_limit": 100
     }
   },
   "Telegram": {

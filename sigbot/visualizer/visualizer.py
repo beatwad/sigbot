@@ -140,7 +140,7 @@ class Visualizer:
         if price > 1:
             price = round(price, 3)
         else:
-            price = round(price, 7)
+            price = round(price, 9)
         return price
 
     def create_plot(self, dfs, point, levels):

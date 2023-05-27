@@ -1,6 +1,6 @@
 import re
 from abc import ABCMeta
-
+from datetime import datetime
 
 class ApiBase(metaclass=ABCMeta):
     @staticmethod
@@ -38,6 +38,37 @@ class ApiBase(metaclass=ABCMeta):
             else:
                 filtered_symbols.append(symbol)
         return filtered_symbols
+
+    @staticmethod
+    def get_timestamp():
+        today_now = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+        dt = datetime.strptime(today_now, '%Y-%m-%d %H:%M:%S')
+        in_secods_now = int(dt.timestamp())
+        return in_secods_now
+
+    @staticmethod
+    def convert_interval_to_secs(interval: str) -> int:
+        if interval[-1] == 'h':
+            interval = int(interval[:-1]) * 60 * 60
+        elif interval[-1] == 'd':
+            interval = int(interval[:-1]) * 60 * 60 * 24
+        elif interval[-1] == 'w':
+            interval = int(interval[:-1]) * 60 * 60 * 24 * 7
+        else:
+            interval = int(interval[:-1]) * 60
+        return interval
+
+    @staticmethod
+    def convert_interval(interval: str) -> str:
+        if interval[-1] == 'h':
+            interval = str(int(interval[:-1]) * 60)
+        elif interval[-1] == 'd':
+            interval = 'D'
+        elif interval[-1] == 'w':
+            interval = 'W'
+        else:
+            interval = interval[:-1]
+        return interval
 
 
 if __name__ == '__main__':

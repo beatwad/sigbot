@@ -19,10 +19,8 @@ class ConfigFactory(object):
             return Development15M1H(environ)
         elif env == '15m_4h':
             return Development15M4H(environ)
-        elif env == '1h_1d':
-            return Development1H1D(environ)
-        elif env == '4h_1d':
-            return Development4H1D(environ)
+        elif env == '1h_4h':
+            return Development1H4H(environ)
         elif env == 'optimize':
             return Optimize(environ)
         elif env == 'docker':
@@ -80,21 +78,12 @@ class Development15M4H(Config):
         self.configs = Config.get_config(pth)
 
 
-class Development1H1D(Config):
+class Development1H4H(Config):
     DEBUG = True
     TESTING = False
 
     def __init__(self, environ):
-        pth = path.join(basedir, environ.get('CONFIG_PATH_1h_1d'))
-        self.configs = Config.get_config(pth)
-
-
-class Development4H1D(Config):
-    DEBUG = True
-    TESTING = False
-
-    def __init__(self, environ):
-        pth = path.join(basedir, environ.get('CONFIG_PATH_4h_1d'))
+        pth = path.join(basedir, environ.get('CONFIG_PATH_1h_4h'))
         self.configs = Config.get_config(pth)
 
 

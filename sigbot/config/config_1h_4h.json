@@ -86,7 +86,7 @@
     },
     "MEXC": {
       "params": {
-        "limit": 300,
+        "limit": 200,
         "timeframe_div": {
           "1m": 60,
           "5m": 300,
@@ -141,7 +141,7 @@
         "min_volume": 500000.0
       }
     },
-    "OKEXFutures": {
+    "OKEXSwap": {
       "params": {
         "limit": 200,
         "timeframe_div": {
@@ -161,13 +161,31 @@
         },
         "min_volume": 1000000.0
       }
+    },
+     "MEXCFutures": {
+      "params": {
+        "limit": 200,
+        "timeframe_div": {
+          "1m": 60,
+          "5m": 300,
+          "15m": 900,
+          "30m": 1800,
+          "1h": 3600,
+          "4h": 14400,
+          "8h": 28800,
+          "1d": 86400,
+          "1w": 604800
+        },
+        "min_volume": 1000000.0
+      }
     }
   },
   "Exchanges": {
     "futures_exchanges": [
       "BinanceFutures",
       "ByBitPerpetual",
-      "OKEXSwap"
+      "OKEXSwap",
+      "MEXCFurures"
     ]
   },
   "Higher_TF_indicator_list": [
@@ -376,13 +394,32 @@
   },
   "Main": {
     "params": {
-      "bot_cycle_length_sec": 20,
+      "bot_cycle_length_sec": 10,
       "cycle_length_hours": 24,
-      "time_period_minutes": 15,
-      "first_cycle_qty_miss": 0
+      "time_period_minutes": 60,
+      "first_cycle_qty_miss": 1
     }
   },
   "Patterns": [
+    [
+      "STOCH",
+      "RSI"
+    ],
+    [
+      "STOCH",
+      "RSI",
+      "Trend"
+    ],
+    [
+      "HighVolume"
+    ],
+    [
+      "PumpDump",
+      "Trend"
+    ],
+    [
+      "MACD"
+    ],
     [
       "Pattern",
       "Trend"
@@ -394,14 +431,14 @@
       "stop_loss_multiplier": 2,
       "test": 0,
       "stat_limit_hours": {
-        "PumpDump": 24,
-        "HighVolume": 24,
-        "MACD": 48,
-        "Pattern": 48,
-        "PumpDump_Trend": 48,
-        "STOCH_RSI": 48,
-        "STOCH_RSI_Trend": 48,
-        "Pattern_Trend": 48
+        "PumpDump": 96,
+        "HighVolume": 96,
+        "MACD": 192,
+        "Pattern": 192,
+        "PumpDump_Trend": 192,
+        "STOCH_RSI": 192,
+        "STOCH_RSI_Trend": 192,
+        "Pattern_Trend": 192
       },
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,
@@ -410,7 +447,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 1
+      "max_prev_candle_limit": 2
     }
   },
   "Telegram": {
@@ -424,15 +461,41 @@
       "log_path": "telegram_log.txt",
       "chat_ids": {
         "Errors": "-1001837009227",
-        "Pattern_Trend": "-1001840430020"
+        "STOCH_RSI": "-1001757652380",
+        "STOCH_RSI_Trend": "-1001757652380",
+        "PumpDump": "-1001757652380",
+        "PumpDump_Trend": "-1001757652380",
+        "HighVolume": "-1001757652380",
+        "MACD": "-1001757652380",
+        "Pattern": "-1001757652380",
+        "Pattern_Trend": "-1001757652380",
+        "Multiple_Patterns": "-1001757652380"
       },
-      "message_thread_ids": {},
+      "message_thread_ids": {
+        "STOCH_RSI_buy": "54",
+        "STOCH_RSI_sell": "76",
+        "STOCH_RSI_Trend_buy": "61",
+        "STOCH_RSI_Trend_sell": "66",
+        "PumpDump_buy": "73",
+        "PumpDump_sell": "92",
+        "PumpDump_Trend_buy": "73",
+        "PumpDump_Trend_sell": "92",
+        "HighVolume_buy": "86",
+        "HighVolume_sell": "86",
+        "MACD_buy": "99",
+        "MACD_sell": "96",
+        "Pattern_Trend_buy": "105",
+        "Pattern_Trend_sell": "102",
+        "Multiple_Patterns": "12100"
+      },
       "favorite_chat_ids": {
-        "Pattern_Trend": "-1001840430020"
+        "Pattern_Trend": "-1001840430020",
+        "Multiple_Patterns": "-1001840430020"
       },
       "favorite_message_thread_ids": {
         "Pattern_Trend_buy": "9",
-        "Pattern_Trend_sell": "12"
+        "Pattern_Trend_sell": "12",
+        "Multiple_Patterns": "883"
       },
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,
@@ -440,8 +503,8 @@
     }
   },
   "Timeframes": {
-    "work_timeframe": "4h",
-    "higher_timeframe": "1d"
+    "work_timeframe": "1h",
+    "higher_timeframe": "4h"
   },
   "Visualizer": {
     "params": {

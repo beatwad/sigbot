@@ -327,13 +327,13 @@
       },
       "Pattern": {
         "params": {
-          "vol_window": 48,
-          "vol_q_high": 0.75,
-          "vol_q_low": 0.2,
+          "vol_window": 24,
+          "vol_q_high": 0.6,
+          "vol_q_low": 0.1,
           "window_low_bound": 1,
-          "window_high_bound": 7,
-          "first_candle": 0.5,
-          "second_candle": 0
+          "window_high_bound": 5,
+          "first_candle": 0.85,
+          "second_candle": 0.75
         }
       },
       "PumpDump": {
@@ -368,12 +368,12 @@
       "Pattern": {
         "params": {
           "vol_window": 48,
-          "vol_q_high": 0.8,
-          "vol_q_low": 0.15,
+          "vol_q_high": 0.7,
+          "vol_q_low": 0.1,
           "window_low_bound": 1,
-          "window_high_bound": 7,
+          "window_high_bound": 5,
           "first_candle": 0.5,
-          "second_candle": 0
+          "second_candle": 0.85
         }
       },
       "PumpDump": {
@@ -394,9 +394,9 @@
   },
   "Main": {
     "params": {
-      "bot_cycle_length_sec": 20,
+      "bot_cycle_length_sec": 10,
       "cycle_length_hours": 24,
-      "time_period_minutes": 15,
+      "time_period_minutes": 60,
       "first_cycle_qty_miss": 0
     }
   },
@@ -431,14 +431,14 @@
       "stop_loss_multiplier": 2,
       "test": 0,
       "stat_limit_hours": {
-        "PumpDump": 24,
-        "HighVolume": 24,
-        "MACD": 48,
-        "Pattern": 48,
-        "PumpDump_Trend": 48,
-        "STOCH_RSI": 48,
-        "STOCH_RSI_Trend": 48,
-        "Pattern_Trend": 48
+        "PumpDump": 96,
+        "HighVolume": 96,
+        "MACD": 192,
+        "Pattern": 192,
+        "PumpDump_Trend": 192,
+        "STOCH_RSI": 192,
+        "STOCH_RSI_Trend": 192,
+        "Pattern_Trend": 192
       },
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,
@@ -456,7 +456,6 @@
         "ByBitPerpetual"
       ],
       "favorite_patterns": [
-        "STOCH_RSI_Trend",
         "Pattern_Trend"
       ],
       "log_path": "telegram_log.txt",
@@ -475,13 +474,10 @@
       "message_thread_ids": {
       },
       "favorite_chat_ids": {
-        "STOCH_RSI_Trend": "-1001840430020",
         "Pattern_Trend": "-1001840430020",
         "Multiple_Patterns": "-1001840430020"
       },
       "favorite_message_thread_ids": {
-        "STOCH_RSI_Trend_buy": "6",
-        "STOCH_RSI_Trend_sell": "2",
         "Pattern_Trend_buy": "9",
         "Pattern_Trend_sell": "12",
         "Multiple_Patterns": "883"
@@ -492,8 +488,8 @@
     }
   },
   "Timeframes": {
-    "work_timeframe": "15m",
-    "higher_timeframe": "1h"
+    "work_timeframe": "1h",
+    "higher_timeframe": "4h"
   },
   "Visualizer": {
     "params": {

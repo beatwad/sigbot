@@ -5,7 +5,7 @@ from datetime import datetime
 from os import environ, remove
 
 # Set environment variable
-environ["ENV"] = "4h_1d"
+environ["ENV"] = "1h_4h"
 
 from bot.bot import SigBot
 from config.config import ConfigFactory
@@ -29,23 +29,24 @@ class Main:
 
     @staticmethod
     def check_time(dt, time_period):
-        """ Check if time in minutes is multiple of a period """
-        if dt.minute % time_period == 0:
+        """ Check if time in minutes is a multiple of a period """
+        if (dt.hour * 60 + dt.minute) % 60 == 0:
             return True
         return False
 
     def cycle(self):
         try:
             dt1 = datetime.now()
-            # if self.check_time(dt1, self.time_period) or self.cycle_number == 1:
-            self.sigbot.main_cycle()
-            dt2 = datetime.now()
-            dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
-            print(f'Cycle is {self.cycle_number}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
-            self.cycle_number += 1
+            if self.check_time(dt1, self.time_period) or self.cycle_number == 1:
+                print(dt1)
+                dt1 = datetime.now()
+                self.sigbot.main_cycle()
+                dt2 = datetime.now()
+                dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
+                print(f'Cycle is {self.cycle_number}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
+                self.cycle_number += 1
+                sleep(60)
             sleep(self.bot_cycle_length)
-            # else:
-            #     sleep(1)
         except (KeyboardInterrupt, SystemExit):
             # stop all exchange monitors
             self.sigbot.stop_monitors()

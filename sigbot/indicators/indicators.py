@@ -125,7 +125,10 @@ class ATR(Indicator):
         super(ATR, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        atr = ta.ATR(df['high'], df['low'], df['close'], **self.configs)
+        try:
+            atr = ta.ATR(df['high'], df['low'], df['close'], **self.configs)
+        except:
+            atr = 0
         df['atr'] = atr
         # column for statistic counting
         df['close_smooth'] = df['close'].rolling(self.configs['timeperiod']).mean()

@@ -78,13 +78,13 @@ def test_price_change(df, timeframe, ticker, expected):
     indicator = IndicatorFactory.factory('PumpDump', 'buy', configs)
     data_qty = 500
     df = indicator.get_indicator(df, ticker, timeframe, data_qty)
-    assert round(df.loc[223, 'close_price_change_lag_1'], 5) == expected[0][0]
+    assert round(df.loc[223, 'price_change_1'], 5) == expected[0][0]
     assert round(df.loc[223, 'q_low_lag_1'], 5) == expected[0][3]
     assert round(df.loc[223, 'q_high_lag_1'], 5) == expected[0][4]
-    assert round(df.loc[500, 'close_price_change_lag_1'], 5) == expected[1][0]
+    assert round(df.loc[500, 'price_change_1'], 5) == expected[1][0]
     assert round(df.loc[500, 'q_low_lag_1'], 5) == expected[1][3]
     assert round(df.loc[500, 'q_high_lag_1'], 5) == expected[1][4]
-    assert round(df.loc[998, 'close_price_change_lag_1'], 5) == expected[2][0]
+    assert round(df.loc[998, 'price_change_1'], 5) == expected[2][0]
     assert round(df.loc[998, 'q_low_lag_1'], 5) == expected[2][3]
     assert round(df.loc[998, 'q_high_lag_1'], 5) == expected[2][4]
 

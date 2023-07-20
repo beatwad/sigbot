@@ -253,12 +253,12 @@ class PumpDumpSignal(SignalBase):
         # Find price change signal
         # buy trade
         if self.ttype == 'buy':
-            price_change_lower_1 = self.lower_bound_robust(df['q_low_lag_1'].loc[0], df['close_price_change_lag_1'])
+            price_change_lower_1 = self.lower_bound_robust(df['q_low_lag_1'].loc[0], df['price_change_1'])
             price_change_lower_2 = 0
             price_change_lower_3 = 0
             return price_change_lower_1 | price_change_lower_2 | price_change_lower_3
         # sell trade
-        price_change_higher_1 = self.higher_bound_robust(df['q_high_lag_1'].loc[0], df['close_price_change_lag_1'])
+        price_change_higher_1 = self.higher_bound_robust(df['q_high_lag_1'].loc[0], df['price_change_1'])
         price_change_higher_2 = 0
         price_change_higher_3 = 0
         return price_change_higher_1 | price_change_higher_2 | price_change_higher_3

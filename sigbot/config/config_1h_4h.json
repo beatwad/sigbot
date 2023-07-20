@@ -231,8 +231,8 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "low_price_quantile": 20,
-          "high_price_quantile": 980,
+          "low_price_quantile": 5,
+          "high_price_quantile": 995,
           "stat_file_path": "signal_stat/price_stat_buy.json"
         }
       },
@@ -240,7 +240,7 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "volume_quantile": 950,
+          "volume_quantile": 995,
           "vol_stat_file_path": "signal_stat/vol_stat.npy"
         }
       }
@@ -284,8 +284,8 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "low_price_quantile": 20,
-          "high_price_quantile": 980,
+          "low_price_quantile": 5,
+          "high_price_quantile": 995,
           "stat_file_path": "signal_stat/price_stat_sell.json"
         }
       },
@@ -293,7 +293,7 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "volume_quantile": 950,
+          "volume_quantile": 995,
           "vol_stat_file_path": "signal_stat/vol_stat_sell.json"
         }
       }

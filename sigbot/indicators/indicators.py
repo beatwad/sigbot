@@ -53,11 +53,14 @@ class RSI(Indicator):
     def get_indicator(self, df, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
         # if mean close price value is too small, RSI indicator can become zero,
         # so we should increase it to at least 1e-4
-        if df['close'].mean() < 1e-4:
-            multiplier = int(1e-4/df['close'].mean()) + 1
-            rsi = ta.RSI(df['close'] * multiplier, **self.configs)
-        else:
-            rsi = ta.RSI(df['close'], **self.configs)
+        try:
+            if df['close'].mean() < 1e-4:
+                multiplier = int(1e-4/df['close'].mean()) + 1
+                rsi = ta.RSI(df['close'] * multiplier, **self.configs)
+            else:
+                rsi = ta.RSI(df['close'], **self.configs)
+        except:
+            rsi = 0
         df['rsi'] = rsi
         return df
 
@@ -70,7 +73,10 @@ class STOCH(Indicator):
         super(STOCH, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        slowk, slowd = ta.STOCH(df['high'], df['low'], df['close'], **self.configs)
+        try:
+            slowk, slowd = ta.STOCH(df['high'], df['low'], df['close'], **self.configs)
+        except:
+            slowk, slowd = 0, 0
         df['stoch_slowk'] = slowk
         df['stoch_slowd'] = slowd
         # add auxilary data
@@ -89,9 +95,12 @@ class Trend(Indicator):
         super(Trend, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        adx = ta.ADX(df['high'], df['low'], df['close'], **self.configs)
-        plus_di = ta.PLUS_DI(df['high'], df['low'], df['close'], **self.configs)
-        minus_di = ta.MINUS_DI(df['high'], df['low'], df['close'], **self.configs)
+        try:
+            adx = ta.ADX(df['high'], df['low'], df['close'], **self.configs)
+            plus_di = ta.PLUS_DI(df['high'], df['low'], df['close'], **self.configs)
+            minus_di = ta.MINUS_DI(df['high'], df['low'], df['close'], **self.configs)
+        except:
+            adx, plus_di, minus_di = 0, 0, 0
         df['linear_reg'] = adx
         df['linear_reg_angle'] = plus_di - minus_di
         return df
@@ -105,7 +114,10 @@ class MACD(Indicator):
         super(MACD, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        macd, macdsignal, macdhist = ta.MACD(df['close'], **self.configs)
+        try:
+            macd, macdsignal, macdhist = ta.MACD(df['close'], **self.configs)
+        except:
+            macd, macdsignal, macdhist = 0, 0, 0
         df['macd'] = macd
         df['macdsignal'] = macdsignal
         df['macdhist'] = macdhist  # macd - macdsignal
@@ -217,7 +229,7 @@ class PumpDump(Indicator):
                 # sort price values
                 self.price_stat[f'lag{i}'] = np.sort(self.price_stat[f'lag{i}'])
             else:
-                self.price_tmp_stat[f'lag{i}'] = np.append(self.price_tmp_stat['lag1'], close_prices)
+                self.price_tmp_stat[f'lag{i}'] = np.append(self.price_tmp_stat[f'lag{i}'], close_prices)
             # if we accumulate enough data - add them to our main statistics and prune it to reasonable size
             if len(self.price_tmp_stat[f'lag{i}']) > self.max_stat_size * 0.2:
                 # add new data

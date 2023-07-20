@@ -441,15 +441,23 @@ class MonitorExchange(Thread):
                         data_qty_buy = self.get_indicators(df, 'buy', ticker, timeframe, data_qty)
                         data_qty_sell = self.get_indicators(df, 'sell', ticker, timeframe, data_qty)
                     except:
-                        logger.exception(f'Something bad has happened to ticker {ticker} on timeframe {timeframe}')
+                        logger.exception(f'Something bad has happened to ticker {ticker} on timeframe {timeframe} '
+                                         f'while getting indicator data.')
                         pass_the_ticker = True
                         continue
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Get the signals
-                        sig_buy_points = self.sigbot.get_buy_signals(ticker, timeframe, data_qty_buy, data_qty_higher)
-                        sig_sell_points = self.sigbot.get_sell_signals(ticker, timeframe, data_qty_sell,
-                                                                       data_qty_higher)
+                        try:
+                            sig_buy_points = self.sigbot.get_buy_signals(ticker, timeframe, data_qty_buy,
+                                                                         data_qty_higher)
+                            sig_sell_points = self.sigbot.get_sell_signals(ticker, timeframe, data_qty_sell,
+                                                                           data_qty_higher)
+                        except:
+                            logger.exception(f'Something bad has happened to ticker {ticker} on timeframe {timeframe} '
+                                             f'while getting signals.')
+                            pass_the_ticker = True
+                            continue
                         # If similar signal was added to stat dataframe not too long time ago (<= 3-5 ticks before) -
                         # don't add it again
                         sig_buy_points = self.sigbot.filter_sig_points(sig_buy_points)

@@ -465,8 +465,8 @@ class Visualizer:
             e_ratio_coef = [s[0] for s in statistics[0]]
             mar_coef = [s[1] for s in statistics[0]]
             mar_coef_std = [s[2] for s in statistics[0]]
-            mar_coef_plus_std = [a + b for a, b in zip(mar_coef, mar_coef_std)]
-            mar_coef_minus_std = [a - b for a, b in zip(mar_coef, mar_coef_std)]
+            mar_coef_plus_std = [min(a + b, 20) for a, b in zip(mar_coef, mar_coef_std)]
+            mar_coef_minus_std = [max(a - b, -20) for a, b in zip(mar_coef, mar_coef_std)]
 
             # get previous percent of right forecast and save current percent to statistics dictionary
             avg_e_ratio_coef = round(sum(e_ratio_coef)/len(e_ratio_coef), 4)

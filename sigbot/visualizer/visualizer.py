@@ -463,8 +463,8 @@ class Visualizer:
         # Plot signal statistics
         if 'HighVolume' not in indicator_list_tmp:
             e_ratio_coef = [s[0] for s in statistics[0]]
-            mar_coef = [np.clip(s[1], -10, 10) for s in statistics[0]]
-            mar_coef_std = [min(s[2], 10) for s in statistics[0]]
+            mar_coef = [np.clip(s[1], -20, 20) for s in statistics[0]]
+            mar_coef_std = [min(s[2], 20) for s in statistics[0]]
             mar_coef_plus_std = [a + b for a, b in zip(mar_coef, mar_coef_std)]
             mar_coef_minus_std = [a - b for a, b in zip(mar_coef, mar_coef_std)]
 

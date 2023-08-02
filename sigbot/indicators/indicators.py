@@ -212,8 +212,8 @@ class PumpDump(Indicator):
 
     def get_price_change(self, df: pd.DataFrame, data_qty: int, lag: int) -> list:
         """ Get difference between current price and previous price """
-        price_change = (df['open'] - df['close']) / df['close']
-        df[f'price_change_{lag}'] = np.round(price_change.values, self.round_decimals)
+        close_prices = (df['close'] - df['close'].shift(lag)) / df['close'].shift(lag)
+        df[f'price_change_{lag}'] = np.round(close_prices.values, self.round_decimals)
         return df[f'price_change_{lag}'][max(df.shape[0] - data_qty + 1, 0):].values
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:

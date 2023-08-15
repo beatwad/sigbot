@@ -1,11 +1,12 @@
 import pandas as pd
+import os
 
 
 class SignalStat:
     """ Class for acquiring signal statistics """
     type = 'SignalStat'
 
-    def __init__(self, **configs):
+    def __init__(self, optimize=False, **configs):
         self.configs = configs[self.type]['params']
         self.take_profit_multiplier = self.configs.get('take_profit_multiplier', 2)
         self.stop_loss_multiplier = self.configs.get('stop_loss_multiplier', 2)
@@ -22,8 +23,12 @@ class SignalStat:
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.higher_tf_patterns = configs['Higher_TF_indicator_list']
-        self.buy_stat_path = f'signal_stat/buy_stat_{self.work_timeframe}.pkl'
-        self.sell_stat_path = f'signal_stat/sell_stat_{self.work_timeframe}.pkl'
+        if optimize:
+            self.buy_stat_path = f'../optimizer/signal_stat/buy_stat_{self.work_timeframe}.pkl'
+            self.sell_stat_path = f'../optimizer/signal_stat/sell_stat_{self.work_timeframe}.pkl'
+        else:
+            self.buy_stat_path = f'signal_stat/buy_stat_{self.work_timeframe}.pkl'
+            self.sell_stat_path = f'signal_stat/sell_stat_{self.work_timeframe}.pkl'
 
     def write_stat(self, dfs: dict, signal_points: list) -> dict:
         """ Write signal statistics for every signal point for current ticker on current timeframe.
@@ -133,6 +138,7 @@ class SignalStat:
 
     def load_statistics(self) -> (pd.DataFrame, pd.DataFrame):
         """ Load statistics from the disk """
+        file_path = os.path.realpath(__file__)
         try:
             buy_stat = pd.read_pickle(self.buy_stat_path)
             sell_stat = pd.read_pickle(self.sell_stat_path)

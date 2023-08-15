@@ -47,11 +47,11 @@ class SigBot:
     """ Class for running main the entire Signal Bot """
 
     @exception
-    def __init__(self, main_class, load_tickers=True, **configs):
+    def __init__(self, main_class, load_tickers=True, optimize=False, **configs):
         # Get main bot class
         self.main = main_class
         # Create statistics class
-        self.stat = SignalStat(**configs)
+        self.stat = SignalStat(optimize=optimize, **configs)
         # Create find signal class
         self.find_signal_buy = FindSignal('buy', configs)
         self.find_signal_sell = FindSignal('sell', configs)
@@ -369,7 +369,7 @@ class MonitorExchange(Thread):
                     last_time = tmp['time'].max()
                     df = df[df['time'] > last_time]
                     df = pd.concat([tmp, df], ignore_index=True)
-                df_path = f'ticker_dataframes/{ticker}_{timeframe}.pkl'
+                df_path = f'{ticker}_{timeframe}.pkl'
                 df.to_pickle(df_path)
 
     def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool):
@@ -400,6 +400,9 @@ class MonitorExchange(Thread):
                     sig_points = self.sigbot.filter_sig_points(sig_points)
                     # Add the signals to statistics
                     self.add_statistics(sig_points)
+        # Save statistics
+        self.save_statistics()
+
 
     @exception
     def run_cycle(self) -> None:

@@ -231,8 +231,8 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "low_price_quantile": 20,
-          "high_price_quantile": 980,
+          "low_price_quantile": 10,
+          "high_price_quantile": 990,
           "stat_file_path": "signal_stat/price_stat_buy.json"
         }
       },
@@ -240,7 +240,7 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "volume_quantile": 950,
+          "volume_quantile": 997,
           "vol_stat_file_path": "signal_stat/vol_stat.npy"
         }
       }
@@ -260,7 +260,7 @@
       },
       "Trend": {
         "params": {
-          "timeperiod": 48
+          "timeperiod": 20
         }
       },
       "MACD": {
@@ -284,8 +284,8 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "low_price_quantile": 20,
-          "high_price_quantile": 980,
+          "low_price_quantile": 10,
+          "high_price_quantile": 990,
           "stat_file_path": "signal_stat/price_stat_sell.json"
         }
       },
@@ -293,7 +293,7 @@
         "params": {
           "round_decimals": 6,
           "max_stat_size": 100000,
-          "volume_quantile": 950,
+          "volume_quantile": 997,
           "vol_stat_file_path": "signal_stat/vol_stat_sell.json"
         }
       }
@@ -327,13 +327,13 @@
       },
       "Pattern": {
         "params": {
-          "vol_window": 48,
-          "vol_q_high": 0.75,
-          "vol_q_low": 0.2,
+          "vol_window": 24,
+          "vol_q_high": 0.6,
+          "vol_q_low": 0.1,
           "window_low_bound": 1,
-          "window_high_bound": 7,
-          "first_candle": 0.5,
-          "second_candle": 0
+          "window_high_bound": 5,
+          "first_candle": 0.85,
+          "second_candle": 0.75
         }
       },
       "PumpDump": {
@@ -368,12 +368,12 @@
       "Pattern": {
         "params": {
           "vol_window": 48,
-          "vol_q_high": 0.8,
-          "vol_q_low": 0.15,
+          "vol_q_high": 0.7,
+          "vol_q_low": 0.1,
           "window_low_bound": 1,
-          "window_high_bound": 7,
+          "window_high_bound": 5,
           "first_candle": 0.5,
-          "second_candle": 0
+          "second_candle": 0.85
         }
       },
       "PumpDump": {
@@ -394,9 +394,9 @@
   },
   "Main": {
     "params": {
-      "bot_cycle_length_sec": 20,
+      "bot_cycle_length_sec": 10,
       "cycle_length_hours": 24,
-      "time_period_minutes": 15,
+      "time_period_minutes": 60,
       "first_cycle_qty_miss": 1
     }
   },
@@ -498,8 +498,8 @@
     }
   },
   "Timeframes": {
-    "work_timeframe": "15m",
-    "higher_timeframe": "1h"
+    "work_timeframe": "1h",
+    "higher_timeframe": "4h"
   },
   "Visualizer": {
     "params": {

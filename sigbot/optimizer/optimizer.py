@@ -22,8 +22,9 @@ class Main:
 
 
 class Optimizer:
-    def __init__(self, pattern, optim_dict, **configs):
+    def __init__(self, pattern, optim_dict, clean=True, **configs):
         self.statistics = dict()
+        self.clean = clean
         self.configs = configs
         self.pattern_list = pattern
         self.optim_dict = optim_dict
@@ -148,7 +149,8 @@ class Optimizer:
 
     def optimize(self, pattern, ttype, opt_limit, load):
         main = Main()
-        self.clean_prev_stat(ttype)
+        if self.clean:
+            self.clean_prev_stat(ttype)
         # set pattern string
         pattern = '_'.join(pattern)
         # get list of config dicts with all possible combinations of pattern settings
@@ -163,7 +165,7 @@ class Optimizer:
         for prod_dict in tqdm(product_dicts):
             # load data
             confs = self.set_configs(prod_dict, ttype)
-            sb = SigBot(main, load_tickers=load_tickers, **confs)
+            sb = SigBot(main, load_tickers=load_tickers, optimize=True, **confs)
             # save database with indicators at the first time
             if not load_tickers:
                 sb.exchanges = copy.deepcopy(exchanges)

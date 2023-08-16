@@ -27,8 +27,8 @@ class SignalStat:
             self.buy_stat_path = f'../ml/signal_stat/buy_stat_{self.work_timeframe}.pkl'
             self.sell_stat_path = f'../ml/signal_stat/sell_stat_{self.work_timeframe}.pkl'
         elif opt_type == 'optimize':
-            self.buy_stat_path = f'../optimize/signal_stat/buy_stat_{self.work_timeframe}.pkl'
-            self.sell_stat_path = f'../optimize/signal_stat/sell_stat_{self.work_timeframe}.pkl'
+            self.buy_stat_path = f'../optimizer/signal_stat/buy_stat_{self.work_timeframe}.pkl'
+            self.sell_stat_path = f'../optimizer/signal_stat/sell_stat_{self.work_timeframe}.pkl'
         else:
             self.buy_stat_path = f'signal_stat/buy_stat_{self.work_timeframe}.pkl'
             self.sell_stat_path = f'signal_stat/sell_stat_{self.work_timeframe}.pkl'

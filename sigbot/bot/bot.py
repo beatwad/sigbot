@@ -369,7 +369,7 @@ class MonitorExchange(Thread):
                     last_time = tmp['time'].max()
                     df = df[df['time'] > last_time]
                     df = pd.concat([tmp, df], ignore_index=True)
-                df_path = f'{ticker}_{timeframe}.pkl'
+                df_path = f'../optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl'
                 df.to_pickle(df_path)
 
     def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool):

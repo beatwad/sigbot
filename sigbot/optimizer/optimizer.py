@@ -40,7 +40,7 @@ class Optimizer:
     @staticmethod
     def clean_prev_tickers_dfs():
         """ Clean previous ticker market data files """
-        files = glob.glob('ticker_dataframes/*.pkl')
+        files = glob.glob('../optimizer/ticker_dataframes/*.pkl')
         for f in files:
             remove(f)
 
@@ -147,7 +147,7 @@ class Optimizer:
         helper(prod_dict)
         return headers
 
-    def optimize(self, pattern, ttype, opt_limit, load):
+    def optimize(self, pattern, ttype, opt_limit, load, op_type):
         main = Main()
         if self.clean:
             self.clean_prev_stat(ttype)
@@ -165,7 +165,7 @@ class Optimizer:
         for prod_dict in tqdm(product_dicts):
             # load data
             confs = self.set_configs(prod_dict, ttype)
-            sb = SigBot(main, load_tickers=load_tickers, optimize=True, **confs)
+            sb = SigBot(main, load_tickers=load_tickers, opt_type=op_type, **confs)
             # save database with indicators at the first time
             if not load_tickers:
                 sb.exchanges = copy.deepcopy(exchanges)
@@ -229,5 +229,5 @@ if __name__ == '__main__':
     configs['Timeframes']['higher_timeframe'] = higher_timeframe
 
     opt = Optimizer(pattern, optim_dict, **configs)
-    rs = opt.optimize(pattern, ttype, opt_limit, load)
+    rs = opt.optimize(pattern, ttype, opt_limit, load, 'optimize')
     print('')

@@ -6,7 +6,7 @@ class SignalStat:
     """ Class for acquiring signal statistics """
     type = 'SignalStat'
 
-    def __init__(self, optimize=False, **configs):
+    def __init__(self, opt_type=None, **configs):
         self.configs = configs[self.type]['params']
         self.take_profit_multiplier = self.configs.get('take_profit_multiplier', 2)
         self.stop_loss_multiplier = self.configs.get('stop_loss_multiplier', 2)
@@ -23,9 +23,12 @@ class SignalStat:
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.higher_tf_patterns = configs['Higher_TF_indicator_list']
-        if optimize:
-            self.buy_stat_path = f'../optimizer/signal_stat/buy_stat_{self.work_timeframe}.pkl'
-            self.sell_stat_path = f'../optimizer/signal_stat/sell_stat_{self.work_timeframe}.pkl'
+        if opt_type == 'ml':
+            self.buy_stat_path = f'../ml/signal_stat/buy_stat_{self.work_timeframe}.pkl'
+            self.sell_stat_path = f'../ml/signal_stat/sell_stat_{self.work_timeframe}.pkl'
+        elif opt_type == 'optimize':
+            self.buy_stat_path = f'../optimize/signal_stat/buy_stat_{self.work_timeframe}.pkl'
+            self.sell_stat_path = f'../optimize/signal_stat/sell_stat_{self.work_timeframe}.pkl'
         else:
             self.buy_stat_path = f'signal_stat/buy_stat_{self.work_timeframe}.pkl'
             self.sell_stat_path = f'signal_stat/sell_stat_{self.work_timeframe}.pkl'
@@ -138,7 +141,6 @@ class SignalStat:
 
     def load_statistics(self) -> (pd.DataFrame, pd.DataFrame):
         """ Load statistics from the disk """
-        file_path = os.path.realpath(__file__)
         try:
             buy_stat = pd.read_pickle(self.buy_stat_path)
             sell_stat = pd.read_pickle(self.sell_stat_path)

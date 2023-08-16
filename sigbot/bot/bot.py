@@ -47,11 +47,11 @@ class SigBot:
     """ Class for running main the entire Signal Bot """
 
     @exception
-    def __init__(self, main_class, load_tickers=True, optimize=False, **configs):
+    def __init__(self, main_class, load_tickers=True, opt_type=None, **configs):
         # Get main bot class
         self.main = main_class
         # Create statistics class
-        self.stat = SignalStat(optimize=optimize, **configs)
+        self.stat = SignalStat(opt_type=opt_type, **configs)
         # Create find signal class
         self.find_signal_buy = FindSignal('buy', configs)
         self.find_signal_sell = FindSignal('sell', configs)
@@ -142,7 +142,7 @@ class SigBot:
                 not_used_tickers.append(orig_ticker)
                 not_used_ticker_vols.append(ticker_vol)
         return not_used_tickers, not_used_ticker_vols
-
+    
     def get_data(self, exchange_api, ticker: str, timeframe: str, dt_now: datetime) -> (pd.DataFrame, int):
         """ Check if new data appeared. If it is - return dataframe with the new data and amount of data """
         df = self.database.get(ticker, dict()).get(timeframe, dict()).get('data', pd.DataFrame()).get('buy',
@@ -362,7 +362,7 @@ class MonitorExchange(Thread):
                 df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now)
                 # If we previously download this dataframe to the disk - update it with new data
                 try:
-                    tmp = pd.read_pickle(f'ticker_dataframes/{ticker}_{timeframe}.pkl')
+                    tmp = pd.read_pickle(f'../optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl')
                 except FileNotFoundError:
                     pass
                 else:
@@ -375,12 +375,16 @@ class MonitorExchange(Thread):
     def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool):
         """ Save statistics data for every ticker for further indicator/signal optimization """
         tickers = self.exchange_data['tickers']
+        
+        import os
+        filename = os.path.abspath(os.getcwd())
+        
         for ticker in tickers:
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
                 if ticker not in self.sigbot.database or timeframe not in self.sigbot.database[ticker]:
                     try:
-                        df = pd.read_pickle(f'ticker_dataframes/{ticker}_{timeframe}.pkl')
+                        df = pd.read_pickle(f'../optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl')
                     except FileNotFoundError:
                         continue
                 else:

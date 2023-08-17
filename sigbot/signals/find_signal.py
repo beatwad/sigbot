@@ -533,7 +533,8 @@ class FindSignal:
         trade_points = pd.DataFrame()
         df_len = min(df_work.shape[0], df_higher.shape[0])
         trade_points['time'] = df_work['time'][df_work.shape[0] - df_len:]
-        trade_points['time_higher'] = df_higher['time'][df_higher.shape[0] - df_len:]
+        x = df_higher['time'][df_higher.shape[0] - df_len:].values
+        trade_points['time_higher'] = df_higher['time'][df_higher.shape[0] - df_len:].values
 
         # Get signal points for each indicator
         for indicator_signal in self.indicator_signals:
@@ -573,7 +574,7 @@ class FindSignal:
             trade_indexes = trade_indexes[df_work.shape[0] - trade_indexes < data_qty]
             sig_pattern = '_'.join(pattern)
             if sig_pattern == 'Pattern_Trend' or sig_pattern == 'MACD':
-                points += [[ticker, self.higher_timeframe, index, self.ttype, trade_points.loc[index, 'time_higher'],
+                points += [[ticker, self.higher_timeframe, df_higher.shape[0] + index - df_work.shape[0], self.ttype, trade_points.loc[index, 'time_higher'],
                             sig_pattern, [], [], [], []] for index in trade_indexes]
             else:
                 points += [[ticker, self.work_timeframe, index, self.ttype, trade_points.loc[index, 'time'],

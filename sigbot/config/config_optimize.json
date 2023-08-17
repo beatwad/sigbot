@@ -431,14 +431,14 @@
       "stop_loss_multiplier": 2,
       "test": 0,
       "stat_limit_hours": {
-        "PumpDump": 10000,
-        "HighVolume": 10000,
-        "MACD": 10000,
-        "Pattern": 10000,
-        "PumpDump_Trend": 10000,
-        "STOCH_RSI": 10000,
-        "STOCH_RSI_Trend": 10000,
-        "Pattern_Trend": 10000
+        "PumpDump": 100000,
+        "HighVolume": 100000,
+        "MACD": 100000,
+        "Pattern": 100000,
+        "PumpDump_Trend": 100000,
+        "STOCH_RSI": 100000,
+        "STOCH_RSI_Trend": 100000,
+        "Pattern_Trend": 100000
       },
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,

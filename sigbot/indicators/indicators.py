@@ -26,6 +26,8 @@ class IndicatorFactory(object):
             return Pattern(ttype, configs)
         elif indicator.startswith('ATR'):
             return ATR(ttype, configs)
+        elif indicator.startswith('SMA'):
+            return SMA(ttype, configs)
 
 
 class Indicator:
@@ -144,6 +146,26 @@ class ATR(Indicator):
         df['atr'] = atr
         # column for statistic counting
         df['close_smooth'] = df['close'].rolling(self.configs['timeperiod']).mean()
+        return df
+    
+class SMA(Indicator):
+    """ Simple Moving Average indicator, default settings: timeperiod: 24 """
+    name = 'SMA'
+
+    def __init__(self, ttype: str, configs: dict):
+        super(SMA, self).__init__(ttype, configs)
+
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        timeperiod = self.configs['timeperiod']
+        try:
+            sma_24 = ta.SMA(df['close'], timeperiod)
+            # sma_168 = ta.SMA(df['close'], timeperiod * 7)
+        except:
+            sma_24 = 0
+            # sma_168 = 0
+        df['sma_24'] = sma_24
+        # df['sma_168'] = sma_168
+        # column for statistic counting
         return df
 
 

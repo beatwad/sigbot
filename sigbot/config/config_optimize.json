@@ -227,6 +227,11 @@
           "timeperiod": 24
         }
       },
+      "SMA": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
       "PumpDump": {
         "params": {
           "round_decimals": 6,
@@ -276,6 +281,11 @@
         }
       },
       "ATR": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
+      "SMA": {
         "params": {
           "timeperiod": 24
         }

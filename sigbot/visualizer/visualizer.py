@@ -199,17 +199,17 @@ class Visualizer:
             subfigs[0].patch.set_facecolor(self.background_color)
             axs_higher = subfigs[0].subplots(2, 1, sharex=True)
             df_higher = dfs[ticker][self.higher_timeframe]['data'][point_type]
-            # get corresponding to signal_time index of dataframe with higher timeframe candles
-            df_higher = df_higher.loc[max(df_higher.shape[0] - self.plot_width * 2, 0):].reset_index(drop=True)
-            ohlc_higher = df_higher[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
-            # plot higher timeframe indicator
-            # indicator_columns = self.indicator_dict[indicator_tmp]
+            # get corresponding to signal_time index of dataframes with working and higher timeframe candles
+            df_working = df_working.reset_index(drop=True)
+            df_higher = df_higher.loc[max(df_higher.shape[0] - self.plot_width, 0):].reset_index(drop=True)
+            ohlc = df_working[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')
+            # plot pattern indicators
             for i_c in indicator_columns:
                 if i_c == 'high_max':
-                    point_max = df_higher.loc[df_higher['high_max'] > 0, 'high']
+                    point_max = df_working.loc[df_working['high_max'] > 0, 'high']
                     axs_higher[0].scatter(point_max.index, point_max.values, s=30, color='blue')
                 elif i_c == 'low_min':
-                    point_min = df_higher.loc[df_higher['low_min'] > 0, 'low']
+                    point_min = df_working.loc[df_working['low_min'] > 0, 'low']
                     axs_higher[0].scatter(point_min.index, point_min.values, s=30, color='orange')
                 else:
                     axs_higher[1].plot(df_higher[i_c], linewidth=2)
@@ -240,13 +240,13 @@ class Visualizer:
             axs_higher[1].spines['right'].set_color(self.border_color)
             axs_higher[1].spines['left'].set_color(self.border_color)
             # plot titles
-            price = self.find_price(df_higher)
-            axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - ${price} - '
-                                    f'{df_higher["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
+            price = self.find_price(df_working)
+            axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {timeframe} - ${price} - '
+                                    f'{df_working["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
                                     color=self.ticker_color)
             axs_higher[1].set_title('Trend Force / Сила тренда', fontsize=14, color=self.ticker_color)
             # plot candles
-            mpf.plot(ohlc_higher, type='candle', ax=axs_higher[0], warn_too_much_data=1001, style='yahoo',
+            mpf.plot(ohlc, type='candle', ax=axs_higher[0], warn_too_much_data=1001, style='yahoo',
                      ylabel='', returnfig=True)
 
             # workaround to show the last xtick for the higher timeframe candle plot
@@ -257,21 +257,24 @@ class Visualizer:
             # copy and format the existing xticks:
             for xt in axs_higher[0].get_xticks():
                 p = int(xt)
-                if 0 <= p < len(ohlc_higher):
-                    ts = ohlc_higher.index[p]
+                # if 0 <= p < len(ohlc_higher):
+                if 0 <= p < len(ohlc):
+                    # ts = ohlc_higher.index[p]
+                    ts = ohlc.index[p]
                     newxticks.append(p)
                     newlabels.append(ts.strftime(format))
 
             # Here we create the final tick and tick label:
-            newxticks.append(len(ohlc_higher) - 1)
-            newlabels.append(ohlc_higher.index[len(ohlc_higher) - 1].strftime(format))
+            newxticks.append(len(ohlc) - 1)
+            newlabels.append(ohlc.index[len(ohlc) - 1].strftime(format))
 
             # set the xticks and labels with the new ticks and labels:
             axs_higher[1].set_xticks(newxticks)
             axs_higher[1].set_xticklabels(newlabels, rotation=30)
 
             # plot point of trade
-            self.plot_point(point_type, df_higher, axs_higher[0], higher=True)
+            # self.plot_point(point_type, df_higher, axs_higher[0], higher=True)
+            self.plot_point(point_type, df_working, axs_higher[0], higher=False)
         elif 'Trend' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
             plot_num -= 1
             subfigs_num = 3
@@ -523,7 +526,7 @@ class Visualizer:
                               fontsize=13, color=self.ticker_color)
 
             # set x-ticks
-            if 'Pattern' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
+            if 'MACD' in indicator_list_tmp: # or 'Pattern' in indicator_list_tmp:
                 xticklabels = ['8', '16', '24', '32', '40', '48', '56', '64', '72', '80', '88', '96']
             else:
                 xticklabels = ['2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24']
@@ -543,12 +546,12 @@ class Visualizer:
 
             # set x-labels
 
-            if 'Pattern' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
-                axs2[1].set_xlabel(f"time after signal, hours / время после сигнала, в часах",
-                                   fontsize=12, color=self.ticker_color)
-            else:
-                axs2[1].set_xlabel(f"time after signal, hours / время после сигнала, в часах",
-                                   fontsize=12, color=self.ticker_color)
+            # if 'Pattern' in indicator_list_tmp or 'MACD' in indicator_list_tmp:
+            #     axs2[1].set_xlabel(f"time after signal, hours / время после сигнала, в часах",
+            #                        fontsize=12, color=self.ticker_color)
+            # else:
+            axs2[1].set_xlabel(f"time after signal, hours / время после сигнала, в часах",
+                                fontsize=12, color=self.ticker_color)
                 # axs2[1].set_xlabel(f"time after signal, hours / время после сигнала, в минутах",
                 #                    fontsize=12, color=self.ticker_color)
 

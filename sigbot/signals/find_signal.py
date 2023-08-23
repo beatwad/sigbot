@@ -543,7 +543,7 @@ class FindSignal:
                 timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] /
                                       self.timeframe_div[self.work_timeframe])
                 fs = indicator_signal.find_signal(df_higher, timeframe_ratio, df_work.shape[0])
-            elif indicator_signal.name == "MACD" or indicator_signal.name == "Pattern":
+            elif indicator_signal.name == "MACD": #  or indicator_signal.name == "Pattern":
                 # check pattern signals every hour
                 if data_qty_higher > 1:
                     fs = indicator_signal.find_signal(df_higher)
@@ -573,7 +573,7 @@ class FindSignal:
             trade_indexes = pattern_points[pattern_points == max_shape].index
             trade_indexes = trade_indexes[df_work.shape[0] - trade_indexes < data_qty]
             sig_pattern = '_'.join(pattern)
-            if sig_pattern == 'Pattern_Trend' or sig_pattern == 'MACD':
+            if sig_pattern == 'MACD': # or sig_pattern == 'Pattern_Trend':
                 points += [[ticker, self.higher_timeframe, df_higher.shape[0] + index - df_work.shape[0], self.ttype, trade_points.loc[index, 'time_higher'],
                             sig_pattern, [], [], [], []] for index in trade_indexes]
             else:

@@ -190,8 +190,7 @@
   },
   "Higher_TF_indicator_list": [
     "Trend",
-    "MACD",
-    "Pattern"
+    "MACD"
   ],
   "Indicator": {
     "buy": {
@@ -411,25 +410,6 @@
     }
   },
   "Patterns": [
-    [
-      "STOCH",
-      "RSI"
-    ],
-    [
-      "STOCH",
-      "RSI",
-      "Trend"
-    ],
-    [
-      "HighVolume"
-    ],
-    [
-      "PumpDump",
-      "Trend"
-    ],
-    [
-      "MACD"
-    ],
     [
       "Pattern",
       "Trend"

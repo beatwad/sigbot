@@ -190,8 +190,7 @@
   },
   "Higher_TF_indicator_list": [
     "Trend",
-    "MACD",
-    "Pattern"
+    "MACD"
   ],
   "Indicator": {
     "buy": {

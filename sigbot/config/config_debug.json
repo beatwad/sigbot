@@ -336,13 +336,13 @@
       },
       "Pattern": {
         "params": {
-          "vol_window": 24,
-          "vol_q_high": 0.6,
+          "vol_window": 48,
+          "vol_q_high": 0.75,
           "vol_q_low": 0.1,
           "window_low_bound": 1,
           "window_high_bound": 5,
-          "first_candle": 0.85,
-          "second_candle": 0.75
+          "first_candle": 0.6,
+          "second_candle": 0.55
         }
       },
       "PumpDump": {
@@ -376,13 +376,13 @@
       },
       "Pattern": {
         "params": {
-          "vol_window": 48,
-          "vol_q_high": 0.7,
+          "vol_window": 96,
+          "vol_q_high": 0.75,
           "vol_q_low": 0.1,
           "window_low_bound": 1,
           "window_high_bound": 5,
-          "first_candle": 0.5,
-          "second_candle": 0.85
+          "first_candle": 0.7,
+          "second_candle": 0.5
         }
       },
       "PumpDump": {
@@ -411,8 +411,7 @@
   },
   "Patterns": [
     [
-      "Pattern",
-      "Trend"
+      "MACD"
     ]
   ],
   "SignalStat": {

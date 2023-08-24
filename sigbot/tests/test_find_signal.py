@@ -4,6 +4,9 @@ import pandas as pd
 from os import environ
 from datetime import datetime
 
+import sys
+sys.path.append('..')
+
 environ["ENV"] = "test"
 
 from data.get_data import DataFactory

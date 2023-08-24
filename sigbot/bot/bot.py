@@ -376,9 +376,6 @@ class MonitorExchange(Thread):
         """ Save statistics data for every ticker for further indicator/signal optimization """
         tickers = self.exchange_data['tickers']
         
-        import os
-        filename = os.path.abspath(os.getcwd())
-        
         for ticker in tickers:
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:

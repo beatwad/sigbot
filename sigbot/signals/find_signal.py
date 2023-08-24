@@ -212,31 +212,22 @@ class TrendSignal(SignalBase):
         self.low_bound = self.configs.get('low_bound', 0)
         self.high_bound = self.configs.get('high_bound', 0)
 
-    def find_signal(self, df: pd.DataFrame, timeframe_ratio: int, working_df_len: int, *args) -> np.ndarray:
+    def find_signal(self, df: pd.DataFrame, trade_points: pd.DataFrame, *args) -> np.ndarray:
         """ 1 - Return true if trend is moving up (buy signal)
             2 - Return true if trend is moving down (sell signal)  """
         # According to difference between working timeframe and higher timeframe for every point on working timeframe
         # find corresponding value of Linear Regression from higher timeframe
-        higher_shape = int(working_df_len / timeframe_ratio) + 1
-        linear_reg_angle = df.loc[max(df.shape[0] - higher_shape, 0):, 'linear_reg_angle']
+        linear_reg_angle = pd.merge(trade_points, df, how='left', left_on='time_higher', right_on='time')['linear_reg_angle']
 
         # buy trade
         if self.ttype == 'buy':
-            # Find Linear Regression signal
+            # find Linear Regression signal
             lr_higher_bound = self.higher_bound_robust(self.high_bound, linear_reg_angle)
-            # Then for each working timeframe point add corresponding LR singal
-            # and make size of the signal the same as size of working timeframe df
-            lr_higher_bound = np.repeat(lr_higher_bound, timeframe_ratio)
-            lr_higher_bound = lr_higher_bound[max(lr_higher_bound.shape[0] - working_df_len, 0):]
             return lr_higher_bound
 
         # same for the sell trade
-        # Find Linear Regression signal
+        # find Linear Regression signal
         lr_lower_bound = self.lower_bound_robust(self.low_bound, linear_reg_angle)
-        # Then for each working timeframe point add corresponding LR singal
-        # and make size of the signal the same as size of working timeframe df
-        lr_lower_bound = np.repeat(lr_lower_bound, timeframe_ratio)
-        lr_lower_bound = lr_lower_bound[max(lr_lower_bound.shape[0] - working_df_len, 0):]
         return lr_lower_bound
 
 
@@ -288,22 +279,22 @@ class MACDSignal(SignalBase):
         self.low_bound = self.configs.get('low_bound', 20)
         self.high_bound = self.configs.get('high_bound', 80)
 
-    def find_signal(self, df: pd.DataFrame) -> np.ndarray:
+    def find_signal(self, df: pd.DataFrame, trade_points: pd.DataFrame, timeframe_ratio: int) -> np.ndarray:
         """ Find MACD signal """
-        macd_diff = df['macdhist']
-        macd_diff_lag_1 = df['macdhist'].shift(1)
-        macd_diff_lag_2 = df['macdhist'].shift(2)
+        macd_df = pd.merge(trade_points, df, how='left', left_on='time_higher', right_on='time')[['macdhist', 'macd_dir', 'macdsignal_dir']]
+        macd_df['macdhist_1'] = macd_df['macdhist'].shift(timeframe_ratio)
+        macd_df['macdhist_2'] = macd_df['macdhist'].shift(timeframe_ratio * 2)
 
         if self.ttype == 'buy':
-            crossed_lines_down = self.crossed_lines(False, macd_diff, macd_diff_lag_1, macd_diff_lag_2)
-            up_direction_macd = self.up_direction(df['macd_dir'])
-            up_direction_macdsignal = self.up_direction(df['macdsignal_dir'])
+            crossed_lines_down = self.crossed_lines(False, macd_df['macdhist'], macd_df['macdhist_1'], macd_df['macdhist_2'])
+            up_direction_macd = self.up_direction(macd_df['macd_dir'])
+            up_direction_macdsignal = self.up_direction(macd_df['macdsignal_dir'])
             macd_up = crossed_lines_down & up_direction_macd & up_direction_macdsignal
             return macd_up
 
-        crossed_lines_up = self.crossed_lines(True, macd_diff, macd_diff_lag_1, macd_diff_lag_2)
-        down_direction_slowk = self.down_direction(df['macd_dir'])
-        down_direction_slowd = self.down_direction(df['macdsignal_dir'])
+        crossed_lines_up = self.crossed_lines(True, macd_df['macdhist'], macd_df['macdhist_1'], macd_df['macdhist_2'])
+        down_direction_slowk = self.down_direction(macd_df['macd_dir'])
+        down_direction_slowd = self.down_direction(macd_df['macdsignal_dir'])
         macd_down = crossed_lines_up & down_direction_slowk & down_direction_slowd
         return macd_down
 
@@ -529,36 +520,31 @@ class FindSignal:
             return points
 
         sig_patterns = [p.copy() for p in self.patterns]
-
-        trade_points = pd.DataFrame()
-        df_len = min(df_work.shape[0], df_higher.shape[0])
-        trade_points['time'] = df_work['time'][df_work.shape[0] - df_len:]
-        x = df_higher['time'][df_higher.shape[0] - df_len:].values
-        trade_points['time_higher'] = df_higher['time'][df_higher.shape[0] - df_len:].values
-
-        # Get signal points for each indicator
+        timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] / self.timeframe_div[self.work_timeframe])
+        # Create signal point df for each indicator 
+        trade_points, tmp = pd.DataFrame(), pd.DataFrame()
+        trade_points['time'] = df_work['time']
+        # merge higher dataframe timestamps and working dataframe timestamps in one dataframe
+        tmp['time'] = df_higher['time']
+        tmp['time_higher'] = tmp['time']
+        # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
+        trade_points = pd.merge(trade_points[['time']], tmp[['time', 'time_higher']], how='left')
+        trade_points['time_higher'] = trade_points['time_higher'].fillna(method='ffill')
+        trade_points['time_higher'] = trade_points['time_higher'].fillna(trade_points['time_higher'].min() - pd.to_timedelta(int(self.higher_timeframe[:-1]), 
+                                                                                                                             self.higher_timeframe[-1]))
+        # Fill signal point df with signals from indicators
         for indicator_signal in self.indicator_signals:
+            # if indicators work with higher timeframe - we should treat them differently
             if indicator_signal.name == "Trend":
-                # get time ratio between higher timeframe and working timeframe
-                timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] /
-                                      self.timeframe_div[self.work_timeframe])
-                fs = indicator_signal.find_signal(df_higher, timeframe_ratio, df_work.shape[0])
-            elif indicator_signal.name == "MACD": #  or indicator_signal.name == "Pattern":
-                # check pattern signals every hour
+                fs = indicator_signal.find_signal(df_higher, trade_points)
+            elif indicator_signal.name == "MACD":
+                # check higher timeframe signals every hour
                 if data_qty_higher > 1:
-                    fs = indicator_signal.find_signal(df_higher)
+                    fs = indicator_signal.find_signal(df_higher, trade_points, timeframe_ratio)
                 else:
-                    fs = np.zeros(df_higher.shape[0])
+                    fs = np.zeros(trade_points.shape[0])
             else:
                 fs = indicator_signal.find_signal(df_work)
-
-            # if sizes of signal and signal dataframe differ - bring them to one size
-            if fs.shape[0] < trade_points.shape[0]:
-                diff = trade_points.shape[0] - fs.shape[0]
-                fs = np.concatenate([np.zeros(diff), fs])
-            elif fs.shape[0] > trade_points.shape[0]:
-                diff = fs.shape[0] - trade_points.shape[0]
-                fs = fs[diff:]
 
             trade_points[indicator_signal.name] = fs
 
@@ -567,14 +553,19 @@ class FindSignal:
             # find indexes of trade points
             if self.ttype == 'sell' and pattern == ['HighVolume']:
                 continue
+            # check if pattern has all 1
             pattern_points = trade_points[pattern]
             max_shape = pattern_points.shape[1]
             pattern_points = pattern_points.sum(axis=1)
+            # get trade indexes
             trade_indexes = pattern_points[pattern_points == max_shape].index
+            # save only recent trade indexes
             trade_indexes = trade_indexes[df_work.shape[0] - trade_indexes < data_qty]
             sig_pattern = '_'.join(pattern)
             if sig_pattern == 'MACD': # or sig_pattern == 'Pattern_Trend':
-                points += [[ticker, self.higher_timeframe, df_higher.shape[0] + index - df_work.shape[0], self.ttype, trade_points.loc[index, 'time_higher'],
+                # sparse signal indexes for higher timeframe
+                trade_indexes = [trade_indexes[i] for i in range(0, len(trade_indexes), timeframe_ratio)]
+                points += [[ticker, self.higher_timeframe, index, self.ttype, trade_points.loc[index, 'time_higher'],
                             sig_pattern, [], [], [], []] for index in trade_indexes]
             else:
                 points += [[ticker, self.work_timeframe, index, self.ttype, trade_points.loc[index, 'time'],

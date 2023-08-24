@@ -1,6 +1,9 @@
 import pytest
 import pandas as pd
 from os import environ
+import sys
+sys.path.append('..')
+
 from config.config import ConfigFactory
 from indicators.indicators import IndicatorFactory
 

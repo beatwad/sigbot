@@ -43,8 +43,9 @@ class SignalStat:
                 continue
             df = dfs[ticker][timeframe]['data'][ttype]
             # array of prices after signal
-            signal_price = df['close'].iloc[index]
-            signal_smooth_price = df['close_smooth'].iloc[index]
+            index = df.loc[df['time'] == time, 'close'].index[0]
+            signal_price = df.iloc[index]['close']
+            signal_smooth_price = df.iloc[index]['close_smooth']
             # If index of point was found too early - we shouldn't use it
             if index < 50:
                 continue

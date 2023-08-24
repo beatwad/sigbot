@@ -334,7 +334,7 @@ class Visualizer:
                                         color=self.ticker_color)
                 axs_higher[1].set_title('Сила тренда', fontsize=14, color=self.ticker_color)
             elif indicator_tmp == 'MACD':
-                axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Тренд', fontsize=14,
+                axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.working_timeframe} - Тренд', fontsize=14,
                                         color=self.ticker_color)
                 axs_higher[1].set_title('MACD', fontsize=14, color=self.ticker_color)
             # plot candles

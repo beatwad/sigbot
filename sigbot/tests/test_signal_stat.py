@@ -1,6 +1,10 @@
 import pytest
 from os import environ
 import pandas as pd
+
+import sys
+sys.path.append('..')
+
 from config.config import ConfigFactory
 from signal_stat.signal_stat import SignalStat
 

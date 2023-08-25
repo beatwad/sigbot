@@ -197,4 +197,9 @@ def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
     res = gd.add_indicator_data(dfs, data, 'buy', indicators, ticker,
                                 timeframe, data_qty)[ticker][timeframe]['data']['buy']
     dfs[ticker][timeframe]['data']['buy'] = res
+    # res_cols, exp_cols = res.columns, expected[0].columns
+    # exp = expected[0].copy()
+    # exp = exp.rename({'close_price_change_lag_1': 'price_change_1'}, axis=1)
+    # exp.to_pickle('test_BTCUSDT_5m_indicators.pkl')
+    # diff = res.compare(expected[0])
     assert res.equals(expected[0])

@@ -44,7 +44,7 @@ class SignalBase:
 
     @staticmethod
     def lower_bound(low_bound: float, indicator: pd.Series, indicator_lag_1: pd.Series,
-                         indicator_lag_2: pd.Series) -> np.ndarray:
+                    indicator_lag_2: pd.Series) -> np.ndarray:
         """ Returns True if at least two of three last points of indicator are higher than high_bound param """
         indicator = np.where(indicator < low_bound, 1, 0)
         indicator_lag_1 = np.where(indicator_lag_1 < low_bound, 1, 0)
@@ -54,7 +54,7 @@ class SignalBase:
 
     @staticmethod
     def higher_bound(high_bound: float, indicator: pd.Series, indicator_lag_1: pd.Series,
-                          indicator_lag_2: pd.Series) -> np.ndarray:
+                     indicator_lag_2: pd.Series) -> np.ndarray:
         """ Returns True if at least two of three last points of indicator are higher than high_bound param """
         indicator = np.where(indicator > high_bound, 1, 0)
         indicator_lag_1 = np.where(indicator_lag_1 > high_bound, 1, 0)
@@ -64,7 +64,7 @@ class SignalBase:
 
     @staticmethod
     def crossed_lines(up: bool, indicator: pd.Series,
-                           indicator_lag_1: pd.Series, indicator_lag_2: pd.Series) -> np.ndarray:
+                      indicator_lag_1: pd.Series, indicator_lag_2: pd.Series) -> np.ndarray:
         """ Returns True if slowk and slowd lines of RSI has crossed """
         if up:
             indicator = np.where(indicator < 0, 1, 0)
@@ -156,14 +156,14 @@ class STOCHSignal(SignalBase):
         stoch_diff_lag_1 = df['stoch_diff'].shift(1)
         stoch_diff_lag_2 = df['stoch_diff'].shift(2)
 
-        if self.ttype == 'buy':
+        if self.ttype == 'sell':
             lower_bound_slowk = self.lower_bound(self.low_bound, stoch_slowk, stoch_slowk_lag_1, stoch_slowk_lag_2)
             lower_bound_slowd = self.lower_bound(self.low_bound, stoch_slowd, stoch_slowd_lag_1, stoch_slowd_lag_2)
             crossed_lines_down = self.crossed_lines(False, stoch_diff, stoch_diff_lag_1, stoch_diff_lag_2)
             up_direction_slowk = self.up_direction(df['stoch_slowk_dir'])
             up_direction_slowd = self.up_direction(df['stoch_slowd_dir'])
-            stoch_up = lower_bound_slowk & lower_bound_slowd & crossed_lines_down & up_direction_slowk & \
-                       up_direction_slowd
+            stoch_up = (lower_bound_slowk & lower_bound_slowd & crossed_lines_down & up_direction_slowk &
+                        up_direction_slowd)
             return stoch_up
 
         higher_bound_slowk = self.higher_bound(self.high_bound, stoch_slowk, stoch_slowk_lag_1, stoch_slowk_lag_2)
@@ -171,8 +171,8 @@ class STOCHSignal(SignalBase):
         crossed_lines_up = self.crossed_lines(True, stoch_diff, stoch_diff_lag_1, stoch_diff_lag_2)
         down_direction_slowk = self.down_direction(df['stoch_slowk_dir'])
         down_direction_slowd = self.down_direction(df['stoch_slowd_dir'])
-        stoch_down = higher_bound_slowk & higher_bound_slowd & crossed_lines_up & down_direction_slowk & \
-                     down_direction_slowd
+        stoch_down = (higher_bound_slowk & higher_bound_slowd & crossed_lines_up & down_direction_slowk &
+                      down_direction_slowd)
         return stoch_down
 
 
@@ -194,7 +194,7 @@ class RSISignal(SignalBase):
         rsi = df['rsi']
         rsi_lag_1 = df['rsi'].shift(1)
         rsi_lag_2 = df['rsi'].shift(2)
-        if self.ttype == 'buy':
+        if self.ttype == 'sell':
             rsi_lower = self.lower_bound(self.low_bound, rsi, rsi_lag_1, rsi_lag_2)
             return rsi_lower
         rsi_higher = self.higher_bound(self.high_bound, rsi, rsi_lag_1, rsi_lag_2)
@@ -217,8 +217,9 @@ class TrendSignal(SignalBase):
             2 - Return true if trend is moving down (sell signal)  """
         # According to difference between working timeframe and higher timeframe for every point on working timeframe
         # find corresponding value of Linear Regression from higher timeframe
-        linear_reg_angle = pd.merge(trade_points, df, how='left', left_on='time_higher', right_on='time')['linear_reg_angle']
-
+        linear_reg_angle = pd.merge(trade_points, df, how='left', left_on='time_higher',
+                                    right_on='time')['linear_reg_angle']
+        x = pd.merge(trade_points, df, how='left', left_on='time_higher', right_on='time')
         # buy trade
         if self.ttype == 'buy':
             # find Linear Regression signal
@@ -281,18 +282,21 @@ class MACDSignal(SignalBase):
 
     def find_signal(self, df: pd.DataFrame, trade_points: pd.DataFrame, timeframe_ratio: int) -> np.ndarray:
         """ Find MACD signal """
-        macd_df = pd.merge(trade_points, df, how='left', left_on='time_higher', right_on='time')[['macdhist', 'macd_dir', 'macdsignal_dir']]
+        macd_df = pd.merge(trade_points, df, how='left',
+                           left_on='time_higher', right_on='time')[['macdhist', 'macd_dir', 'macdsignal_dir']]
         macd_df['macdhist_1'] = macd_df['macdhist'].shift(timeframe_ratio)
         macd_df['macdhist_2'] = macd_df['macdhist'].shift(timeframe_ratio * 2)
 
         if self.ttype == 'buy':
-            crossed_lines_down = self.crossed_lines(False, macd_df['macdhist'], macd_df['macdhist_1'], macd_df['macdhist_2'])
+            crossed_lines_down = self.crossed_lines(False, macd_df['macdhist'],
+                                                    macd_df['macdhist_1'], macd_df['macdhist_2'])
             up_direction_macd = self.up_direction(macd_df['macd_dir'])
             up_direction_macdsignal = self.up_direction(macd_df['macdsignal_dir'])
             macd_up = crossed_lines_down & up_direction_macd & up_direction_macdsignal
             return macd_up
 
-        crossed_lines_up = self.crossed_lines(True, macd_df['macdhist'], macd_df['macdhist_1'], macd_df['macdhist_2'])
+        crossed_lines_up = self.crossed_lines(True, macd_df['macdhist'],
+                                              macd_df['macdhist_1'], macd_df['macdhist_2'])
         down_direction_slowk = self.down_direction(macd_df['macd_dir'])
         down_direction_slowd = self.down_direction(macd_df['macdsignal_dir'])
         macd_down = crossed_lines_up & down_direction_slowk & down_direction_slowd
@@ -530,8 +534,9 @@ class FindSignal:
         # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
         trade_points = pd.merge(trade_points[['time']], tmp[['time', 'time_higher']], how='left')
         trade_points['time_higher'] = trade_points['time_higher'].fillna(method='ffill')
-        trade_points['time_higher'] = trade_points['time_higher'].fillna(trade_points['time_higher'].min() - pd.to_timedelta(int(self.higher_timeframe[:-1]), 
-                                                                                                                             self.higher_timeframe[-1]))
+        trade_points['time_higher'] = trade_points['time_higher'].fillna(trade_points['time_higher'].min() -
+                                                                         pd.to_timedelta(int(self.higher_timeframe[:-1]),
+                                                                                         self.higher_timeframe[-1]))
         # Fill signal point df with signals from indicators
         for indicator_signal in self.indicator_signals:
             # if indicators work with higher timeframe - we should treat them differently
@@ -562,7 +567,7 @@ class FindSignal:
             # save only recent trade indexes
             trade_indexes = trade_indexes[df_work.shape[0] - trade_indexes < data_qty]
             sig_pattern = '_'.join(pattern)
-            if sig_pattern == 'MACD': # or sig_pattern == 'Pattern_Trend':
+            if sig_pattern == 'MACD':  # or sig_pattern == 'Pattern_Trend':
                 # sparse signal indexes for higher timeframe
                 trade_indexes = [trade_indexes[i] for i in range(0, len(trade_indexes), timeframe_ratio)]
                 points += [[ticker, self.higher_timeframe, index, self.ttype, trade_points.loc[index, 'time_higher'],

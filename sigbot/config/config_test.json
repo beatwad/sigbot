@@ -366,7 +366,9 @@
       },
       "Pattern": {
         "params": {
-          "use_vol": 1,
+          "vol_window": 96,
+          "vol_q_high": 0.75,
+          "vol_q_low": 0.1,
           "window_low_bound": 2,
           "window_high_bound": 5,
           "first_candle": 0.667,

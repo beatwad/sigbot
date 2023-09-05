@@ -295,9 +295,9 @@ class HighVolume(Indicator):
         except FileNotFoundError:
             pass
 
-    def save_vol_stat(self) -> None:
+    def save_vol_stat(self, quantile_vol: np.array) -> None:
         """ Save volume statistics to file """
-        np.save(self.vol_stat_file_path)
+        np.save(self.vol_stat_file_path, quantile_vol)
 
     def get_volume(self, df: pd.DataFrame, data_qty: int) -> list:
         """ Get MinMax normalized volume """
@@ -335,7 +335,7 @@ class HighVolume(Indicator):
         quantile_vol = np.quantile(self.vol_stat, self.high_volume_quantile / 1000)
         df['quantile_vol'] = quantile_vol
         # save volume statistics to file
-        # self.save_vol_stat()
+        # self.save_vol_stat(quantile_vol)
         return df
 
 

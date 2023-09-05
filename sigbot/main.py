@@ -5,7 +5,7 @@ from datetime import datetime
 from os import environ, remove
 
 # Set environment variable
-environ["ENV"] = "debug"
+environ["ENV"] = "1h_4h"
 
 from bot.bot import SigBot
 from config.config import ConfigFactory
@@ -59,11 +59,12 @@ class Main:
 
 
 if __name__ == "__main__":
+    cycle_cnt, cycle_num = 0, 24
     load_tickers = True
     database, exchanges, tb_bot = None, None, None
     error_notification_sent = False
 
-    while True:
+    while cycle_cnt < cycle_num:
         main = Main(load_tickers, **configs)
         # variables that is used to save some important sigbot object to prevent their recreation
         # and additional memory consumption; their values are saved on the first cycle and then are used
@@ -83,6 +84,7 @@ if __name__ == "__main__":
             while int((dt2 - dt1).total_seconds() / 3600) <= main.cycle_length:
                 main.cycle()
                 dt2 = datetime.now()
+                cycle_num += 1
         except (KeyboardInterrupt, SystemExit):
             pass
         except:

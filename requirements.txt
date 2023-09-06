@@ -6,7 +6,7 @@ matplotlib==3.5.3
 mplfinance==0.12.9b1
 python-telegram-bot==20.0
 proplot==0.9.5
-requests==2.28.1
+requests==2.28.2
 pytest==7.1.2
 freezegun==1.2.2
 tqdm==4.64.1

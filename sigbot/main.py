@@ -80,3 +80,9 @@ if __name__ == "__main__":
                 text = f'Catch an exception: {sys.exc_info()[1]}'
                 main.sigbot.telegram_bot.send_message(main.sigbot.telegram_bot.chat_ids['Errors'], None, text)
                 error_notification_sent = True
+        print(dt1)
+        print(dt2)
+        print((dt2 - dt1).total_seconds())
+        print(int((dt2 - dt1).total_seconds() / 3600))
+        print(main.cycle_length)
+        print(main.new_data_flag)

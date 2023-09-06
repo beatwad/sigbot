@@ -69,7 +69,7 @@ if __name__ == "__main__":
     # sigbot init
     main = Main(load_tickers=True, **configs)
     # close the bot after some time (default is 24 hours) and only after it get new candle data
-    while int((dt2 - dt1).total_seconds() / 3600) <= main.cycle_length and main.new_data_flag:
+    while int((dt2 - dt1).total_seconds() / 3600) <= main.cycle_length or main.new_data_flag:
         try:
             main.cycle()
             dt2 = datetime.now()

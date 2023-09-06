@@ -69,10 +69,15 @@ if __name__ == "__main__":
     # sigbot init
     main = Main(load_tickers=True, **configs)
     # close the bot after some time (default is 24 hours) and only after it get new candle data
-    while int((dt2 - dt1).total_seconds() / 3600) <= main.cycle_length or main.new_data_flag:
+    while int((dt2 - dt1).total_seconds() / 3600) <= main.cycle_length or not main.new_data_flag:
         try:
             main.cycle()
             dt2 = datetime.now()
+            if main.new_data_flag:
+                print(dt1)
+                print(dt2)
+                print((dt2 - dt1).total_seconds())
+                print(int((dt2 - dt1).total_seconds() / 3600))
         except (KeyboardInterrupt, SystemExit):
             pass
         except:
@@ -80,9 +85,3 @@ if __name__ == "__main__":
                 text = f'Catch an exception: {sys.exc_info()[1]}'
                 main.sigbot.telegram_bot.send_message(main.sigbot.telegram_bot.chat_ids['Errors'], None, text)
                 error_notification_sent = True
-        print(dt1)
-        print(dt2)
-        print((dt2 - dt1).total_seconds())
-        print(int((dt2 - dt1).total_seconds() / 3600))
-        print(main.cycle_length)
-        print(main.new_data_flag)

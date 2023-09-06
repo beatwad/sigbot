@@ -26,6 +26,8 @@ class Main:
         self.cycle_length = configs[self.type]['params']['cycle_length_hours']
         self.first_cycle_qty_miss = configs[self.type]['params']['first_cycle_qty_miss']
         self.sigbot = SigBot(self, load_tickers=load_tickers, **configs)
+        # this flag is used to close the bot only after it get new candle data
+        self.new_data_flag = False
 
     @staticmethod
     def check_time(dt, time_period):
@@ -45,7 +47,10 @@ class Main:
                 dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
                 print(f'Cycle is {self.cycle_number}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
                 self.cycle_number += 1
+                self.new_data_flag = True
                 sleep(60)
+            else:
+                self.new_data_flag = False
             sleep(self.bot_cycle_length)
         except (KeyboardInterrupt, SystemExit):
             # stop all exchange monitors
@@ -63,15 +68,15 @@ if __name__ == "__main__":
     dt1 = dt2 = datetime.now()
     # sigbot init
     main = Main(load_tickers=True, **configs)
-    # close the bot after some time (default is 24 hours)
-    try:
-        while int((dt2 - dt1).total_seconds() / 3600) <= main.cycle_length:
+    # close the bot after some time (default is 24 hours) and only after it get new candle data
+    while int((dt2 - dt1).total_seconds() / 3600) <= main.cycle_length and main.new_data_flag:
+        try:
             main.cycle()
             dt2 = datetime.now()
-    except (KeyboardInterrupt, SystemExit):
-        pass
-    except:
-        if not error_notification_sent:
-            text = f'Catch an exception: {sys.exc_info()[1]}'
-            main.sigbot.telegram_bot.send_message(main.sigbot.telegram_bot.chat_ids['Errors'], None, text)
-            error_notification_sent = True
+        except (KeyboardInterrupt, SystemExit):
+            pass
+        except:
+            if not error_notification_sent:
+                text = f'Catch an exception: {sys.exc_info()[1]}'
+                main.sigbot.telegram_bot.send_message(main.sigbot.telegram_bot.chat_ids['Errors'], None, text)
+                error_notification_sent = True

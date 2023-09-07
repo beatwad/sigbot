@@ -412,21 +412,11 @@
   "Patterns": [
     [
       "STOCH",
+      "RSI"
+    ],
+    [
+      "STOCH",
       "RSI",
-      "Trend"
-    ],
-    [
-      "HighVolume"
-    ],
-    [
-      "PumpDump",
-      "Trend"
-    ],
-    [
-      "MACD"
-    ],
-    [
-      "Pattern",
       "Trend"
     ]
   ],
@@ -452,7 +442,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 100
+      "max_prev_candle_limit": 500
     }
   },
   "Telegram": {

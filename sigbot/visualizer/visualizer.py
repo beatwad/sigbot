@@ -48,15 +48,11 @@ class Visualizer:
         if indicator in self.indicators_to_plot:
             indicator_params = list(self.indicator_params[point_type][indicator]['params'].values())
             if indicator_params:
-                if indicator in ['RSI', 'STOCH']:
-                    buy_level, sell_level = indicator_params[1], indicator_params[0]
-                else:
-                    buy_level, sell_level = indicator_params[0], indicator_params[1]
                 if indicator in self.boundary_indicators:
                     if point_type == 'buy':
-                        axs[index + 1].axhline(y=buy_level, color='g', linestyle='--', linewidth=1.5)
+                        axs[index + 1].axhline(y=indicator_params[0], color='g', linestyle='--', linewidth=1.5)
                     else:
-                        axs[index + 1].axhline(y=sell_level, color='r', linestyle='--', linewidth=1.5)
+                        axs[index + 1].axhline(y=indicator_params[1], color='r', linestyle='--', linewidth=1.5)
 
     def plot_point(self, point_type: str, data: pd.DataFrame, ax: plt.axis, index=0, higher=False) -> None:
         """ Plot trade point """

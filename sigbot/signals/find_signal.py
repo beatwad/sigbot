@@ -156,7 +156,7 @@ class STOCHSignal(SignalBase):
         stoch_diff_lag_1 = df['stoch_diff'].shift(1)
         stoch_diff_lag_2 = df['stoch_diff'].shift(2)
 
-        if self.ttype == 'sell':
+        if self.ttype == 'buy':
             lower_bound_slowk = self.lower_bound(self.low_bound, stoch_slowk, stoch_slowk_lag_1, stoch_slowk_lag_2)
             lower_bound_slowd = self.lower_bound(self.low_bound, stoch_slowd, stoch_slowd_lag_1, stoch_slowd_lag_2)
             crossed_lines_down = self.crossed_lines(False, stoch_diff, stoch_diff_lag_1, stoch_diff_lag_2)
@@ -194,7 +194,7 @@ class RSISignal(SignalBase):
         rsi = df['rsi']
         rsi_lag_1 = df['rsi'].shift(1)
         rsi_lag_2 = df['rsi'].shift(2)
-        if self.ttype == 'sell':
+        if self.ttype == 'buy':
             rsi_lower = self.lower_bound(self.low_bound, rsi, rsi_lag_1, rsi_lag_2)
             return rsi_lower
         rsi_higher = self.higher_bound(self.high_bound, rsi, rsi_lag_1, rsi_lag_2)

@@ -533,7 +533,7 @@ class FindSignal:
         tmp['time_higher'] = tmp['time']
         # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
         trade_points = pd.merge(trade_points[['time']], tmp[['time', 'time_higher']], how='left')
-        trade_points['time_higher'] = trade_points['time_higher'].fillna(method='ffill')
+        trade_points['time_higher'] = trade_points['time_higher'].ffill()
         trade_points['time_higher'] = trade_points['time_higher'].fillna(trade_points['time_higher'].min() -
                                                                          pd.to_timedelta(int(self.higher_timeframe[:-1]),
                                                                                          self.higher_timeframe[-1]))

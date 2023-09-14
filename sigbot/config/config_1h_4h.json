@@ -213,9 +213,9 @@
       },
       "MACD": {
         "params": {
-          "fastperiod": 12,
-          "slowperiod": 26,
-          "signalperiod": 9
+          "fastperiod": 14,
+          "slowperiod": 28,
+          "signalperiod": 11
         }
       },
       "Pattern": {
@@ -269,9 +269,9 @@
       },
       "MACD": {
         "params": {
-          "fastperiod": 12,
-          "slowperiod": 26,
-          "signalperiod": 9
+          "fastperiod": 14,
+          "slowperiod": 28,
+          "signalperiod": 11
         }
       },
       "Pattern": {

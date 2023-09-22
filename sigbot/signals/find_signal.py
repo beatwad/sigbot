@@ -570,8 +570,8 @@ class FindSignal:
                 # sparse signal indexes for higher timeframe
                 trade_indexes = [trade_indexes[i] for i in range(0, len(trade_indexes), timeframe_ratio)]
                 points += [[ticker, self.higher_timeframe, index, self.ttype, trade_points.loc[index, 'time_higher'],
-                            sig_pattern, [], [], [], []] for index in trade_indexes]
+                            sig_pattern, [], [], [], 0] for index in trade_indexes]
             else:
                 points += [[ticker, self.work_timeframe, index, self.ttype, trade_points.loc[index, 'time'],
-                            sig_pattern, [], [], [], []] for index in trade_indexes]
+                            sig_pattern, [], [], [], 0] for index in trade_indexes]
         return points

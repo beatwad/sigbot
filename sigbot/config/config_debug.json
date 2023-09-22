@@ -526,7 +526,7 @@
     "params": {
       "model_path": "ml/lgbm.pkl",
       "feature_path": "ml/features.json",
-      "high_bound": 0.62
+      "high_bound": 0.5
     }
   }
 }

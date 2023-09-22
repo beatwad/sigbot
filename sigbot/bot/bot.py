@@ -449,7 +449,8 @@ class MonitorExchange(Thread):
                 5 - signal pattern, by which signal was searched for
                 6 - path to file with candle/indicator plots of the signal
                 7 - list of exchanges where ticker with this signal can be found
-                8 - statistics for the current pattern """
+                8 - statistics for the current pattern
+                9 - ML model prediction """
         tickers = self.exchange_data['tickers']
         dt_now = datetime.now()
         for ticker in tickers:
@@ -515,7 +516,7 @@ class MonitorExchange(Thread):
                             sig_points = self.sigbot.calc_statistics(sig_points)
                             # Send Telegram notification
                             if sig_points:
-                                self.sigbot.make_prediction(sig_points)
+                                sig_points = self.sigbot.make_prediction(sig_points)
                                 t_print(self.exchange,
                                         [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
                                 self.sigbot.telegram_bot.notification_list += sig_points

@@ -145,7 +145,7 @@ class Visualizer:
 
     def create_plot(self, dfs, point, levels):
         # get necessary info
-        ticker, timeframe, point_index, point_type, sig_time, pattern, plot_path, exchange_list, statistics, y = point
+        ticker, timeframe, point_index, point_type, sig_time, pattern, plot_path, exchange_list, statistics, pred = point
         df_working = dfs[ticker][self.working_timeframe]['data'][point_type]
         df_working = df_working.loc[point_index - self.plot_width:point_index]
         ohlc = df_working[['time', 'open', 'high', 'low', 'close', 'volume']].set_index('time')

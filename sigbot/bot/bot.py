@@ -13,6 +13,7 @@ from indicators.indicators import IndicatorFactory
 from telegram_api.telegram_api import TelegramBot
 from log.log import exception, logger
 from constants.constants import telegram_token
+from ml.inference import Model
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs
@@ -100,6 +101,8 @@ class SigBot:
         self.fut_ex_monitor_list = list()
         # dictionary that is used to determine too late signals according to current work_timeframe
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
+        # model for price prediction
+        self.model = Model(**configs)
 
     def get_api_and_tickers(self) -> None:
         """ Get API and ticker list for every exchange in list """
@@ -302,6 +305,34 @@ class SigBot:
         for monitor in self.fut_ex_monitor_list:
             monitor.save_opt_statistics(ttype, opt_limit, opt_flag)
 
+    def add_higher_time(self, ticker: str) -> None:
+        """ Add time from higher timeframe to dataframe with working timeframe data"""
+        for ttype in ['buy', 'sell']:
+            # Create signal point df for each indicator
+            df_work = self.database[ticker][self.work_timeframe]['data'][ttype]
+            # add signals from
+            df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
+            df_higher['time_higher'] = df_higher['time']
+            # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
+            df_work['time_higher'] = pd.merge(df_work[['time']],
+                                              df_higher[['time', 'time_higher']], how='left')['time_higher']
+            df_work['time_higher'].ffill(inplace=True)
+            df_work['time_higher'].bfill(inplace=True)
+            self.database[ticker][self.work_timeframe]['data'][ttype] = df_work
+
+    def make_prediction(self, signal_points: list) -> list:
+        """ Get dataset and use ML model to make price prediction for current signal points """
+        ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = signal_points[0]
+        df = self.database[ticker][timeframe]['data'][ttype]
+        # add signals from
+        df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
+        df_higher = df_higher[['time', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist', 'macd_dir',
+                               'macdsignal', 'macdsignal_dir']]
+        df_higher.rename({'time': 'time_higher'}, axis=1, inplace=True)
+        df = pd.merge(df, df_higher, how='left', on='time_higher')
+        preds = self.model.make_prediction(df, signal_points)
+        return preds
+
     @exception
     def main_cycle(self):
         """ Create and run exchange monitors """
@@ -451,6 +482,8 @@ class MonitorExchange(Thread):
                         continue
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
+                        # Add time from higher timefram to dataframe with working timeframe data
+                        self.sigbot.add_higher_time(ticker)
                         # Get the signals
                         try:
                             sig_buy_points = self.sigbot.get_buy_signals(ticker, timeframe, data_qty_buy,
@@ -482,6 +515,7 @@ class MonitorExchange(Thread):
                             sig_points = self.sigbot.calc_statistics(sig_points)
                             # Send Telegram notification
                             if sig_points:
+                                self.sigbot.make_prediction(sig_points)
                                 t_print(self.exchange,
                                         [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
                                 self.sigbot.telegram_bot.notification_list += sig_points

@@ -219,7 +219,6 @@ class TrendSignal(SignalBase):
         # find corresponding value of Linear Regression from higher timeframe
         linear_reg_angle = pd.merge(trade_points, df, how='left', left_on='time_higher',
                                     right_on='time')['linear_reg_angle']
-        x = pd.merge(trade_points, df, how='left', left_on='time_higher', right_on='time')
         # buy trade
         if self.ttype == 'buy':
             # find Linear Regression signal

@@ -5,7 +5,7 @@ from os import environ, remove
 from constants.constants import telegram_token
 
 # Get configs
-environ["ENV"] = "1h_4h"
+# environ["ENV"] = "1h_4h"
 
 from log.log import exception
 from time import sleep
@@ -223,7 +223,11 @@ class TelegramBot:
             text += f"https://tradingview.com/symbols/{cleaned_ticker}\n"
             if cleaned_ticker[:-4] != 'BTC':
                 text += f'{cleaned_ticker[:-4]}/BTC:\n'
-                text += f"https://ru.tradingview.com/symbols/{cleaned_ticker[:-4]}BTC"
+                text += f"https://ru.tradingview.com/symbols/{cleaned_ticker[:-4]}BTC\n"
+            # send ML model prediction
+            if prediction > 0:
+                text += 'AI confidence / Уверенность AI:\n'
+                text += f'{round(prediction * 100, 0)}%'
             # Send message + image
             if sig_img_path:
                 # if exchange is in the list of favorite exchanges and pattern is in list of your favorite patterns
@@ -232,6 +236,7 @@ class TelegramBot:
                         sig_pattern in self.favorite_patterns:
                     favorite_chat_id = self.favorite_chat_ids[sig_pattern]
                     favorite_message_thread_id = self.favorite_message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
+                    
                     if favorite_message_thread_id is not None:
                         favorite_message_thread_id = int(favorite_message_thread_id)
                     self.send_photo(favorite_chat_id, favorite_message_thread_id, sig_img_path, text)

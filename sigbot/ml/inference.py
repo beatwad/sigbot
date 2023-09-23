@@ -35,7 +35,10 @@ class Model:
             if pattern in ['Pattern_Trend', 'STOCH_RSI', 'MACD']:
                 patterns.append(pattern)
                 rows = pd.concat([rows, row])
-                rows.iloc[i, rows.columns.get_loc('sig_point_num')] = i
+                try:
+                    rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i
+                except:
+                    print(' ')
         rows.reset_index(inplace=True, drop=True)
         # for every pattern in a signal point list - add its row and mark corresponding pattern feature with 1
         for i, pattern in enumerate(patterns):

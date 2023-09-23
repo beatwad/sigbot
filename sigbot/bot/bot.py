@@ -317,24 +317,20 @@ class SigBot:
             df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
             df_higher['time_higher'] = df_higher['time']
             # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
-            df_work['time_higher'] = pd.merge(df_work[['time']],
-                                              df_higher[['time', 'time_higher']], how='left')['time_higher']
-            df_work['time_higher'].ffill(inplace=True)
-            df_work['time_higher'].bfill(inplace=True)
-            self.database[ticker][self.work_timeframe]['data'][ttype] = df_work
+            higher_features = ['time', 'time_higher', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist',  'macd_dir',
+                               'macdsignal', 'macdsignal_dir']
+            df_work[higher_features] = pd.merge(df_work[['time']], df_higher[higher_features], how='left', on='time')
+            higher_features.remove('time')
+            for f in higher_features:
+                df_work[f].ffill(inplace=True)
+                df_work[f].bfill(inplace=True)
 
     def make_prediction(self, signal_points: list) -> list:
         """ Get dataset and use ML model to make price prediction for current signal points """
         ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = signal_points[0]
         df = self.database[ticker][timeframe]['data'][ttype]
-        # add signals from
-        df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
-        df_higher = df_higher[['time', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist', 'macd_dir',
-                               'macdsignal', 'macdsignal_dir']]
-        df_higher.rename({'time': 'time_higher'}, axis=1, inplace=True)
-        df = pd.merge(df, df_higher, how='left', on='time_higher')
-        preds = self.model.make_prediction(df, signal_points)
-        return preds
+        signal_points = self.model.make_prediction(df, signal_points)
+        return signal_points
 
     @exception
     def main_cycle(self):

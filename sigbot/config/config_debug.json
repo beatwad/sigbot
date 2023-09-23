@@ -406,7 +406,7 @@
       "bot_cycle_length_sec": 10,
       "cycle_length_hours": 24,
       "time_period_minutes": 60,
-      "first_cycle_qty_miss": 0
+      "first_cycle_qty_miss": 1
     }
   },
   "Patterns": [
@@ -442,7 +442,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 500
+      "max_prev_candle_limit": 2
     }
   },
   "Telegram": {
@@ -472,6 +472,8 @@
       },
       "favorite_chat_ids": {
         "Pattern_Trend": "-1001840430020",
+        "STOCH_RSI": "-1001840430020",
+        "MACD": "-1001840430020",
         "Multiple_Patterns": "-1001840430020"
       },
       "favorite_message_thread_ids": {

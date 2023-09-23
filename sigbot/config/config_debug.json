@@ -451,7 +451,9 @@
         "ByBitPerpetual"
       ],
       "favorite_patterns": [
-        "Pattern_Trend"
+        "Pattern_Trend",
+        "STOCH_RSI",
+        "MACD"
       ],
       "log_path": "telegram_log.txt",
       "chat_ids": {
@@ -473,8 +475,12 @@
         "Multiple_Patterns": "-1001840430020"
       },
       "favorite_message_thread_ids": {
+        "STOCH_RSI_buy": "6",
+        "STOCH_RSI_sell": "2",
         "Pattern_Trend_buy": "9",
         "Pattern_Trend_sell": "12",
+        "MACD_buy": "10906",
+        "MACD_sell": "10905",
         "Multiple_Patterns": "883"
       },
       "min_prev_candle_limit": 3,

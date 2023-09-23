@@ -5,7 +5,7 @@ from os import environ, remove
 from constants.constants import telegram_token
 
 # Get configs
-# environ["ENV"] = "15m_1h"
+environ["ENV"] = "1h_4h"
 
 from log.log import exception
 from time import sleep
@@ -192,6 +192,8 @@ class TelegramBot:
         sig_pattern = message[5]
         # get list of available exchanges
         sig_exchanges = message[7]
+        # get price prediction of model
+        prediction = message[9]
         # get chat and thread ids
         chat_id = self.chat_ids[sig_pattern]
         message_thread_id = self.message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
@@ -241,14 +243,6 @@ class TelegramBot:
             chat_id = self.chat_ids['Multiple_Patterns']
             message_thread_id = self.message_thread_ids.get('Multiple_Patterns', None)
             self.send_message(chat_id, message_thread_id, text)
-            # if exchange is in the list of favorite exchanges and one of patterns is in list of your favorite patterns
-            # send the signal to special group
-            if set(sig_exchanges).intersection(set(self.favorite_exchanges)) and \
-                    set(patterns).intersection(set(self.favorite_patterns)):
-                favorite_chat_id = self.favorite_chat_ids['Multiple_Patterns']
-                favorite_message_thread_id = self.favorite_message_thread_ids.get('Multiple_Patterns', None)
-                self.send_message(favorite_chat_id, favorite_message_thread_id, text)
-
         self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.delete_images()
 

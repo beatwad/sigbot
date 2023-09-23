@@ -102,7 +102,10 @@ class SigBot:
         # dictionary that is used to determine too late signals according to current work_timeframe
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
         # model for price prediction
-        self.model = Model(**configs)
+        if opt_type:
+            self.model = None
+        else:
+            self.model = Model(**configs)
 
     def get_api_and_tickers(self) -> None:
         """ Get API and ticker list for every exchange in list """

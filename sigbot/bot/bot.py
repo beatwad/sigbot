@@ -314,10 +314,7 @@ class SigBot:
             # Create signal point df for each indicator
             df_work = self.database[ticker][self.work_timeframe]['data'][ttype]
             # add signals from higher timeframe
-            try:
-                df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
-            except:
-                print(' ')
+            df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
             df_higher['time_higher'] = df_higher['time']
             # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
             higher_features = ['time', 'time_higher', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist',  'macd_dir',

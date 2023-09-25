@@ -406,7 +406,7 @@
       "bot_cycle_length_sec": 10,
       "cycle_length_hours": 24,
       "time_period_minutes": 60,
-      "first_cycle_qty_miss": 0
+      "first_cycle_qty_miss": 1
     }
   },
   "Patterns": [
@@ -418,6 +418,13 @@
       "STOCH",
       "RSI",
       "Trend"
+    ],
+    [
+      "Pattern",
+      "Trend"
+    ],
+    [
+      "MACD"
     ]
   ],
   "SignalStat": {
@@ -442,7 +449,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 500
+      "max_prev_candle_limit": 2
     }
   },
   "Telegram": {
@@ -451,7 +458,9 @@
         "ByBitPerpetual"
       ],
       "favorite_patterns": [
-        "Pattern_Trend"
+        "Pattern_Trend",
+        "STOCH_RSI",
+        "MACD"
       ],
       "log_path": "telegram_log.txt",
       "chat_ids": {
@@ -470,11 +479,17 @@
       },
       "favorite_chat_ids": {
         "Pattern_Trend": "-1001840430020",
+        "STOCH_RSI": "-1001840430020",
+        "MACD": "-1001840430020",
         "Multiple_Patterns": "-1001840430020"
       },
       "favorite_message_thread_ids": {
+        "STOCH_RSI_buy": "6",
+        "STOCH_RSI_sell": "2",
         "Pattern_Trend_buy": "9",
         "Pattern_Trend_sell": "12",
+        "MACD_buy": "10906",
+        "MACD_sell": "10905",
         "Multiple_Patterns": "883"
       },
       "min_prev_candle_limit": 3,

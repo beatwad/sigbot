@@ -102,7 +102,10 @@ class SigBot:
         # dictionary that is used to determine too late signals according to current work_timeframe
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
         # model for price prediction
-        self.model = Model(**configs)
+        if opt_type:
+            self.model = None
+        else:
+            self.model = Model(**configs)
 
     def get_api_and_tickers(self) -> None:
         """ Get API and ticker list for every exchange in list """
@@ -310,28 +313,27 @@ class SigBot:
         for ttype in ['buy', 'sell']:
             # Create signal point df for each indicator
             df_work = self.database[ticker][self.work_timeframe]['data'][ttype]
-            # add signals from
-            df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
+            # add signals from higher timeframe
+            try:
+                df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
+            except:
+                print(' ')
             df_higher['time_higher'] = df_higher['time']
             # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
-            df_work['time_higher'] = pd.merge(df_work[['time']],
-                                              df_higher[['time', 'time_higher']], how='left')['time_higher']
-            df_work['time_higher'].ffill(inplace=True)
-            df_work['time_higher'].bfill(inplace=True)
-            self.database[ticker][self.work_timeframe]['data'][ttype] = df_work
+            higher_features = ['time', 'time_higher', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist',  'macd_dir',
+                               'macdsignal', 'macdsignal_dir']
+            df_work[higher_features] = pd.merge(df_work[['time']], df_higher[higher_features], how='left', on='time')
+            higher_features.remove('time')
+            for f in higher_features:
+                df_work[f].ffill(inplace=True)
+                df_work[f].bfill(inplace=True)
 
     def make_prediction(self, signal_points: list) -> list:
         """ Get dataset and use ML model to make price prediction for current signal points """
         ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = signal_points[0]
         df = self.database[ticker][timeframe]['data'][ttype]
-        # add signals from
-        df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
-        df_higher = df_higher[['time', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist', 'macd_dir',
-                               'macdsignal', 'macdsignal_dir']]
-        df_higher.rename({'time': 'time_higher'}, axis=1, inplace=True)
-        df = pd.merge(df, df_higher, how='left', on='time_higher')
-        preds = self.model.make_prediction(df, signal_points)
-        return preds
+        signal_points = self.model.make_prediction(df, signal_points)
+        return signal_points
 
     @exception
     def main_cycle(self):
@@ -449,7 +451,8 @@ class MonitorExchange(Thread):
                 5 - signal pattern, by which signal was searched for
                 6 - path to file with candle/indicator plots of the signal
                 7 - list of exchanges where ticker with this signal can be found
-                8 - statistics for the current pattern """
+                8 - statistics for the current pattern
+                9 - ML model prediction """
         tickers = self.exchange_data['tickers']
         dt_now = datetime.now()
         for ticker in tickers:
@@ -515,7 +518,7 @@ class MonitorExchange(Thread):
                             sig_points = self.sigbot.calc_statistics(sig_points)
                             # Send Telegram notification
                             if sig_points:
-                                self.sigbot.make_prediction(sig_points)
+                                sig_points = self.sigbot.make_prediction(sig_points)
                                 t_print(self.exchange,
                                         [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
                                 self.sigbot.telegram_bot.notification_list += sig_points

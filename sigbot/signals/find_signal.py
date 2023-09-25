@@ -512,10 +512,8 @@ class FindSignal:
         try:
             if self.ttype == 'buy':
                 df_work = dfs[ticker][self.work_timeframe]['data']['buy'].copy()
-                df_higher = dfs[ticker][self.higher_timeframe]['data']['buy'].copy()
             else:
                 df_work = dfs[ticker][self.work_timeframe]['data']['sell'].copy()
-                df_higher = dfs[ticker][self.higher_timeframe]['data']['sell'].copy()
         except KeyError:
             return points
 
@@ -528,11 +526,11 @@ class FindSignal:
         for indicator_signal in self.indicator_signals:
             # if indicators work with higher timeframe - we should treat them differently
             if indicator_signal.name == "Trend":
-                fs = indicator_signal.find_signal(df_higher)
+                fs = indicator_signal.find_signal(df_work)
             elif indicator_signal.name == "MACD":
                 # check higher timeframe signals every hour
                 if data_qty_higher > 1:
-                    fs = indicator_signal.find_signal(df_higher, timeframe_ratio)
+                    fs = indicator_signal.find_signal(df_work, timeframe_ratio)
                 else:
                     fs = np.zeros(df_work.shape[0])
             else:
@@ -554,12 +552,6 @@ class FindSignal:
             # save only recent trade indexes
             trade_indexes = trade_indexes[df_work.shape[0] - trade_indexes < data_qty]
             sig_pattern = '_'.join(pattern)
-            if sig_pattern == 'MACD':  # or sig_pattern == 'Pattern_Trend':
-                # sparse signal indexes for higher timeframe
-                trade_indexes = [trade_indexes[i] for i in range(0, len(trade_indexes), timeframe_ratio)]
-                points += [[ticker, self.higher_timeframe, index, self.ttype, df_work.loc[index, 'time_higher'],
-                            sig_pattern, [], [], [], 0] for index in trade_indexes]
-            else:
-                points += [[ticker, self.work_timeframe, index, self.ttype, df_work.loc[index, 'time'],
-                            sig_pattern, [], [], [], 0] for index in trade_indexes]
+            points += [[ticker, self.work_timeframe, index, self.ttype, df_work.loc[index, 'time'],
+                        sig_pattern, [], [], [], 0] for index in trade_indexes]
         return points

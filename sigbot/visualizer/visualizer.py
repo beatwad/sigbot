@@ -329,14 +329,10 @@ class Visualizer:
             axs_higher[1].spines['right'].set_color(self.border_color)
             axs_higher[1].spines['left'].set_color(self.border_color)
             # plot titles
-            if indicator_tmp == 'Trend':
-                axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Тренд', fontsize=14,
-                                        color=self.ticker_color)
+            if indicator_tmp == 'Trend' or indicator_tmp == 'MACD':
+                axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.higher_timeframe} - Trend / Тренд',
+                                        fontsize=14, color=self.ticker_color)
                 axs_higher[1].set_title('Сила тренда', fontsize=14, color=self.ticker_color)
-            elif indicator_tmp == 'MACD':
-                axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {self.working_timeframe} - Тренд', fontsize=14,
-                                        color=self.ticker_color)
-                axs_higher[1].set_title('MACD', fontsize=14, color=self.ticker_color)
             # plot candles
             mpf.plot(ohlc_higher, type='candle', ax=axs_higher[0], warn_too_much_data=1001, style='yahoo',
                      ylabel='', returnfig=True)

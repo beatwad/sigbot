@@ -418,6 +418,13 @@
       "STOCH",
       "RSI",
       "Trend"
+    ],
+    [
+      "Pattern",
+      "Trend"
+    ],
+    [
+      "MACD"
     ]
   ],
   "SignalStat": {
@@ -534,7 +541,7 @@
     "params": {
       "model_path": "ml/lgbm.pkl",
       "feature_path": "ml/features.json",
-      "high_bound": 0.5
+      "high_bound": 0.62
     }
   }
 }

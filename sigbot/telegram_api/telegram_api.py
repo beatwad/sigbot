@@ -233,10 +233,9 @@ class TelegramBot:
                 # if exchange is in the list of favorite exchanges and pattern is in list of your favorite patterns
                 # send the signal to special group
                 if set(sig_exchanges).intersection(set(self.favorite_exchanges)) and \
-                        sig_pattern in self.favorite_patterns:
+                        sig_pattern in self.favorite_patterns and prediction > 0:
                     favorite_chat_id = self.favorite_chat_ids[sig_pattern]
                     favorite_message_thread_id = self.favorite_message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
-                    
                     if favorite_message_thread_id is not None:
                         favorite_message_thread_id = int(favorite_message_thread_id)
                     self.send_photo(favorite_chat_id, favorite_message_thread_id, sig_img_path, text)

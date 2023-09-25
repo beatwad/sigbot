@@ -22,7 +22,8 @@ class Model:
         for key, features in self.feature_dict.items():
             if key.isdigit():
                 try:
-                    tmp_row = df.loc[df['time'] == last_time - pd.to_timedelta(int(key), unit='h'), features].reset_index(drop=True)
+                    tmp_row = df.loc[df['time'] == last_time -
+                                     pd.to_timedelta(int(key), unit='h'), features].reset_index(drop=True)
                 except KeyError:
                     return pd.DataFrame()
                 row = pd.concat([row, tmp_row], axis=1)

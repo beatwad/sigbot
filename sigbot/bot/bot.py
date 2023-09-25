@@ -308,22 +308,21 @@ class SigBot:
         for monitor in self.fut_ex_monitor_list:
             monitor.save_opt_statistics(ttype, opt_limit, opt_flag)
 
-    def add_higher_time(self, ticker: str) -> None:
+    def add_higher_time(self, ticker: str, ttype: str) -> None:
         """ Add time from higher timeframe to dataframe with working timeframe data"""
-        for ttype in ['buy', 'sell']:
-            # Create signal point df for each indicator
-            df_work = self.database[ticker][self.work_timeframe]['data'][ttype]
-            # add signals from higher timeframe
-            df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
-            df_higher['time_higher'] = df_higher['time']
-            # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
-            higher_features = ['time', 'time_higher', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist',  'macd_dir',
-                               'macdsignal', 'macdsignal_dir']
-            df_work[higher_features] = pd.merge(df_work[['time']], df_higher[higher_features], how='left', on='time')
-            higher_features.remove('time')
-            for f in higher_features:
-                df_work[f].ffill(inplace=True)
-                df_work[f].bfill(inplace=True)
+        # Create signal point df for each indicator
+        df_work = self.database[ticker][self.work_timeframe]['data'][ttype]
+        # add signals from higher timeframe
+        df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
+        df_higher['time_higher'] = df_higher['time']
+        # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
+        higher_features = ['time', 'time_higher', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist',  'macd_dir',
+                            'macdsignal', 'macdsignal_dir']
+        df_work[higher_features] = pd.merge(df_work[['time']], df_higher[higher_features], how='left', on='time')
+        higher_features.remove('time')
+        for f in higher_features:
+            df_work[f].ffill(inplace=True)
+            df_work[f].bfill(inplace=True)
 
     def make_prediction(self, signal_points: list) -> list:
         """ Get dataset and use ML model to make price prediction for current signal points """
@@ -420,6 +419,7 @@ class MonitorExchange(Thread):
                 self.get_indicators(df, ttype, ticker, timeframe, 1000, opt_flag)
                 # If current timeframe is working timeframe
                 if timeframe == self.sigbot.work_timeframe:
+                    self.sigbot.add_higher_time(ticker, ttype)
                     # Get the signals
                     if ttype == 'buy':
                         sig_points = self.sigbot.find_signal_buy.find_signal(self.sigbot.database, ticker, timeframe,
@@ -483,7 +483,8 @@ class MonitorExchange(Thread):
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Add time from higher timefram to dataframe with working timeframe data
-                        self.sigbot.add_higher_time(ticker)
+                        for ttype in ['buy', 'sell']:
+                            self.sigbot.add_higher_time(ticker, ttype)
                         # Get the signals
                         try:
                             sig_buy_points = self.sigbot.get_buy_signals(ticker, timeframe, data_qty_buy,
@@ -517,15 +518,15 @@ class MonitorExchange(Thread):
                             if sig_points:
                                 sig_points = self.sigbot.make_prediction(sig_points)
                                 t_print(self.exchange,
-                                        [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5]] for sp in sig_points])
+                                        [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5], sp[9]] for sp in sig_points])
                                 self.sigbot.telegram_bot.notification_list += sig_points
-                                # self.sigbot.telegram_bot.update_bot.set()
                                 self.sigbot.telegram_bot.check_notifications()
                             # Log the signals
                             for sig_point in sig_points:
                                 sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
                                               f'{ticker}, timeframe is {timeframe}, type is {sig_point[3]}, ' \
-                                              f'pattern is {sig_point[5]}, time is {sig_point[4]}'
+                                              f'pattern is {sig_point[5]}, time is {sig_point[4]},' \
+                                              f'model confidence is {sig_point[9]}'
                                 logger.info(sig_message)
                 # Save dataframe for further analysis
                 # self.save_dataframe(df, ticker, timeframe)

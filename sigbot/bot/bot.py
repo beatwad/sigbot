@@ -313,7 +313,10 @@ class SigBot:
         # Create signal point df for each indicator
         df_work = self.database[ticker][self.work_timeframe]['data'][ttype]
         # add signals from higher timeframe
-        df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
+        try:
+            df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
+        except KeyError:
+            return
         df_higher['time_higher'] = df_higher['time']
         # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
         higher_features = ['time', 'time_higher', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist',  'macd_dir',
@@ -323,6 +326,7 @@ class SigBot:
         for f in higher_features:
             df_work[f].ffill(inplace=True)
             df_work[f].bfill(inplace=True)
+        return
 
     def make_prediction(self, signal_points: list) -> list:
         """ Get dataset and use ML model to make price prediction for current signal points """

@@ -12,7 +12,7 @@ class Model:
         with open(feature_path) as f:
             self.feature_dict = json.load(f)
         # threshold that filters model predictions with low confidence
-        self.high_bound = configs['Model']['params']['high_bound']
+        self.pred_high_thresh = configs['Model']['params']['pred_high_thresh']
 
     def prepare_data(self, df: pd.DataFrame, signal_points: list) -> pd.DataFrame:
         """ Get data from ticker dataframe and prepare it for model prediction """
@@ -55,7 +55,7 @@ class Model:
         preds = np.zeros([len(rows), 1])
         preds[:, 0] = self.model.predict_proba(rows.iloc[:, :-1])[:, 1]
         # select only highly confident prediction
-        preds = np.where(preds >= self.high_bound, preds, 0).ravel().tolist()
+        preds = np.where(preds >= self.pred_high_thresh, preds, 0).ravel().tolist()
         sig_point_nums = rows['sig_point_num'].tolist()
         # add predictions to signal points
         for s_p_n, pred in zip(sig_point_nums, preds):

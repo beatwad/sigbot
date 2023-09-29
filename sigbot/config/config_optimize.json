@@ -264,14 +264,14 @@
       },
       "Trend": {
         "params": {
-          "timeperiod": 20
+          "timeperiod": 30
         }
       },
       "MACD": {
         "params": {
-          "fastperiod": 12,
-          "slowperiod": 26,
-          "signalperiod": 9
+          "fastperiod": 14,
+          "slowperiod": 28,
+          "signalperiod": 11
         }
       },
       "Pattern": {
@@ -336,13 +336,13 @@
       },
       "Pattern": {
         "params": {
-          "vol_window": 48,
+          "vol_window": 96,
           "vol_q_high": 0.75,
           "vol_q_low": 0.1,
           "window_low_bound": 1,
           "window_high_bound": 5,
-          "first_candle": 0.6,
-          "second_candle": 0.55
+          "first_candle": 0.5,
+          "second_candle": 0.5
         }
       },
       "PumpDump": {
@@ -381,7 +381,7 @@
           "vol_q_low": 0.1,
           "window_low_bound": 1,
           "window_high_bound": 5,
-          "first_candle": 0.7,
+          "first_candle": 0.75,
           "second_candle": 0.5
         }
       },
@@ -550,7 +550,7 @@
     "params": {
       "model_path": "ml/lgbm.pkl",
       "feature_path": "ml/features.json",
-      "pred_high_thresh": 0.5
+      "pred_high_thresh": 0.62
     }
   }
 }

@@ -5,6 +5,9 @@ import talib as ta
 from abc import abstractmethod
 from collections import Counter
 
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 
 class IndicatorFactory(object):
     """ Return indicator according to 'indicator' variable value """

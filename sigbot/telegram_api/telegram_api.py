@@ -38,16 +38,18 @@ class TelegramBot:
         self.bot = Bot(token=self.token)
         self.loop = asyncio.new_event_loop()
         self.configs = configs[self.type]['params']
+        self.chat_ids = self.configs['chat_ids']
+        self.message_thread_ids = self.configs['message_thread_ids']
+        # get lists of favorite patterns, excahnges and chats
         self.favorite_exchanges = self.configs['favorite_exchanges']
         self.favorite_patterns = self.configs['favorite_patterns']
-        self.chat_ids = self.configs['chat_ids']
         self.favorite_chat_ids = self.configs['favorite_chat_ids']
-        self.message_thread_ids = self.configs['message_thread_ids']
         self.favorite_message_thread_ids = self.configs['favorite_message_thread_ids']
+        # max number of candles after which message still could be sent
         self.min_prev_candle_limit = self.configs.get('min_prev_candle_limit', 3)
         self.min_prev_candle_limit_higher = self.configs.get('min_prev_candle_limit_higher', 2)
+        # max number of notifications that could be sent at once
         self.max_notifications_in_row = self.configs.get('self.max_notifications_in_row', 3)
-        # self.dispatcher = self.updater.dispatcher
         # list of notifications
         self.notification_list = list()
         # dataframe for storing of notification history
@@ -56,10 +58,14 @@ class TelegramBot:
         self.images_to_delete = set()
         # dictionary that is used to determine too late signals according to current work_timeframe
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
-        # Get working and higher timeframes
+        # get work and higher timeframes
         self.higher_tf_patterns = configs['Higher_TF_indicator_list']
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
+        # get low and high confident bounds for AI model predictions
+        # threshold that filters model predictions with low confidence
+        self.pred_low_thresh = self.configs['pred_low_thresh']
+        self.pred_high_thresh = self.configs['pred_high_thresh']
 
     @staticmethod
     async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -225,9 +231,19 @@ class TelegramBot:
                 text += f'{cleaned_ticker[:-4]}/BTC:\n'
                 text += f"https://ru.tradingview.com/symbols/{cleaned_ticker[:-4]}BTC\n"
             # send ML model prediction
-            if prediction > 0:
-                text += 'AI confidence / Уверенность AI:\n'
-                text += f'{round(prediction * 100, 0)}%'
+            pred_buy, pred_sell = prediction
+            if sig_type == 'buy':
+                if pred_buy >= self.pred_high_thresh:
+                    text += 'Buy AI confidence / Уверенность AI в покупке:\n'
+                    text += f'{round(pred_buy * 100, 0)}%'
+                    text += 'Sell AI confidence / Уверенность AI в продаже:\n'
+                    text += f'{round(pred_sell * 100, 0)}%'
+            else:
+                if pred_sell >= self.pred_high_thresh:
+                    text += 'Buy AI confidence / Уверенность AI в покупке:\n'
+                    text += f'{round(pred_buy * 100, 0)}%'
+                    text += 'Sell AI confidence / Уверенность AI в продаже:\n'
+                    text += f'{round(pred_sell * 100, 0)}%'
             # Send message + image
             if sig_img_path:
                 # if exchange is in the list of favorite exchanges and pattern is in list of your favorite patterns

@@ -41,26 +41,22 @@ class Model:
                 row = pd.concat([row, tmp_row], axis=1)
         row['Pattern_Trend'] = 0
         row['STOCH_RSI'] = 0
-        row['ttype'] = 0
         row.columns = feature_dict['features']
         # add number of signal point for which prediction is made
         row['sig_point_num'] = 0
         # make predictions only for patterns, which are suitable for ML model prediction
         patterns = list()
         for i, point in enumerate(signal_points):
-            ttype = point[3]
             pattern = point[5]
             if pattern in self.patterns_to_predict:
                 patterns.append(pattern)
                 rows = pd.concat([rows, row])
-                # mark ttype as 1 if it's sell
-                if ttype == 'sell':
-                    rows.iloc[-1, rows.columns.get_loc('ttype')] = 1
                 # for every pattern in a signal point list - add its row and mark corresponding pattern feature with 1
                 if pattern == 'Pattern_Trend' or pattern == 'STOCH_RSI':
                     rows.iloc[-1, rows.columns.get_loc(pattern)] = 1
                 rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i
         rows.reset_index(inplace=True, drop=True)
+        return rows
 
     def make_prediction(self, df: pd.DataFrame, signal_points: list, ttype: str) -> list:
         """ Make prediction with model """
@@ -78,8 +74,5 @@ class Model:
         sig_point_nums = rows['sig_point_num'].tolist()
         # add predictions to signal points
         for s_p_n, pred in zip(sig_point_nums, preds):
-            if ttype == 'buy':
-                signal_points[s_p_n][9][0] = pred
-            else:
-                signal_points[s_p_n][9][1] = pred
+            signal_points[s_p_n][9] = pred
         return signal_points

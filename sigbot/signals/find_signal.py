@@ -553,5 +553,5 @@ class FindSignal:
             trade_indexes = trade_indexes[df_work.shape[0] - trade_indexes < data_qty]
             sig_pattern = '_'.join(pattern)
             points += [[ticker, self.work_timeframe, index, self.ttype, df_work.loc[index, 'time'],
-                        sig_pattern, [], [], [], [0, 0]] for index in trade_indexes]
+                        sig_pattern, [], [], [], 0] for index in trade_indexes]
         return points

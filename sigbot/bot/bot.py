@@ -328,10 +328,15 @@ class SigBot:
             df_work[f].bfill(inplace=True)
         return
 
-    def make_prediction(self, signal_points: list, ttype: str) -> list:
+    def make_prediction(self, signal_points: list) -> list:
         """ Get dataset and use ML model to make price prediction for current signal points """
         ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = signal_points[0]
         df = self.database[ticker][timeframe]['data'][ttype]
+        if pattern == 'STOCH_RSI':
+            if ttype == 'buy':
+                ttype = 'sell'
+            else:
+                ttype = 'buy'
         signal_points = self.model.make_prediction(df, signal_points, ttype)
         return signal_points
 
@@ -520,8 +525,7 @@ class MonitorExchange(Thread):
                             sig_points = self.sigbot.calc_statistics(sig_points)
                             # Send Telegram notification
                             if sig_points:
-                                for ttype in ['buy', 'sell']:
-                                    sig_points = self.sigbot.make_prediction(sig_points, ttype)
+                                sig_points = self.sigbot.make_prediction(sig_points)
                                 t_print(self.exchange,
                                         [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5], sp[9]] for sp in sig_points])
                                 self.sigbot.telegram_bot.notification_list += sig_points

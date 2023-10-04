@@ -64,8 +64,8 @@ class TelegramBot:
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         # get low and high confident bounds for AI model predictions
         # threshold that filters model predictions with low confidence
-        self.pred_low_thresh = self.configs['pred_low_thresh']
-        self.pred_high_thresh = self.configs['pred_high_thresh']
+        self.pred_buy_thresh = self.configs['pred_buy_thresh']
+        self.pred_sell_thresh = self.configs['pred_sell_thresh']
 
     @staticmethod
     async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -232,11 +232,13 @@ class TelegramBot:
                 text += f"https://ru.tradingview.com/symbols/{cleaned_ticker[:-4]}BTC\n"
             # send ML model prediction
             if sig_type == 'buy':
-                if prediction >= self.pred_high_thresh:
+                pred_thresh = self.pred_buy_thresh
+                if prediction >= self.pred_buy_thresh:
                     text += 'Buy AI confidence / Уверенность AI в покупке:\n'
                     text += f'{round(prediction * 100, 0)}%'
             else:
-                if prediction >= self.pred_high_thresh:
+                pred_thresh = self.pred_sell_thresh
+                if prediction >= self.pred_sell_thresh:
                     text += 'Sell AI confidence / Уверенность AI в продаже:\n'
                     text += f'{round(prediction * 100, 0)}%'
             # Send message + image
@@ -244,7 +246,7 @@ class TelegramBot:
                 # if exchange is in the list of favorite exchanges and pattern is in list of your favorite patterns
                 # send the signal to special group
                 if set(sig_exchanges).intersection(set(self.favorite_exchanges)) and \
-                        sig_pattern in self.favorite_patterns and prediction >= self.pred_high_thresh:
+                        sig_pattern in self.favorite_patterns and prediction >= pred_thresh:
                     favorite_chat_id = self.favorite_chat_ids[sig_pattern]
                     favorite_message_thread_id = self.favorite_message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
                     if favorite_message_thread_id is not None:

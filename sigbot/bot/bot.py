@@ -332,6 +332,7 @@ class SigBot:
         """ Get dataset and use ML model to make price prediction for current signal points """
         ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = signal_points[0]
         df = self.database[ticker][timeframe]['data'][ttype]
+        # RSI_STOCH pattern is inverted with respect to the trade sides
         if pattern == 'STOCH_RSI':
             if ttype == 'buy':
                 ttype = 'sell'

@@ -322,13 +322,13 @@
       "RSI": {
         "params": {
           "low_bound": 35,
-          "pred_high_thresh": 65
+          "high_bound": 65
         }
       },
       "STOCH": {
         "params": {
           "low_bound": 25,
-          "pred_high_thresh": 75
+          "high_bound": 75
         }
       },
       "MACD": {
@@ -354,7 +354,7 @@
       "Trend": {
         "params": {
           "low_bound": 0,
-          "pred_high_thresh": 0
+          "high_bound": 0
         }
       }
     },
@@ -362,13 +362,13 @@
       "RSI": {
         "params": {
           "low_bound": 35,
-          "pred_high_thresh": 65
+          "high_bound": 65
         }
       },
       "STOCH": {
         "params": {
           "low_bound": 25,
-          "pred_high_thresh": 75
+          "high_bound": 75
         }
       },
       "MACD": {
@@ -391,7 +391,7 @@
       "Trend": {
         "params": {
           "low_bound": 0,
-          "pred_high_thresh": 0
+          "high_bound": 0
         }
       }
     }
@@ -519,8 +519,8 @@
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,
       "max_notifications_in_row": 3,
-      "pred_high_thresh": 0.62,
-      "pred_low_thresh": 0.38
+      "pred_buy_thresh": 0.69,
+      "pred_sell_thresh": 0.7
     }
   },
   "Timeframes": {

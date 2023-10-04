@@ -400,6 +400,15 @@
       "first_cycle_qty_miss": 0
     }
   },
+  "Model": {
+    "params": {
+      "model_path_buy": "ml/lgbm_buy.pkl",
+      "model_path_sell": "ml/lgbm_sell.pkl",
+      "feature_path_buy": "ml/features_buy.json",
+      "feature_path_sell": "ml/features_sell.json",
+      "patterns_to_predict":  ["Pattern_Trend", "STOCH_RSI", "MACD"]
+    }
+  },
   "Patterns": [
     [
       "STOCH",
@@ -492,7 +501,9 @@
       },
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,
-      "max_notifications_in_row": 3
+      "max_notifications_in_row": 3,
+      "pred_high_thresh": 0.62,
+      "pred_low_thresh": 0.38
     }
   },
   "Timeframes": {
@@ -533,13 +544,6 @@
           "volume"
         ]
       }
-    }
-  },
-  "Model": {
-    "params": {
-      "model_path": "../ml/lgbm.pkl",
-      "feature_path": "../ml/features.json",
-      "pred_high_thresh": 0.62
     }
   }
 }

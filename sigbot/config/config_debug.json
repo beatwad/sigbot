@@ -406,7 +406,16 @@
       "bot_cycle_length_sec": 10,
       "cycle_length_hours": 24,
       "time_period_minutes": 60,
-      "first_cycle_qty_miss": 0
+      "first_cycle_qty_miss": 1
+    }
+  },
+  "Model": {
+    "params": {
+      "model_path_buy": "ml/lgbm_buy.pkl",
+      "model_path_sell": "ml/lgbm_sell.pkl",
+      "feature_path_buy": "ml/features_buy.json",
+      "feature_path_sell": "ml/features_sell.json",
+      "patterns_to_predict":  ["Pattern_Trend", "STOCH_RSI", "MACD"]
     }
   },
   "Patterns": [
@@ -444,7 +453,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 200
+      "max_prev_candle_limit": 2
     }
   },
   "Telegram": {
@@ -532,15 +541,6 @@
           "volume"
         ]
       }
-    }
-  },
-  "Model": {
-    "params": {
-      "model_path_buy": "ml/lgbm_buy.pkl",
-      "model_path_sell": "ml/lgbm_sell.pkl",
-      "feature_path_buy": "ml/features_buy.json",
-      "feature_path_sell": "ml/features_sell.json",
-      "patterns_to_predict":  ["Pattern_Trend", "STOCH_RSI", "MACD"]
     }
   }
 }

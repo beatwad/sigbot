@@ -231,25 +231,20 @@ class TelegramBot:
                 text += f'{cleaned_ticker[:-4]}/BTC:\n'
                 text += f"https://ru.tradingview.com/symbols/{cleaned_ticker[:-4]}BTC\n"
             # send ML model prediction
-            pred_buy, pred_sell = prediction
             if sig_type == 'buy':
-                if pred_buy >= self.pred_high_thresh:
+                if prediction >= self.pred_high_thresh:
                     text += 'Buy AI confidence / Уверенность AI в покупке:\n'
-                    text += f'{round(pred_buy * 100, 0)}%'
-                    text += 'Sell AI confidence / Уверенность AI в продаже:\n'
-                    text += f'{round(pred_sell * 100, 0)}%'
+                    text += f'{round(prediction * 100, 0)}%'
             else:
-                if pred_sell >= self.pred_high_thresh:
-                    text += 'Buy AI confidence / Уверенность AI в покупке:\n'
-                    text += f'{round(pred_buy * 100, 0)}%'
+                if prediction >= self.pred_high_thresh:
                     text += 'Sell AI confidence / Уверенность AI в продаже:\n'
-                    text += f'{round(pred_sell * 100, 0)}%'
+                    text += f'{round(prediction * 100, 0)}%'
             # Send message + image
             if sig_img_path:
                 # if exchange is in the list of favorite exchanges and pattern is in list of your favorite patterns
                 # send the signal to special group
                 if set(sig_exchanges).intersection(set(self.favorite_exchanges)) and \
-                        sig_pattern in self.favorite_patterns and prediction > 0:
+                        sig_pattern in self.favorite_patterns and prediction >= self.pred_high_thresh:
                     favorite_chat_id = self.favorite_chat_ids[sig_pattern]
                     favorite_message_thread_id = self.favorite_message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
                     if favorite_message_thread_id is not None:

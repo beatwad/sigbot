@@ -535,7 +535,7 @@ class MonitorExchange(Thread):
                             for sig_point in sig_points:
                                 sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
                                               f'{ticker}, timeframe is {timeframe}, type is {sig_point[3]}, ' \
-                                              f'pattern is {sig_point[5]}, time is {sig_point[4]},' \
+                                              f'pattern is {sig_point[5]}, time is {sig_point[4]}, ' \
                                               f'model confidence is {sig_point[9]}'
                                 logger.info(sig_message)
                 # Save dataframe for further analysis

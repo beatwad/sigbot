@@ -234,7 +234,7 @@ class TelegramBot:
             if sig_type == 'buy':
                 pred_thresh = self.pred_buy_thresh
                 if prediction >= self.pred_buy_thresh:
-                    text += 'Buy AI confidence / Уверенность AI:\n'
+                    text += 'AI confidence / Уверенность AI:\n'
                     text += f'{round(prediction * 100, 0)}%'
             else:
                 pred_thresh = self.pred_sell_thresh

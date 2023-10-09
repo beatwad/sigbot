@@ -415,7 +415,9 @@
       "model_path_sell": "ml/lgbm_both.pkl",
       "feature_path_buy": "ml/features_both.json",
       "feature_path_sell": "ml/features_both.json",
-      "patterns_to_predict":  ["MACD"]
+      "patterns_to_predict":  [
+        "MACD"
+      ]
     }
   },
   "Patterns": [
@@ -462,8 +464,6 @@
         "ByBitPerpetual"
       ],
       "favorite_patterns": [
-        "Pattern_Trend",
-        "STOCH_RSI",
         "MACD"
       ],
       "log_path": "telegram_log.txt",

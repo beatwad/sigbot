@@ -411,11 +411,13 @@
   },
   "Model": {
     "params": {
-      "model_path_buy": "ml/lgbm_buy.pkl",
-      "model_path_sell": "ml/lgbm_sell.pkl",
-      "feature_path_buy": "ml/features_buy.json",
-      "feature_path_sell": "ml/features_sell.json",
-      "patterns_to_predict":  ["Pattern_Trend", "STOCH_RSI", "MACD"]
+      "model_path_buy": "ml/lgbm_both.pkl",
+      "model_path_sell": "ml/lgbm_both.pkl",
+      "feature_path_buy": "ml/features_both.json",
+      "feature_path_sell": "ml/features_both.json",
+      "patterns_to_predict":  [
+        "MACD"
+      ]
     }
   },
   "Patterns": [
@@ -474,8 +476,6 @@
         "ByBitPerpetual"
       ],
       "favorite_patterns": [
-        "Pattern_Trend",
-        "STOCH_RSI",
         "MACD"
       ],
       "log_path": "telegram_log.txt",

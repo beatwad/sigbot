@@ -69,14 +69,14 @@ class SigBot:
         self.higher_tf_indicators, self.work_tf_indicators = self.create_indicators(configs)
         # Set list of available exchanges, cryptocurrencies and tickers
         self.exchanges = {
-                          'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          'ByBit': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          'MEXC': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'ByBitPerpetual': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                          'ByBit': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                           'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                          'MEXCFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}
+                          'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                          'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                          'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                          'MEXCFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                          'MEXC': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}
                           }
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
@@ -345,12 +345,13 @@ class SigBot:
     def main_cycle(self):
         """ Create and run exchange monitors """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
-        # start all spot exchange monitors
-        for monitor in self.spot_ex_monitor_list:
-            monitor.run_cycle()
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
             monitor.run_cycle()
+        # start all spot exchange monitors
+        for monitor in self.spot_ex_monitor_list:
+            monitor.run_cycle()
+
 
     def stop_monitors(self):
         """ Stop all exchange monitors """

@@ -48,7 +48,7 @@ class Model:
         # make predictions only for patterns, which are suitable for ML model prediction
         patterns = list()
         for i, point in enumerate(signal_points):
-            ttype = point[3]
+            # ttype = point[3]
             pattern = point[5]
             if pattern in self.patterns_to_predict:
                 patterns.append(pattern)

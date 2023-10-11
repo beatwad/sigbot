@@ -317,7 +317,7 @@ class PatternSignal(SignalBase):
 
     def shrink_max_min(self, df: pd.DataFrame, high_max: [pd.DataFrame.index, list],
                        low_min: [pd.DataFrame.index, list]) -> (np.ndarray, np.ndarray):
-        """ EM algorithm that allows to leave only important high and low extremums """
+        """ EM algorithm that allows to leave only important high and low extremes """
         temp_high_max = list()
         temp_low_min = list()
         for i in range(len(low_min) + 1):

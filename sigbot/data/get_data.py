@@ -139,9 +139,9 @@ class GetData:
         elif timeframe == '1h':
             return dt_now.hour
         elif timeframe == '4h':
-            return int(dt_now.hour / 4)
+            return int((dt_now.hour - 3) / 4)
         elif timeframe == '12h':
-            return int(dt_now.hour / 12)
+            return int((dt_now.hour - 3) / 12)
         else:
             return dt_now.day
 

@@ -5,7 +5,7 @@ from datetime import datetime
 from os import environ, remove
 
 # Set environment variable
-environ["ENV"] = "1h_4h"
+environ["ENV"] = "debug"
 
 from bot.bot import SigBot
 from config.config import ConfigFactory
@@ -16,6 +16,7 @@ configs = ConfigFactory.factory(environ).configs
 
 class Main:
     type = 'Main'
+    error_notification_sent = False
 
     def __init__(self, load_tickers=True, **configs):
         """ Initialize separate thread the Telegram bot, so it can work independently
@@ -61,27 +62,24 @@ class Main:
                 remove(f)
             # exit program
             sys.exit()
+        except:
+            if not self.error_notification_sent:
+                text = f'Catch an exception: {sys.exc_info()[1]}'
+                main.sigbot.telegram_bot.send_message(main.sigbot.telegram_bot.chat_ids['Errors'], None, text)
+                self.error_notification_sent = True
 
 
 if __name__ == "__main__":
-    error_notification_sent = False
     dt1 = dt2 = datetime.now()
     # sigbot init
     main = Main(load_tickers=True, **configs)
     # close the bot after some time (default is 24 hours) and only after it get new candle data
     while int((dt2 - dt1).total_seconds() / 3600) <= main.cycle_length or not main.new_data_flag:
-        try:
-            main.cycle()
-            dt2 = datetime.now()
-            if main.new_data_flag:
-                print(dt1)
-                print(dt2)
-                print((dt2 - dt1).total_seconds())
-                print(int((dt2 - dt1).total_seconds() / 3600))
-        except (KeyboardInterrupt, SystemExit):
-            pass
-        except:
-            if not error_notification_sent:
-                text = f'Catch an exception: {sys.exc_info()[1]}'
-                main.sigbot.telegram_bot.send_message(main.sigbot.telegram_bot.chat_ids['Errors'], None, text)
-                error_notification_sent = True
+        main.cycle()
+        dt2 = datetime.now()
+        if main.new_data_flag:
+            print('All database: ', sys.getsizeof(main.sigbot.database))
+            print('Stat: ', sys.getsizeof(main.sigbot.database['stat']))
+            print('BTC: ', sys.getsizeof(main.sigbot.database['BTCUSDT']))
+            print('ETH: ', sys.getsizeof(main.sigbot.database['ETHUSDT']))
+

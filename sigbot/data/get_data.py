@@ -131,17 +131,19 @@ class GetData:
     def get_time_label(dt_now: datetime, timeframe: str) -> int:
         """ Define time label according to the timeframe """
         if timeframe == '5m':
-            return int(dt_now.minute / 5)
+            return dt_now.minute // 5
         elif timeframe == '15m':
-            return int(dt_now.minute / 15)
+            return dt_now.minute // 15
         elif timeframe == '30m':
-            return int(dt_now.minute / 30)
+            return dt_now.minute // 30
         elif timeframe == '1h':
             return dt_now.hour
         elif timeframe == '4h':
-            return int((dt_now.hour - 3) / 4)
+            hour = dt_now.hour - 3
+            return hour // 4 if hour >= 0 else -1
         elif timeframe == '12h':
-            return int((dt_now.hour - 3) / 12)
+            hour = dt_now.hour - 3
+            return hour // 12 if hour >= 0 else -1
         else:
             return dt_now.day
 
@@ -153,7 +155,7 @@ class GetData:
             return self.limit
         else:
             # if enough time has passed and time label has changed - increase the limit to update candle data
-            if dt_measure != self.ticker_dict[ticker][timeframe]:
+            if dt_measure != self.ticker_dict[ticker][timeframe] and dt_measure >= 0:
                 limit = 2
                 self.ticker_dict[ticker][timeframe] = dt_measure
             else:

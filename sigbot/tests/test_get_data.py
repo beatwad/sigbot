@@ -197,9 +197,29 @@ def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
     res = gd.add_indicator_data(dfs, data, 'buy', indicators, ticker,
                                 timeframe, data_qty)[ticker][timeframe]['data']['buy']
     dfs[ticker][timeframe]['data']['buy'] = res
-    # res_cols, exp_cols = res.columns, expected[0].columns
-    # exp = expected[0].copy()
-    # exp = exp.rename({'close_price_change_lag_1': 'price_change_1'}, axis=1)
-    # exp.to_pickle('test_BTCUSDT_5m_indicators.pkl')
-    # diff = res.compare(expected[0])
     assert res.equals(expected[0])
+
+
+@pytest.mark.parametrize('dt_now, timeframe, expected',
+                         [
+                          (pd.to_datetime("11:04:23"), '1h', 11),
+                          (pd.to_datetime("11:04:23"), '4h', 2),
+                          (pd.to_datetime("12:38:23"), '4h', 2),
+                          (pd.to_datetime("13:08:11"), '4h', 2),
+                          (pd.to_datetime("14:24:00"), '4h', 2),
+                          (pd.to_datetime("15:00:01"), '4h', 3),
+                          (pd.to_datetime("23:00:01"), '4h', 5),
+                          (pd.to_datetime("00:00:01"), '4h', -1),
+                          (pd.to_datetime("01:10:11"), '4h', -1),
+                          (pd.to_datetime("02:04:17"), '4h', -1),
+                          (pd.to_datetime("03:04:17"), '4h', 0),
+                          (pd.to_datetime("03:04:17"), '12h', 0),
+                          (pd.to_datetime("14:05:27"), '12h', 0),
+                          (pd.to_datetime("15:25:27"), '12h', 1),
+                          ], ids=repr)
+def test_process_data(mocker, dt_now, timeframe, expected):
+    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+    mocker.patch('api.binance_api.Binance.get_klines', return_value=None)
+    gd = DataFactory.factory('Binance', **configs)
+    res = gd.get_time_label(dt_now, timeframe)
+    assert res == expected

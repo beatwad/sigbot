@@ -411,10 +411,10 @@
   },
   "Model": {
     "params": {
-      "model_path_buy": "ml/lgbm_both.pkl",
-      "model_path_sell": "ml/lgbm_both.pkl",
-      "feature_path_buy": "ml/features_both.json",
-      "feature_path_sell": "ml/features_both.json",
+      "model_path_buy": "ml/lgbm.pkl",
+      "model_path_sell": "ml/lgbm.pkl",
+      "feature_path_buy": "ml/features.json",
+      "feature_path_sell": "ml/features.json",
       "patterns_to_predict":  [
         "MACD"
       ]

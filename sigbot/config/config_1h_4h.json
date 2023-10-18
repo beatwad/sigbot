@@ -526,8 +526,8 @@
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,
       "max_notifications_in_row": 3,
-      "pred_buy_thresh": 0.69,
-      "pred_sell_thresh": 0.7
+      "pred_buy_thresh": 0.66,
+      "pred_sell_thresh": 0.66
     }
   },
   "Timeframes": {

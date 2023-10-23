@@ -9,6 +9,7 @@ environ["ENV"] = "1h_4h"
 
 from bot.bot import SigBot
 from config.config import ConfigFactory
+from log.log import logger
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs
@@ -78,8 +79,8 @@ if __name__ == "__main__":
         main.cycle()
         dt2 = datetime.now()
         if main.new_data_flag:
-            print('All database: ', sys.getsizeof(main.sigbot.database))
-            print('Stat: ', sys.getsizeof(main.sigbot.database['stat']))
-            print('BTC: ', sys.getsizeof(main.sigbot.database['BTCUSDT']))
-            print('ETH: ', sys.getsizeof(main.sigbot.database['ETHUSDT']))
+            logger.info(f'Whole database: {sys.getsizeof(main.sigbot.database)}')
+            logger.info(f'Stat: {sys.getsizeof(main.sigbot.database["stat"])}')
+            logger.info(f'BTC: {sys.getsizeof(main.sigbot.database["BTCUSDT"])}')
+            logger.info(f'ETH: {sys.getsizeof(main.sigbot.database["ETHUSDT"])}')
 

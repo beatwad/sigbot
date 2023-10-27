@@ -80,7 +80,14 @@ if __name__ == "__main__":
         dt2 = datetime.now()
         if main.new_data_flag:
             logger.info(f'Whole database: {sys.getsizeof(main.sigbot.database)}')
-            logger.info(f'Stat: {sys.getsizeof(main.sigbot.database["stat"])}')
-            logger.info(f'BTC: {sys.getsizeof(main.sigbot.database["BTCUSDT"])}')
-            logger.info(f'ETH: {sys.getsizeof(main.sigbot.database["ETHUSDT"])}')
+            logger.info(f'Stat buy: {sys.getsizeof(main.sigbot.database["stat"]["buy"])}')
+            logger.info(f'Stat sell: {sys.getsizeof(main.sigbot.database["stat"]["sell"])}')
+            logger.info(f'BTC 1h buy: {sys.getsizeof(main.sigbot.database["BTCUSDT"]["1h"]["data"]["buy"])}')
+            logger.info(f'BTC 1h sell: {sys.getsizeof(main.sigbot.database["BTCUSDT"]["1h"]["data"]["sell"])}')
+            logger.info(f'BTC 4h buy: {sys.getsizeof(main.sigbot.database["BTCUSDT"]["4h"]["data"]["buy"])}')
+            logger.info(f'BTC 4h sell: {sys.getsizeof(main.sigbot.database["BTCUSDT"]["4h"]["data"]["sell"])}')
+            logger.info(f'ETH 1h buy: {sys.getsizeof(main.sigbot.database["ETHUSDT"]["1h"]["data"]["buy"])}')
+            logger.info(f'ETH 1h sell: {sys.getsizeof(main.sigbot.database["ETHUSDT"]["1h"]["data"]["sell"])}')
+            logger.info(f'ETH 4h buy: {sys.getsizeof(main.sigbot.database["ETHUSDT"]["4h"]["data"]["buy"])}')
+            logger.info(f'ETH 4h sell: {sys.getsizeof(main.sigbot.database["ETHUSDT"]["4h"]["data"]["sell"])}')
 

@@ -526,6 +526,9 @@ class MonitorExchange(Thread):
                             sig_points = self.sigbot.get_exchange_list(ticker, sig_points)
                             # Add pattern and ticker statistics
                             sig_points = self.sigbot.calc_statistics(sig_points)
+                            # Add 1 hour to time of each signal, so they will look actual
+                            for s_p in sig_points:
+                                s_p[4] += pd.to_timedelta(1, 'h')
                             # Send Telegram notification
                             if sig_points:
                                 sig_points = self.sigbot.make_prediction(sig_points)

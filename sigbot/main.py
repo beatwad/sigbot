@@ -5,7 +5,7 @@ from datetime import datetime
 from os import environ, remove
 
 # Set environment variable
-environ["ENV"] = "1h_4h"
+environ["ENV"] = "debug"
 
 from bot.bot import SigBot
 from config.config import ConfigFactory
@@ -66,7 +66,7 @@ class Main:
         except:
             if not self.error_notification_sent:
                 text = f'Catch an exception: {sys.exc_info()[1]}'
-                main.sigbot.telegram_bot.send_message(main.sigbot.telegram_bot.chat_ids['Errors'], None, text)
+                main.sigbot.telegram_monitor.telegram_bot.send_message(main.sigbot.telegram_monitor.telegram_bot.chat_ids['Errors'], None, text)
                 self.error_notification_sent = True
 
 

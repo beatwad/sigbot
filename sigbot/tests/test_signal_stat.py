@@ -197,7 +197,7 @@ get_result_price_after_period_2 = [
                                        '', '',  [], []], 1500, 1510, get_result_price_after_period_2),
                          ], ids=repr)
 def test_get_result_price_after_period(df, point, signal_price, signal_smooth_price, expected):
-    ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
+    ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat, price = point
     ss = SignalStat(**configs)
     high_result_prices, low_result_prices, close_smooth_prices, atr = ss.get_result_price_after_period(df, index)
     assert expected[0] == high_result_prices
@@ -217,7 +217,7 @@ process_stat_2 = pd.read_pickle('test_eth_process_stat.pkl')
                                        '', '',  [], []], 1500, 1510, process_stat_2),
                          ], ids=repr)
 def test_process_statistics(df, point, signal_price, signal_smooth_price, expected):
-    ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
+    ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat, price = point
     ss = SignalStat(**configs)
     dfs = {'stat': {'buy': pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern']),
                     'sell': pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])}}

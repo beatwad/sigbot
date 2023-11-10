@@ -1,6 +1,8 @@
 import functools
 import threading
+import time
 from threading import Thread, Event
+from multiprocessing import Process, Manager
 import pandas as pd
 from os import environ
 from datetime import datetime
@@ -19,7 +21,6 @@ from ml.inference import Model
 configs = ConfigFactory.factory(environ).configs
 # variable for thread locking
 global_lock = threading.Lock()
-
 
 def thread_lock(function):
     """ Threading lock decorator """
@@ -87,9 +88,11 @@ class SigBot:
             # Load tickers
             self.get_api_and_tickers()
             # Start Telegram bot
-            self.telegram_bot = TelegramBot(token=telegram_token,
-                                            database=self.database, **configs)
+            # self.telegram_bot = TelegramBot(token=telegram_token,
+            #                                 database=self.database, **configs)
             # self.telegram_bot.run()
+            self.telegram_monitor = MonitorTelegram(database=self.database, **configs)
+            self.telegram_monitor.run()
         else:
             buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
             sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
@@ -330,7 +333,7 @@ class SigBot:
 
     def make_prediction(self, signal_points: list) -> list:
         """ Get dataset and use ML model to make price prediction for current signal points """
-        ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = signal_points[0]
+        ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat, price = signal_points[0]
         df = self.database[ticker][timeframe]['data'][ttype]
         # RSI_STOCH pattern is inverted with respect to the trade sides
         if pattern == 'STOCH_RSI':
@@ -358,6 +361,7 @@ class SigBot:
             monitor.stopped.set()
         for monitor in self.fut_ex_monitor_list:
             monitor.stopped.set()
+        self.telegram_monitor.stop()
 
 
 class MonitorExchange(Thread):
@@ -460,7 +464,9 @@ class MonitorExchange(Thread):
                 6 - path to file with candle/indicator plots of the signal
                 7 - list of exchanges where ticker with this signal can be found
                 8 - statistics for the current pattern
-                9 - ML model prediction """
+                9 - ML model prediction
+                10 - current ticker price
+        """
         tickers = self.exchange_data['tickers']
         dt_now = datetime.now()
         for ticker in tickers:
@@ -532,9 +538,9 @@ class MonitorExchange(Thread):
                             if sig_points:
                                 sig_points = self.sigbot.make_prediction(sig_points)
                                 t_print(self.exchange,
-                                        [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5], sp[9]] for sp in sig_points])
-                                self.sigbot.telegram_bot.notification_list += sig_points
-                                self.sigbot.telegram_bot.check_notifications()
+                                        [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5], sp[9], sp[10]] for sp in sig_points])
+                                self.sigbot.telegram_monitor.notification_list += sig_points
+                                # self.sigbot.telegram_bot.check_notifications()
                             # Log the signals
                             for sig_point in sig_points:
                                 sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
@@ -546,6 +552,36 @@ class MonitorExchange(Thread):
                 # self.save_dataframe(df, ticker, timeframe)
         # save buy and sell statistics to files
         self.save_statistics()
+
+
+class MonitorTelegram:
+    def __init__(self, database, **configs):
+        # Start Telegram bot
+        manager = Manager()
+        self.notification_list = manager.list()
+        self.telegram_bot = TelegramBot(token=telegram_token, database=database, **configs)
+        self.p = Process(target=self.check_notifications)
+        self.start = True
+
+    def check_notifications(self):
+        while self.start:
+            if len(self.notification_list) > 0:
+                print(self.telegram_bot.notification_list)
+                self.telegram_bot.notification_list.extend(self.notification_list)
+                self.telegram_bot.check_notifications()
+                self.notification_list = list()
+                time.sleep(0.1)
+
+    def run(self):
+        self.p.start()
+
+    def stop(self):
+        self.start = False
+        # self.p.terminate()
+
+
+
+
 
 
 # if __name__ == "__main__":

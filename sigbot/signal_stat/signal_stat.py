@@ -37,7 +37,7 @@ class SignalStat:
         """ Write signal statistics for every signal point for current ticker on current timeframe.
             Statistics for buy and sell trades is written separately """
         for point in signal_points:
-            ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
+            ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat, price = point
             # we don't write statistics for the High Volume pattern
             if pattern == 'HighVolume':
                 continue
@@ -79,7 +79,7 @@ class SignalStat:
                            atr: float) -> dict:
         """ Calculate statistics and write it to the stat dataframe if it's not presented in it """
         # get data
-        ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
+        ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat, price = point
         ticker = ticker.replace('-', '').replace('/', '').replace('SWAP', '')
         tmp = pd.DataFrame()
         tmp['time'] = [time]

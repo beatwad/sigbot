@@ -352,7 +352,6 @@ class SigBot:
         for monitor in self.spot_ex_monitor_list:
             monitor.run_cycle()
 
-
     def stop_monitors(self):
         """ Stop all exchange monitors """
         for monitor in self.spot_ex_monitor_list:
@@ -401,16 +400,17 @@ class MonitorExchange(Thread):
             for timeframe in self.sigbot.timeframes:
                 df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now)
                 # If we previously download this dataframe to the disk - update it with new data
-                try:
-                    tmp = pd.read_pickle(f'../optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl')
-                except FileNotFoundError:
-                    pass
-                else:
-                    last_time = tmp['time'].max()
-                    df = df[df['time'] > last_time]
-                    df = pd.concat([tmp, df], ignore_index=True)
-                df_path = f'../optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl'
-                df.to_pickle(df_path)
+                if data_qty > 1:
+                    try:
+                        tmp = pd.read_pickle(f'../optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl')
+                    except FileNotFoundError:
+                        pass
+                    else:
+                        last_time = tmp['time'].max()
+                        df = df[df['time'] > last_time]
+                        df = pd.concat([tmp, df], ignore_index=True)
+                    df_path = f'../optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl'
+                    df.to_pickle(df_path)
 
     def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool):
         """ Save statistics data for every ticker for further indicator/signal optimization """
@@ -475,13 +475,13 @@ class MonitorExchange(Thread):
                 if pass_the_ticker:
                     continue
                 df, data_qty = self.sigbot.get_data(self.exchange_data['API'], ticker, timeframe, dt_now)
-                if timeframe == self.sigbot.work_timeframe:
-                    t_print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}, ticker {ticker}')
-                else:
-                    data_qty_higher = data_qty
-                # If we get new data - create indicator list from search signal patterns list, if it has
-                # the new data and data is not from higher timeframe, else get only levels
                 if data_qty > 1:
+                    if timeframe == self.sigbot.work_timeframe:
+                        t_print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}, ticker {ticker}')
+                    else:
+                        data_qty_higher = data_qty
+                    # If we get new data - create indicator list from search signal patterns list, if it has
+                    # the new data and data is not from higher timeframe, else get only levels
                     # Get indicators and quantity of data, if catch any exception - pass the ticker
                     try:
                         data_qty_buy = self.get_indicators(df, 'buy', ticker, timeframe, data_qty)

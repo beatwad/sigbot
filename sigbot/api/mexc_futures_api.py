@@ -15,8 +15,8 @@ class MEXCFutures(ApiBase):
 
         all_tickers = tickers['symbol'].str.replace('_', '').to_list()
 
-        tickers['volume24'] = tickers['volume24'].astype(float)
-        tickers = tickers[tickers['volume24'] >= min_volume]
+        # tickers['volume24'] = tickers['volume24'].astype(float)
+        # tickers = tickers[tickers['volume24'] >= min_volume]
 
         filtered_symbols = self.check_symbols(tickers['symbol'])
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)]

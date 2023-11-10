@@ -50,6 +50,8 @@ class GetData:
         # dict to store timestamp for every timeframe
         self.ticker_dict = dict()
         self.api = None
+        # work timeframe
+        self.work_timeframe = configs['Timeframes']['work_timeframe']
 
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str, dt_now: datetime) -> (pd.DataFrame, int):
         """ Get data from exchange """
@@ -62,7 +64,22 @@ class GetData:
                 logger.exception(f'Catch an exception while trying to get data. API is {self.api}')
                 return df, 0
             df = self.process_data(klines, df)
+        
+        # filter tickers by avg 24h volume
+        limit = 0 if not self.filter_by_volume_24(df) else limit
+        
         return df, limit
+
+    def filter_by_volume_24(self, df: pd.DataFrame) -> float:
+        """ Get average 24 hours volume of ticker and decide if it is enough big to use current ticker """
+        # get quantity of candles in 24 hours
+        avg_period = int(24 / (self.timeframe_div[self.work_timeframe] / 3600))
+        # get average volume for 24 hours
+        volume_24 = (df['close'] * df['volume']).rolling(avg_period).sum().dropna().mean()
+
+        if volume_24 >= self.min_volume:
+            return True
+        return False
 
     def get_tickers(self) -> list:
         """ Get list of available ticker names """

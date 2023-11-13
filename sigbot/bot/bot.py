@@ -441,6 +441,7 @@ class MonitorExchange(Thread):
                     # Filter repeating signals
                     sig_points = self.sigbot.filter_sig_points(sig_points)
                     # Add the signals to statistics
+                    
                     self.add_statistics(sig_points)
         # Save statistics
         self.save_statistics()
@@ -463,6 +464,7 @@ class MonitorExchange(Thread):
                 9 - ML model prediction """
         tickers = self.exchange_data['tickers']
         dt_now = datetime.now()
+        t_print(f'Cycle number {self.sigbot.main.cycle_number}')
         for ticker in tickers:
             data_qty_higher = 0
             # flag that allows to pass the ticker in case of errors
@@ -477,7 +479,8 @@ class MonitorExchange(Thread):
                 df, data_qty = self.sigbot.get_data(self.exchange_data['API'], ticker, timeframe, dt_now)
                 if data_qty > 1:
                     if timeframe == self.sigbot.work_timeframe:
-                        t_print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}, ticker {ticker}')
+                        # t_print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}, ticker {ticker}')
+                        pass
                     else:
                         data_qty_higher = data_qty
                     # If we get new data - create indicator list from search signal patterns list, if it has

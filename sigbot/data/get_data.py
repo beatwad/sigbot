@@ -66,14 +66,14 @@ class GetData:
             df = self.process_data(klines, df)
         
         # filter tickers by avg 24h volume
-        limit = 0 if not self.filter_by_volume_24(df) else limit
+        limit = 0 if not self.filter_by_volume_24(df, timeframe) else limit
         
         return df, limit
 
-    def filter_by_volume_24(self, df: pd.DataFrame) -> float:
+    def filter_by_volume_24(self, df: pd.DataFrame, timeframe: str) -> float:
         """ Get average 24 hours volume of ticker and decide if it is enough big to use current ticker """
         # get quantity of candles in 24 hours
-        avg_period = int(24 / (self.timeframe_div[self.work_timeframe] / 3600))
+        avg_period = int(24 / (self.timeframe_div[timeframe] / 3600))
         # get average volume for 24 hours
         volume_24 = (df['close'] * df['volume']).rolling(avg_period).sum().dropna().mean()
 

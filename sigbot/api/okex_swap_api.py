@@ -14,8 +14,8 @@ class OKEXSwap(ApiBase):
         all_tickers = tickers['symbol'].to_list()
 
         tickers = tickers[(tickers['instId'].str.endswith('USDT-SWAP')) | (tickers['instId'].str.endswith('USDC-SWAP'))]
-        # tickers['volCcy24h'] = tickers['volCcy24h'].astype(float)
-        # tickers = tickers[tickers['volCcy24h'] >= min_volume]
+        tickers['volCcy24h'] = tickers['volCcy24h'].astype(float)
+        tickers = tickers[tickers['volCcy24h'] >= min_volume // 3]
 
         filtered_symbols = self.check_symbols(tickers['instId'])
         tickers = tickers[tickers['instId'].isin(filtered_symbols)]

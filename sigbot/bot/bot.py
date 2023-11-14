@@ -240,8 +240,14 @@ class SigBot:
         dt_now = datetime.now()
         for point in sig_points:
             point_time = point[4]
-            if (dt_now - point_time).total_seconds() <= self.timeframe_div[self.work_timeframe] * \
-                    self.max_prev_candle_limit:
+            pattern = point[5]
+            # for patterns from higher timeframes time span for candles is different
+            if pattern in self.higher_tf_patterns:
+                time_span = self.timeframe_div[self.higher_timeframe] * self.max_prev_candle_limit
+            else:
+                time_span = self.timeframe_div[self.work_timeframe] * self.max_prev_candle_limit
+            # select only new signals
+            if (dt_now - point_time).total_seconds() <= time_span:
                 filtered_points.append(point)
         return filtered_points
 

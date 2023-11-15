@@ -101,7 +101,7 @@ def test_process_data(mocker, df, index, limit, expected):
 @pytest.mark.parametrize('df, ticker, timeframe, index, limit, expected',
                          [
                           (pd.DataFrame(), 'BTCUSDT', '5m', 0, 1000,
-                           (df.loc[498:499].reset_index(drop=True), 1000)),
+                           (df.loc[498:499].reset_index(drop=True), 0)),
                           (df.loc[:499], 'BTCUSDT', '5m', 0, 0, (df.loc[:499], 0)),
                           (df.loc[:499], 'BTCUSDT', '5m', 0, 1, (df.loc[:499], 1)),
                           (df.loc[:499], 'BTCUSDT', '5m', 1, 2,

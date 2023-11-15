@@ -528,6 +528,8 @@ class FindSignal:
         for indicator_signal in self.indicator_signals:
             # if indicators work with higher timeframe - we should treat them differently
             if indicator_signal.name == "Trend":
+                if 'linear_reg_angle' not in df_work.columns:
+                    return points
                 fs = indicator_signal.find_signal(df_work)
             elif indicator_signal.name == "MACD":
                 # check higher timeframe signals every hour

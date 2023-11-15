@@ -123,8 +123,10 @@ class GetData:
 
         # set the last candle values to previous candle's values to prevent unnecessary fluctuations of indicators
         for c in ['open', 'high', 'low', 'close', 'volume']:
-            df.iloc[-1, df.columns.get_loc(c)] = df.iloc[-2, df.columns.get_loc(c)]
-
+            if c == 'volume':
+                df.iloc[-1, df.columns.get_loc(c)] = 0
+            else:
+                df.iloc[-1, df.columns.get_loc(c)] = df.iloc[-2, df.columns.get_loc('close')]
         return df
 
     @staticmethod

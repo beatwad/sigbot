@@ -519,9 +519,6 @@ class FindSignal:
         except KeyError:
             return points
 
-        # remove the last candle, because it wasn't close
-        df_work = df_work[:-1]
-
         sig_patterns = [p.copy() for p in self.patterns]
         timeframe_ratio = int(self.timeframe_div[self.higher_timeframe] / self.timeframe_div[self.work_timeframe])
         # Create signal point df for each indicator

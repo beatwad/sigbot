@@ -120,6 +120,11 @@ class GetData:
             df = pd.concat([df, klines])
             # if size of dataframe more than limit - short it
             df = df.iloc[max(df.shape[0]-self.limit, 0):].reset_index(drop=True)
+
+        # set the last candle values to previous candle's values to prevent unnecessary fluctuations of indicators
+        for c in ['open', 'high', 'low', 'close', 'volume']:
+            df.iloc[-1, df.columns.get_loc(c)] = df.iloc[-2, df.columns.get_loc(c)]
+
         return df
 
     @staticmethod

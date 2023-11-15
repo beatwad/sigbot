@@ -279,12 +279,10 @@ class MACDSignal(SignalBase):
 
     def find_signal(self, df: pd.DataFrame, timeframe_ratio: int) -> np.ndarray:
         """ Find MACD signal """
-        try:
-            macd_df = df[['macdhist', 'macd_dir', 'macdsignal_dir']].copy()
-            macd_df['macdhist_1'] = macd_df['macdhist'].shift(timeframe_ratio)
-            macd_df['macdhist_2'] = macd_df['macdhist'].shift(timeframe_ratio * 2)
-        except:
-            print('')
+        macd_df = df[['macdhist', 'macd_dir', 'macdsignal_dir']].copy()
+        macd_df['macdhist_1'] = macd_df['macdhist'].shift(timeframe_ratio)
+        macd_df['macdhist_2'] = macd_df['macdhist'].shift(timeframe_ratio * 2)
+
         if self.ttype == 'buy':
             crossed_lines_down = self.crossed_lines(False, macd_df['macdhist'],
                                                     macd_df['macdhist_1'], macd_df['macdhist_2'])

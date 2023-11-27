@@ -326,9 +326,9 @@ class SigBot:
                             'macdsignal', 'macdsignal_dir']
         df_work[higher_features] = pd.merge(df_work[['time']], df_higher[higher_features], how='left', on='time')
         higher_features.remove('time')
-        for f in higher_features:
-            df_work[f].ffill(inplace=True)
-            df_work[f].bfill(inplace=True)
+        df_work.ffill(inplace=True)
+        df_work.dropna(inplace=True)
+        df_work.reset_index(drop=True, inplace=True)
         return
 
     def make_prediction(self, signal_points: list) -> list:

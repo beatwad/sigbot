@@ -242,12 +242,18 @@ class PumpDumpSignal(SignalBase):
         # Find price change signal
         # buy trade
         if self.ttype == 'buy':
-            price_change_lower_1 = self.lower_bound_robust(df['q_low_lag_1'].loc[0], df['price_change_1'])
+            try:
+                price_change_lower_1 = self.lower_bound_robust(df['q_low_lag_1'].loc[0], df['price_change_1'])
+            except KeyError:
+                return np.zeros(df.shape[0])
             price_change_lower_2 = 0
             price_change_lower_3 = 0
             return price_change_lower_1 | price_change_lower_2 | price_change_lower_3
         # sell trade
-        price_change_higher_1 = self.higher_bound_robust(df['q_high_lag_1'].loc[0], df['price_change_1'])
+        try:
+            price_change_higher_1 = self.higher_bound_robust(df['q_high_lag_1'].loc[0], df['price_change_1'])
+        except KeyError:
+            return np.zeros(df.shape[0])
         price_change_higher_2 = 0
         price_change_higher_3 = 0
         return price_change_higher_1 | price_change_higher_2 | price_change_higher_3
@@ -263,7 +269,10 @@ class HighVolumeSignal(SignalBase):
     def find_signal(self, df: pd.DataFrame) -> np.ndarray:
         """ Find high volume signal  """
         # Find high volume signal
-        high_vol = self.higher_bound_robust(df['quantile_vol'].loc[0], df['normalized_vol'])
+        try:
+            high_vol = self.higher_bound_robust(df['quantile_vol'].loc[0], df['normalized_vol'])
+        except KeyError:
+            return np.zeros(df.shape[0])
         return high_vol
 
 

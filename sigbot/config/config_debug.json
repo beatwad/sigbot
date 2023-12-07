@@ -447,7 +447,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 2
+      "max_prev_candle_limit": 1
     }
   },
   "Telegram": {

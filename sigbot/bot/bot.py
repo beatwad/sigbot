@@ -1,6 +1,4 @@
-import functools
-import threading
-from threading import Thread, Event
+import multiprocessing
 import pandas as pd
 from os import environ
 from datetime import datetime
@@ -17,31 +15,6 @@ from ml.inference import Model
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs
-# variable for thread locking
-global_lock = threading.Lock()
-
-
-def thread_lock(function):
-    """ Threading lock decorator """
-    @functools.wraps(function)
-    def wrapper(*args, **kwargs):
-        # wait until global lock released
-        while global_lock.locked():
-            continue
-        # acquire lock
-        global_lock.acquire()
-        # execute function code
-        f = function(*args, **kwargs)
-        # after all operations are done - release the lock
-        global_lock.release()
-        return f
-    return wrapper
-
-
-@thread_lock
-def t_print(*args):
-    """ Thread safe print """
-    print(*args, flush=True)
 
 
 class SigBot:
@@ -355,29 +328,25 @@ class SigBot:
         for monitor in self.spot_ex_monitor_list:
             monitor.run_cycle()
 
-    def stop_monitors(self):
-        """ Stop all exchange monitors """
-        for monitor in self.spot_ex_monitor_list:
-            monitor.stopped.set()
-        for monitor in self.fut_ex_monitor_list:
-            monitor.stopped.set()
+    # def stop_monitors(self):
+    #     """ Stop all exchange monitors """
+    #     for monitor in self.spot_ex_monitor_list:
+    #         monitor.stopped.set()
+    #     for monitor in self.fut_ex_monitor_list:
+    #         monitor.stopped.set()
 
 
-class MonitorExchange(Thread):
+class MonitorExchange:
     # constructor
     def __init__(self, sigbot, exchange, exchange_data):
         # initialize separate thread the Telegram bot, so it can work independently
-        Thread.__init__(self)
         # instance of main class
         self.sigbot = sigbot
-        # event for stopping bot thread
-        self.stopped = Event()
         # exchange name
         self.exchange = exchange
         # exchange data
         self.exchange_data = exchange_data
 
-    @thread_lock
     def get_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str, data_qty: int,
                        opt_flag: bool = False) -> int:
         """ Get indicators and quantity of data """
@@ -385,11 +354,9 @@ class MonitorExchange(Thread):
                                                                     data_qty, opt_flag)
         return data_qty
 
-    @thread_lock
     def add_statistics(self, sig_points: list) -> None:
         self.sigbot.database = self.sigbot.add_statistics(sig_points)
 
-    @thread_lock
     def save_statistics(self) -> None:
         self.sigbot.save_statistics()
 
@@ -467,14 +434,16 @@ class MonitorExchange(Thread):
                 9 - ML model prediction """
         tickers = self.exchange_data['tickers']
         dt_now = datetime.now()
-        t_print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}')
+        print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}')
+        # list of processes
+        processes = list()
         for ticker in tickers:
             data_qty_higher = 0
             # flag that allows to pass the ticker in case of errors
             pass_the_ticker = False
             # stop thread if stop flag is set
-            if self.stopped.is_set():
-                break
+            # if self.stopped.is_set():
+            #     break
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
                 if pass_the_ticker:
@@ -482,7 +451,8 @@ class MonitorExchange(Thread):
                 df, data_qty = self.sigbot.get_data(self.exchange_data['API'], ticker, timeframe, dt_now)
                 if data_qty > 1:
                     if timeframe == self.sigbot.work_timeframe:
-                        pass
+                        print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}, '
+                              f'ticker {ticker}')
                     else:
                         data_qty_higher = data_qty
                     # If we get new data - create indicator list from search signal patterns list, if it has
@@ -496,6 +466,9 @@ class MonitorExchange(Thread):
                                          f'while getting indicator data.')
                         pass_the_ticker = True
                         continue
+                    # Debug !!!
+                    if timeframe == self.sigbot.higher_timeframe and data_qty_higher > 0:
+                        df.to_csv(f'bot/candles/{ticker}_{timeframe}_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Add time from higher timefram to dataframe with working timeframe data
@@ -533,10 +506,15 @@ class MonitorExchange(Thread):
                             # Send Telegram notification
                             if sig_points:
                                 sig_points = self.sigbot.make_prediction(sig_points)
-                                t_print(self.exchange,
+                                print(self.exchange,
                                         [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5], sp[9]] for sp in sig_points])
-                                self.sigbot.telegram_bot.notification_list += sig_points
-                                self.sigbot.telegram_bot.check_notifications()
+                                # self.sigbot.telegram_bot.notification_list += sig_points
+                                # self.sigbot.telegram_bot.check_notifications()
+                                for sig_point in sig_points:
+                                    pr = multiprocessing.Process(target=self.sigbot.telegram_bot.send_notification,
+                                                                 args=(sig_point,))
+                                    processes.append(pr)
+                                    pr.start()
                             # Log the signals
                             for sig_point in sig_points:
                                 sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
@@ -544,8 +522,9 @@ class MonitorExchange(Thread):
                                               f'pattern is {sig_point[5]}, time is {sig_point[4]}, ' \
                                               f'model confidence is {sig_point[9]}'
                                 logger.info(sig_message)
-                # Save dataframe for further analysis
-                # self.save_dataframe(df, ticker, timeframe)
+        # wait until all processes finish
+        for pr in processes:
+            pr.join()
         # save buy and sell statistics to files
         self.save_statistics()
 

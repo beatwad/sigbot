@@ -178,6 +178,7 @@ class TelegramBot:
         # clear all sent notifications
         self.notification_list[:n_len] = []
 
+
     @staticmethod
     def clean_ticker(ticker: str) -> str:
         """ Clean ticker of not necessary symbols (2U, 1000, 10000, SWAP, -, etc.) """

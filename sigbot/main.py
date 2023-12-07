@@ -5,7 +5,7 @@ from datetime import datetime
 from os import environ, remove
 
 # Set environment variable
-environ["ENV"] = "1h_4h"
+environ["ENV"] = "debug"
 
 from bot.bot import SigBot
 from config.config import ConfigFactory
@@ -55,8 +55,6 @@ class Main:
                 self.new_data_flag = False
             sleep(self.bot_cycle_length)
         except (KeyboardInterrupt, SystemExit):
-            # stop all exchange monitors
-            self.sigbot.stop_monitors()
             # delete everything in image directory on exit
             files = glob.glob('visualizer/images/*.png')
             for f in files:

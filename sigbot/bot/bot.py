@@ -267,22 +267,24 @@ class SigBot:
         dt_now = datetime.now()
         if load:
             print('\nLoad the datasets...')
-            # start all spot exchange monitors
-            for monitor in self.spot_ex_monitor_list:
-                monitor.save_opt_dataframes(dt_now)
             # start all futures exchange monitors
             for monitor in self.fut_ex_monitor_list:
                 monitor.save_opt_dataframes(dt_now)
+            # start all spot exchange monitors
+            for monitor in self.spot_ex_monitor_list:
+                monitor.save_opt_dataframes(dt_now)
+            
 
     def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool) -> None:
         """ Save statistics in program memory for further indicator/signal optimization """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
-        # start all spot exchange monitors
-        for monitor in self.spot_ex_monitor_list:
-            monitor.save_opt_statistics(ttype, opt_limit, opt_flag)
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
             monitor.save_opt_statistics(ttype, opt_limit, opt_flag)
+        # start all spot exchange monitors
+        for monitor in self.spot_ex_monitor_list:
+            monitor.save_opt_statistics(ttype, opt_limit, opt_flag)
+        
 
     def add_higher_time(self, ticker: str, ttype: str) -> None:
         """ Add time from higher timeframe to dataframe with working timeframe data"""
@@ -328,13 +330,6 @@ class SigBot:
         for monitor in self.spot_ex_monitor_list:
             monitor.run_cycle()
 
-    # def stop_monitors(self):
-    #     """ Stop all exchange monitors """
-    #     for monitor in self.spot_ex_monitor_list:
-    #         monitor.stopped.set()
-    #     for monitor in self.fut_ex_monitor_list:
-    #         monitor.stopped.set()
-
 
 class MonitorExchange:
     # constructor
@@ -377,7 +372,8 @@ class MonitorExchange:
                         pass
                     else:
                         last_time = tmp['time'].max()
-                        df = df[df['time'] > last_time]
+                        tmp = tmp[tmp['time'] < last_time]
+                        df = df[df['time'] >= last_time]
                         df = pd.concat([tmp, df], ignore_index=True)
                     df_path = f'../optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl'
                     df.to_pickle(df_path)
@@ -411,7 +407,6 @@ class MonitorExchange:
                     # Filter repeating signals
                     sig_points = self.sigbot.filter_sig_points(sig_points)
                     # Add the signals to statistics
-                    
                     self.add_statistics(sig_points)
         # Save statistics
         self.save_statistics()
@@ -467,8 +462,8 @@ class MonitorExchange:
                         pass_the_ticker = True
                         continue
                     # Debug !!!
-                    if timeframe == self.sigbot.higher_timeframe and data_qty_higher > 0:
-                        df.to_csv(f'bot/candles/{ticker}_{timeframe}_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
+                    if data_qty_higher > 0:
+                        df.to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Add time from higher timefram to dataframe with working timeframe data

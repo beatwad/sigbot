@@ -53,16 +53,30 @@ class GetData:
         # work timeframe
         self.work_timeframe = configs['Timeframes']['work_timeframe']
 
+    @staticmethod
+    def load_saved_data(df: pd.DataFrame, ticker: str, timeframe: str):
+        """ If there is a previously saved dataframe in our base - load it """
+        try:
+            df = pd.read_pickle(f'optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl')
+        except FileNotFoundError:
+            pass
+        return df
+
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str, dt_now: datetime) -> (pd.DataFrame, int):
         """ Get data from exchange """
         limit = self.get_limit(df, ticker, timeframe, dt_now)
+        # load previously saved data
+        if df.shape[0] == 0:
+            df = self.load_saved_data(df, ticker, timeframe)
         # get data from exchange only when there is at least one interval to get
         if limit > 1:
             try:
-                klines = self.api.get_klines(ticker, timeframe, limit + 2)
+                klines = self.api.get_klines(ticker, timeframe, min(limit + 2, self.limit))
             except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout, JSONDecodeError):
                 logger.exception(f'Catch an exception while trying to get data. API is {self.api}')
                 return df, 0
+            if ticker == 'BTCUSDT':
+                print('')
             df = self.process_data(klines, df)
         
         # filter tickers by avg 24h volume
@@ -105,7 +119,7 @@ class GetData:
         klines[['open', 'high', 'low', 'close', 'volume']] = klines[['open', 'high', 'low',
                                                                      'close', 'volume']].astype(float).copy()
         # convert time to UTC+3
-        if self.name == 'ByBitPerpetual':
+        if self.name == 'ByBitPerpetual' or self.name == 'MEXCFutures':
             klines['time'] = pd.to_datetime(klines['time'], unit='s')
         else:
             klines['time'] = pd.to_datetime(klines['time'], unit='ms')
@@ -119,15 +133,15 @@ class GetData:
             df = df[df['time'] < earliest_time]
             df = pd.concat([df, klines])
             # if size of dataframe more than limit - short it
-            df = df.iloc[max(df.shape[0]-self.limit, 0):].reset_index(drop=True)
+            df = df.iloc[max(df.shape[0]-1000, 0):].reset_index(drop=True)
 
         # set the last candle values to previous candle's values to prevent unnecessary fluctuations of indicators
-        for c in ['open', 'high', 'low', 'close', 'volume']:
-            if df.shape[0] >= 50:
-                if c == 'volume':
-                    df.iloc[-1, df.columns.get_loc(c)] = 0
-                else:
-                    df.iloc[-1, df.columns.get_loc(c)] = df.iloc[-2, df.columns.get_loc('close')]
+        # for c in ['open', 'high', 'low', 'close', 'volume']:
+        #     if df.shape[0] >= 50:
+        #         if c == 'volume':
+        #             df.iloc[-1, df.columns.get_loc(c)] = 0
+        #         else:
+        #             df.iloc[-1, df.columns.get_loc(c)] = df.iloc[-2, df.columns.get_loc('close')]
         return df
 
     @staticmethod

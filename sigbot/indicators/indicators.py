@@ -150,7 +150,8 @@ class ATR(Indicator):
         # column for statistic counting
         df['close_smooth'] = df['close'].rolling(self.configs['timeperiod']).mean()
         return df
-    
+
+
 class SMA(Indicator):
     """ Simple Moving Average indicator, default settings: timeperiod: 24 """
     name = 'SMA'

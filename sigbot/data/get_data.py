@@ -132,7 +132,7 @@ class GetData:
             earliest_time = klines['time'].min()
             df = df[df['time'] < earliest_time]
             df = pd.concat([df, klines])
-            # if size of dataframe more than limit - short it
+            # if size of dataframe more than 1000 candles - short it
             df = df.iloc[max(df.shape[0]-1000, 0):].reset_index(drop=True)
 
         # set the last candle values to previous candle's values to prevent unnecessary fluctuations of indicators

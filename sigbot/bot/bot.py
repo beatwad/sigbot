@@ -1,6 +1,4 @@
 import multiprocessing
-import threading
-import functools
 import pandas as pd
 from os import environ
 from datetime import datetime
@@ -17,31 +15,6 @@ from ml.inference import Model
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs
-# variable for thread locking
-global_lock = threading.Lock()
-
-
-def thread_lock(function):
-    """ Threading lock decorator """
-    @functools.wraps(function)
-    def wrapper(*args, **kwargs):
-        # wait until global lock released
-        while global_lock.locked():
-            continue
-        # acquire lock
-        global_lock.acquire()
-        # execute function code
-        f = function(*args, **kwargs)
-        # after all operations are done - release the lock
-        global_lock.release()
-        return f
-    return wrapper
-
-
-# @thread_lock
-def t_print(*args):
-    """ Thread safe print """
-    print(*args, flush=True)
 
 
 class SigBot:
@@ -456,7 +429,7 @@ class MonitorExchange:
                 9 - ML model prediction """
         tickers = self.exchange_data['tickers']
         dt_now = datetime.now()
-        t_print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}')
+        print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}', flush=True)
         # list of processes
         processes = list()
         for ticker in tickers:
@@ -474,7 +447,7 @@ class MonitorExchange:
                 if data_qty > 1:
                     if timeframe == self.sigbot.work_timeframe:
                         print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}, '
-                              f'ticker {ticker}')
+                              f'ticker {ticker}', flush=True)
                     else:
                         data_qty_higher = data_qty
                     # If we get new data - create indicator list from search signal patterns list, if it has
@@ -528,8 +501,9 @@ class MonitorExchange:
                             # Send Telegram notification
                             if sig_points:
                                 sig_points = self.sigbot.make_prediction(sig_points)
-                                t_print(self.exchange,
-                                        [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5], sp[9]] for sp in sig_points])
+                                print(self.exchange,
+                                      [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5], sp[9]] for sp in sig_points],
+                                      flush=True)
                                 # self.sigbot.telegram_bot.notification_list += sig_points
                                 # self.sigbot.telegram_bot.check_notifications()
                                 for sig_point in sig_points:

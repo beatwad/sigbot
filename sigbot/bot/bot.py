@@ -1,4 +1,6 @@
 import multiprocessing
+import threading
+import functools
 import pandas as pd
 from os import environ
 from datetime import datetime
@@ -36,7 +38,7 @@ def thread_lock(function):
     return wrapper
 
 
-@thread_lock
+# @thread_lock
 def t_print(*args):
     """ Thread safe print """
     print(*args, flush=True)

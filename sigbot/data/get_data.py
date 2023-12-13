@@ -65,18 +65,14 @@ class GetData:
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str, dt_now: datetime) -> (pd.DataFrame, int):
         """ Get data from exchange """
         limit = self.get_limit(df, ticker, timeframe, dt_now)
-        # load previously saved data
-        if df.shape[0] == 0:
-            df = self.load_saved_data(df, ticker, timeframe)
         # get data from exchange only when there is at least one interval to get
         if limit > 1:
             try:
                 klines = self.api.get_klines(ticker, timeframe, min(limit + 2, self.limit))
-            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout, JSONDecodeError):
+            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout,
+                    JSONDecodeError, ValueError):
                 logger.exception(f'Catch an exception while trying to get data. API is {self.api}')
                 return df, 0
-            if ticker == 'BTCUSDT':
-                print('')
             df = self.process_data(klines, df)
         
         # filter tickers by avg 24h volume
@@ -132,8 +128,8 @@ class GetData:
             earliest_time = klines['time'].min()
             df = df[df['time'] < earliest_time]
             df = pd.concat([df, klines])
-            # if size of dataframe more than 1000 candles - short it
-            df = df.iloc[max(df.shape[0]-1000, 0):].reset_index(drop=True)
+            # if size of dataframe more than limit - short it
+            df = df.iloc[max(df.shape[0]-self.limit, 0):].reset_index(drop=True)
 
         # set the last candle values to previous candle's values to prevent unnecessary fluctuations of indicators
         # for c in ['open', 'high', 'low', 'close', 'volume']:

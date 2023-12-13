@@ -2,7 +2,7 @@
   "Data": {
     "Basic": {
       "params": {
-        "limit": 200,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -23,7 +23,7 @@
     },
     "Binance": {
       "params": {
-        "limit": 200,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -45,7 +45,7 @@
     },
     "ByBit": {
       "params": {
-        "limit": 200,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -60,7 +60,7 @@
           "1d": 86400,
           "1w": 604800
         },
-        "min_volume": 500000.0
+        "min_volume": 1000000.0
       }
     },
     "OKEX": {
@@ -86,7 +86,7 @@
     },
     "MEXC": {
       "params": {
-        "limit": 200,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "5m": 300,
@@ -96,12 +96,12 @@
           "4h": 14400,
           "1d": 86400
         },
-        "min_volume": 500000.0
+        "min_volume": 1000000.0
       }
     },
     "BinanceFutures": {
       "params": {
-        "limit": 200,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -138,7 +138,7 @@
           "1d": 86400,
           "1w": 604800
         },
-        "min_volume": 500000.0
+        "min_volume": 1000000.0
       }
     },
     "OKEXSwap": {
@@ -164,7 +164,7 @@
     },
      "MEXCFutures": {
       "params": {
-        "limit": 200,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "5m": 300,

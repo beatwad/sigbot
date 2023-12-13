@@ -35,13 +35,22 @@ class ByBitPerpetual(ApiBase):
     def get_klines(self, symbol: str, interval: str, limit: int) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
         interval_secs = self.convert_interval_to_secs(interval)
-        from_time = (self.get_timestamp() - (limit * interval_secs))
-
         interval = self.convert_interval(interval)
+
+        from_time = (self.get_timestamp() - (limit * interval_secs))
         tickers = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval,
+                                                           from_time=from_time, limit=200)['result'])
+        # at first time get candles from previous interval to overcome API limit restrictions
+        if limit > 100:
+            from_time = (self.get_timestamp() - (limit * 2 * interval_secs))
+            tmp = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval,
                                                        from_time=from_time, limit=limit)['result'])
+            if tmp.shape[0] > 0:
+                tickers = pd.concat([tmp, tickers])
+
         tickers = tickers.rename({'open_time': 'time'}, axis=1)
-        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
+
+        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
     # def get_klines_agg(self, symbol: str, interval: str, limit: int) -> pd.DataFrame:
     #     """ Save time, price and volume info to CryptoCurrency structure """

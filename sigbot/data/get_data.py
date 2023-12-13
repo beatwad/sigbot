@@ -69,8 +69,7 @@ class GetData:
         if limit > 1:
             try:
                 klines = self.api.get_klines(ticker, timeframe, min(limit + 2, self.limit))
-            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout,
-                    JSONDecodeError, ValueError):
+            except:
                 logger.exception(f'Catch an exception while trying to get data. API is {self.api}')
                 return df, 0
             df = self.process_data(klines, df)

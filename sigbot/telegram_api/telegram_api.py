@@ -178,7 +178,6 @@ class TelegramBot:
         # clear all sent notifications
         self.notification_list[:n_len] = []
 
-
     @staticmethod
     def clean_ticker(ticker: str) -> str:
         """ Clean ticker of not necessary symbols (2U, 1000, 10000, SWAP, -, etc.) """
@@ -264,7 +263,8 @@ class TelegramBot:
         self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.delete_images()
 
-    def round_price(self, price: float) -> float:
+    @staticmethod
+    def round_price(price: float) -> float:
         """ Function for price rounding """
         if price > 1:
             price = round(price, 3)

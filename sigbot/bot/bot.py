@@ -127,11 +127,7 @@ class SigBot:
         df = self.database.get(ticker, dict()).get(timeframe, dict()).get('data', pd.DataFrame()).get('buy',
                                                                                                       pd.DataFrame())
         # Write data to the dataframe
-        try:
-            df, data_qty = exchange_api.get_data(df, ticker, timeframe, dt_now)
-        except KeyError:
-            logger.exception(f'Catch an exception while trying to get data')
-            return df, 0
+        df, data_qty = exchange_api.get_data(df, ticker, timeframe, dt_now)
         return df, data_qty
 
     @staticmethod
@@ -213,7 +209,6 @@ class SigBot:
         dt_now = datetime.now()
         for point in sig_points:
             point_time = point[4]
-            pattern = point[5]
             # for patterns from higher timeframes time span for candles is different
             time_span = self.timeframe_div[self.work_timeframe] * self.max_prev_candle_limit
             # select only new signals
@@ -273,7 +268,6 @@ class SigBot:
             # start all spot exchange monitors
             for monitor in self.spot_ex_monitor_list:
                 monitor.save_opt_dataframes(dt_now)
-            
 
     def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool) -> None:
         """ Save statistics in program memory for further indicator/signal optimization """
@@ -284,7 +278,6 @@ class SigBot:
         # start all spot exchange monitors
         for monitor in self.spot_ex_monitor_list:
             monitor.save_opt_statistics(ttype, opt_limit, opt_flag)
-        
 
     def add_higher_time(self, ticker: str, ttype: str) -> None:
         """ Add time from higher timeframe to dataframe with working timeframe data"""
@@ -308,7 +301,8 @@ class SigBot:
 
     def make_prediction(self, signal_points: list) -> list:
         """ Get dataset and use ML model to make price prediction for current signal points """
-        ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = signal_points[0]
+        ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, \
+            total_stat, ticker_stat = signal_points[0]
         df = self.database[ticker][timeframe]['data'][ttype]
         # RSI_STOCH pattern is inverted with respect to the trade sides
         if pattern == 'STOCH_RSI':
@@ -410,7 +404,6 @@ class MonitorExchange:
                     self.add_statistics(sig_points)
         # Save statistics
         self.save_statistics()
-
 
     @exception
     def run_cycle(self) -> None:

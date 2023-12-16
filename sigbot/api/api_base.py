@@ -1,6 +1,8 @@
 import re
+import pandas as pd
 from abc import ABCMeta
 from datetime import datetime
+
 
 class ApiBase(metaclass=ABCMeta):
     @staticmethod
@@ -70,6 +72,12 @@ class ApiBase(metaclass=ABCMeta):
         else:
             interval = interval[:-1]
         return interval
+    
+    @staticmethod
+    def convert_timstamp_to_time(timestamp: int, unit: str):
+        time = pd.to_datetime(timestamp, unit=unit)
+        time += pd.to_timedelta(3, unit='h')
+        return time
 
 
 if __name__ == '__main__':

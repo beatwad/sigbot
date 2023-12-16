@@ -1,3 +1,4 @@
+from datetime import datetime
 import pandas as pd
 from api.api_base import ApiBase
 from pybit import usdt_perpetual
@@ -52,22 +53,31 @@ class ByBitPerpetual(ApiBase):
 
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
-    # def get_klines_agg(self, symbol: str, interval: str, limit: int) -> pd.DataFrame:
-    #     """ Save time, price and volume info to CryptoCurrency structure """
-    #     limit_mult = math.ceil(self.global_limit / limit)
-    #     tickers = None
-    #     interval_secs = self.convert_interval_to_secs(interval)
-    #     interval = self.convert_interval(interval)
-    #     for i in range(limit_mult):
-    #         from_time = (self.get_timestamp() - ((self.global_limit - limit * i) * interval_secs))
-    #         tmp = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval,
-    #                                                     from_time=from_time, limit=limit)['result'])
-    #         if tickers is None:
-    #             tickers = tmp.copy()
-    #         else:
-    #             tickers = pd.concat([tickers, tmp])
-    #     tickers = tickers.rename({'open_time': 'time'}, axis=1)
-    #     return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
+    def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
+        """ Save historical time, price and volume info to CryptoCurrency structure
+            for some period (earlier than min_time) """
+        interval_secs = self.convert_interval_to_secs(interval)
+        interval = self.convert_interval(interval)
+        tmp_limit = limit
+        prev_time, earliest_time = None, datetime.now()
+        ts = int(self.get_timestamp() / 3600) * 3600
+        tickers = pd.DataFrame()
+        
+        while earliest_time > min_time:
+            from_time = (ts - (tmp_limit * interval_secs))
+            tmp = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval,
+                                                       from_time=from_time, limit=limit)['result'])
+            prev_time, earliest_time = earliest_time, tmp['open_time'].min()
+            earliest_time = self.convert_timstamp_to_time(earliest_time, unit='s')
+            # prevent endless cycle if there are no candles that eariler than min_time
+            if prev_time == earliest_time:
+                break
+            
+            tickers = pd.concat([tmp, tickers])
+            tmp_limit += limit
+
+        tickers = tickers.rename({'open_time': 'time'}, axis=1)
+        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
 
 if __name__ == '__main__':

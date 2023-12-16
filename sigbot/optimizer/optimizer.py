@@ -147,7 +147,7 @@ class Optimizer:
         helper(prod_dict)
         return headers
 
-    def optimize(self, pattern, ttype, opt_limit, load, op_type):
+    def optimize(self, pattern, ttype, opt_limit, load, op_type, restore=False):
         main = Main()
         if self.clean:
             self.clean_prev_stat(ttype)
@@ -173,7 +173,7 @@ class Optimizer:
             # load candle data from exchanges only at first time
             if load:
                 # self.clean_prev_tickers_dfs()
-                sb.save_opt_dataframes(ttype)
+                sb.save_opt_dataframes(ttype, restore)
                 load = False
             sb.save_opt_statistics(ttype, opt_limit, not load_tickers)
             # save candle data from exchanges only second and next times

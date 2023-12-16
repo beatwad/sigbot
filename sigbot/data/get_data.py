@@ -70,13 +70,31 @@ class GetData:
             try:
                 klines = self.api.get_klines(ticker, timeframe, min(limit + 2, self.limit))
             except:
-                logger.exception(f'Catch an exception while trying to get data. API is {self.api}')
+                logger.exception(f'Catch an exception while trying to get candles. '
+                                 f'API is {self.api}, ticker is {ticker}')
                 return df, 0
             df = self.process_data(klines, df)
         
         # filter tickers by avg 24h volume
         limit = 0 if not self.filter_by_volume_24(df, timeframe) else limit
         
+        return df, limit
+
+    def get_historical_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
+                            min_time: datetime) -> (pd.DataFrame, int):
+        """ Get historical data from exchange for some period """
+        try:
+            klines = self.api.get_historical_klines(ticker, timeframe, self.limit, min_time)
+        except:
+            logger.exception(f'Catch an exception while trying to get historical candles. '
+                             f'API is {self.api}, ticker is {ticker}')
+            return df, 0
+        df = self.process_data(klines, df)
+        df = df[df['time'] >= min_time].reset_index(drop=True)
+
+        # filter tickers by avg 24h volume
+        limit = 0 if not self.filter_by_volume_24(df, timeframe) else self.limit
+
         return df, limit
 
     def filter_by_volume_24(self, df: pd.DataFrame, timeframe: str) -> float:

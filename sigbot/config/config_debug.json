@@ -406,7 +406,7 @@
       "bot_cycle_length_sec": 10,
       "cycle_length_hours": 24,
       "time_period_minutes": 60,
-      "first_cycle_qty_miss": 0
+      "first_cycle_qty_miss": 1
     }
   },
   "Model": {
@@ -447,7 +447,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 100
+      "max_prev_candle_limit": 2
     }
   },
   "Telegram": {

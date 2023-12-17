@@ -42,12 +42,12 @@ class SigBot:
         self.higher_tf_indicators, self.work_tf_indicators = self.create_indicators(configs)
         # Set list of available exchanges, cryptocurrencies and tickers
         self.exchanges = {
-                        # 'ByBitPerpetual': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                        # 'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                        'ByBitPerpetual': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                        'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                         'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                        # 'ByBit': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                        # 'MEXC': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                        # 'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                        'ByBit': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                        'MEXC': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                        'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                         'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                         'MEXCFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}
                         }
@@ -268,7 +268,7 @@ class SigBot:
                 spot_ex_monitor_list.append(monitor)
         return spot_ex_monitor_list, fut_ex_monitor_list
 
-    def save_opt_dataframes(self, load=False, restore=False) -> None:
+    def save_opt_dataframes(self, load=False, historical=False, min_time=None) -> None:
         """ Save all ticker dataframes for further indicator/signal optimization """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
         dt_now = datetime.now()
@@ -276,10 +276,10 @@ class SigBot:
             print('\nLoad the datasets...')
             # start all futures exchange monitors
             for monitor in self.fut_ex_monitor_list:
-                monitor.save_opt_dataframes(dt_now, restore)
+                monitor.save_opt_dataframes(dt_now, historical, min_time)
             # start all spot exchange monitors
             for monitor in self.spot_ex_monitor_list:
-                monitor.save_opt_dataframes(dt_now, restore)
+                monitor.save_opt_dataframes(dt_now, historical, min_time)
 
     def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool) -> None:
         """ Save statistics in program memory for further indicator/signal optimization """
@@ -361,19 +361,21 @@ class MonitorExchange:
     def save_statistics(self) -> None:
         self.sigbot.save_statistics()
 
-    def save_opt_dataframes(self, dt_now: datetime, restore: bool) -> None:
+    def save_opt_dataframes(self, dt_now: datetime, historical: bool, min_time: datetime) -> None:
         """ Save dataframe for every ticker for further indicator/signal optimization """
         exchange_api = self.exchange_data['API']
         tickers = self.exchange_data['tickers']
+        print(80 * '=')
         print(f'{self.exchange}')
-        min_time = None
         for ticker in tickers:
+            if ticker == 'JTO_USDT':
+                print('')
+            if historical:
+                print(ticker)
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
-                
-                # restore hour data
-                if restore and timeframe == self.sigbot.work_timeframe:
-                    print(ticker)
+                if historical:
+                    # get historical data for some period (before min_time)
                     df, data_qty = self.sigbot.get_historical_data(exchange_api, ticker, timeframe, dt_now, min_time)
                 else:
                     df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now)  
@@ -384,12 +386,10 @@ class MonitorExchange:
                     except FileNotFoundError:
                         pass
                     else:
-                        if timeframe == self.sigbot.higher_timeframe or not restore:
+                        if not historical:
                             last_time = tmp['time'].max()
                             df = df[df['time'] > last_time]
                             df = pd.concat([tmp, df], ignore_index=True)
-                    if timeframe == self.sigbot.higher_timeframe:
-                        min_time = df['time'].min()
                     df_path = f'../optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl'
                     df = df.drop_duplicates().reset_index(drop=True)
                     df.to_pickle(df_path)

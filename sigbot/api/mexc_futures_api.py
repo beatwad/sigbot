@@ -1,3 +1,4 @@
+from datetime import datetime
 import requests
 import pandas as pd
 from api.api_base import ApiBase
@@ -36,6 +37,40 @@ class MEXCFutures(ApiBase):
                                   6: 'close_time', 'vol': 'volume'}, axis=1)
         tickers = tickers.sort_values('time', ignore_index=True)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
+    
+
+    def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
+        """ Save historical time, price and volume info to CryptoCurrency structure
+            for some period (earlier than min_time) """
+        interval_secs = self.convert_interval_to_secs(interval)
+        interval = self.interval_dict[interval]
+        params = {'interval': interval, 'limit': limit}
+        tmp_limit = limit
+        prev_time, earliest_time = None, datetime.now()
+        ts = int(self.get_timestamp() / 3600) * 3600
+        tickers = pd.DataFrame()
+        
+        while earliest_time > min_time:
+            start_time = (ts - (tmp_limit * interval_secs))
+            end_time = (ts - ((tmp_limit - limit) * interval_secs))
+            params['start'] = start_time
+            params['end'] = end_time
+            tmp = pd.DataFrame(requests.get(self.URL + f'/kline/{symbol}', params=params).json()['data'])
+            if tmp.shape[0] == 0:
+                break
+            prev_time, earliest_time = earliest_time, tmp['time'].min()
+            earliest_time = self.convert_timstamp_to_time(earliest_time, unit='s')
+            # prevent endless cycle if there are no candles that eariler than min_time
+            if prev_time == earliest_time:
+                break
+            
+            tickers = pd.concat([tmp, tickers])
+            tmp_limit += limit
+
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'asset_volume',
+                                  6: 'close_time', 'vol': 'volume'}, axis=1)
+        tickers = tickers.sort_values('time', ignore_index=True)
+        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
 
 if __name__ == '__main__':

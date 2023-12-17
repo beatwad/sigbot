@@ -69,6 +69,8 @@ class BinanceFutures(ApiBase):
         while earliest_time > min_time:
             start_time = (ts - (tmp_limit * interval_secs)) * 1000
             tmp = pd.DataFrame(self.client.get_klines(symbol=symbol, interval=interval, startTime=start_time, limit=limit))
+            if tmp.shape[0] == 0:
+                break
             prev_time, earliest_time = earliest_time, tmp[0].min()
             earliest_time = self.convert_timstamp_to_time(earliest_time, unit='ms')
             # prevent endless cycle if there are no candles that eariler than min_time

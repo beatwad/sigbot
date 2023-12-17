@@ -43,13 +43,13 @@ class SigBot:
         # Set list of available exchanges, cryptocurrencies and tickers
         self.exchanges = {
                         # 'ByBitPerpetual': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                        'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                        # 'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                        # 'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                        'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                         # 'ByBit': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                         # 'MEXC': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                         # 'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                        # 'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                        # 'MEXCFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}
+                        'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                        'MEXCFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}
                         }
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
@@ -76,6 +76,9 @@ class SigBot:
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
         # model for price prediction
         if opt_type:
+            if opt_type == 'ml':
+                del self.exchanges['OKEX']
+                del self.exchanges['OKEXSwap']
             self.model = None
         else:
             self.model = Model(**configs)

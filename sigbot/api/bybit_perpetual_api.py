@@ -67,6 +67,8 @@ class ByBitPerpetual(ApiBase):
             from_time = (ts - (tmp_limit * interval_secs))
             tmp = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval,
                                                        from_time=from_time, limit=limit)['result'])
+            if tmp.shape[0] == 0:
+                break
             prev_time, earliest_time = earliest_time, tmp['open_time'].min()
             earliest_time = self.convert_timstamp_to_time(earliest_time, unit='s')
             # prevent endless cycle if there are no candles that eariler than min_time

@@ -476,8 +476,8 @@ class MonitorExchange:
                         pass_the_ticker = True
                         continue
                     # Debug !!!
-                    if data_qty_higher > 0:
-                        df.to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
+                    # if data_qty_higher > 0:
+                    #     df.to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Add time from higher timefram to dataframe with working timeframe data

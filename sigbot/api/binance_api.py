@@ -81,8 +81,6 @@ class Binance(ApiBase):
 
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
-    
-
 
 
 if __name__ == '__main__':

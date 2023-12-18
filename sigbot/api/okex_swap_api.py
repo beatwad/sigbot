@@ -51,19 +51,22 @@ class OKEXSwap(ApiBase):
     def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
         """ Save historical time, price and volume info to CryptoCurrency structure
             for some period (earlier than min_time) """
+        # maximum limit for this endpoint is 100
+        limit = 100
         interval_secs = self.convert_interval_to_secs(interval)
         if not interval.endswith('m'):
             interval = interval.upper()
+        symbol = 'LUNA-USDT'
         params = {'instId': symbol, 'bar': interval, 'limit': limit}
-        tmp_limit = 1
+        tmp_limit = 0
         prev_time, earliest_time = None, datetime.now()
         ts = int(self.get_timestamp() / 3600) * 3600
         tickers = pd.DataFrame()
         
         while earliest_time > min_time:
-            after = (ts - (tmp_limit - 1) * interval_secs) * 1000
+            after = (ts - tmp_limit * interval_secs) * 1000
             params['after'] = str(after)
-            tmp = pd.DataFrame(requests.get(self.URL + '/api/v5/market/candles', params=params).json()['data'])
+            tmp = pd.DataFrame(requests.get(self.URL + '/api/v5/market/history-candles', params=params).json()['data'])
             if tmp.shape[0] == 0:
                 break
             prev_time, earliest_time = earliest_time, tmp[0].min()

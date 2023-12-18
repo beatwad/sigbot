@@ -76,9 +76,6 @@ class SigBot:
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
         # model for price prediction
         if opt_type:
-            if opt_type == 'ml':
-                del self.exchanges['OKEX']
-                del self.exchanges['OKEXSwap']
             self.model = None
         else:
             self.model = Model(**configs)

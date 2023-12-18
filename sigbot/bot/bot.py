@@ -443,7 +443,6 @@ class MonitorExchange:
                 9 - ML model prediction """
         tickers = self.exchange_data['tickers']
         dt_now = datetime.now()
-        print(f'Cycle number {self.sigbot.main.cycle_number}, exchange {self.exchange}', flush=True)
         # list of processes
         processes = list()
         for ticker in tickers:

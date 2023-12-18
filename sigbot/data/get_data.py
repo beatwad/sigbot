@@ -1,4 +1,3 @@
-import requests
 import pandas as pd
 from api.binance_api import Binance
 from api.binance_futures_api import BinanceFutures
@@ -9,7 +8,6 @@ from api.bybit_perpetual_api import ByBitPerpetual
 from api.mexc_api import MEXC
 from api.mexc_futures_api import MEXCFutures
 from datetime import datetime
-from json.decoder import JSONDecodeError
 from log.log import logger
 from constants.constants import binance_key, binance_secret, binance_perp_key, binance_perp_secret
 

@@ -9,7 +9,6 @@ environ["ENV"] = "1h_4h"
 
 from bot.bot import SigBot
 from config.config import ConfigFactory
-from log.log import logger
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs

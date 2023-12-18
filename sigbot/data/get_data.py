@@ -82,8 +82,8 @@ class GetData:
             df = self.process_data(klines, df)
         
         # filter tickers by avg 24h volume
-        limit = 0 if not self.filter_by_volume_24(df, timeframe) else limit
-        
+        if limit >= 100:
+            limit = 0 if not self.filter_by_volume_24(df, timeframe, ticker) else limit
         return df, limit
 
     def get_historical_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
@@ -104,12 +104,10 @@ class GetData:
         df = df[df['time'] >= min_time].reset_index(drop=True)
 
         # filter tickers by avg 24h volume
-        limit = 0 if not self.filter_by_volume_24(df, timeframe) else self.limit
-        if limit == 0:
-            print('Volume is too low, skipping')
+        limit = 0 if not self.filter_by_volume_24(df, timeframe, ticker) else self.limit
         return df, limit
 
-    def filter_by_volume_24(self, df: pd.DataFrame, timeframe: str) -> float:
+    def filter_by_volume_24(self, df: pd.DataFrame, timeframe: str, ticker: str) -> float:
         """ Get average 24 hours volume of ticker and decide if it is enough big to use current ticker """
         # get quantity of candles in 24 hours
         avg_period = int(24 / (self.timeframe_div[timeframe] / 3600))
@@ -118,6 +116,8 @@ class GetData:
 
         if volume_24 >= self.min_volume:
             return True
+        if timeframe == self.work_timeframe:
+            logger.info(f'Volume {volume_24} is too low for ticker {ticker}, skipping')
         return False
 
     def get_tickers(self) -> list:

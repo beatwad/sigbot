@@ -449,9 +449,6 @@ class MonitorExchange:
             data_qty_higher = 0
             # flag that allows to pass the ticker in case of errors
             pass_the_ticker = False
-            # stop thread if stop flag is set
-            # if self.stopped.is_set():
-            #     break
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
                 if pass_the_ticker:
@@ -471,12 +468,9 @@ class MonitorExchange:
                         data_qty_sell = self.get_indicators(df, 'sell', ticker, timeframe, data_qty)
                     except:
                         logger.exception(f'Something bad has happened to ticker {ticker} on timeframe {timeframe} '
-                                         f'while getting indicator data.')
+                                         f'while getting the indicator data.')
                         pass_the_ticker = True
                         continue
-                    # Debug !!!
-                    # if data_qty_higher > 0:
-                    #     df.to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Add time from higher timefram to dataframe with working timeframe data
@@ -490,9 +484,19 @@ class MonitorExchange:
                                                                            data_qty_higher)
                         except:
                             logger.exception(f'Something bad has happened to ticker {ticker} on timeframe {timeframe} '
-                                             f'while getting signals.')
+                                             f'while getting the signals.')
                             pass_the_ticker = True
                             continue
+                        if sig_buy_points:  # !!!
+                            for sig_point in sig_buy_points:
+                                sig_message = (f'Find the unfiltered signal buy point. {self.exchange}, {ticker}, '
+                                               f'{timeframe}, {sig_point[5]}, {sig_point[4]}')
+                                logger.info(sig_message)
+                        if sig_sell_points:  # !!!
+                            for sig_point in sig_sell_points:
+                                sig_message = (f'Find the unfiltered signal sell point. {self.exchange}, {ticker}, '
+                                               f'{timeframe}, {sig_point[5]}, {sig_point[4]}')
+                                logger.info(sig_message)
                         # If similar signal was added to stat dataframe not too long time ago (<= 3-5 ticks before) -
                         # don't add it again
                         sig_buy_points = self.sigbot.filter_sig_points(sig_buy_points)
@@ -517,8 +521,8 @@ class MonitorExchange:
                                 print(self.exchange,
                                       [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5], sp[9]] for sp in sig_points],
                                       flush=True)
-                                # self.sigbot.telegram_bot.notification_list += sig_points
-                                # self.sigbot.telegram_bot.check_notifications()
+                                # send Telegram notification, create separate process for each notification
+                                # to run processes of signal search and signal notification simultaneously
                                 for sig_point in sig_points:
                                     pr = multiprocessing.Process(target=self.sigbot.telegram_bot.send_notification,
                                                                  args=(sig_point,))

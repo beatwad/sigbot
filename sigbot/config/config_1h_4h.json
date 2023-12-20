@@ -403,7 +403,7 @@
   },
   "Main": {
     "params": {
-      "bot_cycle_length_sec": 10,
+      "bot_cycle_length_sec": 5,
       "cycle_length_hours": 24,
       "time_period_minutes": 60,
       "first_cycle_qty_miss": 1
@@ -526,8 +526,8 @@
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,
       "max_notifications_in_row": 3,
-      "pred_buy_thresh": 0.69,
-      "pred_sell_thresh": 0.69
+      "pred_buy_thresh": 0.63,
+      "pred_sell_thresh": 0.63
     }
   },
   "Timeframes": {

@@ -8,7 +8,7 @@ class OKEXSwap(ApiBase):
     URL = 'https://www.okex.com'
 
     def get_ticker_names(self, min_volume) -> (list, list, list):
-        """ Get tickers from spot, futures and swap OKEX exchanges and get tickers with big enough 24h volume """
+        """ Get tickers from spot, futures and swap exchanges and get tickers with big enough 24h volume """
         tickers = pd.DataFrame(requests.get(self.URL +
                                             '/api/v5/market/tickers?instType=SWAP', timeout=3).json()['data'])
         tickers['symbol'] = tickers['instId'].str.replace('-', '').str.replace('SWAP', '')

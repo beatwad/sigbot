@@ -8,7 +8,7 @@ class OKEX(ApiBase):
     URL = 'https://www.okex.com'
 
     def get_ticker_names(self, min_volume) -> (list, list, list):
-        """ Get tickers from spot, futures and swap OKEX exchanges and get tickers with big enough 24h volume """
+        """ Get tickers from spot, futures and swap exchanges and get tickers with big enough 24h volume """
         tickers = pd.DataFrame(requests.get(self.URL + '/api/v5/market/tickers?instType=SPOT',
                                             timeout=3).json()['data'])
         tickers['symbol'] = tickers['instId'].str.replace('-', '')
@@ -81,7 +81,6 @@ class OKEX(ApiBase):
         tickers = tickers.sort_values(0, ignore_index=True)
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
-
 
 
 if __name__ == '__main__':

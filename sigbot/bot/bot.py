@@ -300,7 +300,7 @@ class SigBot:
         df_higher['time_higher'] = df_higher['time']
         # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
         higher_features = ['time', 'time_higher', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist',  'macd_dir',
-                            'macdsignal', 'macdsignal_dir']
+                           'macdsignal', 'macdsignal_dir']
         df_work[higher_features] = pd.merge(df_work[['time']], df_higher[higher_features], how='left', on='time')
         higher_features.remove('time')
         df_work.ffill(inplace=True)
@@ -365,8 +365,6 @@ class MonitorExchange:
         print(80 * '=')
         print(f'{self.exchange}')
         for ticker in tickers:
-            if ticker == 'JTO_USDT':
-                print('')
             if historical:
                 print(ticker)
             # For every timeframe get the data and find the signal
@@ -378,8 +376,9 @@ class MonitorExchange:
                     df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now)  
                 # If we previously download this dataframe to the disk - update it with new data
                 if data_qty > 1:
+                    tmp_ticker = ticker.replace('-', '').replace('SWAP', '')
                     try:
-                        tmp = pd.read_pickle(f'../optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl')
+                        tmp = pd.read_pickle(f'../optimizer/ticker_dataframes/{tmp_ticker}_{timeframe}.pkl')
                     except FileNotFoundError:
                         pass
                     else:
@@ -402,7 +401,8 @@ class MonitorExchange:
             for timeframe in self.sigbot.timeframes:
                 if ticker not in self.sigbot.database or timeframe not in self.sigbot.database[ticker]:
                     try:
-                        df = pd.read_pickle(f'../optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl')
+                        tmp_ticker = ticker.replace('-', '').replace('SWAP', '')
+                        df = pd.read_pickle(f'../optimizer/ticker_dataframes/{tmp_ticker}_{timeframe}.pkl')
                     except FileNotFoundError:
                         continue
                 else:

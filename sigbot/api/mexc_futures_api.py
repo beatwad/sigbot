@@ -10,7 +10,7 @@ class MEXCFutures(ApiBase):
                      '8h': 'Hour8', '1d': 'Day1', '1w': 'Week1'}
 
     def get_ticker_names(self, min_volume) -> (list, list, list):  # ok
-        """ Get tickers from spot, futures and swap OKEX exchanges and get tickers with big enough 24h volume """
+        """ Get tickers from spot, futures and swap exchanges and get tickers with big enough 24h volume """
         tickers = pd.DataFrame(requests.get(self.URL + '/ticker', timeout=3).json()['data'])
         tickers = tickers[tickers['symbol'].str.endswith('USDT')]
 

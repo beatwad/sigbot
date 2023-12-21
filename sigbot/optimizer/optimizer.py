@@ -172,7 +172,6 @@ class Optimizer:
                 sb.database = copy.deepcopy(database)
             # load candle data from exchanges only at first time
             if load:
-                # self.clean_prev_tickers_dfs()
                 sb.save_opt_dataframes(ttype, historical, min_time)
                 load = False
             sb.save_opt_statistics(ttype, opt_limit, not load_tickers)

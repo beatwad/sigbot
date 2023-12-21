@@ -253,7 +253,7 @@ class GetOKEXData(GetData):
 
 
 class GetOKEXSwapData(GetData):
-    name = 'OKEX'
+    name = 'OKEXSwap'
 
     def __init__(self, **configs):
         super(GetOKEXSwapData, self).__init__(**configs)

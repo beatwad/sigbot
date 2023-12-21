@@ -386,7 +386,7 @@ class MonitorExchange:
                             last_time = tmp['time'].max()
                             df = df[df['time'] > last_time]
                             df = pd.concat([tmp, df], ignore_index=True)
-                    df_path = f'../optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl'
+                    df_path = f'../optimizer/ticker_dataframes/{tmp_ticker}_{timeframe}.pkl'
                     df = df.drop_duplicates().reset_index(drop=True)
                     df.to_pickle(df_path)
                 else:

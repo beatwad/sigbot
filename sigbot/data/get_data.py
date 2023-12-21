@@ -1,3 +1,5 @@
+import sys
+from time import sleep
 import pandas as pd
 from api.binance_api import Binance
 from api.binance_futures_api import BinanceFutures
@@ -69,13 +71,14 @@ class GetData:
             for _ in range(3):
                 try:
                     klines = self.api.get_klines(ticker, timeframe, min(limit + 2, self.limit))
-                except:
+                except Exception as e:
+                    sleep(1)
                     continue
                 else:
                     break
             else:
                 logger.exception(f'Catch an exception while trying to get candles. '
-                                f'API is {self.api}, ticker is {ticker}')
+                                 f'API is {self.api}, ticker is {ticker}, exception is {sys.exc_info()[1]}')
                 return df, 0
             df = self.process_data(klines, df)
         
@@ -90,12 +93,13 @@ class GetData:
             try:
                 klines = self.api.get_historical_klines(ticker, timeframe, self.limit, min_time)
             except:
+                sleep(3)
                 continue
             else:
                 break
         else:
-            logger.exception(f'Catch an exception while trying to get historical candles. ' 
-                             f'API is {self.api}, ticker is {ticker}')
+            logger.exception(f'Catch an exception while trying to get candles. '
+                             f'API is {self.api}, ticker is {ticker}, exception is {sys.exc_info()[1]}')
             return df, 0
         df = self.process_data(klines, df)
         df = df[df['time'] >= min_time].reset_index(drop=True)
@@ -110,10 +114,11 @@ class GetData:
         avg_period = int(24 / (self.timeframe_div[timeframe] / 3600))
         # get average volume for 24 hours
         volume_24 = (df['close'] * df['volume']).rolling(avg_period).sum().dropna().mean()
-
         if volume_24 >= self.min_volume:
             return True
         if timeframe == self.work_timeframe:
+            if volume_24 != volume_24 and len(df) > 24:
+                pass
             logger.info(f'Volume {volume_24} is too low for ticker {ticker}, skipping')
         return False
 
@@ -141,7 +146,7 @@ class GetData:
         klines[['open', 'high', 'low', 'close', 'volume']] = klines[['open', 'high', 'low',
                                                                      'close', 'volume']].astype(float).copy()
         # convert time to UTC+3
-        if self.name == 'ByBitPerpetual' or self.name == 'MEXCFutures':
+        if self.name == 'MEXCFutures':
             klines['time'] = pd.to_datetime(klines['time'], unit='s')
         else:
             klines['time'] = pd.to_datetime(klines['time'], unit='ms')

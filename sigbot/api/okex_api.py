@@ -14,9 +14,11 @@ class OKEX(ApiBase):
         tickers['symbol'] = tickers['instId'].str.replace('-', '')
         all_tickers = tickers['symbol'].to_list()
 
+        x = tickers[tickers['instId'] == 'XETA-USDT']
         tickers = tickers[(tickers['instId'].str.endswith('USDT')) | (tickers['instId'].str.endswith('USDC'))]
         tickers['volCcy24h'] = tickers['volCcy24h'].astype(float)
         tickers = tickers[tickers['volCcy24h'] >= min_volume // 3]
+        y = tickers[tickers['instId'] == 'XETA-USDT']
 
         filtered_symbols = self.check_symbols(tickers['instId'])
         tickers = tickers[tickers['instId'].isin(filtered_symbols)]
@@ -87,13 +89,13 @@ if __name__ == '__main__':
     from datetime import datetime
 
     okex = OKEX()
-    tickers = okex.get_ticker_names(1e5)
+    tickers = okex.get_ticker_names(1e1)
     dt1 = datetime.now()
 
     for ticker in tickers:
         print(ticker)
-        klines1 = okex.get_klines(ticker, '5m')
-        klines2 = okex.get_klines(ticker, '3m')
+        # klines1 = okex.get_klines(ticker, '5m')
+        # klines2 = okex.get_klines(ticker, '3m')
 
 
     dt2 = datetime.now()

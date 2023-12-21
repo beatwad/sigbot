@@ -1,7 +1,7 @@
 from datetime import datetime
 import pandas as pd
 from api.api_base import ApiBase
-from pybit import usdt_perpetual
+from pybit import unified_trading
 
 
 class ByBitPerpetual(ApiBase):
@@ -16,41 +16,39 @@ class ByBitPerpetual(ApiBase):
         self.connect_to_api('', '')
 
     def connect_to_api(self, api_key, api_secret):
-        self.client = usdt_perpetual.HTTP(self.mainnet, api_key=api_key, api_secret=api_secret)
+        self.client = unified_trading.HTTP(api_key=api_key, api_secret=api_secret)
 
     def get_ticker_names(self, min_volume) -> (list, list, list):
-        tickers = pd.DataFrame(self.client.latest_information_for_symbol()['result'])
-
+        tickers = pd.DataFrame(self.client.get_tickers(category="linear")['result']['list'])
         all_tickers = tickers['symbol'].to_list()
 
         tickers = tickers[(tickers['symbol'].str.endswith('USDT'))]
-        tickers['turnover_24h'] = tickers['turnover_24h'].astype(float)
-        tickers = tickers[tickers['turnover_24h'] >= min_volume // 3]
+        tickers['turnover24h'] = tickers['turnover24h'].astype(float)
+        tickers = tickers[tickers['turnover24h'] >= min_volume // 3]
 
         filtered_symbols = self.check_symbols(tickers['symbol'])
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)]
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
 
-        return tickers['symbol'].to_list(), tickers['volume_24h'].to_list(), all_tickers
+        return tickers['symbol'].to_list(), tickers['volume24h'].to_list(), all_tickers
 
     def get_klines(self, symbol: str, interval: str, limit: int) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
         interval_secs = self.convert_interval_to_secs(interval)
         interval = self.convert_interval(interval)
 
-        from_time = (self.get_timestamp() - (limit * interval_secs))
-        tickers = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval,
-                                                           from_time=from_time, limit=200)['result'])
+        start = (self.get_timestamp() - (limit * interval_secs)) * 1000
+        tickers = pd.DataFrame(self.client.get_kline(category='linear', symbol=symbol,
+                                                     interval=interval, start=start, limit=200)['result']['list'])
         # at first time get candles from previous interval to overcome API limit restrictions
         if limit > 100:
-            from_time = (self.get_timestamp() - (limit * 2 * interval_secs))
-            tmp = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval,
-                                                       from_time=from_time, limit=limit)['result'])
+            start = (self.get_timestamp() - (limit * 2 * interval_secs)) * 1000
+            tmp = pd.DataFrame(self.client.get_kline(category='linear', symbol=symbol,
+                                                     interval=interval, start=start, limit=200)['result']['list'])
             if tmp.shape[0] > 0:
-                tickers = pd.concat([tmp, tickers])
+                tickers = pd.concat([tickers, tmp])
 
-        tickers = tickers.rename({'open_time': 'time'}, axis=1)
-
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
     def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
@@ -64,21 +62,21 @@ class ByBitPerpetual(ApiBase):
         tickers = pd.DataFrame()
         
         while earliest_time > min_time:
-            from_time = (ts - (tmp_limit * interval_secs))
-            tmp = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval,
-                                                       from_time=from_time, limit=limit)['result'])
+            start = (ts - (tmp_limit * interval_secs))
+            tmp = pd.DataFrame(self.client.get_kline(category='linear', symbol=symbol,
+                                                     interval=interval, start=start, limit=200)['result']['list'])
             if tmp.shape[0] == 0:
                 break
             prev_time, earliest_time = earliest_time, tmp['open_time'].min()
-            earliest_time = self.convert_timstamp_to_time(earliest_time, unit='s')
+            earliest_time = self.convert_timstamp_to_time(earliest_time, unit='ms')
             # prevent endless cycle if there are no candles that eariler than min_time
             if prev_time == earliest_time:
                 break
             
-            tickers = pd.concat([tmp, tickers])
+            tickers = pd.concat([tickers, tmp])
             tmp_limit += limit
 
-        tickers = tickers.rename({'open_time': 'time'}, axis=1)
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
 

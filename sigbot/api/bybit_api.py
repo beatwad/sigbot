@@ -1,7 +1,7 @@
 from datetime import datetime
 import pandas as pd
 from api.api_base import ApiBase
-from pybit import spot
+from pybit import unified_trading
 
 
 class ByBit(ApiBase):
@@ -13,28 +13,29 @@ class ByBit(ApiBase):
         self.connect_to_api('', '')
 
     def connect_to_api(self, api_key, api_secret):
-        self.client = spot.HTTP(api_key=api_key, api_secret=api_secret)
+        self.client = unified_trading.HTTP(api_key=api_key, api_secret=api_secret)
 
     def get_ticker_names(self, min_volume) -> (list, list, list):
-        tickers = pd.DataFrame(self.client.latest_information_for_symbol()['result'])
-
+        tickers = pd.DataFrame(self.client.get_tickers(category="spot")['result']['list'])
         all_tickers = tickers['symbol'].to_list()
 
         tickers = tickers[(tickers['symbol'].str.endswith('USDT')) | (tickers['symbol'].str.endswith('USDC'))]
-        tickers['quoteVolume'] = tickers['quoteVolume'].astype(float)
-        tickers = tickers[tickers['quoteVolume'] >= min_volume // 3]
+        tickers['volume24h'] = tickers['volume24h'].astype(float)
+        tickers = tickers[tickers['volume24h'] >= min_volume // 3]
 
         filtered_symbols = self.check_symbols(tickers['symbol'])
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)]
         filtered_symbols = self.delete_duplicate_symbols(tickers['symbol'])
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
 
-        return tickers['symbol'].to_list(), tickers['volume'].to_list(), all_tickers
+        return tickers['symbol'].to_list(), tickers['volume24h'].to_list(), all_tickers
 
     def get_klines(self, symbol, interval, limit) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
-        tickers = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval, limit=limit)['result'])
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, axis=1)
+        interval = self.convert_interval(interval)
+        tickers = pd.DataFrame(self.client.get_kline(category='spot', symbol=symbol,
+                                                     interval=interval, limit=limit)['result']['list'])
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
 
     def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
@@ -50,8 +51,8 @@ class ByBit(ApiBase):
         while earliest_time > min_time:
             start_time = (ts - (tmp_limit * interval_secs)) * 1000
             end_time = (ts - ((tmp_limit - limit) * interval_secs)) * 1000
-            tmp = pd.DataFrame(self.client.query_kline(symbol=symbol, interval=interval,
-                                                       startTime=start_time, endTime=end_time, limit=limit)['result'])
+            tmp = pd.DataFrame(self.client.get_kline(category='spot', symbol=symbol, interval=interval,
+                                                     startTime=start_time, endTime=end_time, limit=limit)['result'])
             if tmp.shape[0] == 0:
                 break
             prev_time, earliest_time = earliest_time, tmp[0].min()
@@ -60,10 +61,10 @@ class ByBit(ApiBase):
             if prev_time == earliest_time:
                 break
             
-            tickers = pd.concat([tmp, tickers])
+            tickers = pd.concat([tickers, tmp])
             tmp_limit += limit
             
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, axis=1)
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
 
@@ -72,5 +73,5 @@ if __name__ == '__main__':
     secret = ""
     bybit_api = ByBit()
     tickers = bybit_api.get_ticker_names(1)
-    kline = bybit_api.get_klines('BITUSDT', '5m', 1000)
+    kline = bybit_api.get_klines('BTCUSDT', '5m', 1000)
     print(kline)

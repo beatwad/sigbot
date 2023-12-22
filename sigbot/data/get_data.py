@@ -1,4 +1,3 @@
-import sys
 from time import sleep
 import pandas as pd
 from api.binance_api import Binance

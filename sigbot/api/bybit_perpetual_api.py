@@ -11,8 +11,6 @@ class ByBitPerpetual(ApiBase):
         self.global_limit = 1000
         self.api_key = api_key
         self.api_secret = api_secret
-        self.mainnet = 'https://api.bybit.com'
-        self.testnet = 'https://api-testnet.bybit.com'
         self.connect_to_api('', '')
 
     def connect_to_api(self, api_key, api_secret):
@@ -32,29 +30,10 @@ class ByBitPerpetual(ApiBase):
 
         return tickers['symbol'].to_list(), tickers['volume24h'].to_list(), all_tickers
 
-    # def get_klines(self, symbol: str, interval: str, limit: int) -> pd.DataFrame:
-    #     """ Save time, price and volume info to CryptoCurrency structure """
-    #     interval_secs = self.convert_interval_to_secs(interval)
-    #     interval = self.convert_interval(interval)
-
-    #     start = (self.get_timestamp() - (limit * interval_secs)) * 1000
-    #     tickers = pd.DataFrame(self.client.get_kline(category='linear', symbol=symbol,
-    #                                                  interval=interval, start=start, limit=200)['result']['list'])
-    #     # at first time get candles from previous interval to overcome API limit restrictions
-    #     if limit > 100:
-    #         start = (self.get_timestamp() - (limit * 2 * interval_secs)) * 1000
-    #         tmp = pd.DataFrame(self.client.get_kline(category='linear', symbol=symbol,
-    #                                                  interval=interval, start=start, limit=200)['result']['list'])
-    #         if tmp.shape[0] > 0:
-    #             tickers = pd.concat([tickers, tmp])
-
-    #     tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
-    #     return tickers[['time', 'open', 'high', 'low', 'close', 'volume']][::-1].reset_index(drop=True)
-
     def get_klines(self, symbol, interval, limit) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
         interval = self.convert_interval(interval)
-        tickers = pd.DataFrame(self.client.get_kline(category='spot', symbol=symbol,
+        tickers = pd.DataFrame(self.client.get_kline(category='linear', symbol=symbol,
                                                      interval=interval, limit=limit)['result']['list'])
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]

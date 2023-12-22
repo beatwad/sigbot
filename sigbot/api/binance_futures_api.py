@@ -68,7 +68,8 @@ class BinanceFutures(ApiBase):
         # get historical data in cycle until we reach the min_time
         while earliest_time > min_time:
             start_time = (ts - (tmp_limit * interval_secs)) * 1000
-            tmp = pd.DataFrame(self.client.get_klines(symbol=symbol, interval=interval, startTime=start_time, limit=limit))
+            tmp = pd.DataFrame(self.client.futures_klines(symbol=symbol, interval=interval, startTime=start_time,
+                                                          limit=limit))
             if tmp.shape[0] == 0:
                 break
             prev_time, earliest_time = earliest_time, tmp[0].min()
@@ -88,8 +89,10 @@ if __name__ == '__main__':
     secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
     binance_api = BinanceFutures(key, secret)
     tickers = binance_api.get_ticker_names(1e6)
-    k_lines = binance_api.get_klines('BTCUSDT', '5m', 1000)
-    print(len(tickers[0]))
+    min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(2, unit='h')
+    k_lines = binance_api.get_historical_klines('1000SHIBUSDT', '5m', 1000, min_time)
+    print(tickers)
+    print(k_lines)
     # t_list = list()
     # for t in tickers:
     #     t_list.append(t['symbol'])

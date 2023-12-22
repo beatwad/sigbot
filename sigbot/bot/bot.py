@@ -376,7 +376,7 @@ class MonitorExchange:
                     df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now)  
                 # If we previously download this dataframe to the disk - update it with new data
                 if data_qty > 1:
-                    tmp_ticker = ticker.replace('-', '').replace('SWAP', '')
+                    tmp_ticker = ticker.replace('-', '').replace('SWAP', '').replace('_USDT', 'USDT')
                     try:
                         tmp = pd.read_pickle(f'../optimizer/ticker_dataframes/{tmp_ticker}_{timeframe}.pkl')
                     except FileNotFoundError:
@@ -401,7 +401,7 @@ class MonitorExchange:
             for timeframe in self.sigbot.timeframes:
                 if ticker not in self.sigbot.database or timeframe not in self.sigbot.database[ticker]:
                     try:
-                        tmp_ticker = ticker.replace('-', '').replace('SWAP', '')
+                        tmp_ticker = ticker.replace('-', '').replace('SWAP', '').replace('_USDT', 'USDT')
                         df = pd.read_pickle(f'../optimizer/ticker_dataframes/{tmp_ticker}_{timeframe}.pkl')
                     except FileNotFoundError:
                         continue

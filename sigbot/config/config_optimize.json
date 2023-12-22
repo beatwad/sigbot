@@ -18,7 +18,8 @@
           "1d": 86400,
           "4d": 345600,
           "1w": 604800
-        }
+        },
+        "num_retries": 3
       }
     },
     "Binance": {
@@ -123,7 +124,7 @@
     },
     "ByBitPerpetual": {
       "params": {
-        "limit": 200,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,

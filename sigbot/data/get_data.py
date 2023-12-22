@@ -52,6 +52,8 @@ class GetData:
         self.api = None
         # work timeframe
         self.work_timeframe = configs['Timeframes']['work_timeframe']
+        # number of tries to get candles
+        self.num_retries = 3
 
     @staticmethod
     def load_saved_data(df: pd.DataFrame, ticker: str, timeframe: str):
@@ -68,17 +70,18 @@ class GetData:
         # get data from exchange only when there is at least one interval to get
         if limit > 1:
             # if there are errors in connection, try 3 times and only then log exception
-            for _ in range(3):
+            for i in range(self.num_retries):
                 try:
                     klines = self.api.get_klines(ticker, timeframe, min(limit + 2, self.limit))
-                except Exception as e:
+                except:
+                    if i == self.num_retries - 1:
+                        logger.exception(f'Catch an exception while trying to get candles. ' 
+                                         f'API is {self.api}, ticker is {ticker}')
                     sleep(1)
                     continue
                 else:
                     break
             else:
-                logger.exception(f'Catch an exception while trying to get candles. '
-                                 f'API is {self.api}, ticker is {ticker}, exception is {sys.exc_info()[1]}')
                 return df, 0
             df = self.process_data(klines, df)
         
@@ -89,23 +92,24 @@ class GetData:
     def get_historical_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
                             min_time: datetime) -> (pd.DataFrame, int):
         """ Get historical data from exchange for some period """
-        for _ in range(5):
+        for i in range(self.num_retries):
             try:
                 klines = self.api.get_historical_klines(ticker, timeframe, self.limit, min_time)
             except:
-                sleep(3)
+                if i == self.num_retries - 1:
+                    logger.exception(f'Catch an exception while trying to get candles. ' 
+                                     f'API is {self.api}, ticker is {ticker}')
+                sleep(1)
                 continue
             else:
                 break
         else:
-            logger.exception(f'Catch an exception while trying to get candles. '
-                             f'API is {self.api}, ticker is {ticker}, exception is {sys.exc_info()[1]}')
             return df, 0
         df = self.process_data(klines, df)
         df = df[df['time'] >= min_time].reset_index(drop=True)
 
         # filter tickers by avg 24h volume
-        limit = 0 if not self.filter_by_volume_24(df, timeframe, ticker) else self.limit
+        limit = 0 if len(df) > 24 and not self.filter_by_volume_24(df, timeframe, ticker) else self.limit
         return df, limit
 
     def filter_by_volume_24(self, df: pd.DataFrame, timeframe: str, ticker: str) -> float:
@@ -117,8 +121,6 @@ class GetData:
         if volume_24 >= self.min_volume:
             return True
         if timeframe == self.work_timeframe:
-            if volume_24 != volume_24 and len(df) > 24:
-                pass
             logger.info(f'Volume {volume_24} is too low for ticker {ticker}, skipping')
         return False
 

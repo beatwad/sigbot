@@ -42,6 +42,7 @@ class ByBit(ApiBase):
         """ Save historical time, price and volume info to CryptoCurrency structure
             for some period (earlier than min_time) """
         interval_secs = self.convert_interval_to_secs(interval)
+        interval = self.convert_interval(interval)
         tmp_limit = limit
         prev_time, earliest_time = None, datetime.now()
         ts = int(self.get_timestamp() / 3600) * 3600
@@ -49,10 +50,9 @@ class ByBit(ApiBase):
 
         # get historical data in cycle until we reach the min_time
         while earliest_time > min_time:
-            start_time = (ts - (tmp_limit * interval_secs)) * 1000
-            end_time = (ts - ((tmp_limit - limit) * interval_secs)) * 1000
-            tmp = pd.DataFrame(self.client.get_kline(category='spot', symbol=symbol, interval=interval,
-                                                     startTime=start_time, endTime=end_time, limit=limit)['result'])
+            start = (ts - (tmp_limit * interval_secs)) * 1000
+            tmp = pd.DataFrame(self.client.get_kline(category='spot', symbol=symbol,
+                                                     interval=interval, start=start, limit=limit)['result']['list'])
             if tmp.shape[0] == 0:
                 break
             prev_time, earliest_time = earliest_time, tmp[0].min()
@@ -65,7 +65,7 @@ class ByBit(ApiBase):
             tmp_limit += limit
             
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
-        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
+        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']][::-1].reset_index(drop=True)
 
 
 if __name__ == '__main__':

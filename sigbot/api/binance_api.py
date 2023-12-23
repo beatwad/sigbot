@@ -73,7 +73,7 @@ class Binance(ApiBase):
                 break
             prev_time, earliest_time = earliest_time, tmp[0].min()
             earliest_time = self.convert_timstamp_to_time(earliest_time, unit='ms')
-            # prevent endless cycle if there are no candles that eariler than min_time
+            # prevent endless cycle if there are no candles than earlier than min_time
             if prev_time == earliest_time:
                 break
             tickers = pd.concat([tmp, tickers])

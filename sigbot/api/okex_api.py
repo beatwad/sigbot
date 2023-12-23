@@ -44,11 +44,10 @@ class OKEX(ApiBase):
             params['after'] = str(after)
             tmp = pd.DataFrame(requests.get(self.URL + '/api/v5/market/candles', params=params).json()['data'])
             if tmp.shape[0] > 0:
-                tickers = pd.concat([tmp, tickers])
+                tickers = pd.concat([tickers, tmp])
 
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
-        tickers = tickers.sort_values('time', ignore_index=True)
-        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
+        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']][::-1].reset_index(drop=True)
     
     def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
         """ Save historical time, price and volume info to CryptoCurrency structure
@@ -58,7 +57,6 @@ class OKEX(ApiBase):
         interval_secs = self.convert_interval_to_secs(interval)
         if not interval.endswith('m'):
             interval = interval.upper()
-        symbol = 'LUNA-USDT'
         params = {'instId': symbol, 'bar': interval, 'limit': limit}
         tmp_limit = 0
         prev_time, earliest_time = None, datetime.now()
@@ -73,7 +71,7 @@ class OKEX(ApiBase):
                 break
             prev_time, earliest_time = earliest_time, tmp[0].min()
             earliest_time = self.convert_timstamp_to_time(int(earliest_time), unit='ms')
-            # prevent endless cycle if there are no candles that eariler than min_time
+            # prevent endless cycle if there are no candles that earlier than min_time
             if prev_time == earliest_time:
                 break
             
@@ -89,14 +87,13 @@ if __name__ == '__main__':
     from datetime import datetime
 
     okex = OKEX()
-    tickers = okex.get_ticker_names(1e1)
+    tickers = okex.get_ticker_names(1e1)[0]
     dt1 = datetime.now()
 
     for ticker in tickers:
         print(ticker)
-        # klines1 = okex.get_klines(ticker, '5m')
-        # klines2 = okex.get_klines(ticker, '3m')
-
+        klines1 = okex.get_klines(ticker, '1h')
+        klines2 = okex.get_klines(ticker, '3m')
 
     dt2 = datetime.now()
     dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)

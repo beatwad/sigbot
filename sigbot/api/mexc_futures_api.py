@@ -37,7 +37,6 @@ class MEXCFutures(ApiBase):
                                   6: 'close_time', 'vol': 'volume'}, axis=1)
         tickers = tickers.sort_values('time', ignore_index=True)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
-    
 
     def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
         """ Save historical time, price and volume info to CryptoCurrency structure
@@ -60,7 +59,7 @@ class MEXCFutures(ApiBase):
                 break
             prev_time, earliest_time = earliest_time, tmp['time'].min()
             earliest_time = self.convert_timstamp_to_time(earliest_time, unit='s')
-            # prevent endless cycle if there are no candles that eariler than min_time
+            # prevent endless cycle if there are no candles that earlier than min_time
             if prev_time == earliest_time:
                 break
             
@@ -78,7 +77,7 @@ if __name__ == '__main__':
     tickers = mexc.get_ticker_names(1e6)[0]
 
     for ticker in tickers:
-        klines1 = mexc.get_klines('LTC_USDT', '5m')
-        klines2 = mexc.get_klines('LTC_USDT', '1h')
+        klines1 = mexc.get_klines(ticker, '5m')
+        klines2 = mexc.get_klines(ticker, '1h')
 
 

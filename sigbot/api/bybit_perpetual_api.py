@@ -36,7 +36,7 @@ class ByBitPerpetual(ApiBase):
         tickers = pd.DataFrame(self.client.get_kline(category='linear', symbol=symbol,
                                                      interval=interval, limit=limit)['result']['list'])
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
-        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
+        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']][::-1].reset_index(drop=True)
     
     def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
         """ Save historical time, price and volume info to CryptoCurrency structure
@@ -56,7 +56,7 @@ class ByBitPerpetual(ApiBase):
                 break
             prev_time, earliest_time = earliest_time, tmp[0].min()
             earliest_time = self.convert_timstamp_to_time(earliest_time, unit='ms')
-            # prevent endless cycle if there are no candles that eariler than min_time
+            # prevent endless cycle if there are no candles that earlier than min_time
             if prev_time == earliest_time:
                 break
             
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     key = ""
     secret = ""
     bybit_api = ByBitPerpetual()
-    tickers = bybit_api.get_ticker_names(1)
-    print(tickers)
-    # kline = bybit_api.get_klines('10000NFTUSDT', '4h', 1000)
-    # print(kline)
+    # tickers = bybit_api.get_ticker_names(1)
+    # print(tickers)
+    kline = bybit_api.get_klines('10000NFTUSDT', '4h', 1000)
+    print(kline)

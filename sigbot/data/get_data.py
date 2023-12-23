@@ -108,7 +108,7 @@ class GetData:
         df = df[df['time'] >= min_time].reset_index(drop=True)
 
         # filter tickers by avg 24h volume
-        limit = 0 if len(df) > 24 and not self.filter_by_volume_24(df, timeframe, ticker) else self.limit
+        limit = 0 if not self.filter_by_volume_24(df, timeframe, ticker) else self.limit
         return df, limit
 
     def filter_by_volume_24(self, df: pd.DataFrame, timeframe: str, ticker: str) -> float:

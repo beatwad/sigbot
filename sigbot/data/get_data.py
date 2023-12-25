@@ -63,7 +63,8 @@ class GetData:
             pass
         return df
 
-    def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str, dt_now: datetime) -> (pd.DataFrame, int):
+    def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
+                 dt_now: datetime, optimize=False) -> (pd.DataFrame, int):
         """ Get data from exchange """
         limit = self.get_limit(df, ticker, timeframe, dt_now)
         # get data from exchange only when there is at least one interval to get
@@ -82,7 +83,7 @@ class GetData:
                     break
             else:
                 return df, 0
-            df = self.process_data(klines, df)
+            df = self.process_data(klines, df, optimize)
         
         # filter tickers by avg 24h volume
         limit = 0 if not self.filter_by_volume_24(df, timeframe, ticker) else limit
@@ -104,7 +105,7 @@ class GetData:
                 break
         else:
             return df, 0
-        df = self.process_data(klines, df)
+        df = self.process_data(klines, df, optimize=False)
         df = df[df['time'] >= min_time].reset_index(drop=True)
 
         # filter tickers by avg 24h volume
@@ -119,8 +120,7 @@ class GetData:
         volume_24 = (df['close'] * df['volume']).rolling(avg_period).sum().dropna().mean()
         if volume_24 >= self.min_volume:
             return True
-        if timeframe == self.work_timeframe:
-            logger.info(f'Volume {volume_24} is too low for ticker {ticker}, skipping')
+        logger.info(f'Volume {volume_24} is too low for ticker {ticker} on timeframe {timeframe}, skipping')
         return False
 
     def get_tickers(self) -> list:
@@ -141,7 +141,7 @@ class GetData:
         df['time'] = df['time'] + pd.to_timedelta(3, unit='h')
         return df
 
-    def process_data(self, klines: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
+    def process_data(self, klines: pd.DataFrame, df: pd.DataFrame, optimize: bool) -> pd.DataFrame:
         """ Update dataframe for current ticker or create new dataframe if it's first run """
         # convert numeric data to float type
         klines[['open', 'high', 'low', 'close', 'volume']] = klines[['open', 'high', 'low',
@@ -164,12 +164,13 @@ class GetData:
             df = df.iloc[max(df.shape[0]-self.limit, 0):].reset_index(drop=True)
 
         # set the last candle values to previous candle's values to prevent unnecessary fluctuations of indicators
-        # for c in ['open', 'high', 'low', 'close', 'volume']:
-        #     if df.shape[0] >= 50:
-        #         if c == 'volume':
-        #             df.iloc[-1, df.columns.get_loc(c)] = 0
-        #         else:
-        #             df.iloc[-1, df.columns.get_loc(c)] = df.iloc[-2, df.columns.get_loc('close')]
+        if not optimize:
+            for c in ['open', 'high', 'low', 'close', 'volume']:
+                if df.shape[0] >= 50:
+                    if c == 'volume':
+                        df.iloc[-1, df.columns.get_loc(c)] = 0
+                    else:
+                        df.iloc[-1, df.columns.get_loc(c)] = df.iloc[-2, df.columns.get_loc('close')]
         return df
 
     @staticmethod

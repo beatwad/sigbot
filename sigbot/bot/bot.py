@@ -122,12 +122,13 @@ class SigBot:
                 not_used_ticker_vols.append(ticker_vol)
         return not_used_tickers, not_used_ticker_vols
     
-    def get_data(self, exchange_api, ticker: str, timeframe: str, dt_now: datetime) -> (pd.DataFrame, int):
+    def get_data(self, exchange_api, ticker: str, timeframe: str,
+                 dt_now: datetime, optimize=False) -> (pd.DataFrame, int):
         """ Check if new data appeared. If it is - return dataframe with the new data and amount of data """
         df = self.database.get(ticker, dict()).get(timeframe, dict())\
             .get('data', pd.DataFrame()).get('buy', pd.DataFrame())
         # Write data to the dataframe
-        df, data_qty = exchange_api.get_data(df, ticker, timeframe, dt_now)
+        df, data_qty = exchange_api.get_data(df, ticker, timeframe, dt_now, optimize)
         return df, data_qty
     
     def get_historical_data(self, exchange_api, ticker: str, timeframe: str,
@@ -373,7 +374,7 @@ class MonitorExchange:
                     # get historical data for some period (before min_time)
                     df, data_qty = self.sigbot.get_historical_data(exchange_api, ticker, timeframe, dt_now, min_time)
                 else:
-                    df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now)  
+                    df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now, optimize=True)
                 # If we previously download this dataframe to the disk - update it with new data
                 if data_qty > 1:
                     tmp_ticker = ticker.replace('-', '').replace('SWAP', '').replace('_USDT', 'USDT')
@@ -383,8 +384,8 @@ class MonitorExchange:
                         pass
                     else:
                         if not historical:
-                            last_time = tmp['time'].max()
-                            df = df[df['time'] > last_time]
+                            first_time = df['time'].min()
+                            tmp = tmp[tmp['time'] < first_time]
                             df = pd.concat([tmp, df], ignore_index=True)
                     df_path = f'../optimizer/ticker_dataframes/{tmp_ticker}_{timeframe}.pkl'
                     df = df.drop_duplicates().reset_index(drop=True)
@@ -471,6 +472,9 @@ class MonitorExchange:
                                          f'while getting the indicator data.')
                         pass_the_ticker = True
                         continue
+                    # Debug !!!
+                    if data_qty_higher > 0:
+                        df.to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Add time from higher timefram to dataframe with working timeframe data

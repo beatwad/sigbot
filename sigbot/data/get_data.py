@@ -120,7 +120,10 @@ class GetData:
         volume_24 = (df['close'] * df['volume']).rolling(avg_period).sum().dropna().mean()
         if volume_24 >= self.min_volume:
             return True
-        logger.info(f'Volume {volume_24} is too low for ticker {ticker} on timeframe {timeframe}, skipping')
+        if len(df) > 24 and volume_24 != volume_24:
+            pass
+        logger.info(f'Volume {volume_24} is too low for ticker {ticker} on timeframe {timeframe}, skipping. '
+                    f'Dataframe shape is {df.shape}')
         return False
 
     def get_tickers(self) -> list:

@@ -73,5 +73,5 @@ if __name__ == '__main__':
     bybit_api = ByBitPerpetual()
     # tickers = bybit_api.get_ticker_names(1)
     # print(tickers)
-    kline = bybit_api.get_klines('10000NFTUSDT', '4h', 1000)
+    kline = bybit_api.get_klines('LPTUSDT', '1h', 1000)
     print(kline)

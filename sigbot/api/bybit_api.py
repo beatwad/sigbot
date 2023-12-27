@@ -73,5 +73,5 @@ if __name__ == '__main__':
     secret = ""
     bybit_api = ByBit()
     tickers = bybit_api.get_ticker_names(1)
-    kline = bybit_api.get_klines('BTCUSDT', '5m', 1000)
+    kline = bybit_api.get_klines('VINUUSDT', '5m', 1000)
     print(kline)

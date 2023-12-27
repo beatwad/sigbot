@@ -73,9 +73,7 @@ class MEXC(ApiBase):
 if __name__ == '__main__':
     mexc = MEXC()
     tickers = mexc.get_ticker_names(5e5)[0]
-
-    for ticker in tickers:
-        klines1 = mexc.get_klines(ticker, '5m')
-        klines2 = mexc.get_klines(ticker, '1h')
+    klines1 = mexc.get_klines('VINUUSDT', '1h')
+    pass
 
 

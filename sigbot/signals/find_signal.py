@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from abc import abstractmethod
+from log.log import logger
 
 
 class SignalFactory(object):
@@ -524,6 +525,7 @@ class FindSignal:
             else:
                 df_work = dfs[ticker][self.work_timeframe]['data']['sell'].copy()
         except KeyError:
+            logger.exception(f"Can't find 1h dataframe with ticker {ticker} for ttype {self.ttype}")  # !!!
             return points
 
         sig_patterns = [p.copy() for p in self.patterns]

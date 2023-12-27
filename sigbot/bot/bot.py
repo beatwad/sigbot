@@ -43,13 +43,13 @@ class SigBot:
         # Set list of available exchanges, cryptocurrencies and tickers
         self.exchanges = {
                         'ByBitPerpetual': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                        'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                        'MEXCFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
+                        'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                         'Binance': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                        'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                         'ByBit': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                         'MEXC': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                        'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                        'OKEXSwap': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
-                        'MEXCFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []}
+                        'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                         }
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
         # Get API and ticker list for every exchange in list
@@ -291,19 +291,23 @@ class SigBot:
 
     def add_higher_time(self, ticker: str, ttype: str) -> None:
         """ Add time from higher timeframe to dataframe with working timeframe data"""
+        dt_now = datetime.now()
+        if dt_now.hour in [3, 7, 11, 15, 19, 23]:
+            pass
         # Create signal point df for each indicator
         df_work = self.database[ticker][self.work_timeframe]['data'][ttype]
         # add signals from higher timeframe
         try:
             df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
         except KeyError:
+            logger.exception(f"Can't find higher timeframe for ticker {ticker} with ttype {ttype}") # !!!
             return
-        df_higher['time_higher'] = df_higher['time']
+        df_higher['time_higher'] = df_higher['time']  # TODO remove this
         # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
         higher_features = ['time', 'time_higher', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist',  'macd_dir',
                            'macdsignal', 'macdsignal_dir']
         df_work[higher_features] = pd.merge(df_work[['time']], df_higher[higher_features], how='left', on='time')
-        higher_features.remove('time')
+        higher_features.remove('time')  # TODO remove this
         df_work.ffill(inplace=True)
         df_work.dropna(inplace=True)
         df_work.reset_index(drop=True, inplace=True)
@@ -472,13 +476,10 @@ class MonitorExchange:
                                          f'while getting the indicator data.')
                         pass_the_ticker = True
                         continue
-                    # Debug !!!
-                    # if data_qty_higher > 0:
-                    #     df.to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
                         # Add time from higher timefram to dataframe with working timeframe data
-                        for ttype in ['buy', 'sell']:
+                        for ttype in ['buy', 'sell']:  # TODO: add condition of data_qty_higher > 1
                             self.sigbot.add_higher_time(ticker, ttype)
                         # Get the signals
                         try:
@@ -539,6 +540,9 @@ class MonitorExchange:
                                               f'pattern is {sig_point[5]}, time is {sig_point[4]}, ' \
                                               f'model confidence is {sig_point[9]}'
                                 logger.info(sig_message)
+                    # Debug !!!
+                    self.sigbot.database[ticker][timeframe]['data']['buy'].to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_buy_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
+                    self.sigbot.database[ticker][timeframe]['data']['sell'].to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_sell_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
         # wait until all processes finish
         for pr in processes:
             pr.join()

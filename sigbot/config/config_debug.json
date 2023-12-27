@@ -185,8 +185,8 @@
     "futures_exchanges": [
       "BinanceFutures",
       "ByBitPerpetual",
-      "OKEXSwap",
-      "MEXCFutures"
+      "MEXCFutures",
+      "OKEXSwap"
     ]
   },
   "Higher_TF_indicator_list": [

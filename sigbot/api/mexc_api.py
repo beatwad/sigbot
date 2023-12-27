@@ -73,7 +73,8 @@ class MEXC(ApiBase):
 if __name__ == '__main__':
     mexc = MEXC()
     tickers = mexc.get_ticker_names(5e5)[0]
-    klines1 = mexc.get_klines('VINUUSDT', '1h')
+    min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
+    klines = mexc.get_klines('VINUUSDT', '1h', 1000)
     pass
 
 

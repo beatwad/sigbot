@@ -2,6 +2,7 @@ config/.env
 *.pkl
 *.npy
 *.png
+*.pkl
 *.txt
 .idea/
 .ipynb_checkpoints/

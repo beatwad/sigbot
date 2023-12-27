@@ -50,7 +50,7 @@ class Binance(ApiBase):
 
         return tickers['symbol'].to_list(), tickers['volume'].to_list(), all_tickers
 
-    def get_klines(self, symbol: str, interval: str, limit: str) -> pd.DataFrame:
+    def get_klines(self, symbol: str, interval: str, limit: int) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
         tickers = pd.DataFrame(self.client.get_klines(symbol=symbol, interval=interval, limit=limit))
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, axis=1)

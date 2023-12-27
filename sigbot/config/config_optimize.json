@@ -41,7 +41,7 @@
           "4d": 345600,
           "1w": 604800
         },
-        "min_volume": 1.0
+        "min_volume": 10.0
       }
     },
     "ByBit": {
@@ -61,7 +61,7 @@
           "1d": 86400,
           "1w": 604800
         },
-        "min_volume": 1.0
+        "min_volume": 10.0
       }
     },
     "OKEX": {
@@ -82,7 +82,7 @@
           "3d": 259200,
           "1w": 604800
         },
-        "min_volume": 1.0
+        "min_volume": 10.0
       }
     },
     "MEXC": {
@@ -97,7 +97,7 @@
           "4h": 14400,
           "1d": 86400
         },
-        "min_volume": 1.0
+        "min_volume": 10.0
       }
     },
     "BinanceFutures": {
@@ -119,7 +119,7 @@
           "4d": 345600,
           "1w": 604800
         },
-        "min_volume": 1.0
+        "min_volume": 10.0
       }
     },
     "ByBitPerpetual": {
@@ -139,7 +139,7 @@
           "1d": 86400,
           "1w": 604800
         },
-        "min_volume": 1.0
+        "min_volume": 10.0
       }
     },
     "OKEXSwap": {
@@ -160,7 +160,7 @@
           "3d": 259200,
           "1w": 604800
         },
-        "min_volume": 1.0
+        "min_volume": 10.0
       }
     },
      "MEXCFutures": {
@@ -177,7 +177,7 @@
           "1d": 86400,
           "1w": 604800
         },
-        "min_volume": 1.0
+        "min_volume": 10.0
       }
     }
   },

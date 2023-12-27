@@ -214,7 +214,10 @@ class TelegramBot:
             sig_img_path = self.add_plot(message)
             # Form text message
             cleaned_ticker = self.clean_ticker(ticker)
-            text = f'#{cleaned_ticker[:-4]}\n'
+            if cleaned_ticker.endswith('.P'):
+                text = f'#{cleaned_ticker[:-6]}\n'
+            else:
+                text = f'#{cleaned_ticker[:-4]}\n'
             text += ' + '.join(sig_pattern.split('_')) + '\n'
             text += f'Price / Цена: ${price}\n'
             if sig_pattern == 'HighVolume':
@@ -228,7 +231,7 @@ class TelegramBot:
                 text += f' • {exchange}\n'
             text += 'TradingView:\n'
             text += f"https://tradingview.com/symbols/{cleaned_ticker}\n"
-            if cleaned_ticker[:-4] != 'BTC':
+            if cleaned_ticker[:-4] != 'BTC' and not cleaned_ticker.endswith('.P'):
                 text += f'{cleaned_ticker[:-4]}/BTC:\n'
                 text += f"https://ru.tradingview.com/symbols/{cleaned_ticker[:-4]}BTC\n"
             # send ML model prediction

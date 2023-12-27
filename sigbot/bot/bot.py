@@ -489,16 +489,6 @@ class MonitorExchange:
                                              f'while getting the signals.')
                             pass_the_ticker = True
                             continue
-                        if sig_buy_points:  # TODO remove this when end debugging
-                            for sig_point in sig_buy_points:
-                                sig_message = (f'Find the unfiltered signal buy point. {self.exchange}, {ticker}, '
-                                               f'{timeframe}, {sig_point[5]}, {sig_point[4]}')
-                                logger.info(sig_message)
-                        if sig_sell_points:  # TODO remove this when end debugging
-                            for sig_point in sig_sell_points:
-                                sig_message = (f'Find the unfiltered signal sell point. {self.exchange}, {ticker}, '
-                                               f'{timeframe}, {sig_point[5]}, {sig_point[4]}')
-                                logger.info(sig_message)
                         # If similar signal was added to stat dataframe not too long time ago (<= 3-5 ticks before) -
                         # don't add it again
                         sig_buy_points = self.sigbot.filter_sig_points(sig_buy_points)

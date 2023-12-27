@@ -407,7 +407,7 @@
       "bot_cycle_length_sec": 5,
       "cycle_length_hours": 24,
       "time_period_minutes": 60,
-      "first_cycle_qty_miss": 0
+      "first_cycle_qty_miss": 1
     }
   },
   "Model": {

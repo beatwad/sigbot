@@ -33,9 +33,7 @@ class MEXCFutures(ApiBase):
 
         params = {'interval': interval, 'start': start}
         tickers = pd.DataFrame(requests.get(self.URL + f'/kline/{symbol}', params=params).json()['data'])
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'asset_volume',
-                                  6: 'close_time', 'vol': 'volume'}, axis=1)
-        tickers = tickers.sort_values('time', ignore_index=True)
+        tickers = tickers.rename({'vol': 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
 
     def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
@@ -75,7 +73,7 @@ class MEXCFutures(ApiBase):
 if __name__ == '__main__':
     mexc = MEXCFutures()
     tickers = mexc.get_ticker_names(1e6)[0]
-    klines1 = mexc.get_klines('1000000VINU_USDT', '1h')
+    klines = mexc.get_klines('1000000VINU_USDT', '1h')
     pass
 
 

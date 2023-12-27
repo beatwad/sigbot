@@ -219,16 +219,15 @@ class SigBot:
         dt_now = datetime.now()
         for point in sig_points:
             point_time = point[4]
-            # for patterns from higher timeframes time span for candles is different
             time_span = self.timeframe_div[self.work_timeframe] * self.max_prev_candle_limit
             # select only new signals
             if (dt_now - point_time).total_seconds() <= time_span:
                 filtered_points.append(point)
         return filtered_points
 
-    def add_statistics(self, sig_points: list) -> dict:
+    def add_statistics(self, sig_points: list, data_qty_higher=None) -> dict:
         """ Get statistics and write it to the database """
-        database = self.stat.write_stat(self.database, sig_points)
+        database = self.stat.write_stat(self.database, sig_points, data_qty_higher)
         return database
 
     def save_statistics(self) -> None:
@@ -300,7 +299,6 @@ class SigBot:
         try:
             df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
         except KeyError:
-            # logger.exception(f"Can't find higher timeframe for ticker {ticker} with ttype {ttype}") # TODO remove this when end debugging
             return
         # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
         higher_features = ['time', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist',  'macd_dir',
@@ -355,8 +353,8 @@ class MonitorExchange:
                                                                     data_qty, opt_flag)
         return data_qty
 
-    def add_statistics(self, sig_points: list) -> None:
-        self.sigbot.database = self.sigbot.add_statistics(sig_points)
+    def add_statistics(self, sig_points: list, data_qty_higher=None) -> None:
+        self.sigbot.database = self.sigbot.add_statistics(sig_points, data_qty_higher)
 
     def save_statistics(self) -> None:
         self.sigbot.save_statistics()
@@ -491,23 +489,23 @@ class MonitorExchange:
                                              f'while getting the signals.')
                             pass_the_ticker = True
                             continue
-                        # if sig_buy_points:  # TODO remove this when end debugging
-                        #     for sig_point in sig_buy_points:
-                        #         sig_message = (f'Find the unfiltered signal buy point. {self.exchange}, {ticker}, '
-                        #                        f'{timeframe}, {sig_point[5]}, {sig_point[4]}')
-                        #         logger.info(sig_message)
-                        # if sig_sell_points:  # TODO remove this when end debugging
-                        #     for sig_point in sig_sell_points:
-                        #         sig_message = (f'Find the unfiltered signal sell point. {self.exchange}, {ticker}, '
-                        #                        f'{timeframe}, {sig_point[5]}, {sig_point[4]}')
-                        #         logger.info(sig_message)
+                        if sig_buy_points:  # TODO remove this when end debugging
+                            for sig_point in sig_buy_points:
+                                sig_message = (f'Find the unfiltered signal buy point. {self.exchange}, {ticker}, '
+                                               f'{timeframe}, {sig_point[5]}, {sig_point[4]}')
+                                logger.info(sig_message)
+                        if sig_sell_points:  # TODO remove this when end debugging
+                            for sig_point in sig_sell_points:
+                                sig_message = (f'Find the unfiltered signal sell point. {self.exchange}, {ticker}, '
+                                               f'{timeframe}, {sig_point[5]}, {sig_point[4]}')
+                                logger.info(sig_message)
                         # If similar signal was added to stat dataframe not too long time ago (<= 3-5 ticks before) -
                         # don't add it again
                         sig_buy_points = self.sigbot.filter_sig_points(sig_buy_points)
                         sig_sell_points = self.sigbot.filter_sig_points(sig_sell_points)
                         # Add signals to statistics
-                        self.add_statistics(sig_buy_points)
-                        self.add_statistics(sig_sell_points)
+                        self.add_statistics(sig_buy_points, data_qty_higher)
+                        self.add_statistics(sig_sell_points, data_qty_higher)
                         # If bot cycle isn't first - calculate statistics and send Telegram notification
                         if self.sigbot.main.cycle_number > self.sigbot.main.first_cycle_qty_miss:
                             # Send signals in Telegram notification only if they are fresh (<= 1-2 ticks ago)
@@ -540,8 +538,8 @@ class MonitorExchange:
                                               f'model confidence is {sig_point[9]}'
                                 logger.info(sig_message)
                     # TODO remove this when end debugging
-                    # self.sigbot.database[ticker][timeframe]['data']['buy'].to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_buy_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
-                    # self.sigbot.database[ticker][timeframe]['data']['sell'].to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_sell_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
+                    self.sigbot.database[ticker][timeframe]['data']['buy'].to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_buy_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
+                    self.sigbot.database[ticker][timeframe]['data']['sell'].to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_sell_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
         # wait until all processes finish
         for pr in processes:
             pr.join()

@@ -86,7 +86,8 @@ class GetData:
             df = self.process_data(klines, df, optimize)
         
         # filter tickers by avg 24h volume
-        # limit = 0 if not self.filter_by_volume_24(df, timeframe, ticker) else limit
+        if optimize:
+            limit = 0 if not self.filter_by_volume_24(df, timeframe, ticker) else limit
         return df, limit
 
     def get_historical_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
@@ -120,8 +121,6 @@ class GetData:
         volume_24 = (df['close'] * df['volume']).rolling(avg_period).sum().dropna().mean()
         if volume_24 >= self.min_volume:
             return True
-        if len(df) > 24 and volume_24 != volume_24:
-            pass
         logger.info(f'Volume {volume_24} is too low for ticker {ticker} on timeframe {timeframe}, skipping. '
                     f'Dataframe shape is {df.shape}')
         return False

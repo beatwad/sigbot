@@ -300,7 +300,7 @@ class SigBot:
         try:
             df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
         except KeyError:
-            logger.exception(f"Can't find higher timeframe for ticker {ticker} with ttype {ttype}") # !!!
+            logger.exception(f"Can't find higher timeframe for ticker {ticker} with ttype {ttype}") # TODO remove this when end debugging
             return
         df_higher['time_higher'] = df_higher['time']  # TODO remove this
         # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
@@ -492,12 +492,12 @@ class MonitorExchange:
                                              f'while getting the signals.')
                             pass_the_ticker = True
                             continue
-                        if sig_buy_points:  # !!!
+                        if sig_buy_points:  # TODO remove this when end debugging
                             for sig_point in sig_buy_points:
                                 sig_message = (f'Find the unfiltered signal buy point. {self.exchange}, {ticker}, '
                                                f'{timeframe}, {sig_point[5]}, {sig_point[4]}')
                                 logger.info(sig_message)
-                        if sig_sell_points:  # !!!
+                        if sig_sell_points:  # TODO remove this when end debugging
                             for sig_point in sig_sell_points:
                                 sig_message = (f'Find the unfiltered signal sell point. {self.exchange}, {ticker}, '
                                                f'{timeframe}, {sig_point[5]}, {sig_point[4]}')
@@ -540,7 +540,7 @@ class MonitorExchange:
                                               f'pattern is {sig_point[5]}, time is {sig_point[4]}, ' \
                                               f'model confidence is {sig_point[9]}'
                                 logger.info(sig_message)
-                    # Debug !!!
+                    # TODO remove this when end debugging
                     self.sigbot.database[ticker][timeframe]['data']['buy'].to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_buy_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
                     self.sigbot.database[ticker][timeframe]['data']['sell'].to_csv(f'bot/ticker_dataframes/{ticker}_{timeframe}_sell_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
         # wait until all processes finish

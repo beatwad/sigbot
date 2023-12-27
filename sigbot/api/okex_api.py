@@ -86,11 +86,5 @@ if __name__ == '__main__':
 
     okex = OKEX()
     tickers = okex.get_ticker_names(500000)[0]
-    dt1 = datetime.now()
-
-    klines1 = okex.get_klines('MDT-USDT', '1h')
-
-    dt2 = datetime.now()
-    dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
-    print(f'Time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
+    klines = okex.get_klines('MDT-USDT', '1h')
 

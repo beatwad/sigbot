@@ -86,16 +86,8 @@ class OKEXSwap(ApiBase):
 
 if __name__ == '__main__':
     from datetime import datetime
-
     okex = OKEXSwap()
     tickers = okex.get_ticker_names(1e5)[0]
-    dt1 = datetime.now()
+    klines = okex.get_klines('ETC-USDT-SWAP', '1h')
 
-    for ticker in tickers:
-        klines1 = okex.get_klines(ticker, '5m')
-        klines2 = okex.get_klines(ticker, '3m')
-
-    dt2 = datetime.now()
-    dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
-    print(f'Time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
 

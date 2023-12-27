@@ -21,8 +21,10 @@ class ByBitPerpetual(ApiBase):
         all_tickers = tickers['symbol'].to_list()
 
         tickers = tickers[(tickers['symbol'].str.endswith('USDT'))]
-        tickers['turnover24h'] = tickers['turnover24h'].astype(float)
-        tickers = tickers[tickers['turnover24h'] >= min_volume // 3]
+        tickers['volume24h'] = tickers['volume24h'].astype(float)
+        tickers['lastPrice'] = tickers['lastPrice'].astype(float)
+        ticker_vol = tickers['volume24h'] * tickers['lastPrice']
+        tickers = tickers[ticker_vol >= min_volume // 2]
 
         filtered_symbols = self.check_symbols(tickers['symbol'])
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)]
@@ -71,7 +73,7 @@ if __name__ == '__main__':
     key = ""
     secret = ""
     bybit_api = ByBitPerpetual()
-    # tickers = bybit_api.get_ticker_names(1)
+    tickers = bybit_api.get_ticker_names(500000)
     # print(tickers)
     kline = bybit_api.get_klines('VINUUSDT', '4h', 1000)
     print(kline)

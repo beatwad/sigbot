@@ -41,7 +41,7 @@ class Binance(ApiBase):
 
         tickers = tickers[(tickers['symbol'].str.endswith('USDT')) | (tickers['symbol'].str.endswith('BUSD'))]
         tickers.loc[:, 'quoteVolume'] = tickers.loc[:, 'quoteVolume'].astype(float)
-        tickers = tickers[tickers['quoteVolume'] >= min_volume // 3]
+        tickers = tickers[tickers['quoteVolume'] >= min_volume // 2]
 
         filtered_symbols = self.check_symbols(tickers['symbol'])
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)]

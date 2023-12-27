@@ -86,7 +86,7 @@ class GetData:
             df = self.process_data(klines, df, optimize)
         
         # filter tickers by avg 24h volume
-        limit = 0 if not self.filter_by_volume_24(df, timeframe, ticker) else limit
+        # limit = 0 if not self.filter_by_volume_24(df, timeframe, ticker) else limit
         return df, limit
 
     def get_historical_data(self, df: pd.DataFrame, ticker: str, timeframe: str,

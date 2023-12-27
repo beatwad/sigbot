@@ -16,8 +16,8 @@ class MEXCFutures(ApiBase):
 
         all_tickers = tickers['symbol'].str.replace('_', '').to_list()
 
-        tickers['volume24'] = tickers['volume24'].astype(float)
-        tickers = tickers[tickers['volume24'] >= min_volume // 3]
+        tickers['amount24'] = tickers['amount24'].astype(float)
+        tickers = tickers[tickers['amount24'] >= min_volume // 2]
 
         filtered_symbols = self.check_symbols(tickers['symbol'])
         tickers = tickers[tickers['symbol'].isin(filtered_symbols)]
@@ -75,9 +75,7 @@ class MEXCFutures(ApiBase):
 if __name__ == '__main__':
     mexc = MEXCFutures()
     tickers = mexc.get_ticker_names(1e6)[0]
-
-    for ticker in tickers:
-        klines1 = mexc.get_klines(ticker, '5m')
-        klines2 = mexc.get_klines(ticker, '1h')
+    klines1 = mexc.get_klines('1000000VINU_USDT', '1h')
+    pass
 
 

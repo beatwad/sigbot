@@ -287,35 +287,6 @@ class MACDSignal(SignalBase):
         self.low_bound = self.configs.get('low_bound', 20)
         self.high_bound = self.configs.get('high_bound', 80)
 
-    @staticmethod
-    def crossed_lines_macd(up: bool, indicator: pd.Series,
-                           indicator_lag_1: pd.Series,
-                           indicator_lag_2: pd.Series,
-                           indicator_lag_3: pd.Series) -> np.ndarray:
-        """ Returns True if macd and macdsignal lines have crossed """
-        if up:
-            indicator = np.where(indicator < 0, 1, 0)
-            indicator_lag_1 = np.where(indicator_lag_1 > 0, 1, 0)
-            indicator_lag_1 = np.array([indicator, indicator_lag_1]).sum(axis=0)
-            indicator_lag_2 = np.where(indicator_lag_2 > 0, 1, 0)
-            indicator_lag_2 = np.array([indicator, indicator_lag_2]).sum(axis=0)
-            indicator_lag_3 = np.where(indicator_lag_3 > 0, 1, 0)
-            indicator_lag_3 = np.array([indicator, indicator_lag_3]).sum(axis=0)
-        else:
-            indicator = np.where(indicator > 0, 1, 0)
-            indicator_lag_1 = np.where(indicator_lag_1 < 0, 1, 0)
-            indicator_lag_1 = np.array([indicator, indicator_lag_1]).sum(axis=0)
-            indicator_lag_2 = np.where(indicator_lag_2 < 0, 1, 0)
-            indicator_lag_2 = np.array([indicator, indicator_lag_2]).sum(axis=0)
-            indicator_lag_3 = np.where(indicator_lag_3 < 0, 1, 0)
-            indicator_lag_3 = np.array([indicator, indicator_lag_3]).sum(axis=0)
-        indicator = np.zeros((indicator_lag_1.shape[0], 3))
-        indicator[:, 0] = indicator_lag_1
-        indicator[:, 1] = indicator_lag_2
-        indicator[:, 2] = indicator_lag_3
-        indicator = np.max(indicator, axis=1)
-        return np.where(indicator > 1, 1, 0)
-
     def find_signal(self, df: pd.DataFrame, timeframe_ratio: int) -> np.ndarray:
         """ Find MACD signal """
         macd_df = df[['macdhist', 'macd_dir', 'macdsignal_dir']].copy()
@@ -324,15 +295,15 @@ class MACDSignal(SignalBase):
         macd_df['macdhist_3'] = macd_df['macdhist'].shift(timeframe_ratio * 3)
 
         if self.ttype == 'buy':
-            crossed_lines_down = self.crossed_lines_macd(False, macd_df['macdhist'], macd_df['macdhist_1'],
-                                                         macd_df['macdhist_2'], macd_df['macdhist_3'])
+            crossed_lines_down = self.crossed_lines(False, macd_df['macdhist'], macd_df['macdhist_1'],
+                                                         macd_df['macdhist_2'])
             up_direction_macd = self.up_direction(macd_df['macd_dir'])
             up_direction_macdsignal = self.up_direction(macd_df['macdsignal_dir'])
             macd_up = crossed_lines_down & up_direction_macd & up_direction_macdsignal
             return macd_up
 
-        crossed_lines_up = self.crossed_lines_macd(True, macd_df['macdhist'], macd_df['macdhist_1'],
-                                                   macd_df['macdhist_2'], macd_df['macdhist_3'])
+        crossed_lines_up = self.crossed_lines(True, macd_df['macdhist'], macd_df['macdhist_1'],
+                                                   macd_df['macdhist_2'])
         down_direction_slowk = self.down_direction(macd_df['macd_dir'])
         down_direction_slowd = self.down_direction(macd_df['macdsignal_dir'])
         macd_down = crossed_lines_up & down_direction_slowk & down_direction_slowd

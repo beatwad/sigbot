@@ -38,8 +38,8 @@ class SignalStat:
             Statistics for buy and sell trades is written separately """
         for point in signal_points:
             ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, total_stat, ticker_stat = point
-            if timeframe == self.higher_timeframe and data_qty_higher == 0:
-                continue
+            # if timeframe == self.higher_timeframe and data_qty_higher == 0:
+            #     continue
             # we don't write statistics for the High Volume pattern
             if pattern == 'HighVolume':
                 continue

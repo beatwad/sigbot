@@ -84,10 +84,6 @@ class GetData:
             else:
                 return df, 0
             df = self.process_data(klines, df, optimize)
-        
-        # if tickers are loaded for optimization / model training - filter them by avg 24h volume
-        if optimize:
-            limit = 0 if not self.filter_by_volume_24(df, timeframe, ticker) else limit
         return df, limit
 
     def get_historical_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
@@ -109,21 +105,7 @@ class GetData:
         df = self.process_data(klines, df, optimize=False)
         df = df[df['time'] >= min_time].reset_index(drop=True)
 
-        # filter tickers by avg 24h volume
-        limit = 0 if not self.filter_by_volume_24(df, timeframe, ticker) else self.limit
-        return df, limit
-
-    def filter_by_volume_24(self, df: pd.DataFrame, timeframe: str, ticker: str) -> float:
-        """ Get average 24 hours volume of ticker and decide if it is enough big to use current ticker """
-        # get quantity of candles in 24 hours
-        avg_period = int(24 / (self.timeframe_div[timeframe] / 3600))
-        # get average volume for 24 hours
-        volume_24 = ((df['open'] + df['close']) / 2 * df['volume']).rolling(avg_period).sum().dropna().mean()
-        # because this function is used in optimization mode only and optimization mode min_volume = 10
-        # increase this min_volume to 7.5e5 to effectively filter any shitcoin with low volume
-        if volume_24 >= self.min_volume * 7.5e4:
-            return True
-        return False
+        return df, self.limit
 
     def get_tickers(self) -> list:
         """ Get list of available ticker names """

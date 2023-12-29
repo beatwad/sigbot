@@ -216,6 +216,8 @@ class SigBot:
     def filter_old_signals(self, sig_points: list) -> list:
         """ Don't send Telegram notification for the old signals (older than 1-2 candles ago) """
         filtered_points = list()
+        # round datetime to hours, so additional time for data loading doesn't influence on the time span
+        # between current moment and signal time
         dt_now = datetime.now().replace(microsecond=0, second=0, minute=0)
         for point in sig_points:
             point_time = point[4]
@@ -363,6 +365,20 @@ class MonitorExchange:
     def save_statistics(self) -> None:
         self.sigbot.save_statistics()
 
+    
+    def filter_by_volume_24(self, df: pd.DataFrame, timeframe: str, ticker: str) -> float:
+        """ Get average 24 hours volume of ticker and decide if it is enough big to use current ticker """
+        # get quantity of candles in 24 hours
+        avg_period = int(24 / (self.sigbot.timeframe_div[timeframe] / 3600))
+        # get average volume for 24 hours
+        volume_24 = ((df['open'] + df['close']) / 2 * df['volume']).rolling(avg_period).sum().dropna().mean()
+        # because this function is used in optimization mode only and optimization mode min_volume = 10,
+        # increase this min_volume to 7.5e5 to effectively filter any shitcoin with low volume
+        if volume_24 >= 7.5e5:
+            return True
+        print(f'Volume {volume_24} is not enough for ticker {ticker}, skip it.')
+        return False
+    
     def save_opt_dataframes(self, dt_now: datetime, historical: bool, min_time: datetime) -> None:
         """ Save dataframe for every ticker for further indicator/signal optimization """
         exchange_api = self.exchange_data['API']
@@ -370,8 +386,7 @@ class MonitorExchange:
         print(80 * '=')
         print(f'{self.exchange}')
         for ticker in tickers:
-            if historical:
-                print(ticker)
+            print(ticker)
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
                 if historical:
@@ -393,7 +408,8 @@ class MonitorExchange:
                             df = pd.concat([tmp, df], ignore_index=True)
                     df_path = f'../optimizer/ticker_dataframes/{tmp_ticker}_{timeframe}.pkl'
                     df = df.drop_duplicates().reset_index(drop=True)
-                    df.to_pickle(df_path)
+                    if self.filter_by_volume_24(df, timeframe, ticker):
+                        df.to_pickle(df_path)
                 else:
                     break
 
@@ -531,12 +547,6 @@ class MonitorExchange:
                                               f'pattern is {sig_point[5]}, time is {sig_point[4]}, ' \
                                               f'model confidence is {sig_point[9]}'
                                 logger.info(sig_message)
-                # TODO remove this when end debugging
-                # if self.sigbot.main.cycle_number > self.sigbot.main.first_cycle_qty_miss:
-                #     self.sigbot.database[ticker][timeframe]['data']['buy'].to_csv(
-                #         f'bot/ticker_dataframes/{ticker}_{timeframe}_buy_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
-                #     self.sigbot.database[ticker][timeframe]['data']['sell'].to_csv(
-                #         f'bot/ticker_dataframes/{ticker}_{timeframe}_sell_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
         # wait until all processes finish
         for pr in processes:
             pr.join()

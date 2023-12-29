@@ -216,10 +216,14 @@ class SigBot:
     def filter_old_signals(self, sig_points: list) -> list:
         """ Don't send Telegram notification for the old signals (older than 1-2 candles ago) """
         filtered_points = list()
-        dt_now = datetime.now()
+        dt_now = datetime.now().replace(microsecond=0, second=0, minute=0)
         for point in sig_points:
             point_time = point[4]
-            time_span = self.timeframe_div[self.work_timeframe] * self.max_prev_candle_limit
+            pattern = point[5]
+            if pattern in self.higher_tf_patterns:
+                time_span = self.timeframe_div[self.higher_timeframe] * self.max_prev_candle_limit
+            else:
+                time_span = self.timeframe_div[self.work_timeframe] * self.max_prev_candle_limit
             # select only new signals
             if (dt_now - point_time).total_seconds() <= time_span:
                 filtered_points.append(point)
@@ -527,6 +531,12 @@ class MonitorExchange:
                                               f'pattern is {sig_point[5]}, time is {sig_point[4]}, ' \
                                               f'model confidence is {sig_point[9]}'
                                 logger.info(sig_message)
+                # TODO remove this when end debugging
+                # if self.sigbot.main.cycle_number > self.sigbot.main.first_cycle_qty_miss:
+                #     self.sigbot.database[ticker][timeframe]['data']['buy'].to_csv(
+                #         f'bot/ticker_dataframes/{ticker}_{timeframe}_buy_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
+                #     self.sigbot.database[ticker][timeframe]['data']['sell'].to_csv(
+                #         f'bot/ticker_dataframes/{ticker}_{timeframe}_sell_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
         # wait until all processes finish
         for pr in processes:
             pr.join()

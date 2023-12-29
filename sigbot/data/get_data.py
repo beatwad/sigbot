@@ -164,15 +164,8 @@ class GetData:
             df = pd.concat([df, klines])
             # if size of dataframe more than limit - short it
             df = df.iloc[max(df.shape[0]-self.limit, 0):].reset_index(drop=True)
-
-        # set the last candle values to previous candle's values to prevent unnecessary fluctuations of indicators
-        if not optimize:
-            for c in ['open', 'high', 'low', 'close', 'volume']:
-                if df.shape[0] >= 50:
-                    if c == 'volume':
-                        df.iloc[-1, df.columns.get_loc(c)] = 0
-                    else:
-                        df.iloc[-1, df.columns.get_loc(c)] = df.iloc[-2, df.columns.get_loc('close')]
+        # remove the last candle because it's not closed yet
+        df = df[:-1]
         return df
 
     @staticmethod

@@ -495,7 +495,7 @@
         "ByBitPerpetual"
       ],
       "favorite_patterns": [
-        "MACD"
+        "MACD_Volume24"
       ],
       "log_path": "telegram_log.txt",
       "chat_ids": {
@@ -520,8 +520,8 @@
         "PumpDump_Trend_sell": "69",
         "HighVolume_buy": "86",
         "HighVolume_sell": "86",
-        "MACD_buy": "99",
-        "MACD_sell": "96",
+        "MACD_Volume24_buy": "99",
+        "MACD_Volume24_sell": "96",
         "Pattern_Trend_buy": "105",
         "Pattern_Trend_sell": "102"
       },
@@ -538,8 +538,8 @@
       "min_prev_candle_limit": 3,
       "min_prev_candle_limit_higher": 2,
       "max_notifications_in_row": 3,
-      "pred_buy_thresh": 0.63,
-      "pred_sell_thresh": 0.63
+      "pred_buy_thresh": 0.66,
+      "pred_sell_thresh": 0.66
     }
   },
   "Timeframes": {

@@ -218,6 +218,8 @@ class TelegramBot:
                 text = f'#{cleaned_ticker[:-6]}\n'
             else:
                 text = f'#{cleaned_ticker[:-4]}\n'
+            # we do not need Volume24 in pattern's name
+            sig_pattern = sig_pattern[:-9] if sig_pattern.endswith('Volume24') else sig_pattern
             text += ' + '.join(sig_pattern.split('_')) + '\n'
             text += f'Price / Цена: ${price}\n'
             if sig_pattern == 'HighVolume':

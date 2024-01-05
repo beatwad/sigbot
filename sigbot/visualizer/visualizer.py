@@ -164,6 +164,7 @@ class Visualizer:
             main_candleplot_ratio = 3
             plot_width_mult = 5
         elif 'MACD' in indicator_list_tmp:
+            indicator_list.remove('Volume24')
             plot_num = len(indicator_list) + 2
             main_candleplot_ratio = 1
             plot_width_mult = 2.5

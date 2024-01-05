@@ -23,6 +23,8 @@ class SignalFactory(object):
             return TrendSignal(ttype, **configs)
         elif indicator == 'HighVolume':
             return HighVolumeSignal(ttype, **configs)
+        elif indicator == 'Volume24':
+            return Volume24Signal(ttype, **configs)
 
 
 class SignalBase:
@@ -308,6 +310,21 @@ class MACDSignal(SignalBase):
         down_direction_slowd = self.down_direction(macd_df['macdsignal_dir'])
         macd_down = crossed_lines_up & down_direction_slowk & down_direction_slowd
         return macd_down
+
+
+class Volume24Signal(SignalBase):
+    type = 'Indicator_signal'
+    name = 'Volume24'
+
+    def __init__(self, ttype, **configs):
+        super(Volume24Signal, self).__init__(ttype, configs)
+        self.configs = self.configs[self.name]['params']
+        self.min_volume_24 = self.configs.get('min_volume_24', 500000)
+
+    def find_signal(self, df: pd.DataFrame) -> np.ndarray:
+        """ Find if ticker volume for the last 24 hours more than min_volume_24 threshold """
+        volume_24 = df['volume_24']
+        return np.where(volume_24 >= self.min_volume_24, 1, 0)
 
 
 class PatternSignal(SignalBase):

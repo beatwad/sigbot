@@ -35,7 +35,7 @@ class SigBot:
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframes = [self.higher_timeframe, self.work_timeframe]
-        self.higher_tf_patterns = configs['Higher_TF_indicator_list']
+        self.higher_tf_indicator_list = configs['Higher_TF_indicator_list']
         # List of Futures Exchanges
         self.futures_exchanges = configs['Exchanges']['futures_exchanges']
         # Create indicators
@@ -121,7 +121,7 @@ class SigBot:
                 not_used_tickers.append(orig_ticker)
                 not_used_ticker_vols.append(ticker_vol)
         return not_used_tickers, not_used_ticker_vols
-    
+
     def get_data(self, exchange_api, ticker: str, timeframe: str,
                  dt_now: datetime, optimize=False) -> (pd.DataFrame, int):
         """ Check if new data appeared. If it is - return dataframe with the new data and amount of data """
@@ -130,7 +130,7 @@ class SigBot:
         # Write data to the dataframe
         df, data_qty = exchange_api.get_data(df, ticker, timeframe, dt_now, optimize)
         return df, data_qty
-    
+
     def get_historical_data(self, exchange_api, ticker: str, timeframe: str,
                             dt_now: datetime, min_time: datetime) -> (pd.DataFrame, int):
         """ Check if new data appeared. If it is - return dataframe with the new data and amount of data """
@@ -221,14 +221,26 @@ class SigBot:
         dt_now = datetime.now().replace(microsecond=0, second=0, minute=0)
         for point in sig_points:
             point_time = point[4]
-            pattern = point[5]
-            if pattern in self.higher_tf_patterns:
+            indicator_list = set(point[5].split('_'))
+            if indicator_list.intersection(set(self.higher_tf_indicator_list)):
                 time_span = self.timeframe_div[self.higher_timeframe] * self.max_prev_candle_limit
             else:
                 time_span = self.timeframe_div[self.work_timeframe] * self.max_prev_candle_limit
             # select only new signals
             if (dt_now - point_time).total_seconds() <= time_span:
                 filtered_points.append(point)
+        return filtered_points
+
+    def filter_higher_tf_signals(self, sig_points: list) -> list:
+        """ If hour time of higher tf signal is not in 3, 7, 11, 15, 19, 23 - don't add it """
+        filtered_points = list()
+        for point in sig_points:
+            point_time = point[4]
+            indicator_list = set(point[5].split('_'))
+            if indicator_list.intersection(set(self.higher_tf_indicator_list)) and point_time.hour not in [3, 7, 11, 15,
+                                                                                                           19, 23]:
+                continue
+            filtered_points.append(point)
         return filtered_points
 
     def add_statistics(self, sig_points: list, data_qty_higher=None) -> dict:
@@ -296,9 +308,6 @@ class SigBot:
 
     def add_higher_time(self, ticker: str, ttype: str) -> None:
         """ Add time from higher timeframe to dataframe with working timeframe data"""
-        dt_now = datetime.now()
-        if dt_now.hour in [3, 7, 11, 15, 19, 23]:
-            pass
         # Create signal point df for each indicator
         df_work = self.database[ticker][self.work_timeframe]['data'][ttype]
         # add signals from higher timeframe
@@ -364,20 +373,6 @@ class MonitorExchange:
 
     def save_statistics(self) -> None:
         self.sigbot.save_statistics()
-
-    
-    def filter_by_volume_24(self, df: pd.DataFrame, timeframe: str, ticker: str) -> float:
-        """ Get average 24 hours volume of ticker and decide if it is enough big to use current ticker """
-        # get quantity of candles in 24 hours
-        avg_period = int(24 / (self.sigbot.timeframe_div[timeframe] / 3600))
-        # get average volume for 24 hours
-        volume_24 = ((df['open'] + df['close']) / 2 * df['volume']).rolling(avg_period).sum().dropna().mean()
-        # because this function is used in optimization mode only and optimization mode min_volume = 10,
-        # increase this min_volume to 7.5e5 to effectively filter any shitcoin with low volume
-        if volume_24 >= 7.5e5:
-            return True
-        print(f'Volume {volume_24} is not enough for ticker {ticker}, skip it.')
-        return False
     
     def save_opt_dataframes(self, dt_now: datetime, historical: bool, min_time: datetime) -> None:
         """ Save dataframe for every ticker for further indicator/signal optimization """
@@ -408,8 +403,7 @@ class MonitorExchange:
                             df = pd.concat([tmp, df], ignore_index=True)
                     df_path = f'../optimizer/ticker_dataframes/{tmp_ticker}_{timeframe}.pkl'
                     df = df.drop_duplicates().reset_index(drop=True)
-                    if self.filter_by_volume_24(df, timeframe, ticker):
-                        df.to_pickle(df_path)
+                    df.to_pickle(df_path)
                 else:
                     break
 
@@ -518,11 +512,16 @@ class MonitorExchange:
                         self.add_statistics(sig_sell_points, data_qty_higher)
                         # If bot cycle isn't first - calculate statistics and send Telegram notification
                         if self.sigbot.main.cycle_number > self.sigbot.main.first_cycle_qty_miss:
-                            # Send signals in Telegram notification only if they are fresh (<= 1-2 ticks ago)
-                            sig_buy_points = self.sigbot.filter_old_signals(sig_buy_points)
-                            sig_sell_points = self.sigbot.filter_old_signals(sig_sell_points)
+                            # # Send signals in Telegram notification only if they are fresh (<= 1-2 ticks ago)
+                            # sig_buy_points = self.sigbot.filter_old_signals(sig_buy_points)
+                            # sig_sell_points = self.sigbot.filter_old_signals(sig_sell_points)
                             # Join buy and sell points into the one list
                             sig_points = sig_buy_points + sig_sell_points
+                            # Send signals in Telegram notification only if they are fresh (<= 1-2 ticks ago)
+                            sig_points = self.sigbot.filter_old_signals(sig_points)
+                            # Send higher signals in Telegram notification only if their hour time
+                            # is in 3, 7, 11, 15, 19, 23
+                            sig_points = self.sigbot.filter_higher_tf_signals(sig_points)
                             # Add list of exchanges where this ticker is available and has a good liquidity
                             sig_points = self.sigbot.get_exchange_list(ticker, sig_points)
                             # Add pattern and ticker statistics

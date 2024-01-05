@@ -31,6 +31,8 @@ class IndicatorFactory(object):
             return ATR(ttype, configs)
         elif indicator.startswith('SMA'):
             return SMA(ttype, configs)
+        elif indicator.startswith('Volume24'):
+            return Volume24(ttype, configs)
 
 
 class Indicator:
@@ -423,4 +425,20 @@ class Pattern(Indicator):
         df.loc[high_max, 'high_max'] = 1
         df['low_min'] = 0
         df.loc[low_min, 'low_min'] = 1
+        return df
+
+
+class Volume24(Indicator):
+    """ Find ticker volume for the last 24 hours """
+    name = 'Volume24'
+
+    def __init__(self, ttype: str, configs: dict):
+        super(Volume24, self).__init__(ttype, configs)
+        self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
+
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        # get quantity of candles in 24 hours
+        avg_period = int(24 / (self.timeframe_div[timeframe] / 3600))
+        # get average volume for 24 hours
+        df['volume_24'] = ((df['open'] + df['close']) / 2 * df['volume']).rolling(avg_period).sum()
         return df

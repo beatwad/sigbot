@@ -3,10 +3,6 @@ import time
 import asyncio
 from os import environ, remove
 from constants.constants import telegram_token
-
-# Get configs
-# environ["ENV"] = "1h_4h"
-
 from log.log import exception
 from time import sleep
 import pandas as pd
@@ -16,7 +12,7 @@ from visualizer.visualizer import Visualizer
 
 import telegram
 from telegram import Bot, Update
-from telegram.ext import Application, ContextTypes, MessageHandler, filters
+from telegram.ext import Application, ContextTypes, MessageHandler, CommandHandler, filters
 
 # Get configs
 configs = ConfigFactory.factory(environ).configs
@@ -28,7 +24,10 @@ class TelegramBot:
     type = 'Telegram'
 
     # constructor
-    def __init__(self, token,  database, **configs):
+    def __init__(self, token,  database, trade_type, locker, **configs):
+        # trade mode - if it's activated, bot will use its own signals to trade on exchange
+        self.trade_type = trade_type
+        self.locker = locker
         # ticker database
         self.database = database
         # visualizer class
@@ -67,25 +66,72 @@ class TelegramBot:
         self.pred_buy_thresh = self.configs['pred_buy_thresh']
         self.pred_sell_thresh = self.configs['pred_sell_thresh']
 
+    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """ Enable trade mode """
+        if self.trade_type[0] == 0:
+            with self.locker:
+                self.trade_type[0] = 1
+            text = 'Trade mode is on'
+            await update.message.reply_text(text)
+        else:
+            text = 'Trade mode is already on'
+            await update.message.reply_text(text)
+
+    async def stop(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """ Disable trade mode """
+        if self.trade_type[0] == 1:
+            with self.locker:
+                self.trade_type[0] = 0
+            text = 'Trade mode is off'
+            await update.message.reply_text(text)
+        else:
+            text = 'Trade mode is already off'
+            await update.message.reply_text(text)
+
+    @staticmethod
+    async def help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Inform user about what this bot can do"""
+        text = "Available commands:\n" \
+                  "/start\n" \
+                  "/stop\n" \
+                  "/id\n" \
+                  "Enter any other text to get the status"
+        await update.message.reply_text(text)
+
     @staticmethod
     async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """ Print chat id in response to user message """
         chat_id = update.effective_chat['id']
         message_thread_id = update.message.message_thread_id
-        text = f'ID данного чата: {chat_id}, ID данной темы: {message_thread_id}'
+        text = f'ID of this chat: {chat_id}, ID of this topic: {message_thread_id}'
+        x = await context.bot.send_message(chat_id=chat_id, message_thread_id=message_thread_id, text=text)
+        return x
+
+    async def get_trade_mode(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """ Return bot trade state """
+        chat_id = update.effective_chat['id']
+        message_thread_id = update.message.message_thread_id
+        if environ["trade_mode"] == "true":
+            text = 'Trade mode is on'
+        else:
+            text = 'Trade mode is off'
         x = await context.bot.send_message(chat_id=chat_id, message_thread_id=message_thread_id, text=text)
         return x
 
     @exception
     def polling(self) -> None:
         """ Start the bot polling """
-        if __name__ == '__main__':
-            # Create the Application and pass it your bot's token.
-            application = Application.builder().token(self.token).build()
-            # on non command i.e. message - echo the message on Telegram
-            application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.get_chat_id))
-            # Run the bot until the user presses Ctrl-C
-            application.run_polling()
+        # if __name__ == '__main__':
+        # Create the Application and pass it your bot's token.
+        application = Application.builder().token(self.token).build()
+        # on non command i.e. message - echo the message on Telegram
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.get_trade_mode))
+        application.add_handler(CommandHandler("start", self.start))
+        application.add_handler(CommandHandler("stop", self.stop))
+        application.add_handler(CommandHandler("id", self.get_chat_id))
+        application.add_handler(CommandHandler("help", self.help))
+        # Run the bot until the user presses Ctrl-C
+        application.run_polling()
 
     @staticmethod
     def process_ticker(ticker: str) -> str:

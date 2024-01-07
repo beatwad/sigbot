@@ -13,6 +13,8 @@ from log.log import exception, logger
 from constants.constants import telegram_token
 from ml.inference import Model
 
+from time import sleep
+
 # Get configs
 configs = ConfigFactory.factory(environ).configs
 
@@ -60,9 +62,18 @@ class SigBot:
             # Load tickers
             self.get_api_and_tickers()
             # Start Telegram bot
+            self.trade_exchange = self.exchanges['ByBitPerpetual']['API']
+            self.trade_type = multiprocessing.Array("i", range(1))
+            locker = multiprocessing.Lock()
             self.telegram_bot = TelegramBot(token=telegram_token,
-                                            database=self.database, **configs)
-            # self.telegram_bot.run()
+                                            database=self.database,
+                                            trade_type=self.trade_type,
+                                            locker=locker,
+                                            **configs)
+            # run polling in separate process
+
+            pr = multiprocessing.Process(target=self.telegram_bot.polling)
+            pr.start()
         else:
             buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
             sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
@@ -529,12 +540,18 @@ class MonitorExchange:
                             # Send Telegram notification
                             if sig_points:
                                 sig_points = self.sigbot.make_prediction(sig_points)
+                                # if trade mode is enabled and model has made prediction - place an order
                                 print(self.exchange,
                                       [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5], sp[9]] for sp in sig_points],
                                       flush=True)
                                 # send Telegram notification, create separate process for each notification
                                 # to run processes of signal search and signal notification simultaneously
                                 for sig_point in sig_points:
+                                    ticker = sig_point[0]
+                                    sig_type = sig_point[3].capitalize()
+                                    prediction = sig_point[9]
+                                    if self.sigbot.trade_type[0] and prediction > 0:
+                                        self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type)
                                     pr = multiprocessing.Process(target=self.sigbot.telegram_bot.send_notification,
                                                                  args=(sig_point,))
                                     processes.append(pr)

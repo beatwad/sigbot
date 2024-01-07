@@ -163,7 +163,7 @@
         "min_volume": 250000.0
       }
     },
-     "MEXCFutures": {
+    "MEXCFutures": {
       "params": {
         "limit": 200,
         "timeframe_div": {
@@ -433,7 +433,7 @@
       "model_path_sell": "ml/lgbm.pkl",
       "feature_path_buy": "ml/features.json",
       "feature_path_sell": "ml/features.json",
-      "patterns_to_predict":  [
+      "patterns_to_predict": [
         "MACD_Volume24"
       ]
     }
@@ -466,7 +466,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 200
+      "max_prev_candle_limit": 40
     }
   },
   "Telegram": {
@@ -517,6 +517,14 @@
   "Timeframes": {
     "work_timeframe": "1h",
     "higher_timeframe": "4h"
+  },
+  "Trade": {
+    "leverage": 4,
+    "risk": 0.001,
+    "fiat": "USDT",
+    "currency": "USD",
+    "one_way_mode": 1,
+    "is_isolated": 1
   },
   "Visualizer": {
     "params": {

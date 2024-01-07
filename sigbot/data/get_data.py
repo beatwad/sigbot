@@ -1,3 +1,4 @@
+from os import environ
 from time import sleep
 import pandas as pd
 from api.binance_api import Binance
@@ -10,7 +11,10 @@ from api.mexc_api import MEXC
 from api.mexc_futures_api import MEXCFutures
 from datetime import datetime
 from log.log import logger
+from constants.constants import bybit_key, bybit_secret, bybit_test_key, bybit_test_secret
 from constants.constants import binance_key, binance_secret, binance_perp_key, binance_perp_secret
+
+env = environ.get("ENV", "debug")
 
 
 class DataFactory(object):
@@ -257,7 +261,13 @@ class GetByBitPerpetualData(GetData):
 
     def __init__(self, **configs):
         super(GetByBitPerpetualData, self).__init__(**configs)
-        self.api = ByBitPerpetual()
+        if env == 'debug':
+            self.key = bybit_test_key
+            self.secret = bybit_test_secret
+        else:
+            self.key = bybit_key
+            self.secret = bybit_secret
+        self.api = ByBitPerpetual(api_key=self.key, api_secret=self.secret)
 
 
 class GetMEXCData(GetData):

@@ -46,8 +46,8 @@ class ApiBase(metaclass=ABCMeta):
     def get_timestamp():
         today_now = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         dt = datetime.strptime(today_now, '%Y-%m-%d %H:%M:%S')
-        in_secods_now = int(dt.timestamp())
-        return in_secods_now
+        ts = int(dt.timestamp())
+        return ts
 
     @staticmethod
     def convert_interval_to_secs(interval: str) -> int:

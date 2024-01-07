@@ -24,10 +24,12 @@ class ByBitPerpetual(ApiBase):
         self.query_symbols_info()
         self.leverage = configs['Trade']['leverage']
         self.risk = configs['Trade']['risk']
-        self.fiat = configs['Trade']['fiat']
+        self.quote_coin = configs['Trade']['quote_coin']
         self.currency = configs['Trade']['currency']
         self.one_way_mode = configs['Trade']['one_way_mode']
         self.is_isolated = configs['Trade']['is_isolated']
+        self.order_timeout_hours = configs['Trade']['order_timeout_hours']
+        self.position_timeout_hours = configs['Trade']['position_timeout_hours']
 
     def connect_to_api(self, api_key, api_secret):
         if environ['ENV'] == 'debug':
@@ -169,16 +171,15 @@ class ByBitPerpetual(ApiBase):
 
     def get_price(self, symbol) -> float:
         """ Get current price of symbol  """
-        today_now = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        dt = datetime.strptime(today_now, '%Y-%m-%d %H:%M:%S')
-        in_seconds_now = int(dt.timestamp()) - 61
+        ts = self.get_timestamp() - 61
+
         try:
             price = self.client.get_kline(
                 category='linear',
                 symbol=symbol,
                 interval=1,
                 limit=2,
-                from_time=in_seconds_now)['result']['list'][0][4]
+                from_time=ts)['result']['list'][0][4]
         except IndexError:
             price = 0
         return float(price)
@@ -212,17 +213,17 @@ class ByBitPerpetual(ApiBase):
         # get number of digits for prices rounding (depends on tick size)
         round_digits_num = self.get_round_digits_qty(symbol)
         # get the free balance
-        free_balance = self.get_balance(self.fiat)
+        free_balance = self.get_balance(self.quote_coin)
         # get change of price from entry to SL and multiply it by leverage
         price_change = abs(price - stop_loss) / price * self.leverage
         # use price change to find the amount of balance that will be used in the trade
         quantity = ((free_balance * self.risk / price_change) / price)
         message += f'Symbol is {symbol}\n' \
                    f'Min trading quantity is {round(quantity, round_digits_num + 1)}\n' \
-                   f'Free balance is {round(free_balance, 2)} {self.fiat}\n' \
+                   f'Free balance is {round(free_balance, 2)} {self.quote_coin}\n' \
                    f'Risk is {self.risk * 100}% x {len(prices)} x {len(take_profits)} = ' \
                    f'{round(self.risk * divide * 100, 2)}%\n' \
-                   f'{round(quantity * divide * price, 2)} {self.fiat} will be used as margin ' \
+                   f'{round(quantity * divide * price, 2)} {self.quote_coin} will be used as margin ' \
                    f'to {side} {round(quantity * divide * self.leverage, round_digits_num)} '\
                    f'{self.currency} at price ${price} ' \
                    f'with leverage {self.leverage}x\n'
@@ -230,7 +231,7 @@ class ByBitPerpetual(ApiBase):
         quantity = round(quantity * self.leverage, round_digits_num)
         if quantity == 0:
             message += f'Minimal available trade quantity is 0. Increase trade volume or leverage or both. ' \
-                       f'Minminal trading quantity for the current symbol is {self.get_min_trading_qty(symbol)}'
+                       f'Minimal trading quantity for ticker {symbol} is {self.get_min_trading_qty(symbol)}'
         return quantity, message
 
     def place_conditional_order(self, symbol, side, price, trigger_direction, trigger_price, quantity, stop_loss,
@@ -261,15 +262,88 @@ class ByBitPerpetual(ApiBase):
         logger.info(message)
         return message
 
-    # @exception
+    def find_open_orders(self) -> None:
+        """ Find open orders (not TP / SL) that weren't triggered within a certain time and cancel them """
+        ts_now = self.get_timestamp()
+        order_ids_to_cancel = list()
+        orders = self.client.get_open_orders(category='linear', settleCoin=self.quote_coin)['result']['list']
+        for o in orders:
+            symbol = o['symbol']
+            created_time = int(o['createdTime']) // 1000
+            order_id = o['orderId']
+            side = o['side']
+            created_price = float(o['lastPriceOnCreated'])
+            trigger_price = float(o['triggerPrice'])
+            # check if creation price and trigger price almost do not differ
+            # this will tell us that this order is not TP / SL order
+            diff = abs(created_price - trigger_price) / created_price
+            # check the amount of time passed
+            time_span = (ts_now - created_time) // 3600
+            if time_span >= self.order_timeout_hours and diff < 0.01:
+                order_ids_to_cancel.append((symbol, order_id, side))
+
+        for s_o in order_ids_to_cancel:
+            symbol, order_id, side = s_o
+            message = f'\nOrder timeout. {side} order for ticker {symbol} is cancelled.\n'
+            logger.info(message)
+            self.client.cancel_order(category='linear', symbol=symbol, orderId=order_id)
+
+    def check_open_positions(self, symbol=None) -> bool:
+        """ Check if there are open positions. If they are, and we can't cancel them because of position timeout -
+            don't open the new one. If there are positions that weren't closed within a certain time - close them """
+        ts_now = self.get_timestamp()
+        positions_to_close = list()
+        if symbol:
+            positions = self.client.get_positions(category='linear', symbol=symbol)['result']['list']
+        else:
+            positions = self.client.get_positions(category='linear', settleCoin=self.quote_coin)['result']['list']
+        for p in positions:
+            created_time = int(p['updatedTime']) // 1000
+            symbol = p['symbol']
+            side = p['side']
+            size = p['size']
+            status = p['positionStatus']
+            # check the amount of time passed
+            time_span = (ts_now - created_time) // 3600
+            if time_span >= self.position_timeout_hours and status == 'Normal':
+                positions_to_close.append((symbol, side, size))
+
+        for pos in positions_to_close:
+            symbol, side, size = pos
+            side = 'Sell' if side == 'Buy' else 'Buy'
+            self.place_market_order(symbol, side, size)
+
+        if len(positions) == 0 or len(positions) == len(positions_to_close):
+            return True
+        return False
+
+    def place_market_order(self, symbol, side, size) -> str:
+        """ Place market order to close position """
+        self.client.place_order(
+            category='linear',
+            symbol=symbol,
+            side=side,
+            orderType='Market',
+            qty=size,
+            timeInForce='GTC',
+            positionIdx=0,
+            reduceOnly=False
+        )
+        message = f'\nPosition timeout. Market {side} order for ticker {symbol} is placed\n'
+        logger.info(message)
+        return message
+
     def place_all_conditional_orders(self, symbol, side) -> (bool, str):
         """ Place all necessary conditional orders for symbol """
+        if not self.check_open_positions(symbol):
+            message = f"There are opened positions for ticker {symbol}, don't open the new one."
+            logger.info(message)
+            return False, message
+
         self.set_settings(symbol)
-
         ts_round_digits_num, tick_size = self.get_round_digits_tick_size(symbol)
-
         price = self.get_price(symbol)
-        print(price)
+
         if side == 'Buy':
             direction = 'Fall'
             prices = [price - 2 * tick_size]
@@ -284,6 +358,7 @@ class ByBitPerpetual(ApiBase):
         quantity, message = self.get_quantity(symbol, prices, take_profits, stop_loss, side,
                                               len(take_profits) * len(prices))
         if quantity == 0:
+            logger.info(message)
             return False, message
 
         for i, price in enumerate(prices):

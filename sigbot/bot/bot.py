@@ -63,7 +63,7 @@ class SigBot:
             self.get_api_and_tickers()
             # Start Telegram bot
             self.trade_exchange = self.exchanges['ByBitPerpetual']['API']
-            self.trade_type = multiprocessing.Array("i", range(1))
+            self.trade_type = [1]  # multiprocessing.Array("i", range(1)) !!!
             locker = multiprocessing.Lock()
             self.telegram_bot = TelegramBot(token=telegram_token,
                                             database=self.database,
@@ -72,8 +72,8 @@ class SigBot:
                                             **configs)
             # run polling in separate process
 
-            pr = multiprocessing.Process(target=self.telegram_bot.polling)
-            pr.start()
+            # pr = multiprocessing.Process(target=self.telegram_bot.polling) !!!
+            # pr.start()
         else:
             buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
             sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
@@ -547,6 +547,7 @@ class MonitorExchange:
                                 # send Telegram notification, create separate process for each notification
                                 # to run processes of signal search and signal notification simultaneously
                                 for sig_point in sig_points:
+                                    self.sigbot.trade_exchange.api.check_open_positions()
                                     ticker = sig_point[0]
                                     sig_type = sig_point[3].capitalize()
                                     prediction = sig_point[9]
@@ -568,6 +569,9 @@ class MonitorExchange:
             pr.join()
         # save buy and sell statistics to files
         self.save_statistics()
+        # find open orders (not TP / SL) that weren't triggered within an hour and cancel them
+        self.sigbot.trade_exchange.api.find_open_orders()
+        self.sigbot.trade_exchange.api.check_open_positions()
 
 
 # if __name__ == "__main__":

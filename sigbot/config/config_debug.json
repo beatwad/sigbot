@@ -521,10 +521,12 @@
   "Trade": {
     "leverage": 4,
     "risk": 0.001,
-    "fiat": "USDT",
+    "quote_coin": "USDT",
     "currency": "USD",
     "one_way_mode": 1,
-    "is_isolated": 1
+    "is_isolated": 1,
+    "order_timeout_hours": 1,
+    "position_timeout_hours": 96
   },
   "Visualizer": {
     "params": {

@@ -13,6 +13,7 @@ class Model:
         self.sell_model = joblib.load(sell_model_path)
         # list of patterns for which models will make predictions
         self.patterns_to_predict = configs['Model']['params']['patterns_to_predict']
+        self.favorite_exchanges = configs['Telegram']['params']['favorite_exchanges']
         # load feature lists for buy and sell models
         buy_feature_path = configs['Model']['params']['feature_path_buy']
         sell_feature_path = configs['Model']['params']['feature_path_sell']
@@ -43,11 +44,12 @@ class Model:
         # add number of signal point for which prediction is made
         row['sig_point_num'] = 0
         # make predictions only for patterns, which are suitable for ML model prediction
+        # and only for exchanges where we trade
         patterns = list()
         for i, point in enumerate(signal_points):
-            # ttype = point[3]
             pattern = point[5]
-            if pattern in self.patterns_to_predict:
+            exchange_list = point[7]
+            if pattern in self.patterns_to_predict and set(exchange_list).intersection(set(self.favorite_exchanges)):
                 patterns.append(pattern)
                 rows = pd.concat([rows, row])
                 rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i

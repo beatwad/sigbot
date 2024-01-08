@@ -63,7 +63,7 @@ class SigBot:
             self.get_api_and_tickers()
             # Start Telegram bot
             self.trade_exchange = self.exchanges['ByBitPerpetual']['API']
-            self.trade_type = [1]  # multiprocessing.Array("i", range(1)) !!!
+            self.trade_type = [0]  # multiprocessing.Array("i", range(1)) !!!
             locker = multiprocessing.Lock()
             self.telegram_bot = TelegramBot(token=telegram_token,
                                             database=self.database,

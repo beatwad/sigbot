@@ -28,10 +28,21 @@ class OKEX(ApiBase):
 
     def get_klines(self, symbol, interval, limit=200) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
+        interval_secs = self.convert_interval_to_secs(interval)
+
         if not interval.endswith('m'):
             interval = interval.upper()
         params = {'instId': symbol, 'bar': interval, 'limit': limit}
         tickers = pd.DataFrame(requests.get(self.URL + '/api/v5/market/candles', params=params).json()['data'])
+        # at first time get candles from previous interval to overcome API limit restrictions
+        if limit > 100:
+            after = tickers.iloc[0, 0]
+            after = int(after) - (limit - 1) * interval_secs * 1000
+            params['after'] = str(after)
+            tmp = pd.DataFrame(requests.get(self.URL + '/api/v5/market/candles', params=params).json()['data'])
+            if tmp.shape[0] > 0:
+                tickers = pd.concat([tickers, tmp])
+
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']][::-1].reset_index(drop=True)
     
@@ -73,7 +84,7 @@ if __name__ == '__main__':
     from datetime import datetime
 
     okex = OKEX()
-    tickers = okex.get_ticker_names(500000)[0]
-    klines = okex.get_klines('MDT-USDT', '1h')
+    # tickers = okex.get_ticker_names(500000)[0]
+    klines = okex.get_klines('MDT-USDT', '1h', limit=150)
     pass
 

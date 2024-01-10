@@ -2,7 +2,7 @@
   "Data": {
     "Basic": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -24,7 +24,7 @@
     },
     "Binance": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -46,7 +46,7 @@
     },
     "ByBit": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -66,7 +66,7 @@
     },
     "OKEX": {
       "params": {
-        "limit": 200,
+        "limit": 150,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -87,7 +87,7 @@
     },
     "MEXC": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "5m": 300,
@@ -102,7 +102,7 @@
     },
     "BinanceFutures": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -124,7 +124,7 @@
     },
     "ByBitPerpetual": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -144,7 +144,7 @@
     },
     "OKEXSwap": {
       "params": {
-        "limit": 200,
+        "limit": 150,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -163,9 +163,9 @@
         "min_volume": 250000.0
       }
     },
-     "MEXCFutures": {
+    "MEXCFutures": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "5m": 300,
@@ -433,7 +433,7 @@
       "model_path_sell": "ml/lgbm.pkl",
       "feature_path_buy": "ml/features.json",
       "feature_path_sell": "ml/features.json",
-      "patterns_to_predict":  [
+      "patterns_to_predict": [
         "MACD_Volume24"
       ]
     }
@@ -552,6 +552,16 @@
   "Timeframes": {
     "work_timeframe": "1h",
     "higher_timeframe": "4h"
+  },
+  "Trade": {
+    "leverage": 4,
+    "risk": 0.001,
+    "quote_coin": "USDT",
+    "currency": "USD",
+    "one_way_mode": 1,
+    "is_isolated": 1,
+    "order_timeout_hours": 1,
+    "position_timeout_hours": 96
   },
   "Visualizer": {
     "params": {

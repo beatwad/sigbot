@@ -13,8 +13,6 @@ from log.log import exception, logger
 from constants.constants import telegram_token
 from ml.inference import Model
 
-from time import sleep
-
 # Get configs
 configs = ConfigFactory.factory(environ).configs
 
@@ -70,8 +68,7 @@ class SigBot:
                                             trade_type=self.trade_type,
                                             locker=locker,
                                             **configs)
-            # run polling in separate process
-
+            # run polling in the separate process
             # pr = multiprocessing.Process(target=self.telegram_bot.polling) !!!
             # pr.start()
         else:
@@ -547,7 +544,7 @@ class MonitorExchange:
                                 # send Telegram notification, create separate process for each notification
                                 # to run processes of signal search and signal notification simultaneously
                                 for sig_point in sig_points:
-                                    self.sigbot.trade_exchange.api.check_open_positions()
+                                    # self.sigbot.trade_exchange.api.check_open_positions() # !!!
                                     ticker = sig_point[0]
                                     sig_type = sig_point[3].capitalize()
                                     prediction = sig_point[9]
@@ -570,8 +567,9 @@ class MonitorExchange:
         # save buy and sell statistics to files
         self.save_statistics()
         # find open orders (not TP / SL) that weren't triggered within an hour and cancel them
-        self.sigbot.trade_exchange.api.find_open_orders()
-        self.sigbot.trade_exchange.api.check_open_positions()
+        # if self.exchange == 'ByBitPerpetual': !!!
+        #     self.sigbot.trade_exchange.api.find_open_orders()
+        #     self.sigbot.trade_exchange.api.check_open_positions()
 
 
 # if __name__ == "__main__":

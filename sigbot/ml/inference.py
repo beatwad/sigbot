@@ -24,32 +24,35 @@ class Model:
 
     def prepare_data(self, df: pd.DataFrame, signal_points: list, ttype: str) -> pd.DataFrame:
         """ Get data from ticker dataframe and prepare it for model prediction """
-        last_time = df['time'].max()
-        row, rows = pd.DataFrame(), pd.DataFrame()
+        rows = pd.DataFrame()
 
         if ttype == 'buy':
             feature_dict = self.buy_feature_dict
         else:
             feature_dict = self.sell_feature_dict
 
-        for key, features in feature_dict.items():
-            if key.isdigit():
-                try:
-                    tmp_row = df.loc[df['time'] == last_time -
-                                     pd.to_timedelta(int(key), unit='h'), features].reset_index(drop=True)
-                except KeyError:
-                    return pd.DataFrame()
-                row = pd.concat([row, tmp_row], axis=1)
-        row.columns = feature_dict['features']
-        # add number of signal point for which prediction is made
-        row['sig_point_num'] = 0
         # make predictions only for patterns, which are suitable for ML model prediction
         # and only for exchanges where we trade
         patterns = list()
         for i, point in enumerate(signal_points):
+            row = pd.DataFrame()
+            point_idx = point[2]
+            point_time = df.iloc[point_idx, df.columns.get_loc('time')]
+            for key, features in feature_dict.items():
+                if key.isdigit():
+                    try:
+                        tmp_row = df.loc[df['time'] == point_time -
+                                         pd.to_timedelta(int(key), unit='h'), features].reset_index(drop=True)
+                    except KeyError:
+                        return pd.DataFrame()
+                    row = pd.concat([row, tmp_row], axis=1)
+            row.columns = feature_dict['features']
+            # add number of signal point for which prediction is made
+            row['sig_point_num'] = 0
             pattern = point[5]
             exchange_list = point[7]
-            if pattern in self.patterns_to_predict and set(exchange_list).intersection(set(self.favorite_exchanges)):
+            # if pattern in self.patterns_to_predict and set(exchange_list).intersection(set(self.favorite_exchanges)): !!!
+            if pattern in self.patterns_to_predict:
                 patterns.append(pattern)
                 rows = pd.concat([rows, row])
                 rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i

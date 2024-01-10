@@ -88,9 +88,7 @@ if __name__ == '__main__':
     secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
     binance_api = Binance(key, secret)
     binance_api.get_ticker_names(1e1)
-    klines = binance_api.get_klines('OSMOUSDT', '4h', 1000)
-    t_list = list()
-    # for t in tickers:
-    #     t_list.append(t['symbol'])
-    # exchange_info = binance_api.client.futures_exchange_info()
-    # print('1000SHIBUSDT' in t_list)
+    klines = binance_api.get_klines('OSMOUSDT', '1h', 300)
+    pass
+
+

@@ -73,7 +73,7 @@ class MEXCFutures(ApiBase):
 if __name__ == '__main__':
     mexc = MEXCFutures()
     tickers = mexc.get_ticker_names(1e6)[0]
-    klines = mexc.get_klines('1000000VINU_USDT', '1h')
+    klines = mexc.get_klines('1000000VINU_USDT', '1h', limit=300)
     pass
 
 

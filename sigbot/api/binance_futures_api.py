@@ -88,13 +88,6 @@ if __name__ == '__main__':
     key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
     secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
     binance_api = BinanceFutures(key, secret)
-    tickers = binance_api.get_ticker_names(1e6)
-    min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(2, unit='h')
-    k_lines = binance_api.get_historical_klines('1000SHIBUSDT', '5m', 1000, min_time)
-    print(tickers)
-    print(k_lines)
-    # t_list = list()
-    # for t in tickers:
-    #     t_list.append(t['symbol'])
-    # exchange_info = binance_api.client.futures_exchange_info()
-    # print('1000SHIBUSDT' in t_list)
+    klines = binance_api.get_klines('1000SHIBUSDT', '1h', 300)
+    pass
+

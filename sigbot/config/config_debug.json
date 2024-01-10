@@ -2,7 +2,7 @@
   "Data": {
     "Basic": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -24,7 +24,7 @@
     },
     "Binance": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -46,7 +46,7 @@
     },
     "ByBit": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -66,7 +66,7 @@
     },
     "OKEX": {
       "params": {
-        "limit": 200,
+        "limit": 150,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -87,7 +87,7 @@
     },
     "MEXC": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "5m": 300,
@@ -102,7 +102,7 @@
     },
     "BinanceFutures": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -124,7 +124,7 @@
     },
     "ByBitPerpetual": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -144,7 +144,7 @@
     },
     "OKEXSwap": {
       "params": {
-        "limit": 200,
+        "limit": 150,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -165,7 +165,7 @@
     },
     "MEXCFutures": {
       "params": {
-        "limit": 200,
+        "limit": 300,
         "timeframe_div": {
           "1m": 60,
           "5m": 300,
@@ -424,7 +424,7 @@
       "bot_cycle_length_sec": 5,
       "cycle_length_hours": 24,
       "time_period_minutes": 60,
-      "first_cycle_qty_miss": 0
+      "first_cycle_qty_miss": 1
     }
   },
   "Model": {
@@ -466,7 +466,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 40
+      "max_prev_candle_limit": 1
     }
   },
   "Telegram": {

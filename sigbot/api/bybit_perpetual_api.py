@@ -32,10 +32,10 @@ class ByBitPerpetual(ApiBase):
         self.position_timeout_hours = configs['Trade']['position_timeout_hours']
 
     def connect_to_api(self, api_key, api_secret):
-        if environ['ENV'] == 'debug':
-            test = True
-        else:
-            test = False
+        # if environ['ENV'] == 'debug': !!!
+        #     test = True
+        # else:
+        test = False
         self.client = unified_trading.HTTP(api_key=api_key, api_secret=api_secret, testnet=test)
 
     def get_ticker_names(self, min_volume) -> (list, list, list):
@@ -387,7 +387,7 @@ if __name__ == '__main__':
     key = ""
     secret = ""
     bybit_api = ByBitPerpetual()
-    tickers = bybit_api.get_ticker_names(500000)
+    # tickers = bybit_api.get_ticker_names(500000)
     # print(tickers)
-    kline = bybit_api.get_klines('VINUUSDT', '4h', 1000)
-    print(kline)
+    kline = bybit_api.get_klines('1INCHUSDT', '4h', 300)
+    pass

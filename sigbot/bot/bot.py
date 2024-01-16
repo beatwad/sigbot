@@ -61,11 +61,11 @@ class SigBot:
             self.get_api_and_tickers()
             # Start Telegram bot
             self.trade_exchange = self.exchanges['ByBitPerpetual']['API']
-            self.trade_type = [0]  # multiprocessing.Array("i", range(1)) !!!
+            self.trade_mode = [0]  # multiprocessing.Array("i", range(1)) !!!
             locker = multiprocessing.Lock()
             self.telegram_bot = TelegramBot(token=telegram_token,
                                             database=self.database,
-                                            trade_type=self.trade_type,
+                                            trade_mode=self.trade_mode,
                                             locker=locker,
                                             **configs)
             # run polling in the separate process
@@ -547,9 +547,13 @@ class MonitorExchange:
                                     # self.sigbot.trade_exchange.api.check_open_positions() # !!!
                                     ticker = sig_point[0]
                                     sig_type = sig_point[3].capitalize()
+                                    pattern = sig_point[5]
                                     prediction = sig_point[9]
-                                    if self.sigbot.trade_type[0] and prediction > 0:
-                                        self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type)
+                                    if self.sigbot.trade_mode[0] and prediction > 0:
+                                        if pattern.startswith('STOCH_RSI'):
+                                            # for STOCH_RSI pattern buy / sell trades are inverted
+                                            sig_type = 'Sell' if sig_type == 'Buy' else 'Buy'
+                                        # self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type)
                                     pr = multiprocessing.Process(target=self.sigbot.telegram_bot.send_notification,
                                                                  args=(sig_point,))
                                     processes.append(pr)

@@ -3,6 +3,9 @@ import time
 import asyncio
 from os import environ, remove
 from constants.constants import telegram_token
+
+# environ["ENV"] = "debug"
+
 from log.log import exception
 from time import sleep
 import pandas as pd
@@ -24,9 +27,9 @@ class TelegramBot:
     type = 'Telegram'
 
     # constructor
-    def __init__(self, token,  database, trade_type, locker, **configs):
+    def __init__(self, token,  database, trade_mode, locker, **configs):
         # trade mode - if it's activated, bot will use its own signals to trade on exchange
-        self.trade_type = trade_type
+        self.trade_mode = trade_mode
         self.locker = locker
         # ticker database
         self.database = database
@@ -68,9 +71,9 @@ class TelegramBot:
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """ Enable trade mode """
-        if self.trade_type[0] == 0:
+        if self.trade_mode[0] == 0:
             with self.locker:
-                self.trade_type[0] = 1
+                self.trade_mode[0] = 1
             text = 'Trade mode is on'
             await update.message.reply_text(text)
         else:
@@ -79,9 +82,9 @@ class TelegramBot:
 
     async def stop(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """ Disable trade mode """
-        if self.trade_type[0] == 1:
+        if self.trade_mode[0] == 1:
             with self.locker:
-                self.trade_type[0] = 0
+                self.trade_mode[0] = 0
             text = 'Trade mode is off'
             await update.message.reply_text(text)
         else:
@@ -111,7 +114,7 @@ class TelegramBot:
         """ Return bot trade state """
         chat_id = update.effective_chat['id']
         message_thread_id = update.message.message_thread_id
-        if environ["trade_mode"] == "true":
+        if self.trade_mode[0] == 1:
             text = 'Trade mode is on'
         else:
             text = 'Trade mode is off'
@@ -387,5 +390,5 @@ class TelegramBot:
 if __name__ == '__main__':
     configs = ConfigFactory.factory(environ).configs
 
-    telegram_bot = TelegramBot(token=telegram_token, database=None, **configs)
+    telegram_bot = TelegramBot(token=telegram_token, database=None, trade_mode=True, locker=None, **configs)
     telegram_bot.polling()

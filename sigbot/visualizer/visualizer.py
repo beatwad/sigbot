@@ -154,6 +154,8 @@ class Visualizer:
         indicator_list_tmp = indicator_list.copy()
 
         # check if PumpDump indicator is in indicator list to make a special plot
+        if 'Volume24' in indicator_list_tmp:
+            indicator_list.remove('Volume24')
         if 'PumpDump' in indicator_list_tmp:
             plot_num = len(indicator_list) + 1
             indicator_list.remove('PumpDump')
@@ -164,7 +166,6 @@ class Visualizer:
             main_candleplot_ratio = 3
             plot_width_mult = 5
         elif 'MACD' in indicator_list_tmp:
-            indicator_list.remove('Volume24')
             plot_num = len(indicator_list) + 2
             main_candleplot_ratio = 1
             plot_width_mult = 2.5

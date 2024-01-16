@@ -433,15 +433,17 @@
       "model_path_sell": "ml/lgbm.pkl",
       "feature_path_buy": "ml/features.json",
       "feature_path_sell": "ml/features.json",
-      "patterns_to_predict":  [
-        "MACD_Volume24"
+      "patterns_to_predict": [
+        "STOCH_RSI_Volume24",
+        "Pattern_Volume24"
       ]
     }
   },
   "Patterns": [
     [
       "STOCH",
-      "RSI"
+      "RSI",
+      "Volume24"
     ],
     [
       "STOCH",
@@ -456,12 +458,11 @@
       "Trend"
     ],
     [
-      "MACD",
-      "Volume24"
+      "MACD"
     ],
     [
       "Pattern",
-      "Trend"
+      "Volume24"
     ]
   ],
   "SignalStat": {
@@ -472,14 +473,14 @@
       "stat_limit_hours": {
         "PumpDump": 100000,
         "HighVolume": 100000,
-        "MACD_Volume24": 100000,
+        "MACD": 100000,
         "Pattern": 100000,
         "PumpDump_Trend": 100000,
-        "STOCH_RSI": 100000,
         "STOCH_RSI_Trend": 100000,
-        "Pattern_Trend": 100000
+        "STOCH_RSI_Volume24": 100000,
+        "Pattern_Trend_Volume24": 100000
       },
-      "min_prev_candle_limit": 3,
+      "min_prev_candle_limit": 4,
       "min_prev_candle_limit_higher": 2,
       "stat_range": 24
     }
@@ -495,7 +496,8 @@
         "ByBitPerpetual"
       ],
       "favorite_patterns": [
-        "MACD_Volume24"
+        "STOCH_RSI_Volume24",
+        "Pattern_Volume24"
       ],
       "log_path": "telegram_log.txt",
       "chat_ids": {
@@ -535,7 +537,7 @@
         "Pattern_Trend_buy": "9",
         "Pattern_Trend_sell": "12"
       },
-      "min_prev_candle_limit": 3,
+      "min_prev_candle_limit": 4,
       "min_prev_candle_limit_higher": 2,
       "max_notifications_in_row": 3,
       "pred_buy_thresh": 0.66,

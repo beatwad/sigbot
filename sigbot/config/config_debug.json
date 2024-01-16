@@ -434,13 +434,20 @@
       "feature_path_buy": "ml/features.json",
       "feature_path_sell": "ml/features.json",
       "patterns_to_predict": [
-        "MACD_Volume24"
+        "STOCH_RSI_Volume24",
+        "Pattern_Trend_Volume24"
       ]
     }
   },
   "Patterns": [
     [
-      "MACD",
+      "STOCH",
+      "RSI",
+      "Volume24"
+    ],
+    [
+      "Pattern",
+      "Trend",
       "Volume24"
     ]
   ],
@@ -452,14 +459,13 @@
       "stat_limit_hours": {
         "PumpDump": 96,
         "HighVolume": 96,
-        "MACD_Volume24": 192,
-        "Pattern": 192,
+        "MACD": 192,
         "PumpDump_Trend": 192,
-        "STOCH_RSI": 192,
+        "STOCH_RSI_Volume24": 192,
         "STOCH_RSI_Trend": 192,
-        "Pattern_Trend": 192
+        "Pattern_Trend_Volume24": 192
       },
-      "min_prev_candle_limit": 3,
+      "min_prev_candle_limit": 4,
       "min_prev_candle_limit_higher": 2,
       "stat_range": 24
     }
@@ -475,43 +481,43 @@
         "ByBitPerpetual"
       ],
       "favorite_patterns": [
-        "MACD_Volume24"
+        "STOCH_RSI_Volume24",
+        "Pattern_Trend_Volume24"
       ],
       "log_path": "telegram_log.txt",
       "chat_ids": {
         "Errors": "-1001837009227",
-        "STOCH_RSI": "-1001840430020",
+        "STOCH_RSI_Volume24": "-1001840430020",
         "STOCH_RSI_Trend": "-1001840430020",
         "PumpDump": "-1001840430020",
         "PumpDump_Trend": "-1001840430020",
         "HighVolume": "-1001840430020",
-        "MACD_Volume24": "-1001840430020",
-        "Pattern": "-1001840430020",
-        "Pattern_Trend": "-1001840430020",
+        "MACD": "-1001840430020",
+        "Pattern_Trend_Volume24": "-1001840430020",
         "Multiple_Patterns": "-1001840430020"
       },
       "message_thread_ids": {
       },
       "favorite_chat_ids": {
-        "Pattern_Trend": "-1001840430020",
-        "STOCH_RSI": "-1001840430020",
-        "MACD_Volume24": "-1001840430020",
+        "Pattern_Trend_Volume24": "-1001840430020",
+        "STOCH_RSI_Volume24": "-1001840430020",
+        "MACD": "-1001840430020",
         "Multiple_Patterns": "-1001840430020"
       },
       "favorite_message_thread_ids": {
-        "STOCH_RSI_buy": "6",
-        "STOCH_RSI_sell": "2",
-        "Pattern_Trend_buy": "9",
-        "Pattern_Trend_sell": "12",
-        "MACD_Volume24_buy": "10906",
-        "MACD_Volume24_sell": "10905",
+        "STOCH_RSI_Volume24_buy": "6",
+        "STOCH_RSI_Volume24_sell": "2",
+        "Pattern_Trend_Volume24_buy": "9",
+        "Pattern_Trend_Volume24_sell": "12",
+        "MACD_buy": "10906",
+        "MACD_sell": "10905",
         "Multiple_Patterns": "883"
       },
-      "min_prev_candle_limit": 3,
+      "min_prev_candle_limit": 4,
       "min_prev_candle_limit_higher": 2,
       "max_notifications_in_row": 3,
-      "pred_buy_thresh": 0.66,
-      "pred_sell_thresh": 0.66
+      "pred_buy_thresh": 0.65,
+      "pred_sell_thresh": 0.65
     }
   },
   "Timeframes": {

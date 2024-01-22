@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from abc import abstractmethod
-from log.log import logger
 
 
 class SignalFactory(object):
@@ -21,6 +20,8 @@ class SignalFactory(object):
             return PumpDumpSignal(ttype, **configs)
         elif indicator == 'Trend':
             return TrendSignal(ttype, **configs)
+        elif indicator == 'AntiTrend':
+            return AntiTrendSignal(ttype, **configs)
         elif indicator == 'HighVolume':
             return HighVolumeSignal(ttype, **configs)
         elif indicator == 'Volume24':
@@ -232,6 +233,34 @@ class TrendSignal(SignalBase):
         return lr_lower_bound
 
 
+class AntiTrendSignal(SignalBase):
+    """ Check trend using linear regression indicator """
+    type = 'Indicator_signal'
+    name = "AntiTrend"
+
+    def __init__(self, ttype, **configs):
+        super(AntiTrendSignal, self).__init__(ttype, configs)
+        self.configs = self.configs[self.name]['params']
+        self.low_bound = self.configs.get('low_bound', 0)
+        self.high_bound = self.configs.get('high_bound', 0)
+
+    def find_signal(self, df: pd.DataFrame, *args) -> np.ndarray:
+        """ 1 - Return true if trend is moving down (buy signal)
+            2 - Return true if trend is moving up (sell signal)  """
+        # According to difference between working timeframe and higher timeframe for every point on working timeframe
+        # find corresponding value of Linear Regression from higher timeframe
+        # buy trade
+        if self.ttype == 'sell':
+            # find Linear Regression signal
+            lr_higher_bound = self.higher_bound_robust(self.high_bound, df['linear_reg_angle'])
+            return lr_higher_bound
+
+        # same for the sell trade
+        # find Linear Regression signal
+        lr_lower_bound = self.lower_bound_robust(self.low_bound, df['linear_reg_angle'])
+        return lr_lower_bound
+
+
 class PumpDumpSignal(SignalBase):
     type = 'Indicator_signal'
     name = 'PumpDump'
@@ -343,39 +372,6 @@ class PatternSignal(SignalBase):
         self.first_candle = self.configs.get('first_candle', 0.667)
         self.second_candle = self.configs.get('second_candle', 0.5)
 
-    def shrink_max_min(self, df: pd.DataFrame, high_max: [pd.DataFrame.index, list],
-                       low_min: [pd.DataFrame.index, list]) -> (np.ndarray, np.ndarray):
-        """ EM algorithm that allows to leave only important high and low extremes """
-        temp_high_max = list()
-        temp_low_min = list()
-        for i in range(len(low_min) + 1):
-            if i == 0:
-                interval = high_max[(0 < high_max) & (high_max < low_min[i])]
-            elif i == len(low_min):
-                interval = high_max[(low_min[i - 1] < high_max) & (high_max < np.inf)]
-            else:
-                interval = high_max[(low_min[i - 1] < high_max) & (high_max < low_min[i])]
-            if len(interval):
-                idx = df.loc[interval, 'high'].argmax()
-                temp_high_max.append(interval[idx])
-        for i in range(len(high_max) + 1):
-            if i == 0:
-                interval = low_min[(0 < low_min) & (low_min < high_max[i])]
-            elif i == len(high_max):
-                interval = low_min[(high_max[i - 1] < low_min) & (low_min < np.inf)]
-            else:
-                interval = low_min[(high_max[i - 1] < low_min) & (low_min < high_max[i])]
-            if len(interval):
-                idx = df.loc[interval, 'low'].argmin()
-                temp_low_min.append(interval[idx])
-        if len(temp_high_max) == len(high_max) and len(temp_low_min) == len(low_min):
-            if self.ttype == 'buy':
-                low_min = low_min[low_min > min(high_max)]
-            else:
-                high_max = high_max[high_max > min(low_min)]
-            return high_max, low_min
-        return self.shrink_max_min(df, np.array(temp_high_max), np.array(temp_low_min))
-
     def get_min_max_indexes(self, df: pd.DataFrame, gmax: pd.DataFrame.index,
                             gmin: pd.DataFrame.index) -> (tuple, tuple):
         if self.ttype == 'buy':  # find H&S
@@ -422,8 +418,7 @@ class PatternSignal(SignalBase):
                 break
         return v
 
-    def head_and_shoulders(self, df: pd.DataFrame, min_max_idxs: tuple, min_max_vals: tuple,
-                           avg_gap: float) -> np.ndarray:
+    def head_and_shoulders(self, df: pd.DataFrame, min_max_idxs: tuple, min_max_vals: tuple) -> np.ndarray:
         """ Find H&S/inverted H&S pattern """
         ai, bi, ci, di, ei, fi = min_max_idxs
         aiv, biv, civ, div, eiv, fiv = min_max_vals
@@ -500,12 +495,12 @@ class PatternSignal(SignalBase):
         gmax, gmin = high_max[:min_len], low_min[:min_len]
         # find minimum and maximum indexes for patterns search
         min_max_idxs, min_max_vals = self.get_min_max_indexes(df, gmax, gmin)
-        has = self.head_and_shoulders(df, min_max_idxs, min_max_vals, avg_gap)
+        has = self.head_and_shoulders(df, min_max_idxs, min_max_vals)
         hlh = self.hlh_lhl(df, min_max_idxs, min_max_vals)
         dt = self.dt_db(df, min_max_idxs, min_max_vals)
         tgc = self.two_good_candles(df, self.ttype)
-        sw = self.swing(df, min_max_idxs, min_max_vals, avg_gap)
-        pattern_signal = (has | hlh | dt | sw) & tgc
+        # sw = self.swing(df, min_max_idxs, min_max_vals, avg_gap)
+        pattern_signal = (has | hlh | dt) & tgc
         return pattern_signal
 
 

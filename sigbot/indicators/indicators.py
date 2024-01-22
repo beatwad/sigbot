@@ -2,6 +2,7 @@ import json
 import numpy as np
 import pandas as pd
 import talib as ta
+from scipy.signal import argrelmax, argrelmin
 from abc import abstractmethod
 from collections import Counter
 
@@ -354,77 +355,19 @@ class Pattern(Indicator):
         # number of last candle's extremums that will be updated (to increase performance) on second bot cycle and after
         self.last_candles_ext_num = self.configs.get('number_last_ext', 100)
 
-    @staticmethod
-    def get_high_max(df: pd.DataFrame) -> pd.Series:
-        """ Get maximum high prices """
-        df_high = df['high']
-        high_max = df_high[(df_high >= df_high.shift(1)) &
-                           (df_high >= df_high.shift(2)) &
-                           (df_high >= df_high.shift(-1)) &
-                           (df_high >= df_high.shift(-2))]
-        return high_max
-
-    @staticmethod
-    def get_low_min(df: pd.DataFrame) -> pd.Series:
-        """ Get minimum low prices """
-        df_low = df['low']
-        low_min = df_low[(df_low <= df_low.shift(1)) &
-                         (df_low <= df_low.shift(2)) &
-                         (df_low <= df_low.shift(-1)) &
-                         (df_low <= df_low.shift(-2))]
-        return low_min
-
-    def shrink_max_min(self, df: pd.DataFrame, high_max: pd.DataFrame.index,
-                       low_min: pd.DataFrame.index) -> (np.ndarray, np.ndarray):
-        """ EM algorithm that allows to leave only important high and low extremums """
-        temp_high_max = list()
-        temp_low_min = list()
-        for i in range(len(low_min) + 1):
-            if i == 0:
-                interval = high_max[(0 < high_max) & (high_max < low_min[i])]
-            elif i == len(low_min):
-                interval = high_max[(low_min[i - 1] < high_max) & (high_max < np.inf)]
-            else:
-                interval = high_max[(low_min[i - 1] < high_max) & (high_max < low_min[i])]
-            if len(interval):
-                idx = df.loc[interval, 'high'].argmax()
-                temp_high_max.append(interval[idx])
-        for i in range(len(high_max) + 1):
-            if i == 0:
-                interval = low_min[(0 < low_min) & (low_min < high_max[i])]
-            elif i == len(high_max):
-                interval = low_min[(high_max[i - 1] < low_min) & (low_min < np.inf)]
-            else:
-                interval = low_min[(high_max[i - 1] < low_min) & (low_min < high_max[i])]
-            if len(interval):
-                idx = df.loc[interval, 'low'].argmin()
-                temp_low_min.append(interval[idx])
-        if len(temp_high_max) == len(high_max) and len(temp_low_min) == len(low_min):
-            if self.ttype == 'buy':
-                low_min = low_min[low_min > min(high_max)]
-            else:
-                high_max = high_max[high_max > min(low_min)]
-            return high_max, low_min
-        return self.shrink_max_min(df, np.array(temp_high_max), np.array(temp_low_min))
-
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
         """ Get main minimum and maximum extremums """
-        high_max = self.get_high_max(df).index
-        low_min = self.get_low_min(df).index
-        df_len = df.shape[0]
-        # on second and next cycles don't update all maximums and minimums to increase performance
-        if data_qty <= 100:
-            high_max = high_max[high_max >= df_len - self.last_candles_ext_num]
-            low_min = low_min[low_min >= df_len - self.last_candles_ext_num]
-        # leave only global maximums and minimums
-        try:
-            high_max, low_min = self.shrink_max_min(df, high_max, low_min)
-        except IndexError:
-            high_max, low_min = [], []
+        high_max = argrelmax(df['high'].values, order=4)[0]
+        low_min = argrelmin(df['low'].values, order=4)[0]
+        min_max_len = min(high_max.shape[0], low_min.shape[0])
+        high_max = high_max[-min_max_len:]
+        low_min = low_min[-min_max_len:]
+
         df['high_max'] = 0
         df.loc[high_max, 'high_max'] = 1
         df['low_min'] = 0
         df.loc[low_min, 'low_min'] = 1
+        
         return df
 
 

@@ -369,6 +369,12 @@
           "low_bound": 0,
           "high_bound": 0
         }
+      },
+      "AntiTrend": {
+        "params": {
+          "low_bound": 0,
+          "high_bound": 0
+        }
       }
     },
     "sell": {
@@ -394,7 +400,7 @@
           "vol_q_low": 0.1,
           "window_low_bound": 1,
           "window_high_bound": 5,
-          "first_candle": 0.75,
+          "first_candle": 0.5,
           "second_candle": 0.5
         }
       },
@@ -407,6 +413,12 @@
         }
       },
       "Trend": {
+        "params": {
+          "low_bound": 0,
+          "high_bound": 0
+        }
+      },
+      "AntiTrend": {
         "params": {
           "low_bound": 0,
           "high_bound": 0
@@ -440,11 +452,6 @@
     }
   },
   "Patterns": [
-    [
-      "STOCH",
-      "RSI",
-      "Volume24"
-    ],
     [
       "Pattern",
       "Trend",
@@ -516,8 +523,8 @@
       "min_prev_candle_limit": 4,
       "min_prev_candle_limit_higher": 2,
       "max_notifications_in_row": 3,
-      "pred_buy_thresh": 0.65,
-      "pred_sell_thresh": 0.65
+      "pred_buy_thresh": 0.3,
+      "pred_sell_thresh": 0.3
     }
   },
   "Timeframes": {
@@ -561,6 +568,9 @@
           "low_min"
         ],
         "Trend": [
+          "linear_reg"
+        ],
+        "AntiTrend": [
           "linear_reg"
         ],
         "PumpDump": [],

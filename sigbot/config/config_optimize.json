@@ -369,6 +369,12 @@
           "low_bound": 0,
           "high_bound": 0
         }
+      },
+      "AntiTrend": {
+        "params": {
+          "low_bound": 0,
+          "high_bound": 0
+        }
       }
     },
     "sell": {
@@ -394,7 +400,7 @@
           "vol_q_low": 0.1,
           "window_low_bound": 1,
           "window_high_bound": 5,
-          "first_candle": 0.75,
+          "first_candle": 0.5,
           "second_candle": 0.5
         }
       },
@@ -407,6 +413,12 @@
         }
       },
       "Trend": {
+        "params": {
+          "low_bound": 0,
+          "high_bound": 0
+        }
+      },
+      "AntiTrend": {
         "params": {
           "low_bound": 0,
           "high_bound": 0
@@ -435,7 +447,7 @@
       "feature_path_sell": "ml/features.json",
       "patterns_to_predict": [
         "STOCH_RSI_Volume24",
-        "Pattern_Volume24"
+        "Pattern_Trend_Volume24"
       ]
     }
   },
@@ -478,6 +490,7 @@
         "PumpDump_Trend": 100000,
         "STOCH_RSI_Trend": 100000,
         "STOCH_RSI_Volume24": 100000,
+        "STOCH_RSI_AntiTrend_Volume24": 100000,
         "Pattern_Trend_Volume24": 100000
       },
       "min_prev_candle_limit": 4,
@@ -497,7 +510,7 @@
       ],
       "favorite_patterns": [
         "STOCH_RSI_Volume24",
-        "Pattern_Volume24"
+        "Pattern_Trend_Volume24"
       ],
       "log_path": "telegram_log.txt",
       "chat_ids": {
@@ -507,7 +520,7 @@
         "PumpDump": "-1001700504878",
         "PumpDump_Trend": "-1001691421580",
         "HighVolume": "-1001656085421",
-        "MACD_Volume24": "-1001742813847",
+        "MACD": "-1001742813847",
         "Pattern": "-1001742813847",
         "Pattern_Trend": "-1001742813847"
       },
@@ -585,6 +598,9 @@
           "low_min"
         ],
         "Trend": [
+          "linear_reg"
+        ],
+        "AntiTrend": [
           "linear_reg"
         ],
         "PumpDump": [],

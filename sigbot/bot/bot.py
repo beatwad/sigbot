@@ -245,8 +245,8 @@ class SigBot:
         for point in sig_points:
             point_time = point[4]
             indicator_list = set(point[5].split('_'))
-            if indicator_list.intersection(set(self.higher_tf_indicator_list)) and point_time.hour not in [3, 7, 11, 15,
-                                                                                                           19, 23]:
+            higher_tf_indicator_list = {'MACD'}
+            if indicator_list.intersection(higher_tf_indicator_list) and point_time.hour not in [3, 7, 11, 15, 19, 23]:
                 continue
             filtered_points.append(point)
         return filtered_points
@@ -299,20 +299,20 @@ class SigBot:
             print('\nLoad the datasets...')
             # start all futures exchange monitors
             for monitor in self.fut_ex_monitor_list:
-                monitor.save_opt_dataframes(dt_now, historical, min_time)
+                monitor.mon_save_opt_dataframes(dt_now, historical, min_time)
             # start all spot exchange monitors
             for monitor in self.spot_ex_monitor_list:
-                monitor.save_opt_dataframes(dt_now, historical, min_time)
+                monitor.mon_save_opt_dataframes(dt_now, historical, min_time)
 
     def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool) -> None:
         """ Save statistics in program memory for further indicator/signal optimization """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
-            monitor.save_opt_statistics(ttype, opt_limit, opt_flag)
+            monitor.mon_save_opt_statistics(ttype, opt_limit, opt_flag)
         # start all spot exchange monitors
         for monitor in self.spot_ex_monitor_list:
-            monitor.save_opt_statistics(ttype, opt_limit, opt_flag)
+            monitor.mon_save_opt_statistics(ttype, opt_limit, opt_flag)
 
     def add_higher_time(self, ticker: str, ttype: str) -> None:
         """ Add time from higher timeframe to dataframe with working timeframe data"""
@@ -369,20 +369,20 @@ class MonitorExchange:
         # exchange data
         self.exchange_data = exchange_data
 
-    def get_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str, data_qty: int,
-                       opt_flag: bool = False) -> int:
+    def mon_get_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str, data_qty: int, 
+                           opt_flag: bool = False) -> int:
         """ Get indicators and quantity of data """
         self.sigbot.database, data_qty = self.sigbot.get_indicators(df, ttype, ticker, timeframe, self.exchange_data,
                                                                     data_qty, opt_flag)
         return data_qty
 
-    def add_statistics(self, sig_points: list, data_qty_higher=None) -> None:
+    def mon_add_statistics(self, sig_points: list, data_qty_higher=None) -> None:
         self.sigbot.database = self.sigbot.add_statistics(sig_points, data_qty_higher)
 
-    def save_statistics(self) -> None:
+    def mon_save_statistics(self) -> None:
         self.sigbot.save_statistics()
     
-    def save_opt_dataframes(self, dt_now: datetime, historical: bool, min_time: datetime) -> None:
+    def mon_save_opt_dataframes(self, dt_now: datetime, historical: bool, min_time: datetime) -> None:
         """ Save dataframe for every ticker for further indicator/signal optimization """
         exchange_api = self.exchange_data['API']
         tickers = self.exchange_data['tickers']
@@ -415,7 +415,7 @@ class MonitorExchange:
                 else:
                     break
 
-    def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool):
+    def mon_save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool):
         """ Save statistics data for every ticker for further indicator/signal optimization """
         tickers = self.exchange_data['tickers']
         
@@ -431,7 +431,7 @@ class MonitorExchange:
                 else:
                     df = self.sigbot.database[ticker][timeframe]['data'][ttype].copy()
                 # Add indicators
-                self.get_indicators(df, ttype, ticker, timeframe, 1000, opt_flag)
+                self.mon_get_indicators(df, ttype, ticker, timeframe, 1000, opt_flag)
                 # If current timeframe is working timeframe
                 if timeframe == self.sigbot.work_timeframe:
                     self.sigbot.add_higher_time(ticker, ttype)
@@ -445,9 +445,9 @@ class MonitorExchange:
                     # Filter repeating signals
                     sig_points = self.sigbot.filter_sig_points(sig_points)
                     # Add the signals to statistics
-                    self.add_statistics(sig_points)
+                    self.mon_add_statistics(sig_points)
         # Save statistics
-        self.save_statistics()
+        self.mon_save_statistics()
 
     @exception
     def run_cycle(self) -> None:
@@ -487,8 +487,8 @@ class MonitorExchange:
                     # the new data and data is not from higher timeframe, else get only levels
                     # Get indicators and quantity of data, if catch any exception - pass the ticker
                     try:
-                        data_qty_buy = self.get_indicators(df, 'buy', ticker, timeframe, data_qty)
-                        data_qty_sell = self.get_indicators(df, 'sell', ticker, timeframe, data_qty)
+                        data_qty_buy = self.mon_get_indicators(df, 'buy', ticker, timeframe, data_qty)
+                        data_qty_sell = self.mon_get_indicators(df, 'sell', ticker, timeframe, data_qty)
                     except:
                         logger.exception(f'Something bad has happened to ticker {ticker} on timeframe {timeframe} '
                                          f'while getting the indicator data.')
@@ -496,10 +496,10 @@ class MonitorExchange:
                         continue
                     # If current timeframe is working timeframe
                     if timeframe == self.sigbot.work_timeframe:
-                        # Add time from higher timefram to dataframe with working timeframe data
-                        if data_qty_higher > 1:
-                            for ttype in ['buy', 'sell']:
-                                self.sigbot.add_higher_time(ticker, ttype)
+                        # Add time from higher timeframe to dataframe with working timeframe data
+                        # if data_qty_higher > 1:
+                        for ttype in ['buy', 'sell']:
+                            self.sigbot.add_higher_time(ticker, ttype)
                         # Get the signals
                         try:
                             sig_buy_points = self.sigbot.get_buy_signals(ticker, timeframe, data_qty_buy,
@@ -516,13 +516,10 @@ class MonitorExchange:
                         sig_buy_points = self.sigbot.filter_sig_points(sig_buy_points)
                         sig_sell_points = self.sigbot.filter_sig_points(sig_sell_points)
                         # Add signals to statistics
-                        self.add_statistics(sig_buy_points, data_qty_higher)
-                        self.add_statistics(sig_sell_points, data_qty_higher)
+                        self.mon_add_statistics(sig_buy_points, data_qty_higher)
+                        self.mon_add_statistics(sig_sell_points, data_qty_higher)
                         # If bot cycle isn't first - calculate statistics and send Telegram notification
                         if self.sigbot.main.cycle_number > self.sigbot.main.first_cycle_qty_miss:
-                            # # Send signals in Telegram notification only if they are fresh (<= 1-2 ticks ago)
-                            # sig_buy_points = self.sigbot.filter_old_signals(sig_buy_points)
-                            # sig_sell_points = self.sigbot.filter_old_signals(sig_sell_points)
                             # Join buy and sell points into the one list
                             sig_points = sig_buy_points + sig_sell_points
                             # Send signals in Telegram notification only if they are fresh (<= 1-2 ticks ago)
@@ -547,13 +544,17 @@ class MonitorExchange:
                                     # self.sigbot.trade_exchange.api.check_open_positions() # !!!
                                     ticker = sig_point[0]
                                     sig_type = sig_point[3].capitalize()
+                                    sig_time = sig_point[4]
                                     pattern = sig_point[5]
                                     prediction = sig_point[9]
                                     if self.sigbot.trade_mode[0] and prediction > 0:
+                                        # miss the signals that don't happen at 3, 7, 11, 15, 19 or 23 hour
+                                        if sig_time.hour not in [3, 7, 11, 15, 19, 23]:
+                                            continue
                                         if pattern.startswith('STOCH_RSI'):
                                             # for STOCH_RSI pattern buy / sell trades are inverted
                                             sig_type = 'Sell' if sig_type == 'Buy' else 'Buy'
-                                        # self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type)
+                                        # self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type) !!!
                                     pr = multiprocessing.Process(target=self.sigbot.telegram_bot.send_notification,
                                                                  args=(sig_point,))
                                     processes.append(pr)
@@ -569,7 +570,7 @@ class MonitorExchange:
         for pr in processes:
             pr.join()
         # save buy and sell statistics to files
-        self.save_statistics()
+        self.mon_save_statistics()
         # find open orders (not TP / SL) that weren't triggered within an hour and cancel them
         # if self.exchange == 'ByBitPerpetual': !!!
         #     self.sigbot.trade_exchange.api.find_open_orders()

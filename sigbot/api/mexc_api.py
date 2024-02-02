@@ -73,7 +73,7 @@ if __name__ == '__main__':
     mexc = MEXC()
     # tickers = mexc.get_ticker_names(5e5)[0]
     # min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    klines = mexc.get_klines('KWENTAUSDT', '1h', 300)
+    klines = mexc.get_klines('TRUMP2024USDT', '1h', 300)
     pass
 
 

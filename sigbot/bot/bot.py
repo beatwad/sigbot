@@ -36,6 +36,7 @@ class SigBot:
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframes = [self.higher_timeframe, self.work_timeframe]
         self.higher_tf_indicator_list = configs['Higher_TF_indicator_list']
+        self.higher_tf_indicator_set = set([i for i in self.higher_tf_indicator_list if i != 'Trend'])
         # List of Futures Exchanges
         self.futures_exchanges = configs['Exchanges']['futures_exchanges']
         # Create indicators
@@ -148,12 +149,10 @@ class SigBot:
         df, data_qty = exchange_api.get_historical_data(df, ticker, timeframe, min_time)
         return df, data_qty
 
-    @staticmethod
-    def create_indicators(configs) -> (list, list):
+    def create_indicators(self, configs) -> (list, list):
         """ Create indicators list for higher and working timeframes """
         higher_tf_indicators = list()
         working_tf_indicators = list()
-        higher_tf_indicator_list = configs['Higher_TF_indicator_list']
         indicator_list = configs['Indicator_list']
         # get indicators for higher timeframe
         for ttype in ['buy', 'sell']:
@@ -161,7 +160,7 @@ class SigBot:
             higher_tf_indicators.append(ind_factory)
             working_tf_indicators.append(ind_factory)
 
-            for indicator in higher_tf_indicator_list:
+            for indicator in self.higher_tf_indicator_list:
                 ind_factory = IndicatorFactory.factory(indicator, ttype, configs)
                 if ind_factory:
                     higher_tf_indicators.append(ind_factory)
@@ -170,7 +169,7 @@ class SigBot:
                 if ttype == 'sell' and indicator == 'HighVolume':
                     continue
                 ind_factory = IndicatorFactory.factory(indicator, ttype, configs)
-                if ind_factory and indicator not in higher_tf_indicator_list:
+                if ind_factory and indicator not in self.higher_tf_indicator_list:
                     working_tf_indicators.append(ind_factory)
         return higher_tf_indicators, working_tf_indicators
 
@@ -224,13 +223,13 @@ class SigBot:
     def filter_old_signals(self, sig_points: list) -> list:
         """ Don't send Telegram notification for the old signals (older than 1-2 candles ago) """
         filtered_points = list()
-        # round datetime to hours, so additional time for data loading doesn't influence on the time span
+        # round datetime to hours, so additional time for data loading doesn't influence the time span
         # between current moment and signal time
         dt_now = datetime.now().replace(microsecond=0, second=0, minute=0)
         for point in sig_points:
             point_time = point[4]
             indicator_list = set(point[5].split('_'))
-            if indicator_list.intersection(set(self.higher_tf_indicator_list)):
+            if indicator_list.intersection(self.higher_tf_indicator_set):
                 time_span = self.timeframe_div[self.higher_timeframe] * self.max_prev_candle_limit
             else:
                 time_span = self.timeframe_div[self.work_timeframe] * self.max_prev_candle_limit
@@ -245,8 +244,8 @@ class SigBot:
         for point in sig_points:
             point_time = point[4]
             indicator_list = set(point[5].split('_'))
-            higher_tf_indicator_list = {'MACD'}
-            if indicator_list.intersection(higher_tf_indicator_list) and point_time.hour not in [3, 7, 11, 15, 19, 23]:
+            if indicator_list.intersection(self.higher_tf_indicator_set) and point_time.hour not in [3, 7, 11,
+                                                                                                     15, 19, 23]:
                 continue
             filtered_points.append(point)
         return filtered_points
@@ -323,12 +322,17 @@ class SigBot:
             df_higher = self.database[ticker][self.higher_timeframe]['data'][ttype]
         except KeyError:
             return
+        
         # merge work timeframe with higher timeframe, so we can work with indicator values from higher timeframe
-        higher_features = ['time', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist',  'macd_dir',
+        higher_features = ['time_4h', 'linear_reg', 'linear_reg_angle', 'macd', 'macdhist',  'macd_dir',
                            'macdsignal', 'macdsignal_dir']
-        df_work[higher_features] = pd.merge(df_work[['time']], df_higher[higher_features], how='left', on='time')
+        df_higher['time_4h'] = df_higher['time'] + pd.to_timedelta(3, unit='h')
+        df_work[['time'] + higher_features] = pd.merge(df_work[['time']], df_higher[higher_features], how='left',
+                                                       left_on='time', right_on='time_4h')
+        df_work.drop(columns=['time_4h'], inplace=True)
+        df_higher.drop(columns=['time_4h'], inplace=True)
+
         df_work.ffill(inplace=True)
-        df_work.dropna(inplace=True)
         df_work.reset_index(drop=True, inplace=True)
         return
 
@@ -566,6 +570,12 @@ class MonitorExchange:
                                               f'pattern is {sig_point[5]}, time is {sig_point[4]}, ' \
                                               f'model confidence is {sig_point[9]}'
                                 logger.info(sig_message)
+                    # TODO remove this when end debugging
+                    # if self.sigbot.main.cycle_number > self.sigbot.main.first_cycle_qty_miss:
+                    #     self.sigbot.database[ticker][timeframe]['data']['buy'].to_csv(
+                    #         f'bot/ticker_dataframes/{ticker}_{timeframe}_buy_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
+                    #     self.sigbot.database[ticker][timeframe]['data']['sell'].to_csv(
+                    #         f'bot/ticker_dataframes/{ticker}_{timeframe}_sell_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
         # wait until all processes finish
         for pr in processes:
             pr.join()

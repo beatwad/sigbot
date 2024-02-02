@@ -345,10 +345,10 @@
       "Pattern": {
         "params": {
           "vol_window": 96,
-          "vol_q_high": 0.75,
-          "vol_q_low": 0.1,
-          "window_low_bound": 1,
-          "window_high_bound": 5,
+          "vol_q_high": 0.65,
+          "vol_q_low": 0.15,
+          "window_low_bound": 4,
+          "window_high_bound": 9,
           "first_candle": 0.5,
           "second_candle": 0.5
         }
@@ -396,10 +396,10 @@
       "Pattern": {
         "params": {
           "vol_window": 96,
-          "vol_q_high": 0.75,
-          "vol_q_low": 0.1,
-          "window_low_bound": 1,
-          "window_high_bound": 5,
+          "vol_q_high": 0.65,
+          "vol_q_low": 0.15,
+          "window_low_bound": 4,
+          "window_high_bound": 9,
           "first_candle": 0.5,
           "second_candle": 0.5
         }
@@ -474,6 +474,7 @@
     ],
     [
       "Pattern",
+      "Trend",
       "Volume24"
     ]
   ],

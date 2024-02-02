@@ -1,5 +1,4 @@
 import pandas as pd
-import os
 
 
 class SignalStat:
@@ -22,7 +21,7 @@ class SignalStat:
         # Get working and higher timeframes
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
-        self.higher_tf_patterns = configs['Higher_TF_indicator_list']
+        self.higher_tf_indicator_set = set([i for i in configs['Higher_TF_indicator_list'] if i != 'Trend'])
         if opt_type == 'ml':
             self.buy_stat_path = f'../ml/signal_stat/buy_stat_{self.work_timeframe}.pkl'
             self.sell_stat_path = f'../ml/signal_stat/sell_stat_{self.work_timeframe}.pkl'
@@ -205,7 +204,7 @@ class SignalStat:
             prev_signal_timestamp = prev_time
             last_signal_timestamp = max(prev_signal_timestamp, last_signal_timestamp)
         # check if signal appeared too early after previous signal
-        if set(pattern.split('_')).intersection(set(self.higher_tf_patterns)):
+        if set(pattern.split('_')).intersection(self.higher_tf_indicator_set):
             if (point_time - last_signal_timestamp).total_seconds() > self.timeframe_div[self.higher_timeframe] * \
                     self.min_prev_candle_limit_higher:
                 return True

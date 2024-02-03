@@ -83,11 +83,37 @@ class BinanceFutures(ApiBase):
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
+    def get_historical_funding_rate(self, symbol: str, limit: int, min_time: datetime) -> pd.DataFrame:
+        """ Save historical funding rate info to CryptoCurrency structure
+            for some period (earlier than min_time) """
+        interval_secs = 8 * 3600 * 1000
+        prev_time, earliest_time = None, datetime.now()
+        start_time = int(self.get_timestamp() / 3600) * 3600 * 1000
+        funding_rates = pd.DataFrame()
+
+        while earliest_time > min_time:
+            start_time, end_time = (start_time - (limit * interval_secs)), start_time
+            tmp = pd.DataFrame(self.client.futures_funding_rate(symbol=symbol, limit=limit, startTime=start_time,
+                                                                endTime=end_time))
+            if tmp.shape[0] == 0:
+                break
+            prev_time, earliest_time = earliest_time, tmp['fundingTime'].min()
+            earliest_time = self.convert_timstamp_to_time(earliest_time, unit='ms')
+            # prevent endless cycle if there are no candles that earlier than min_time
+            if prev_time == earliest_time:
+                break
+
+            funding_rates = pd.concat([tmp, funding_rates])
+        funding_rates = funding_rates.rename({'fundingTime': 'time', 'fundingRate': 'funding_rate'}, axis=1)
+        funding_rates['time'] = (funding_rates['time'] // 1000) * 1000
+        return funding_rates[['time', 'funding_rate']].reset_index(drop=True)
+
 
 if __name__ == '__main__':
     key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
     secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
     binance_api = BinanceFutures(key, secret)
-    klines = binance_api.get_klines('1000SHIBUSDT', '1h', 300)
+    min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
+    klines = binance_api.get_historical_funding_rate(symbol='1000SHIBUSDT', limit=1000, min_time=min_time)
     pass
 

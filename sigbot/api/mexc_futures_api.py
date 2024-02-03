@@ -69,11 +69,33 @@ class MEXCFutures(ApiBase):
         tickers = tickers.sort_values('time', ignore_index=True)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
+    def get_historical_funding_rate(self, symbol: str, limit: int, min_time: datetime) -> pd.DataFrame:
+        """ Save historical funding rate info to CryptoCurrency structure
+            for some period (earlier than min_time) """
+        params = {'symbol': symbol, 'page_num': 1, 'page_size': 100}
+        prev_time, earliest_time = None, datetime.now()
+        funding_rates = pd.DataFrame()
+
+        while earliest_time > min_time:
+            tmp = pd.DataFrame(requests.get(self.URL + f'/funding_rate/history',
+                                            params=params).json()['data']['resultList'])
+            if tmp.shape[0] == 0:
+                break
+            prev_time, earliest_time = earliest_time, tmp['settleTime'].min()
+            earliest_time = self.convert_timstamp_to_time(earliest_time, unit='ms')
+            # prevent endless cycle if there are no candles that earlier than min_time
+            if prev_time == earliest_time:
+                break
+            funding_rates = pd.concat([funding_rates, tmp])
+            params['page_num'] += 1
+        funding_rates = funding_rates.rename({'settleTime': 'time', 'fundingRate': 'funding_rate'}, axis=1)
+        return funding_rates[['time', 'funding_rate']][::-1].reset_index(drop=True)
+
 
 if __name__ == '__main__':
     mexc = MEXCFutures()
-    tickers = mexc.get_ticker_names(1e6)[0]
-    klines = mexc.get_klines('1000000VINU_USDT', '1h', limit=300)
+    min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
+    klines = mexc.get_historical_funding_rate('1000000VINU_USDT', limit=300, min_time=min_time)
     pass
 
 

@@ -79,6 +79,11 @@ class ApiBase(metaclass=ABCMeta):
         time += pd.to_timedelta(3, unit='h')
         return time
 
+    def get_historical_funding_rate(self, symbol: str, limit: int, min_time: datetime) -> pd.DataFrame:
+        """ Save historical funding rate info to CryptoCurrency structure
+            for some period (earlier than min_time) """
+        return pd.DataFrame(columns=['time', 'funding_rate'])
+
 
 if __name__ == '__main__':
     symbol = 'TRXUPUSDT'

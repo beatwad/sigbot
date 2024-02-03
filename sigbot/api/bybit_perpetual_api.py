@@ -6,9 +6,13 @@ from time import sleep
 from api.api_base import ApiBase
 from pybit import unified_trading
 from pybit.exceptions import InvalidRequestError
-from log.log import logger
+# from log.log import logger
 from config.config import ConfigFactory
 
+from os import environ
+
+# Set environment variable
+environ["ENV"] = "debug"
 configs = ConfigFactory.factory(environ).configs
 
 
@@ -89,6 +93,31 @@ class ByBitPerpetual(ApiBase):
 
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']][::-1].reset_index(drop=True)
+
+    def get_historical_funding_rate(self, symbol: str, limit: int, min_time: datetime) -> pd.DataFrame:
+        """ Save historical funding rate info to CryptoCurrency structure
+            for some period (earlier than min_time) """
+        interval_secs = 8 * 3600 * 1000
+        prev_time, earliest_time = None, datetime.now()
+        end_time = int(self.get_timestamp() / 3600) * 3600 * 1000
+        funding_rates = pd.DataFrame()
+
+        while earliest_time > min_time:
+            tmp = pd.DataFrame(self.client.get_funding_rate_history(category='linear', symbol=symbol, limit=limit,
+                                                                    endTime=end_time)['result']['list'])
+            if tmp.shape[0] == 0:
+                break
+            prev_time, earliest_time = earliest_time, tmp['fundingRateTimestamp'].min()
+            earliest_time = self.convert_timstamp_to_time(earliest_time, unit='ms')
+            # prevent endless cycle if there are no candles that earlier than min_time
+            if prev_time == earliest_time:
+                break
+
+            funding_rates = pd.concat([funding_rates, tmp])
+            end_time = (end_time - (limit * interval_secs))
+        funding_rates = funding_rates.rename({'fundingRateTimestamp': 'time',
+                                              'fundingRate': 'funding_rate'}, axis=1)
+        return funding_rates[['time', 'funding_rate']][::-1].reset_index(drop=True)
 
     # ===== Trading =====
     def pos_mode_switch(self, symbol) -> None:
@@ -389,5 +418,6 @@ if __name__ == '__main__':
     bybit_api = ByBitPerpetual()
     # tickers = bybit_api.get_ticker_names(500000)
     # print(tickers)
-    kline = bybit_api.get_klines('1INCHUSDT', '4h', 300)
+    min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
+    funding_rates = bybit_api.get_historical_funding_rate(symbol='1INCHUSDT', limit=200, min_time=min_time)
     pass

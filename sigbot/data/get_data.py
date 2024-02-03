@@ -87,15 +87,16 @@ class GetData:
                     break
             else:
                 return df, 0
-            df = self.process_data(klines, df, optimize)
+            df = self.process_data(klines, df)
         return df, limit
 
     def get_historical_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
                             min_time: datetime) -> (pd.DataFrame, int):
-        """ Get historical data from exchange for some period """
+        """ Get historical data from exchange for some period and also add funding rate data """
         for i in range(self.num_retries):
             try:
                 klines = self.api.get_historical_klines(ticker, timeframe, self.limit, min_time)
+                funding_rates = self.api.get_historical_funding_rate(ticker, self.limit, min_time)
             except:
                 if i == self.num_retries - 1:
                     logger.exception(f'Catch an exception while trying to get candles. ' 
@@ -106,10 +107,34 @@ class GetData:
                 break
         else:
             return df, 0
-        df = self.process_data(klines, df, optimize=False)
+        df = self.process_data(klines, df)
         df = df[df['time'] >= min_time].reset_index(drop=True)
 
+        if funding_rates.shape[0] > 0:
+            funding_rates = self.process_funding_rate_data(funding_rates)
+            df = pd.merge(df, funding_rates, how='left', on='time')
+            df.ffill(inplace=True)
+        else:
+            df['funding_rate'] = 0
         return df, self.limit
+
+    def get_historical_funding_rate_data(self, ticker: str, min_time: datetime) -> (pd.DataFrame, int):
+        """ Get historical funding rate data from exchange for some period """
+        for i in range(self.num_retries):
+            try:
+                funding_rates = self.api.get_historical_funding_rate(ticker, self.limit, min_time)
+            except:
+                if i == self.num_retries - 1:
+                    logger.exception(f'Catch an exception while trying to get candles. ' 
+                                     f'API is {self.api}, ticker is {ticker}')
+                sleep(1)
+                continue
+            else:
+                break
+        else:
+            return pd.DataFrame(columns=['time', 'funding_rate']), 0
+
+        return funding_rates, self.limit
 
     def get_tickers(self) -> list:
         """ Get list of available ticker names """
@@ -129,11 +154,11 @@ class GetData:
         df['time'] = df['time'] + pd.to_timedelta(3, unit='h')
         return df
 
-    def process_data(self, klines: pd.DataFrame, df: pd.DataFrame, optimize: bool) -> pd.DataFrame:
+    def process_data(self, klines: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
         """ Update dataframe for current ticker or create new dataframe if it's first run """
         # convert numeric data to float type
         klines[['open', 'high', 'low', 'close', 'volume']] = klines[['open', 'high', 'low',
-                                                                     'close', 'volume']].astype(float).copy()
+                                                                     'close', 'volume']].astype(float)
         # convert time to UTC+3
         if self.name == 'MEXCFutures':
             klines['time'] = pd.to_datetime(klines['time'], unit='s')
@@ -153,6 +178,18 @@ class GetData:
         # remove the last candle because it's not closed yet
         df = df[:-1]
         return df
+
+    def process_funding_rate_data(self, funding_rates) -> pd.DataFrame:
+        """ Update dataframe for current ticker or create new dataframe if it's first run """
+        # convert numeric data to float type
+        funding_rates[['funding_rate']] = funding_rates[['funding_rate']].astype(float)
+        # convert time to UTC+3
+        if self.name == 'MEXCFutures':
+            funding_rates['time'] = pd.to_datetime(funding_rates['time'], unit='s')
+        else:
+            funding_rates['time'] = pd.to_datetime(funding_rates['time'], unit='ms')
+        funding_rates = self.add_utc_3(funding_rates)
+        return funding_rates
 
     @staticmethod
     def add_indicator_data(dfs: dict, df: pd.DataFrame, ttype: str, indicators: list, ticker: str, timeframe: str,

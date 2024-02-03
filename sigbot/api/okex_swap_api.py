@@ -82,12 +82,40 @@ class OKEXSwap(ApiBase):
         tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 6: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
+    def get_historical_funding_rate(self, symbol: str, limit: int, min_time: datetime) -> pd.DataFrame:
+        """ Save historical funding rate info to CryptoCurrency structure
+            for some period (earlier than min_time) """
+        interval_secs = 8 * 3600 * 1000
+        after = int(self.get_timestamp() / 3600) * 3600 * 1000
+        limit = 100
+        params = {'instId': symbol, 'limit': limit}
+        prev_time, earliest_time = None, datetime.now()
+        funding_rates = pd.DataFrame()
+
+        while earliest_time > min_time:
+            after = (after - (limit * interval_secs))
+            params['after'] = str(after)
+            tmp = pd.DataFrame(requests.get(self.URL + '/api/v5/public/funding-rate-history',
+                                            params=params).json()['data'])
+            if tmp.shape[0] == 0:
+                break
+            prev_time, earliest_time = earliest_time, tmp['fundingTime'].min()
+            earliest_time = self.convert_timstamp_to_time(earliest_time, unit='ms')
+            # prevent endless cycle if there are no candles that earlier than min_time
+            if prev_time == earliest_time:
+                break
+
+            funding_rates = pd.concat([funding_rates, tmp])
+        funding_rates = funding_rates.rename({'fundingTime': 'time', 'fundingRate': 'funding_rate'}, axis=1)
+        return funding_rates[['time', 'funding_rate']].reset_index(drop=True)
+
 
 if __name__ == '__main__':
     from datetime import datetime
     okex = OKEXSwap()
     tickers = okex.get_ticker_names(1e5)[0]
-    klines = okex.get_klines('ETC-USDT-SWAP', '1h', limit=150)
+    min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
+    klines = okex.get_historical_funding_rate(symbol='ETC-USDT-SWAP', limit=150, min_time=min_time)
     pass
 
 

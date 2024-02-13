@@ -86,15 +86,15 @@ class OKEXSwap(ApiBase):
         """ Save historical funding rate info to CryptoCurrency structure
             for some period (earlier than min_time) """
         interval_secs = 8 * 3600 * 1000
-        after = int(self.get_timestamp() / 3600) * 3600 * 1000
+        before = int(self.get_timestamp() / 3600) * 3600 * 1000
         limit = 100
         params = {'instId': symbol, 'limit': limit}
         prev_time, earliest_time = None, datetime.now()
         funding_rates = pd.DataFrame()
 
         while earliest_time > min_time:
-            after = (after - (limit * interval_secs))
-            params['after'] = str(after)
+            before = (before - (limit * interval_secs))
+            params['before'] = str(before)
             tmp = pd.DataFrame(requests.get(self.URL + '/api/v5/public/funding-rate-history',
                                             params=params).json()['data'])
             if tmp.shape[0] == 0:
@@ -107,7 +107,7 @@ class OKEXSwap(ApiBase):
 
             funding_rates = pd.concat([funding_rates, tmp])
         funding_rates = funding_rates.rename({'fundingTime': 'time', 'fundingRate': 'funding_rate'}, axis=1)
-        return funding_rates[['time', 'funding_rate']].reset_index(drop=True)
+        return funding_rates[['time', 'funding_rate']][::-1].reset_index(drop=True)
 
 
 if __name__ == '__main__':
@@ -115,7 +115,9 @@ if __name__ == '__main__':
     okex = OKEXSwap()
     tickers = okex.get_ticker_names(1e5)[0]
     min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    klines = okex.get_historical_funding_rate(symbol='ETC-USDT-SWAP', limit=150, min_time=min_time)
+    funding_rates = okex.get_historical_klines(symbol='BTC-USDT-SWAP', interval='1h', limit=150, min_time=min_time)
+    funding_rates['time'] = pd.to_datetime(funding_rates['time'], unit='ms')
+    funding_rates['time'] = funding_rates['time'] + pd.to_timedelta(3, unit='h')
     pass
 
 

@@ -6,13 +6,11 @@ from time import sleep
 from api.api_base import ApiBase
 from pybit import unified_trading
 from pybit.exceptions import InvalidRequestError
-# from log.log import logger
+from log.log import logger
 from config.config import ConfigFactory
 
-from os import environ
-
 # Set environment variable
-environ["ENV"] = "debug"
+# environ["ENV"] = "debug"
 configs = ConfigFactory.factory(environ).configs
 
 
@@ -420,4 +418,6 @@ if __name__ == '__main__':
     # print(tickers)
     min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
     funding_rates = bybit_api.get_historical_funding_rate(symbol='1INCHUSDT', limit=200, min_time=min_time)
+    funding_rates['time'] = pd.to_datetime(funding_rates['time'], unit='ms')
+    funding_rates['time'] = funding_rates['time'] + pd.to_timedelta(3, unit='h')
     pass

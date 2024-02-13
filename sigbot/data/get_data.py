@@ -110,12 +110,15 @@ class GetData:
         df = self.process_data(klines, df)
         df = df[df['time'] >= min_time].reset_index(drop=True)
 
-        if funding_rates.shape[0] > 0:
-            funding_rates = self.process_funding_rate_data(funding_rates)
-            df = pd.merge(df, funding_rates, how='left', on='time')
-            df.ffill(inplace=True)
-        else:
-            df['funding_rate'] = 0
+        if timeframe == self.work_timeframe:
+            if funding_rates.shape[0] > 0:
+                funding_rates = self.process_funding_rate_data(funding_rates)
+                df = pd.merge(df, funding_rates, how='left', on='time')
+                df['funding_rate'] = df['funding_rate'].ffill()
+                if self.name == 'OKEXSwap':
+                    df['funding_rate'] = df['funding_rate'].fillna(0)
+            else:
+                df['funding_rate'] = 0
         return df, self.limit
 
     def get_historical_funding_rate_data(self, ticker: str, min_time: datetime) -> (pd.DataFrame, int):
@@ -184,10 +187,7 @@ class GetData:
         # convert numeric data to float type
         funding_rates[['funding_rate']] = funding_rates[['funding_rate']].astype(float)
         # convert time to UTC+3
-        if self.name == 'MEXCFutures':
-            funding_rates['time'] = pd.to_datetime(funding_rates['time'], unit='s')
-        else:
-            funding_rates['time'] = pd.to_datetime(funding_rates['time'], unit='ms')
+        funding_rates['time'] = pd.to_datetime(funding_rates['time'], unit='ms')
         funding_rates = self.add_utc_3(funding_rates)
         return funding_rates
 

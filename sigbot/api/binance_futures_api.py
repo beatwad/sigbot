@@ -114,6 +114,8 @@ if __name__ == '__main__':
     secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
     binance_api = BinanceFutures(key, secret)
     min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    klines = binance_api.get_historical_funding_rate(symbol='1000SHIBUSDT', limit=1000, min_time=min_time)
+    funding_rates = binance_api.get_historical_funding_rate(symbol='DODOXUSDT', limit=1000, min_time=min_time)
+    funding_rates['time'] = pd.to_datetime(funding_rates['time'], unit='ms')
+    funding_rates['time'] = funding_rates['time'] + pd.to_timedelta(3, unit='h')
     pass
 

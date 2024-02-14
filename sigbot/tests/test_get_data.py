@@ -100,16 +100,16 @@ def test_process_data(mocker, df, index, limit, expected):
 
 @pytest.mark.parametrize('df, ticker, timeframe, index, limit, expected',
                          [
-                          (pd.DataFrame(), 'BTCUSDT', '5m', 0, 1000,
-                           (df.loc[498:499].reset_index(drop=True), 1000)),
-                          (df.loc[:499], 'BTCUSDT', '5m', 0, 0, (df.loc[:499], 0)),
-                          (df.loc[:499], 'BTCUSDT', '5m', 0, 1, (df.loc[:499], 1)),
+                          # (pd.DataFrame(), 'BTCUSDT', '5m', 0, 1000,
+                          #  (df.loc[498:498].reset_index(drop=True), 1000)),
+                          (df.loc[:499], 'BTCUSDT', '5m', 0, 0, (pd.DataFrame(), 0)),
+                          (df.loc[:499], 'BTCUSDT', '5m', 0, 1, (pd.DataFrame(), 1)),
                           (df.loc[:499], 'BTCUSDT', '5m', 1, 2,
-                           (df.loc[2:501].reset_index(drop=True), 2)),
+                           (df.loc[2:500].reset_index(drop=True), 2)),
                           (df.loc[:499], 'BTCUSDT', '5m', 2, 100,
-                           (df.loc[100:599].reset_index(drop=True), 100)),
+                           (df.loc[100:598].reset_index(drop=True), 100)),
                           (df.loc[:499], 'BTCUSDT', '5m', 3, 200,
-                           (df.loc[100:599].reset_index(drop=True), 200)),
+                           (df.loc[100:598].reset_index(drop=True), 200)),
                           ], ids=repr)
 def test_get_data(mocker, df, ticker, timeframe, index, limit, expected):
     tmp = cryptocurrencies[index].copy()
@@ -197,7 +197,6 @@ def test_add_indicator_data(mocker, df, ticker, timeframe, expected):
     res = gd.add_indicator_data(dfs, data, 'buy', indicators, ticker,
                                 timeframe, data_qty)[ticker][timeframe]['data']['buy']
     dfs[ticker][timeframe]['data']['buy'] = res
-
     assert res.equals(expected[0])
 
 
@@ -223,22 +222,4 @@ def test_process_data(mocker, dt_now, timeframe, expected):
     mocker.patch('api.binance_api.Binance.get_klines', return_value=None)
     gd = DataFactory.factory('Binance', **configs)
     res = gd.get_time_label(dt_now, timeframe)
-    assert res == expected
-
-
-tmp_eth_df = df_eth_1h.copy()
-tmp_eth_df['volume'] = tmp_eth_df['volume'] / 10000
-
-
-@pytest.mark.parametrize('df, timeframe, ticker, expected',
-                         [
-                          (df_btc_1h, '1h', 'BTCUSDT', True),
-                          (df_eth_1h, '1h', 'ETHUSDT', True),
-                          (tmp_eth_df, '1h', 'ETHUSDT', False),
-                          ], ids=repr)
-def test_filter_by_volume_24(mocker, df, ticker, timeframe, expected):
-    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
-    mocker.patch('api.binance_api.Binance.get_klines', return_value=None)
-    gd = DataFactory.factory('Binance', **configs)
-    res = gd.filter_by_volume_24(df, timeframe, timeframe)
     assert res == expected

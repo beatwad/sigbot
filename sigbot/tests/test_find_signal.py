@@ -8,7 +8,7 @@ sys.path.append('..')
 
 environ["ENV"] = "test"
 
-from bot.bot import SigBot
+# from bot.bot import SigBot
 from data.get_data import DataFactory
 from config.config import ConfigFactory
 from signals.find_signal import SignalFactory
@@ -243,6 +243,27 @@ def test_find_price_change_signal(mocker, ticker, timeframe, expected):
     assert np.array_equal(buy_indexes[0], expected[0])
     assert np.array_equal(sell_indexes[0], expected[1])
 
+@pytest.mark.parametrize('timeframe, ticker, multiplier, expected',
+                         [
+                             ('5m', 'BTCUSDT', 1, 100),
+                             ('5m', 'ETHUSDT', 1, 100),
+                             ('5m', 'ETHUSDT', 0.0001, 0),
+                          ], ids=repr)
+def test_filter_by_volume_24(mocker, ticker, timeframe, multiplier, expected):
+    mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)
+    dfs = create_test_data()
+
+    price_volume_sig_buy = SignalFactory().factory('Volume24', 'buy', configs)
+    price_volume_sig_sell = SignalFactory().factory('Volume24', 'sell', configs)
+    buy_df = dfs[ticker][timeframe]['data']['buy'][-100:].copy()
+    buy_df['volume_24'] = buy_df['volume_24'] * multiplier
+    buy_points = price_volume_sig_buy.find_signal(buy_df)
+    sell_df = dfs[ticker][timeframe]['data']['sell'][-100:].copy()
+    sell_df['volume_24'] = sell_df['volume_24'] * multiplier
+    sell_points = price_volume_sig_sell.find_signal(sell_df)
+    assert np.sum(buy_points) == expected
+    assert np.sum(sell_points) == expected
+
 
 btc_lr_buy_expected_1 = np.load('test_btc_buy_indexes_1.npy')
 btc_lr_sell_expected_1 = np.load('test_btc_sell_indexes_1.npy')
@@ -300,26 +321,7 @@ point_b1 = [['BTCUSDT',
              [],
              [],
              0],
-            ['BTCUSDT',
-              '5m',
-              535,
-              'buy',
-              pd.Timestamp('2022-08-23 00:20:00'),
-              'Pattern_Trend',
-              [],
-              [],
-              [],
-              0],
-             ['BTCUSDT',
-              '5m',
-              856,
-              'buy',
-              pd.Timestamp('2022-08-24 03:05:00'),
-              'Pattern_Trend',
-              [],
-              [],
-              [],
-              0]]
+            ]
 point_b2 = [['BTCUSDT',
              '5m',
              506,
@@ -330,26 +332,7 @@ point_b2 = [['BTCUSDT',
              [],
              [],
              0],
-            ['BTCUSDT',
-              '5m',
-              535,
-              'buy',
-              pd.Timestamp('2022-08-23 00:20:00'),
-              'Pattern_Trend',
-              [],
-              [],
-              [],
-              0],
-            ['BTCUSDT',
-             '5m',
-             856,
-             'buy',
-             pd.Timestamp('2022-08-24 03:05:00'),
-             'Pattern_Trend',
-             [],
-             [],
-             [],
-             0]]
+            ]
 point_b3 = [['ETHUSDT',
              '5m',
              370,
@@ -382,9 +365,9 @@ point_b3 = [['ETHUSDT',
              0],
             ['ETHUSDT',
              '5m',
-             763,
+             172,
              'buy',
-            pd.Timestamp('2022-08-23 20:00:00'),
+            pd.Timestamp('2022-08-21 18:45:00'),
              'Pattern_Trend',
              [],
              [],
@@ -392,9 +375,9 @@ point_b3 = [['ETHUSDT',
              0],
             ['ETHUSDT',
              '5m',
-             819,
+             557,
              'buy',
-             pd.Timestamp('2022-08-24 00:40:00'),
+             pd.Timestamp('2022-08-23 02:50:00'),
              'Pattern_Trend',
              [],
              [],
@@ -422,24 +405,15 @@ point_b4 = [['ETHUSDT',
              0],
             ['ETHUSDT',
              '5m',
-             763,
+             557,
              'buy',
-             pd.Timestamp('2022-08-23 20:00:00'),
+             pd.Timestamp('2022-08-23 02:50:00'),
              'Pattern_Trend',
              [],
              [],
              [],
              0],
-            ['ETHUSDT',
-             '5m',
-             819,
-             'buy',
-             pd.Timestamp('2022-08-24 00:40:00'),
-             'Pattern_Trend',
-             [],
-             [],
-             [],
-             0]]
+            ]
 expected_buy = [point_b1, point_b2, point_b3, point_b4]
 
 
@@ -462,16 +436,6 @@ point_s1 = [['BTCUSDT',
              [],
              [],
              [],
-             0],
-            ['BTCUSDT',
-             '5m',
-             503,
-             'sell',
-             pd.Timestamp('2022-08-22 21:40:00'),
-             'Pattern_Trend',
-             [],
-             [],
-             [],
              0]
             ]
 point_s2 = [['BTCUSDT',
@@ -483,17 +447,8 @@ point_s2 = [['BTCUSDT',
              [],
              [],
              [],
-             0],
-            ['BTCUSDT',
-             '5m',
-              503,
-              'sell',
-              pd.Timestamp('2022-08-22 21:40:00'),
-              'Pattern_Trend',
-              [],
-              [],
-              [],
-              0]]
+             0]
+            ]
 
 point_s3 = [['ETHUSDT',
               '5m',
@@ -507,24 +462,15 @@ point_s3 = [['ETHUSDT',
               0],
              ['ETHUSDT',
               '5m',
-              869,
+              362,
               'sell',
-              pd.Timestamp('2022-08-24 04:50:00'),
+              pd.Timestamp('2022-08-22 10:35:00'),
               'Pattern_Trend',
               [],
               [],
               [],
               0]]
-point_s4 = [['ETHUSDT',
-              '5m',
-              869,
-              'sell',
-              pd.Timestamp('2022-08-24 04:50:00'),
-              'Pattern_Trend',
-              [],
-              [],
-              [],
-              0]]
+point_s4 = []
 expected_sell = [point_s1, point_s2, point_s3, point_s4]
 
 

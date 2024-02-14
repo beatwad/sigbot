@@ -441,8 +441,7 @@
   },
   "Model": {
     "params": {
-      "model_lgb_path": "ml/lgbm.pkl",
-      "model_svc_path": "ml/svc.pkl",
+      "model_path": "ml/lgbm.pkl",
       "feature_path": "ml/features.json",
       "weight": 0.279,
       "patterns_to_predict": [
@@ -503,8 +502,7 @@
         "ByBitPerpetual"
       ],
       "favorite_patterns": [
-        "STOCH_RSI_Volume24",
-        "Pattern_Trend_Volume24"
+        "STOCH_RSI_Volume24"
       ],
       "log_path": "telegram_log.txt",
       "chat_ids": {

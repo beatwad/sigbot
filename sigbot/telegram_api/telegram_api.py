@@ -147,87 +147,6 @@ class TelegramBot:
         ticker = ticker[:-4] + '-' + ticker[-4:]
         return ticker
 
-    # def add_to_notification_history(self, sig_time: pd.Timestamp, sig_type: str, ticker: str,
-    #                                 timeframe: str, pattern: str) -> None:
-    #     """ Add new notification to notification history """
-    #     tmp = pd.DataFrame()
-    #     tmp['time'] = [sig_time]
-    #     tmp['sig_type'] = [sig_type]
-    #     tmp['ticker'] = [ticker]
-    #     tmp['timeframe'] = [timeframe]
-    #     tmp['pattern'] = [pattern]
-    #     self.notification_df = pd.concat([tmp, self.notification_df])
-
-    def add_plot(self, message: list) -> str:
-        """ Generate signal plot, save it to file and add this filepath to the signal point data """
-        sig_img_path = self.visualizer.create_plot(self.database, message, levels=[])
-        # add image to set of images which we are going to delete
-        self.images_to_delete.add(sig_img_path)
-        return sig_img_path
-
-    # def check_previous_notifications(self, sig_time: pd.Timestamp, sig_type: str, ticker: str,
-    #                                  timeframe: str, sig_pattern: str) -> bool:
-    #     """ Check if previous notifications wasn't send short time before """
-    #     tmp = self.notification_df[
-    #                                 (self.notification_df['sig_type'] == sig_type) &
-    #                                 (self.notification_df['ticker'] == ticker) &
-    #                                 (self.notification_df['timeframe'] == timeframe) &
-    #                                 (self.notification_df['pattern'] == sig_pattern)
-    #                                ]
-    #     if tmp.shape[0] > 0:
-    #         latest_time = tmp['time'].max()
-    #         higher_tf_indicator_set = set([i for i in self.higher_tf_indicator_set if i != 'Trend'])
-    #         if set(sig_pattern.split('_')).intersection(higher_tf_indicator_set):
-    #             if (sig_time - latest_time).total_seconds() < self.timeframe_div[self.higher_timeframe] * \
-    #                     self.min_prev_candle_limit_higher:
-    #                 return False
-    #         else:
-    #             if (sig_time - latest_time).total_seconds() < self.timeframe_div[self.work_timeframe] * \
-    #                     self.min_prev_candle_limit:
-    #                 return False
-    #     return True
-
-    # def check_multiple_notifications(self, sig_time: pd.Timestamp, sig_type: str, ticker: str,
-    #                                  sig_pattern: str) -> list:
-    #     """ Check if signals from different patterns appeared not too long time ago """
-    #     if self.notification_df.shape[0] > 0:
-    #         tmp = self.notification_df[
-    #                                     (self.notification_df['sig_type'] == sig_type) &
-    #                                     (self.notification_df['ticker'] == ticker)
-    #                                    ]
-    #         # find time difference between current signal and previous signals
-    #         tmp['time_diff_sec'] = (sig_time - tmp['time']).dt.total_seconds()
-    #         tmp = tmp[(tmp['time_diff_sec'] > 0) &
-    #                   (tmp['time_diff_sec'] <= self.timeframe_div[self.higher_timeframe] * 1.5)]
-    #         if tmp.shape[0] > 0:
-    #             patterns = tmp['pattern'].to_list()
-    #             # if signals from different patterns appeared not so much time ago - send the list of these patterns
-    #             if set(patterns).difference({sig_pattern}):
-    #                 res = sorted(list(set(patterns + [sig_pattern])))
-    #                 if res != ['STOCH_RSI', 'STOCH_RSI_Trend']:
-    #                     return res
-    #     return []
-
-    # def check_notifications(self):
-    #     """ Check if we can send each notification separately or there are too many of them,
-    #         so we have to send list of them in one message """
-    #     n_len = len(self.notification_list)
-    #     message_dict = dict()
-    #     # each pattern corresponds to its own chat, so we have to check the length of notification list for each pattern
-    #     for pattern in self.chat_ids.keys():
-    #         message_dict[pattern] = {'buy': [], 'sell': []}
-    #     for i in range(n_len):
-    #         message = self.notification_list[i]
-    #         sig_type = message[3]
-    #         sig_pattern = message[5]
-    #         message_dict[sig_pattern][sig_type].append([i, message])
-    #     for pattern in self.chat_ids.keys():
-    #         for ttype in ['buy', 'sell']:
-    #             for i, message in message_dict[pattern][ttype]:
-    #                 self.send_notification(message)
-    #     # clear all sent notifications
-    #     self.notification_list[:n_len] = []
-
     @staticmethod
     def clean_ticker(ticker: str) -> str:
         """ Clean ticker of not necessary symbols (SWAP, -, _, etc.) """
@@ -239,7 +158,14 @@ class TelegramBot:
         ticker = re.sub('_', '', ticker)
         return ticker
 
-    def send_notification(self, message) -> None:
+    def add_plot(self, message: list) -> str:
+        """ Generate signal plot, save it to file and add this filepath to the signal point data """
+        sig_img_path = self.visualizer.create_plot(self.database, message, levels=[])
+        # add image to set of images which we are going to delete
+        self.images_to_delete.add(sig_img_path)
+        return sig_img_path
+
+    def send_notification(self, message: list) -> None:
         """ Send notification separately """
         # Get info from signal
         ticker = self.process_ticker(message[0])
@@ -310,14 +236,6 @@ class TelegramBot:
                 self.send_photo(favorite_chat_id, favorite_message_thread_id, sig_img_path, text)
             self.send_photo(chat_id, message_thread_id, sig_img_path, text)
         time.sleep(0.5)
-        # # send noticfications for multiple patterns
-        # patterns = self.check_multiple_notifications(sig_time, sig_type, ticker, sig_pattern)
-        # if patterns:
-        #     text = self.send_notification_for_multiple_signals(sig_type, ticker, sig_exchanges, patterns, price)
-        #     chat_id = self.chat_ids['Multiple_Patterns']
-        #     message_thread_id = self.message_thread_ids.get('Multiple_Patterns', None)
-        #     self.send_message(chat_id, message_thread_id, text)
-        # self.add_to_notification_history(sig_time, sig_type, ticker, timeframe, sig_pattern)
         self.delete_images()
 
     @staticmethod
@@ -328,30 +246,6 @@ class TelegramBot:
         else:
             price = round(price, 9)
         return price
-
-    # def send_notification_for_multiple_signals(self, sig_type: str, ticker: str, sig_exchanges: list, patterns: list,
-    #                                            price: float):
-    #     """ Send notifications in case of multiple signals from different patterns
-    #         but for the same ticker and trade type """
-    #     cleaned_ticker = self.clean_ticker(ticker)
-    #     text = f'#{cleaned_ticker[:-4]}\n'
-    #     text += f'Price / Цена: ${price}\n'
-    #     if sig_type == 'buy':
-    #         text += 'Buy / Покупка\n'
-    #     else:
-    #         text += 'Sell / Продажа\n'
-    #     text += 'Patterns / Паттерны:\n'
-    #     for pattern in patterns:
-    #         text += f' • {pattern}\n'
-    #     text += 'Exchanges / Биржи:\n'
-    #     for exchange in sig_exchanges:
-    #         text += f' • {exchange}\n'
-    #     text += 'TradingView:\n'
-    #     text += f"https://tradingview.com/symbols/{cleaned_ticker}\n"
-    #     if cleaned_ticker[:-4] != 'BTC':
-    #         text += f'{cleaned_ticker[:-4]}/BTC:\n'
-    #         text += f"https://ru.tradingview.com/symbols/{cleaned_ticker[:-4]}BTC"
-    #     return text
 
     @staticmethod
     async def bot_send_message(bot: Bot, chat_id: str, message_thread_id: int, text: str) -> telegram.Message:

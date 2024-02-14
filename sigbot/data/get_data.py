@@ -72,22 +72,23 @@ class GetData:
         """ Get data from exchange """
         limit = self.get_limit(df, ticker, timeframe, dt_now)
         # get data from exchange only when there is at least one interval to get
-        if limit > 1:
-            # if there are errors in connection, try 3 times and only then log exception
-            for i in range(self.num_retries):
-                try:
-                    klines = self.api.get_klines(ticker, timeframe, min(limit + 2, self.limit))
-                except:
-                    if i == self.num_retries - 1:
-                        logger.exception(f'Catch an exception while trying to get candles. ' 
-                                         f'API is {self.api}, ticker is {ticker}')
-                    sleep(1)
-                    continue
-                else:
-                    break
+        if limit < 2:
+            return pd.DataFrame(), limit
+        # if there are errors in connection, try 3 times and only then log exception
+        for i in range(self.num_retries):
+            try:
+                klines = self.api.get_klines(ticker, timeframe, min(limit + 2, self.limit))
+            except:
+                if i == self.num_retries - 1:
+                    logger.exception(f'Catch an exception while trying to get candles. ' 
+                                     f'API is {self.api}, ticker is {ticker}')
+                sleep(1)
+                continue
             else:
-                return df, 0
-            df = self.process_data(klines, df)
+                break
+        else:
+            return df, 0
+        df = self.process_data(klines, df)
         return df, limit
 
     def get_historical_data(self, df: pd.DataFrame, ticker: str, timeframe: str,

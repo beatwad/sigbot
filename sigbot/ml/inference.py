@@ -1,16 +1,13 @@
 import json
 import joblib
 import pandas as pd
-import numpy as np
 
 
 class Model:
     def __init__(self, **configs):
         # load buy and sell models
-        model_lgb_path = configs['Model']['params']['model_lgb_path']
-        model_svc_path = configs['Model']['params']['model_svc_path']
+        model_lgb_path = configs['Model']['params']['model_path']
         self.model_lgb = joblib.load(model_lgb_path)
-        self.model_svc = joblib.load(model_svc_path)
         # list of patterns for which models will make predictions
         self.patterns_to_predict = configs['Model']['params']['patterns_to_predict']
         self.favorite_exchanges = configs['Telegram']['params']['favorite_exchanges']
@@ -71,9 +68,7 @@ class Model:
         if rows.shape[0] == 0:
             return signal_points
         # make predictions and average them
-        preds_svc = self.model_svc.predict_proba(rows.iloc[:, :-1])
-        preds_lgb = self.model_lgb.predict_proba(rows.iloc[:, :-1])
-        preds = np.average([preds_svc, preds_lgb], weights=[self.weight, 1 - self.weight], axis=0)
+        preds = self.model_lgb.predict_proba(rows.iloc[:, :-1])
         # transform predictions to a list
         preds = preds[:, 1].ravel().tolist()
         sig_point_nums = rows['sig_point_num'].tolist()

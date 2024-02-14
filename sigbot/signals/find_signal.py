@@ -499,8 +499,8 @@ class PatternSignal(SignalBase):
         hlh = self.hlh_lhl(df, min_max_idxs, min_max_vals)
         dt = self.dt_db(df, min_max_idxs, min_max_vals)
         tgc = self.two_good_candles(df, self.ttype)
-        # sw = self.swing(df, min_max_idxs, min_max_vals, avg_gap)
-        pattern_signal = (has | hlh | dt) & tgc
+        sw = self.swing(df, min_max_idxs, min_max_vals, avg_gap)
+        pattern_signal = (has | hlh | dt | sw) & tgc
         return pattern_signal
 
 

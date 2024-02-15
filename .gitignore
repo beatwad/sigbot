@@ -4,6 +4,7 @@ config/.env
 *.png
 *.pkl
 *.txt
+*.pyc
 .idea/
 .ipynb_checkpoints/
 sigbot/__pycache__/

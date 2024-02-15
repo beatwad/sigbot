@@ -3,9 +3,6 @@ import numpy as np
 import pandas as pd
 from os import environ
 
-import sys
-sys.path.append('..')
-
 environ["ENV"] = "test"
 
 # from bot.bot import SigBot

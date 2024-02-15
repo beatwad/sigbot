@@ -12,7 +12,7 @@ from bot.bot import SigBot
 from config.config import ConfigFactory
 
 # Get configs
-configs = ConfigFactory.factory(environ).configs
+configs_ = ConfigFactory.factory(environ).configs
 
 
 # mock class
@@ -53,7 +53,7 @@ class Optimizer:
             i, vk = 0, list(value.keys())
             while i < len(vk):
                 k, v = vk[i], value[vk[i]]
-                if type(v) == str:
+                if isinstance(v, str):
                     del vk[i]
                     del value[k]
                 else:
@@ -123,12 +123,12 @@ class Optimizer:
     def get_headers_from_dict(prod_dict: dict) -> list:
         headers = list()
 
-        def helper(prod_dict, header):
-            for key in prod_dict:
-                if type(prod_dict[key]) != dict:
+        def helper(prod_dict_, header):
+            for key in prod_dict_:
+                if not isinstance(prod_dict_[key], dict):
                     headers.append(header + key)
                 else:
-                    helper(prod_dict[key], header + key + '_')
+                    helper(prod_dict_[key], header + key + '_')
 
         helper(prod_dict, '')
         return headers
@@ -137,12 +137,12 @@ class Optimizer:
     def get_values_from_dict(prod_dict: dict) -> list:
         headers = list()
 
-        def helper(prod_dict):
-            for key in prod_dict:
-                if type(prod_dict[key]) != dict:
-                    headers.append(prod_dict[key])
+        def helper(prod_dict_):
+            for key in prod_dict_:
+                if not isinstance(prod_dict_[key], dict):
+                    headers.append(prod_dict_[key])
                 else:
-                    helper(prod_dict[key])
+                    helper(prod_dict_[key])
 
         helper(prod_dict)
         return headers
@@ -204,15 +204,15 @@ class Optimizer:
 
 
 if __name__ == '__main__':
-    ttype = 'buy'
-    pattern = ['Pattern', 'Trend']
-    indicator_list = pattern
-    indicator_list_higher = pattern
+    ttype_ = 'buy'
+    pattern_ = ['Pattern', 'Trend']
+    indicator_list = pattern_
+    indicator_list_higher = pattern_
 
-    opt_limit = 1000
-    load = False
+    opt_limit_ = 1000
+    load_ = False
 
-    optim_dict = {
+    optim_dict_ = {
         'Pattern': {'use_vol': [0], 'window_low_bound': [1], 'window_high_bound': [6],
                     'first_candle': [0.8], 'second_candle': [0.7],
                     'third_candle': [0.5]},
@@ -222,11 +222,11 @@ if __name__ == '__main__':
     work_timeframe = '15m'
     higher_timeframe = '1h'
 
-    configs['Indicator_list'] = indicator_list
-    configs['Higher_TF_indicator_list'] = indicator_list_higher
-    configs['Timeframes']['work_timeframe'] = work_timeframe
-    configs['Timeframes']['higher_timeframe'] = higher_timeframe
+    configs_['Indicator_list'] = indicator_list
+    configs_['Higher_TF_indicator_list'] = indicator_list_higher
+    configs_['Timeframes']['work_timeframe'] = work_timeframe
+    configs_['Timeframes']['higher_timeframe'] = higher_timeframe
 
-    opt = Optimizer(pattern, optim_dict, **configs)
-    rs = opt.optimize(pattern, ttype, opt_limit, load, 'optimize')
+    opt_ = Optimizer(pattern_, optim_dict_, **configs_)
+    rs_ = opt_.optimize(pattern_, ttype_, opt_limit_, load_, 'optimize')
     print('')

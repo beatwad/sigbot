@@ -94,10 +94,8 @@ class MEXCFutures(ApiBase):
 
 if __name__ == '__main__':
     mexc = MEXCFutures()
-    min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    funding_rates = mexc.get_historical_funding_rate('BTC_USDT', limit=300, min_time=min_time)
-    funding_rates['time'] = pd.to_datetime(funding_rates['time'], unit='ms')
-    funding_rates['time'] = funding_rates['time'] + pd.to_timedelta(3, unit='h')
+    min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
+    funding_rates_ = mexc.get_historical_funding_rate('BTC_USDT', limit=300, min_time=min_time_)
+    funding_rates_['time'] = pd.to_datetime(funding_rates_['time'], unit='ms')
+    funding_rates_['time'] = funding_rates_['time'] + pd.to_timedelta(3, unit='h')
     pass
-
-

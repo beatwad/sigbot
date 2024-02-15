@@ -1,13 +1,12 @@
 import pytest
 import pandas as pd
 from os import environ
-import sys
-sys.path.append('..')
 
 from config.config import ConfigFactory
 
 # Set environment variable
 environ["ENV"] = "test"
+
 from telegram_api.telegram_api import TelegramBot
 
 # Get configs

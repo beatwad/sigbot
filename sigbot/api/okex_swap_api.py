@@ -113,11 +113,9 @@ class OKEXSwap(ApiBase):
 if __name__ == '__main__':
     from datetime import datetime
     okex = OKEXSwap()
-    tickers = okex.get_ticker_names(1e5)[0]
-    min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    funding_rates = okex.get_historical_klines(symbol='BTC-USDT-SWAP', interval='1h', limit=150, min_time=min_time)
-    funding_rates['time'] = pd.to_datetime(funding_rates['time'], unit='ms')
-    funding_rates['time'] = funding_rates['time'] + pd.to_timedelta(3, unit='h')
+    tickers_ = okex.get_ticker_names(1e5)[0]
+    min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
+    funding_rates_ = okex.get_historical_klines(symbol='BTC-USDT-SWAP', interval='1h', limit=150, min_time=min_time_)
+    funding_rates_['time'] = pd.to_datetime(funding_rates_['time'], unit='ms')
+    funding_rates_['time'] = funding_rates_['time'] + pd.to_timedelta(3, unit='h')
     pass
-
-

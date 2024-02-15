@@ -2,6 +2,7 @@ import multiprocessing
 import pandas as pd
 from os import environ
 from datetime import datetime
+
 from data.get_data import GetData
 from data.get_data import DataFactory
 from config.config import ConfigFactory
@@ -14,14 +15,15 @@ from constants.constants import telegram_token
 from ml.inference import Model
 
 # Get configs
-configs = ConfigFactory.factory(environ).configs
+configs_ = ConfigFactory.factory(environ).configs
 
 
 class SigBot:
-    """ Class for running main the entire Signal Bot """
+    """ Class with methods for collecting and processing trading signals """
 
     @exception
     def __init__(self, main_class, load_tickers=True, opt_type=None, **configs):
+        self.configs = configs
         # Get main bot class
         self.main = main_class
         # Create statistics class
@@ -41,7 +43,7 @@ class SigBot:
         self.futures_exchanges = configs['Exchanges']['futures_exchanges']
         # Create indicators
         self.higher_tf_indicators, self.work_tf_indicators = self.create_indicators(configs)
-        # Set list of available exchanges, cryptocurrencies and tickers
+        # Dict of available exchanges and their corresponding tickers
         self.exchanges = {
                         'ByBitPerpetual': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                         'BinanceFutures': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
@@ -53,7 +55,7 @@ class SigBot:
                         'OKEX': {'API': GetData(**configs), 'tickers': [], 'all_tickers': []},
                         }
         self.max_prev_candle_limit = configs['Signal_params']['params']['max_prev_candle_limit']
-        # Get API and ticker list for every exchange in list
+        # Get API and ticker list for every exchange in the list
         if load_tickers:
             # Load statistics
             buy_stat, sell_stat = self.stat.load_statistics()
@@ -90,11 +92,11 @@ class SigBot:
             self.model = Model(**configs)
 
     def get_api_and_tickers(self) -> None:
-        """ Get API and ticker list for every exchange in list """
+        """ Get API and ticker list for every exchange in the exchange list """
         exchange_list = list(self.exchanges.keys())
         for i, ex in enumerate(exchange_list):
             # get exchange API
-            exchange_api = DataFactory.factory(ex, **configs)
+            exchange_api = DataFactory.factory(ex, **self.configs)
             self.exchanges[ex]['API'] = exchange_api
             # get ticker list
             try:
@@ -103,9 +105,8 @@ class SigBot:
                 del self.exchanges[ex]
                 logger.exception(f'Catch an exception while accessing to exchange {ex}')
                 continue
-
+            # filter tickers that were used by previous exchanges
             tickers, ticker_vols = self.filter_used_tickers(tickers, ticker_vols)
-
             # create dictionary to store info for each ticker (volume, funding, etc.)
             self.exchanges[ex]['tickers'] = {tickers[i]: [float(ticker_vols[i])] for i in range(len(tickers))}
             # create list of all available tickers
@@ -115,9 +116,19 @@ class SigBot:
             self.exchanges[ex]['API'].fill_ticker_dict(tickers)
 
     def filter_used_tickers(self, tickers: list, ticker_vols: list) -> (list, list):
-        """ Check if ticker was already used by previous exchange and balance number of tickers in current
-            and previous exchanges if current exchange also has these tickers and their number is lesser
-            than number of tickers in previous exchange """
+        """ Check if ticker was already used by previous exchange and add only unused tickers.
+        Parameters
+        ----------
+        tickers
+            List of tickers from the current exchange.
+        ticker_vols
+            List of corresponding ticker volumes.
+
+        Returns
+        -------
+        tuple(list, list)
+            Lists of tickers and their corresponding volumes that were not used by previous exchanges.
+        """
         # create list of cleaned tickers from previous exchange
         not_used_tickers = list()
         not_used_ticker_vols = list()
@@ -131,25 +142,54 @@ class SigBot:
                 not_used_ticker_vols.append(ticker_vol)
         return not_used_tickers, not_used_ticker_vols
 
-    def get_data(self, exchange_api, ticker: str, timeframe: str,
-                 dt_now: datetime, optimize=False) -> (pd.DataFrame, int):
-        """ Check if new data appeared. If it is - return dataframe with the new data and amount of data """
+    def get_data(self, exchange_api: GetData, ticker: str, timeframe: str,
+                 dt_now: datetime) -> (pd.DataFrame, int):
+        """ Check if new data appeared. If it is - return dataframe with the new data and amount of data
+        Parameters
+        ----------
+        exchange_api
+            API class for current exchange access
+        ticker
+            Name of ticker (e.g. BTCUSDT, ETHUSDT).
+        timeframe
+            Timeframe value (e.g. 5m, 1h, 4h, 1d).
+        dt_now
+            Current datetime value
+        Returns
+        -------
+        tuple(pd.DataFrame, int)
+            Dataframe that contains the new data and amount of these data
+        """
         df = self.database.get(ticker, dict()).get(timeframe, dict())\
             .get('data', pd.DataFrame()).get('buy', pd.DataFrame())
         # Write data to the dataframe
-        df, data_qty = exchange_api.get_data(df, ticker, timeframe, dt_now, optimize)
+        df, data_qty = exchange_api.get_data(df, ticker, timeframe, dt_now)
         return df, data_qty
 
-    def get_historical_data(self, exchange_api, ticker: str, timeframe: str,
-                            dt_now: datetime, min_time: datetime) -> (pd.DataFrame, int):
-        """ Check if new data appeared. If it is - return dataframe with the new data and amount of data """
+    def get_historical_data(self, exchange_api, ticker: str, timeframe: str, min_time: datetime) -> (pd.DataFrame, int):
+        """ Collect historical candle data from min_time and until now
+                Parameters
+                ----------
+                exchange_api
+                    API class for current exchange access
+                ticker
+                    Name of ticker (e.g. BTCUSDT, ETHUSDT).
+                timeframe
+                    Timeframe value (e.g. 5m, 1h, 4h, 1d).
+                min_time
+                    Time before which data will be collected
+                Returns
+                -------
+                tuple(pd.DataFrame, int)
+                    Dataframe that contains the historical data and amount of these data
+                """
         df = self.database.get(ticker, dict()).get(timeframe, dict())\
             .get('data', pd.DataFrame()).get('buy', pd.DataFrame())
         # Write data to the dataframe
         df, data_qty = exchange_api.get_historical_data(df, ticker, timeframe, min_time)
         return df, data_qty
 
-    def create_indicators(self, configs) -> (list, list):
+    def create_indicators(self, configs: dict) -> (list, list):
         """ Create indicators list for higher and working timeframes """
         higher_tf_indicators = list()
         working_tf_indicators = list()
@@ -363,7 +403,7 @@ class SigBot:
 
 
 class MonitorExchange:
-    # constructor
+    """ Class for monitoring of signals from current exchange """
     def __init__(self, sigbot, exchange, exchange_data):
         # initialize separate thread the Telegram bot, so it can work independently
         # instance of main class
@@ -398,7 +438,7 @@ class MonitorExchange:
             for timeframe in self.sigbot.timeframes:
                 if historical:
                     # get historical data for some period (before min_time)
-                    df, data_qty = self.sigbot.get_historical_data(exchange_api, ticker, timeframe, dt_now, min_time)
+                    df, data_qty = self.sigbot.get_historical_data(exchange_api, ticker, timeframe, min_time)
                 else:
                     df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now, optimize=True)
                 # If we previously download this dataframe to the disk - update it with new data

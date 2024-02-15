@@ -1,10 +1,9 @@
 import pytest
 from os import environ
-import sys
-sys.path.append('..')
-
 from config.config import ConfigFactory
+
 environ["ENV"] = "test"
+
 from bot.bot import SigBot
 
 # Get configs

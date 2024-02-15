@@ -1,8 +1,6 @@
 import pytest
 from os import environ
 import pandas as pd
-import sys
-sys.path.append('..')
 
 from config.config import ConfigFactory
 from visualizer.visualizer import Visualizer

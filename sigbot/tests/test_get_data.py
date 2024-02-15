@@ -4,9 +4,6 @@ import pandas as pd
 from os import environ
 from freezegun import freeze_time
 
-import sys
-sys.path.append('..')
-
 # Set environment variable
 environ["ENV"] = "test"
 

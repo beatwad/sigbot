@@ -75,5 +75,3 @@ if __name__ == '__main__':
     # min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
     klines = mexc.get_klines('TRUMP2024USDT', '1h', 300)
     pass
-
-

@@ -74,6 +74,6 @@ if __name__ == '__main__':
     key = ""
     secret = ""
     bybit_api = ByBit()
-    tickers = bybit_api.get_ticker_names(500000)
-    kline = bybit_api.get_klines('VINUUSDT', '1h', 300)
+    tickers_ = bybit_api.get_ticker_names(500000)
+    kline_ = bybit_api.get_klines('VINUUSDT', '1h', 300)
     pass

@@ -416,8 +416,8 @@ if __name__ == '__main__':
     bybit_api = ByBitPerpetual()
     # tickers = bybit_api.get_ticker_names(500000)
     # print(tickers)
-    min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    funding_rates = bybit_api.get_historical_funding_rate(symbol='1INCHUSDT', limit=200, min_time=min_time)
-    funding_rates['time'] = pd.to_datetime(funding_rates['time'], unit='ms')
-    funding_rates['time'] = funding_rates['time'] + pd.to_timedelta(3, unit='h')
+    min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
+    funding_rates_ = bybit_api.get_historical_funding_rate(symbol='1INCHUSDT', limit=200, min_time=min_time_)
+    funding_rates_['time'] = pd.to_datetime(funding_rates_['time'], unit='ms')
+    funding_rates_['time'] = funding_rates_['time'] + pd.to_timedelta(3, unit='h')
     pass

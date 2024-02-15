@@ -68,7 +68,7 @@ class GetData:
         return df
 
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
-                 dt_now: datetime, optimize=False) -> (pd.DataFrame, int):
+                 dt_now: datetime) -> (pd.DataFrame, int):
         """ Get data from exchange """
         limit = self.get_limit(df, ticker, timeframe, dt_now)
         # get data from exchange only when there is at least one interval to get

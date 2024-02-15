@@ -87,4 +87,3 @@ if __name__ == '__main__':
     # tickers = okex.get_ticker_names(500000)[0]
     klines = okex.get_klines('MDT-USDT', '1h', limit=150)
     pass
-

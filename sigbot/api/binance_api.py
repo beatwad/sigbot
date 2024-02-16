@@ -77,6 +77,10 @@ class Binance(ApiBase):
             # prevent endless cycle if there are no candles than earlier than min_time
             if prev_time == earliest_time:
                 break
+            
+            # drop duplicated rows
+            if tickers.shape[0] > 0:
+                tickers = tickers[tickers[0] > tmp[0].max()]
             tickers = pd.concat([tmp, tickers])
             tmp_limit += limit
 

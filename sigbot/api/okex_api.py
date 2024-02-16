@@ -72,6 +72,9 @@ class OKEX(ApiBase):
             if prev_time == earliest_time:
                 break
             
+            # drop duplicated rows
+            if tickers.shape[0] > 0:
+                tickers = tickers[tickers[0] > tmp[0].max()]
             tickers = pd.concat([tickers, tmp])
             tmp_limit += limit
 

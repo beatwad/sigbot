@@ -73,7 +73,7 @@ class ByBitPerpetual(ApiBase):
         prev_time, earliest_time = None, datetime.now()
         ts = int(self.get_timestamp() / 3600) * 3600
         tickers = pd.DataFrame()
-        
+
         while earliest_time > min_time:
             start = (ts - (tmp_limit * interval_secs)) * 1000
             tmp = pd.DataFrame(self.client.get_kline(category='linear', symbol=symbol,
@@ -86,6 +86,10 @@ class ByBitPerpetual(ApiBase):
             if prev_time == earliest_time:
                 break
             
+            # drop duplicated rows
+            if tickers.shape[0] > 0:
+                tickers = tickers[tickers[0] > tmp[0].max()]
+                
             tickers = pd.concat([tickers, tmp])
             tmp_limit += limit
 
@@ -99,7 +103,7 @@ class ByBitPerpetual(ApiBase):
         prev_time, earliest_time = None, datetime.now()
         end_time = int(self.get_timestamp() / 3600) * 3600 * 1000
         funding_rates = pd.DataFrame()
-
+        
         while earliest_time > min_time:
             tmp = pd.DataFrame(self.client.get_funding_rate_history(category='linear', symbol=symbol, limit=limit,
                                                                     endTime=end_time)['result']['list'])
@@ -110,6 +114,10 @@ class ByBitPerpetual(ApiBase):
             # prevent endless cycle if there are no candles that earlier than min_time
             if prev_time == earliest_time:
                 break
+
+            # drop duplicated rows
+            if funding_rates.shape[0] > 0:
+                funding_rates = funding_rates[funding_rates['fundingRateTimestamp'] > tmp['fundingRateTimestamp'].max()]
 
             funding_rates = pd.concat([funding_rates, tmp])
             end_time = (end_time - (limit * interval_secs))

@@ -59,8 +59,21 @@ class GetData:
         self.num_retries = 3
 
     @staticmethod
-    def load_saved_data(df: pd.DataFrame, ticker: str, timeframe: str):
-        """ If there is a previously saved dataframe in our base - load it """
+    def load_saved_data(df: pd.DataFrame, ticker: str, timeframe: str) -> pd.DataFrame:
+        """ If there is a previously saved dataframe in our base - load it
+            Parameters
+                ----------
+                df
+                    Dataframe with candles.
+                ticker
+                    Name of ticker (e.g. BTCUSDT, ETHUSDT).
+                timeframe
+                    Timeframe value (e.g. 5m, 1h, 4h, 1d).
+                Returns
+                -------
+                df
+                    List of higher timeframe indicators, list of working timeframe indicators
+        """
         try:
             df = pd.read_pickle(f'optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl')
         except FileNotFoundError:
@@ -68,7 +81,7 @@ class GetData:
         return df
 
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
-                 dt_now: datetime) -> (pd.DataFrame, int):
+                 dt_now: datetime, add_funding_rate_: bool = False) -> tuple[pd.DataFrame, int]:
         """ Get data from exchange """
         limit = self.get_limit(df, ticker, timeframe, dt_now)
         # get data from exchange only when there is at least one interval to get
@@ -89,10 +102,16 @@ class GetData:
         else:
             return df, 0
         df = self.process_data(klines, df)
+
+        if add_funding_rate_:
+            min_time = klines['time'].min()
+            funding_rates = self.api.get_historical_funding_rate(ticker, self.limit, min_time)
+            df = self.add_funding_rate(df, funding_rates, timeframe)
+
         return df, limit
 
     def get_historical_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
-                            min_time: datetime) -> (pd.DataFrame, int):
+                            min_time: datetime) -> tuple[pd.DataFrame, int]:
         """ Get historical data from exchange for some period and also add funding rate data """
         for i in range(self.num_retries):
             try:
@@ -111,18 +130,25 @@ class GetData:
         df = self.process_data(klines, df)
         df = df[df['time'] >= min_time].reset_index(drop=True)
 
+        df = self.add_funding_rate(df, funding_rates, timeframe)
+
+        return df, self.limit
+
+    def add_funding_rate(self, df: pd.DataFrame, funding_rates: pd.DataFrame, timeframe: str) -> pd.DataFrame:
+        """ Add funding rate data to the kandle dataframe """
         if timeframe == self.work_timeframe:
             if funding_rates.shape[0] > 0:
                 funding_rates = self.process_funding_rate_data(funding_rates)
                 df = pd.merge(df, funding_rates, how='left', on='time')
                 df['funding_rate'] = df['funding_rate'].ffill()
-                if self.name == 'OKEXSwap':
+                if self.name == 'OKEXSwap': # OKEXSwap funding rate history is capped with 3 months
                     df['funding_rate'] = df['funding_rate'].fillna(0)
             else:
                 df['funding_rate'] = 0
-        return df, self.limit
+        return df
 
-    def get_historical_funding_rate_data(self, ticker: str, min_time: datetime) -> (pd.DataFrame, int):
+    
+    def get_historical_funding_rate_data(self, ticker: str, min_time: datetime) -> tuple[pd.DataFrame, int]:
         """ Get historical funding rate data from exchange for some period """
         for i in range(self.num_retries):
             try:

@@ -3,8 +3,7 @@ import pandas as pd
 from os import environ
 from datetime import datetime
 
-from data.get_data import GetData
-from data.get_data import DataFactory
+from data.get_data import GetData, DataFactory
 from config.config import ConfigFactory
 from signals.find_signal import FindSignal
 from signal_stat.signal_stat import SignalStat
@@ -115,7 +114,7 @@ class SigBot:
             # for periodic updates of ticker information
             self.exchanges[ex]['API'].fill_ticker_dict(tickers)
 
-    def filter_used_tickers(self, tickers: list, ticker_vols: list) -> (list, list):
+    def filter_used_tickers(self, tickers: list, ticker_vols: list) -> tuple[list, list]:
         """ Check if ticker was already used by previous exchange and add only unused tickers.
         Parameters
         ----------
@@ -123,11 +122,12 @@ class SigBot:
             List of tickers from the current exchange.
         ticker_vols
             List of corresponding ticker volumes.
-
         Returns
         -------
-        tuple(list, list)
-            Lists of tickers and their corresponding volumes that were not used by previous exchanges.
+        not_used_tickers
+            Lists of tickers that were not used by previous exchanges.
+        not_used_ticker_vols
+            Lists of ticker corresponding volumes that were not used by previous exchanges.
         """
         # create list of cleaned tickers from previous exchange
         not_used_tickers = list()
@@ -143,54 +143,72 @@ class SigBot:
         return not_used_tickers, not_used_ticker_vols
 
     def get_data(self, exchange_api: GetData, ticker: str, timeframe: str,
-                 dt_now: datetime) -> (pd.DataFrame, int):
+                 dt_now: datetime, add_funding_rate: bool = False) -> tuple[pd.DataFrame, int]:
         """ Check if new data appeared. If it is - return dataframe with the new data and amount of data
         Parameters
         ----------
         exchange_api
-            API class for current exchange access
+            API class for current exchange access.
         ticker
             Name of ticker (e.g. BTCUSDT, ETHUSDT).
         timeframe
             Timeframe value (e.g. 5m, 1h, 4h, 1d).
         dt_now
-            Current datetime value
+            Current datetime value.
+        add_funding_rate
+            Flag that indicates if funding rate data should be added.
         Returns
         -------
-        tuple(pd.DataFrame, int)
-            Dataframe that contains the new data and amount of these data
+        df
+            Dataframe that contains the historical data.
+        data_qty
+            Amount of these historical data.
         """
         df = self.database.get(ticker, dict()).get(timeframe, dict())\
             .get('data', pd.DataFrame()).get('buy', pd.DataFrame())
         # Write data to the dataframe
-        df, data_qty = exchange_api.get_data(df, ticker, timeframe, dt_now)
+        df, data_qty = exchange_api.get_data(df, ticker, timeframe, dt_now, add_funding_rate)
         return df, data_qty
 
-    def get_historical_data(self, exchange_api, ticker: str, timeframe: str, min_time: datetime) -> (pd.DataFrame, int):
+    def get_historical_data(self, exchange_api, ticker: str,
+                            timeframe: str, min_time: datetime) -> tuple[pd.DataFrame, int]:
         """ Collect historical candle data from min_time and until now
-                Parameters
-                ----------
-                exchange_api
-                    API class for current exchange access
-                ticker
-                    Name of ticker (e.g. BTCUSDT, ETHUSDT).
-                timeframe
-                    Timeframe value (e.g. 5m, 1h, 4h, 1d).
-                min_time
-                    Time before which data will be collected
-                Returns
-                -------
-                tuple(pd.DataFrame, int)
-                    Dataframe that contains the historical data and amount of these data
-                """
+            Parameters
+            ----------
+            exchange_api
+                API class for current exchange access.
+            ticker
+                Name of ticker (e.g. BTCUSDT, ETHUSDT).
+            timeframe
+                Timeframe value (e.g. 5m, 1h, 4h, 1d).
+            min_time
+                Time before which data will be collected.
+            Returns
+            -------
+            df
+                Dataframe that contains the historical data.
+            data_qty
+                Amount of these historical data.
+            """
         df = self.database.get(ticker, dict()).get(timeframe, dict())\
             .get('data', pd.DataFrame()).get('buy', pd.DataFrame())
         # Write data to the dataframe
         df, data_qty = exchange_api.get_historical_data(df, ticker, timeframe, min_time)
         return df, data_qty
 
-    def create_indicators(self, configs: dict) -> (list, list):
-        """ Create indicators list for higher and working timeframes """
+    def create_indicators(self, configs: dict) -> tuple[list, list]:
+        """ Create indicators list for higher and working timeframes 
+            Parameters
+            ----------
+            configs
+                Configuration dictionary.
+            Returns
+            -------
+            higher_tf_indicators
+                List of higher timeframe indicators.
+            working_tf_indicators
+                list of working timeframe indicators.
+            """
         higher_tf_indicators = list()
         working_tf_indicators = list()
         indicator_list = configs['Indicator_list']
@@ -213,10 +231,26 @@ class SigBot:
                     working_tf_indicators.append(ind_factory)
         return higher_tf_indicators, working_tf_indicators
 
-    def get_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str,
+    def add_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str,
                        exchange_data: dict, data_qty: int, opt_flag: bool = False) -> (dict, int):
-        """ Create indicator list from search signal patterns list, if it has the new data and
-            data is not from higher timeframe, else get only levels """
+        """ Create indicators and add them to data
+            Parameters
+            ----------
+            df
+                Dataframe with candles.
+            ttype
+                Type of trade (buy or sell).
+            ticker
+                Name of ticker (e.g. BTCUSDT, ETHUSDT).
+            timeframe
+                Timeframe value (e.g. 5m, 1h, 4h, 1d).
+            Returns
+            -------
+            database
+                List of higher timeframe indicators, list of working timeframe indicators.
+            data_qty
+                Amount of these historical data.
+        """
         if timeframe == self.work_timeframe:
             indicators = self.work_tf_indicators
         else:
@@ -413,10 +447,10 @@ class MonitorExchange:
         # exchange data
         self.exchange_data = exchange_data
 
-    def mon_get_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str, data_qty: int, 
+    def mon_add_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str, data_qty: int, 
                            opt_flag: bool = False) -> int:
-        """ Get indicators and quantity of data """
-        self.sigbot.database, data_qty = self.sigbot.get_indicators(df, ttype, ticker, timeframe, self.exchange_data,
+        """ Add indicators and return quantity of data """
+        self.sigbot.database, data_qty = self.sigbot.add_indicators(df, ttype, ticker, timeframe, self.exchange_data,
                                                                     data_qty, opt_flag)
         return data_qty
 
@@ -440,7 +474,7 @@ class MonitorExchange:
                     # get historical data for some period (before min_time)
                     df, data_qty = self.sigbot.get_historical_data(exchange_api, ticker, timeframe, min_time)
                 else:
-                    df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now, optimize=True)
+                    df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now, add_funding_rate=True)
                 # If we previously download this dataframe to the disk - update it with new data
                 if data_qty > 1:
                     tmp_ticker = ticker.replace('-', '').replace('SWAP', '').replace('_USDT', 'USDT')
@@ -475,7 +509,7 @@ class MonitorExchange:
                 else:
                     df = self.sigbot.database[ticker][timeframe]['data'][ttype].copy()
                 # Add indicators
-                self.mon_get_indicators(df, ttype, ticker, timeframe, 1000, opt_flag)
+                self.mon_add_indicators(df, ttype, ticker, timeframe, 1000, opt_flag)
                 # If current timeframe is working timeframe
                 if timeframe == self.sigbot.work_timeframe:
                     self.sigbot.add_higher_time(ticker, ttype)
@@ -531,8 +565,8 @@ class MonitorExchange:
                     # the new data and data is not from higher timeframe, else get only levels
                     # Get indicators and quantity of data, if catch any exception - pass the ticker
                     try:
-                        data_qty_buy = self.mon_get_indicators(df, 'buy', ticker, timeframe, data_qty)
-                        data_qty_sell = self.mon_get_indicators(df, 'sell', ticker, timeframe, data_qty)
+                        data_qty_buy = self.mon_add_indicators(df, 'buy', ticker, timeframe, data_qty)
+                        data_qty_sell = self.mon_add_indicators(df, 'sell', ticker, timeframe, data_qty)
                     except:
                         logger.exception(f'Something bad has happened to ticker {ticker} on timeframe {timeframe} '
                                          f'while getting the indicator data.')

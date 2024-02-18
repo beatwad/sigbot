@@ -18,8 +18,19 @@ configs_ = ConfigFactory.factory(environ).configs
 
 
 class SigBot:
-    """ Class with methods for collecting and processing trading signals """
-
+    """ Class with methods for collecting and processing trading signals
+        Parameters
+        ----------
+        main_class
+            Link to the main class from file main.py.
+        load_tickers
+            Flag that shows if tickers is needed to be loaded. During optimzation process it's should be set to False.
+        opt_type
+            Flag that shows if class is used in optimization mode or not. If it's used in optimization mode
+            than some class instances aren't need to be initialized.
+        configs
+            Dictionary of configs which is loaded from file config/config_*env*.json
+    """
     @exception
     def __init__(self, main_class, load_tickers=True, opt_type=None, **configs):
         self.configs = configs
@@ -36,6 +47,7 @@ class SigBot:
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframes = [self.higher_timeframe, self.work_timeframe]
+        self.higher_timeframe_hours = configs['Timeframes']['higher_timeframe_hours']
         self.higher_tf_indicator_list = configs['Higher_TF_indicator_list']
         self.higher_tf_indicator_set = set([i for i in self.higher_tf_indicator_list if i != 'Trend'])
         # List of Futures Exchanges
@@ -152,7 +164,7 @@ class SigBot:
         ticker
             Name of ticker (e.g. BTCUSDT, ETHUSDT).
         timeframe
-            Timeframe value (e.g. 5m, 1h, 4h, 1d).
+            Time frame value (e.g. 5m, 1h, 4h, 1d).
         dt_now
             Current datetime value.
         add_funding_rate
@@ -180,7 +192,7 @@ class SigBot:
             ticker
                 Name of ticker (e.g. BTCUSDT, ETHUSDT).
             timeframe
-                Timeframe value (e.g. 5m, 1h, 4h, 1d).
+                Time frame value (e.g. 5m, 1h, 4h, 1d).
             min_time
                 Time before which data will be collected.
             Returns
@@ -243,7 +255,16 @@ class SigBot:
             ticker
                 Name of ticker (e.g. BTCUSDT, ETHUSDT).
             timeframe
-                Timeframe value (e.g. 5m, 1h, 4h, 1d).
+                Time frame value (e.g. 5m, 1h, 4h, 1d).
+            exchange_data
+                Dictionary that stores link to exchange API and names of all tickers from that exchange.
+            data_qty
+                Amount of data to which indicators will be added.
+            opt_flag
+                Flag that is used in optimization process. If it's True than Pattern indicator doesn't need to be added,
+                if it's False - Pattern indicator will be added. This flag is True for the first optimization iteration
+                and False for any next iterations. This was done because Pattern indicator doesn't have parameters
+                and thus doesn't need to be optimized, so we may add it only one time during the first iteration.
             Returns
             -------
             database
@@ -265,17 +286,56 @@ class SigBot:
         return database, data_qty
 
     def get_buy_signals(self, ticker: str, timeframe: str, data_qty: int, data_qty_higher: int) -> list:
-        """ Try to find the signals and if succeed - return them and support/resistance levels """
+        """ Try to find the buy signals and if succeed - return them
+            Parameters
+            ----------
+            ticker
+                Name of ticker (e.g. BTCUSDT, ETHUSDT).
+            timeframe
+                Time frame value (e.g. 5m, 1h, 4h, 1d).
+            data_qty
+                Amount of data from working timeframe (default is 1h) to which indicators will be added.
+            data_qty_higher
+                Amount of data from higher timeframe (default is 4h) to which indicators will be added.
+            Returns
+            -------
+            sig_points_buy
+                List of signal buy points.
+            """
         sig_points_buy = self.find_signal_buy.find_signal(self.database, ticker, timeframe, data_qty, data_qty_higher)
         return sig_points_buy
 
     def get_sell_signals(self, ticker: str, timeframe: str, data_qty: int, data_qty_higher: int) -> list:
-        """ Try to find the signals and if succeed - return them and support/resistance levels """
+        """ Try to find the sell signals and if succeed - return them
+            Parameters
+            ----------
+            ticker
+                Name of ticker (e.g. BTCUSDT, ETHUSDT).
+            timeframe
+                Time frame value (e.g. 5m, 1h, 4h, 1d).
+            data_qty
+                Amount of data from working timeframe (default is 1h) to which indicators will be added.
+            data_qty_higher
+                Amount of data from higher timeframe (default is 4h) to which indicators will be added.
+            Returns
+            -------
+            sig_points_sell
+                List of signal sell points.
+        """
         sig_points_sell = self.find_signal_sell.find_signal(self.database, ticker, timeframe, data_qty, data_qty_higher)
         return sig_points_sell
 
     def filter_sig_points(self, sig_points: list) -> list:
-        """ Don't add signal if relatively fresh similar signal was already added to the statistics dataframe before """
+        """ Don't add signal if relatively fresh similar signal was already added to the statistics dataframe before
+            Parameters
+            ----------
+            sig_points
+                List of signal points to be filtered.
+            Returns
+            -------
+            filtered_points
+                List of filtered signal points.
+        """
         filtered_points = list()
         prev_point = (None, None, None)
         for point in sig_points:
@@ -295,9 +355,18 @@ class SigBot:
         return filtered_points
 
     def filter_old_signals(self, sig_points: list) -> list:
-        """ Don't send Telegram notification for the old signals (older than 1-2 candles ago) """
+        """ Don't send Telegram notification for the old signals (older than 1-2 candles ago)
+            Parameters
+            ----------
+            sig_points
+                List of signal points to be filtered.
+            Returns
+            -------
+            filtered_points
+                List of filtered signal points.
+        """
         filtered_points = list()
-        # round datetime to hours, so additional time for data loading doesn't influence the time span
+        # round datetime to hours, so time spent for data loading doesn't influence the time span
         # between current moment and signal time
         dt_now = datetime.now().replace(microsecond=0, second=0, minute=0)
         for point in sig_points:
@@ -313,19 +382,40 @@ class SigBot:
         return filtered_points
 
     def filter_higher_tf_signals(self, sig_points: list) -> list:
-        """ If hour time of higher tf signal is not in 3, 7, 11, 15, 19, 23 - don't add it """
+        """ If higher tf signal was found but new higher tf candle wasn't closed at the time of this signal -
+        don't add it.
+            Parameters
+            ----------
+            sig_points
+                List of signal points to be filtered.
+            Returns
+            -------
+            filtered_points
+                List of filtered signal points.
+        """
         filtered_points = list()
         for point in sig_points:
             point_time = point[4]
             indicator_list = set(point[5].split('_'))
-            if indicator_list.intersection(self.higher_tf_indicator_set) and point_time.hour not in [3, 7, 11,
-                                                                                                     15, 19, 23]:
+            if (indicator_list.intersection(self.higher_tf_indicator_set) and point_time.hour not in
+                    self.higher_timeframe_hours):
                 continue
             filtered_points.append(point)
         return filtered_points
 
     def add_statistics(self, sig_points: list, data_qty_higher=None) -> dict:
-        """ Get statistics and write it to the database """
+        """ Write statistics for signal points to the database
+            Parameters
+            ----------
+            sig_points
+                List of signal points to be filtered.
+            data_qty_higher
+                Amount of data from higher timeframe (default is 4h) to which indicators will be added.
+            Returns
+            -------
+            filtered_points
+                List of filtered signal points.
+        """
         database = self.stat.write_stat(self.database, sig_points, data_qty_higher)
         return database
 
@@ -333,7 +423,16 @@ class SigBot:
         self.stat.save_statistics(self.database)
 
     def calc_statistics(self, sig_points: list) -> list:
-        """ Calculate statistics and write it for every signal """
+        """ Calculate statistics and write it for every signal in signal points list
+            Parameters
+            ----------
+            sig_points
+                List of signal points.
+            Returns
+            -------
+            sig_points
+                List of signal points with added statistics.
+        """
         for sig_point in sig_points:
             sig_type = sig_point[3]
             pattern = sig_point[5]
@@ -342,7 +441,18 @@ class SigBot:
         return sig_points
 
     def get_exchange_list(self, ticker: str, sig_points: list) -> list:
-        """ Add list of exchanges on which this ticker can be traded """
+        """ Add list of exchanges where this ticker can be traded
+            Parameters
+            ----------
+            ticker
+                Name of ticker (e.g. BTCUSDT, ETHUSDT).
+            sig_points
+                List of signal points.
+            Returns
+            -------
+            sig_points
+                List of signal points with added list of exchanges where corresponding to signal ticker can be traded.
+        """
         for sig_point in sig_points:
             for exchange, exchange_data in self.exchanges.items():
                 ticker = ticker.replace('SWAP', '')
@@ -352,8 +462,15 @@ class SigBot:
                     sig_point[7].append(exchange)
         return sig_points
 
-    def create_exchange_monitors(self) -> (list, list):
-        """ Create list of instances for ticker monitoring for every exchange """
+    def create_exchange_monitors(self) -> tuple[list, list]:
+        """ Create two lists of instances for ticker monitoring for every exchange
+            Returns
+            -------
+            spot_ex_monitor_list
+                List of spot exchanges.
+            fut_ex_monitor_list
+                List of futures exchanges.
+        """
         spot_ex_monitor_list = list()
         fut_ex_monitor_list = list()
         for exchange, exchange_data in self.exchanges.items():
@@ -365,7 +482,17 @@ class SigBot:
         return spot_ex_monitor_list, fut_ex_monitor_list
 
     def save_opt_dataframes(self, load=False, historical=False, min_time=None) -> None:
-        """ Save all ticker dataframes for further indicator/signal optimization """
+        """ Save all ticker dataframes for further indicator/signal optimization
+            Parameters
+            ----------
+            load
+               Flag that defines if candle data must be loaded from the internet
+            historical
+                Flag that defines if we need to load only the latest candle data (False)
+                or we need to load all available candle data (True) from min_time and until current time.
+            min_time
+                Time from which historical candle data will be loaded.
+        """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
         dt_now = datetime.now()
         if load:
@@ -378,7 +505,20 @@ class SigBot:
                 monitor.mon_save_opt_dataframes(dt_now, historical, min_time)
 
     def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool) -> None:
-        """ Save statistics in program memory for further indicator/signal optimization """
+        """ Save statistics in program memory for further indicator/signal optimization
+            Parameters
+            ----------
+            ttype
+                Type of trade (buy or sell).
+            opt_limit
+                Amount of the last data for which we look for the signals and collect signal statistics.
+                This parameter is added to speed up finding the signals and signal statistic collection.
+            opt_flag
+                Flag that is used in optimization process. If it's True than Pattern indicator doesn't need to be added,
+                if it's False - Pattern indicator will be added. This flag is True for the first optimization iteration
+                and False for any next iteration. This was done because Pattern indicator doesn't have parameters
+                and thus doesn't need to be optimized, so we may add it only one time during the first iteration.
+        """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
@@ -388,7 +528,14 @@ class SigBot:
             monitor.mon_save_opt_statistics(ttype, opt_limit, opt_flag)
 
     def add_higher_time(self, ticker: str, ttype: str) -> None:
-        """ Add time from higher timeframe to dataframe with working timeframe data"""
+        """ Add time from higher timeframe to dataframe with working timeframe data
+            Parameters
+            ----------
+            ticker
+                Name of ticker (e.g. BTCUSDT, ETHUSDT).
+            ttype
+                Type of trade (buy or sell).
+        """
         # Create signal point df for each indicator
         df_work = self.database[ticker][self.work_timeframe]['data'][ttype]
         # add signals from higher timeframe
@@ -410,10 +557,19 @@ class SigBot:
         df_work.reset_index(drop=True, inplace=True)
         return
 
-    def make_prediction(self, signal_points: list) -> list:
-        """ Get dataset and use ML model to make price prediction for current signal points """
+    def make_prediction(self, sig_points: list) -> list:
+        """ Get dataset and use ML model to make price prediction for current signal points
+            Parameters
+            ----------
+            sig_points
+                List of signal points.
+            Returns
+            ----------
+            sig_points
+                List of signal points with added ML prediction for every signal point.
+        """
         ticker, timeframe, index, ttype, time, pattern, plot_path, exchange_list, \
-            total_stat, ticker_stat = signal_points[0]
+            total_stat, ticker_stat = sig_points[0]
         df = self.database[ticker][timeframe]['data'][ttype]
         # RSI_STOCH pattern is inverted with respect to the trade sides
         if pattern == 'STOCH_RSI':
@@ -421,8 +577,8 @@ class SigBot:
                 ttype = 'sell'
             else:
                 ttype = 'buy'
-        signal_points = self.model.make_prediction(df, signal_points, ttype)
-        return signal_points
+        sig_points = self.model.make_prediction(df, sig_points, ttype)
+        return sig_points
 
     @exception
     def main_cycle(self):

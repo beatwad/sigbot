@@ -52,6 +52,7 @@ class MEXCFutures(ApiBase):
             end_time = (ts - ((tmp_limit - limit) * interval_secs))
             params['start'] = start_time
             params['end'] = end_time
+            tmp = requests.get(self.URL + f'/kline/{symbol}', params=params).json()
             tmp = pd.DataFrame(requests.get(self.URL + f'/kline/{symbol}', params=params).json()['data'])
             if tmp.shape[0] == 0:
                 break
@@ -104,7 +105,7 @@ class MEXCFutures(ApiBase):
 if __name__ == '__main__':
     mexc = MEXCFutures()
     min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    funding_rates_ = mexc.get_historical_funding_rate('BTC_USDT', limit=300, min_time=min_time_)
-    funding_rates_['time'] = pd.to_datetime(funding_rates_['time'], unit='ms')
-    funding_rates_['time'] = funding_rates_['time'] + pd.to_timedelta(3, unit='h')
+    klines_ = mexc.get_historical_klines('KAKA_USDT', interval='1h', limit=1000, min_time=min_time_)
+    klines_['time'] = pd.to_datetime(klines_['time'], unit='ms')
+    klines_['time'] = klines_['time'] + pd.to_timedelta(3, unit='h')
     pass

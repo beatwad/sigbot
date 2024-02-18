@@ -74,7 +74,8 @@ class MEXC(ApiBase):
 
 if __name__ == '__main__':
     mexc = MEXC()
-    # tickers = mexc.get_ticker_names(5e5)[0]
-    # min_time = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    klines = mexc.get_klines('TRUMP2024USDT', '1h', 300)
+    min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
+    klines_ = mexc.get_historical_klines('KAKAUSDT', interval='1h', limit=300, min_time=min_time_)
+    klines_['time'] = pd.to_datetime(klines_['time'], unit='ms')
+    klines_['time'] = klines_['time'] + pd.to_timedelta(3, unit='h')
     pass

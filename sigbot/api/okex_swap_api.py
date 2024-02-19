@@ -123,7 +123,5 @@ if __name__ == '__main__':
     okex = OKEXSwap()
     tickers_ = okex.get_ticker_names(1e5)[0]
     min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    funding_rates_ = okex.get_historical_klines(symbol='BTC-USDT-SWAP', interval='1h', limit=150, min_time=min_time_)
-    funding_rates_['time'] = pd.to_datetime(funding_rates_['time'], unit='ms')
-    funding_rates_['time'] = funding_rates_['time'] + pd.to_timedelta(3, unit='h')
+    klines = okex.get_klines('BTC-USDT', '1h', limit=150)
     pass

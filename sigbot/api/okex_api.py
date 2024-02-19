@@ -88,5 +88,5 @@ if __name__ == '__main__':
 
     okex = OKEX()
     # tickers = okex.get_ticker_names(500000)[0]
-    klines = okex.get_klines('MDT-USDT', '1h', limit=150)
+    klines = okex.get_klines('BTC-USDT', '1h', limit=150)
     pass

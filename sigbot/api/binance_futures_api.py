@@ -53,7 +53,7 @@ class BinanceFutures(ApiBase):
     def get_klines(self, symbol, interval, limit) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
         tickers = pd.DataFrame(self.client.futures_klines(symbol=symbol, interval=interval, limit=limit))
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, axis=1)
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 7: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
 
     def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
@@ -84,7 +84,7 @@ class BinanceFutures(ApiBase):
             tickers = pd.concat([tmp, tickers])
             tmp_limit += limit
 
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, axis=1)
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 7: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
     def get_historical_funding_rate(self, symbol: str, limit: int, min_time: datetime) -> pd.DataFrame:
@@ -121,8 +121,5 @@ if __name__ == '__main__':
     key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
     secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
     binance_api = BinanceFutures(key, secret)
-    min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    funding_rates_ = binance_api.get_historical_funding_rate(symbol='DODOXUSDT', limit=1000, min_time=min_time_)
-    funding_rates_['time'] = pd.to_datetime(funding_rates_['time'], unit='ms')
-    funding_rates_['time'] = funding_rates_['time'] + pd.to_timedelta(3, unit='h')
+    klines = binance_api.get_klines('BTCUSDT', '1h', 300)
     pass

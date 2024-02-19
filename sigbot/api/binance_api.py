@@ -53,7 +53,7 @@ class Binance(ApiBase):
     def get_klines(self, symbol: str, interval: str, limit: int) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """
         tickers = pd.DataFrame(self.client.get_klines(symbol=symbol, interval=interval, limit=limit))
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, axis=1)
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 7: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
     
     def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
@@ -84,7 +84,7 @@ class Binance(ApiBase):
             tickers = pd.concat([tmp, tickers])
             tmp_limit += limit
 
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, axis=1)
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 7: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
 
@@ -93,5 +93,5 @@ if __name__ == '__main__':
     secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
     binance_api = Binance(key, secret)
     binance_api.get_ticker_names(1e1)
-    klines = binance_api.get_klines('OSMOUSDT', '1h', 300)
+    klines = binance_api.get_klines('BTCUSDT', '1h', 300)
     pass

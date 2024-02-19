@@ -383,5 +383,6 @@ class Volume24(Indicator):
         # get quantity of candles in 24 hours
         avg_period = int(24 / (self.timeframe_div[timeframe] / 3600))
         # get average volume for 24 hours
-        df['volume_24'] = ((df['open'] + df['close']) / 2 * df['volume']).rolling(avg_period).sum()
+        # df['volume_24'] = ((df['open'] + df['close']) / 2 * df['volume']).rolling(avg_period).sum()
+        df['volume_24'] = df['volume'].rolling(avg_period).sum()
         return df

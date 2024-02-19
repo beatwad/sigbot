@@ -6,11 +6,12 @@ from time import sleep
 from api.api_base import ApiBase
 from pybit import unified_trading
 from pybit.exceptions import InvalidRequestError
-from log.log import logger
+# from log.log import logger
+logger = None
 from config.config import ConfigFactory
 
 # Set environment variable
-# environ["ENV"] = "debug"
+environ["ENV"] = "debug"
 configs = ConfigFactory.factory(environ).configs
 
 
@@ -425,7 +426,7 @@ if __name__ == '__main__':
     # tickers = bybit_api.get_ticker_names(500000)
     # print(tickers)
     min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    funding_rates_ = bybit_api.get_historical_funding_rate(symbol='1INCHUSDT', limit=200, min_time=min_time_)
-    funding_rates_['time'] = pd.to_datetime(funding_rates_['time'], unit='ms')
-    funding_rates_['time'] = funding_rates_['time'] + pd.to_timedelta(3, unit='h')
+    klines_ = bybit_api.get_klines(symbol='BTCUSDT', interval='1h', limit=200)
+    klines_['time'] = pd.to_datetime(klines_['time'], unit='ms')
+    klines_['time'] = klines_['time'] + pd.to_timedelta(3, unit='h')
     pass

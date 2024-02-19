@@ -30,8 +30,7 @@ class MEXC(ApiBase):
             interval = '60m'
         params = {'symbol': symbol, 'interval': interval, 'limit': limit}
         tickers = pd.DataFrame(requests.get(self.URL + '/klines', params=params).json())
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume',
-                                  6: 'close_time', 7: 'quote_volume'}, axis=1)
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 7: 'volume'}, axis=1)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
 
     def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
@@ -66,8 +65,7 @@ class MEXC(ApiBase):
             tickers = pd.concat([tmp, tickers])
             tmp_limit += limit
 
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'asset_volume',
-                                  6: 'close_time', 7: 'volume'}, axis=1)
+        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 7: 'volume'}, axis=1)
         tickers = tickers.sort_values('time', ignore_index=True)
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
@@ -75,7 +73,7 @@ class MEXC(ApiBase):
 if __name__ == '__main__':
     mexc = MEXC()
     min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    klines_ = mexc.get_historical_klines('KAKAUSDT', interval='1h', limit=300, min_time=min_time_)
+    klines_ = mexc.get_klines('BTCUSDT', '1h', 300)
     klines_['time'] = pd.to_datetime(klines_['time'], unit='ms')
     klines_['time'] = klines_['time'] + pd.to_timedelta(3, unit='h')
     pass

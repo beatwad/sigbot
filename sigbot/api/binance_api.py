@@ -34,7 +34,7 @@ class Binance(ApiBase):
                 filtered_symbols.append(symbol)
         return filtered_symbols
 
-    def get_ticker_names(self, min_volume) -> (list, list, list):
+    def get_ticker_names(self, min_volume) -> tuple[list, list, list]:
         """ Get tickers and their volumes """
         tickers = pd.DataFrame(self.client.get_ticker())
         all_tickers = tickers['symbol'].to_list()

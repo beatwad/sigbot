@@ -153,7 +153,8 @@ class TelegramBot:
         # if ticker has 1000 in its name - apparently it belongs to perpetual futures, add .P to it's name
         if '1000' in ticker:
             ticker = ticker + '.P'
-        ticker = re.sub('SWAP', '', ticker)
+        if not ticker.startswith('SWAP'):
+            ticker = re.sub('SWAP', '', ticker)
         ticker = re.sub('-', '', ticker)
         ticker = re.sub('_', '', ticker)
         return ticker

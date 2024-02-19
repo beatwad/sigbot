@@ -146,7 +146,7 @@ class SigBot:
         not_used_ticker_vols = list()
         for ticker, ticker_vol in zip(tickers, ticker_vols):
             orig_ticker = ticker
-            ticker = ticker.replace('-', '').replace('_', '').replace('/', '').replace('SWAP', '')[:-4]
+            ticker = self.delete_redundant_symbols_from_ticker(ticker)[:-4]
             # if tickers is not used - add it to current exchange list
             if ticker not in self.used_tickers:
                 self.used_tickers.append(ticker)
@@ -455,7 +455,8 @@ class SigBot:
         """
         for sig_point in sig_points:
             for exchange, exchange_data in self.exchanges.items():
-                ticker = ticker.replace('SWAP', '')
+                if not ticker.startswith('SWAP'):
+                    ticker = ticker.replace('SWAP', '')
                 if ticker in exchange_data['all_tickers'] or ticker.replace('-', '') in exchange_data['all_tickers'] \
                         or ticker.replace('_', '') in exchange_data['all_tickers'] \
                         or ticker.replace('/', '') in exchange_data['all_tickers']:
@@ -591,6 +592,13 @@ class SigBot:
         for monitor in self.spot_ex_monitor_list:
             monitor.run_cycle()
 
+    @staticmethod
+    def delete_redundant_symbols_from_ticker(ticker: str) -> str:
+        ticker = ticker.replace('-', '').replace('_USDT', 'USDT')
+        if not ticker.startswith('SWAP'):
+            ticker = ticker.replace('SWAP', '')
+        return ticker
+
 
 class MonitorExchange:
     """ Class for monitoring of signals from current exchange """
@@ -633,7 +641,7 @@ class MonitorExchange:
                     df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now, add_funding_rate=True)
                 # If we previously download this dataframe to the disk - update it with new data
                 if data_qty > 1:
-                    tmp_ticker = ticker.replace('-', '').replace('SWAP', '').replace('_USDT', 'USDT')
+                    tmp_ticker = self.sigbot.delete_redundant_symbols_from_ticker(ticker)
                     try:
                         tmp = pd.read_pickle(f'../optimizer/ticker_dataframes/{tmp_ticker}_{timeframe}.pkl')
                     except FileNotFoundError:
@@ -658,7 +666,7 @@ class MonitorExchange:
             for timeframe in self.sigbot.timeframes:
                 if ticker not in self.sigbot.database or timeframe not in self.sigbot.database[ticker]:
                     try:
-                        tmp_ticker = ticker.replace('-', '').replace('SWAP', '').replace('_USDT', 'USDT')
+                        tmp_ticker = self.sigbot.delete_redundant_symbols_from_ticker(ticker)
                         df = pd.read_pickle(f'../optimizer/ticker_dataframes/{tmp_ticker}_{timeframe}.pkl')
                     except FileNotFoundError:
                         continue

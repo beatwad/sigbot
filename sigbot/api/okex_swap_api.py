@@ -16,9 +16,9 @@ class OKEXSwap(ApiBase):
 
         tickers = tickers[(tickers['instId'].str.endswith('USDT-SWAP')) | (tickers['instId'].str.endswith('USDC-SWAP'))]
         # meaning of vol24h is different between SPOT and SWAP
-        tickers['vol24h'] = tickers['vol24h'].astype(float)
+        tickers['volCcy24h'] = tickers['volCcy24h'].astype(float)
         tickers['last'] = tickers['last'].astype(float)
-        ticker_vol = tickers['vol24h'] * tickers['last']
+        ticker_vol = tickers['volCcy24h'] * tickers['last']
         tickers = tickers[ticker_vol >= min_volume // 2]
 
         filtered_symbols = self.check_symbols(tickers['instId'])
@@ -27,7 +27,7 @@ class OKEXSwap(ApiBase):
         tickers = tickers[tickers['instId'].isin(filtered_symbols)].reset_index(drop=True)
         tickers = tickers.drop_duplicates(subset=['instId'])
 
-        return tickers['instId'].to_list(), tickers['vol24h'].to_list(), all_tickers
+        return tickers['instId'].to_list(), tickers['volCcy24h'].to_list(), all_tickers
 
     def get_klines(self, symbol, interval, limit=200) -> pd.DataFrame:
         """ Save time, price and volume info to CryptoCurrency structure """

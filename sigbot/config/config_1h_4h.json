@@ -441,13 +441,27 @@
   },
   "Model": {
     "params": {
-      "model_path_buy": "ml/lgbm.pkl",
-      "model_path_sell": "ml/lgbm.pkl",
-      "feature_path_buy": "ml/features.json",
-      "feature_path_sell": "ml/features.json",
+      "model_path": "ml/lgbm.pkl",
+      "feature_path": "ml/features.json",
+      "weight": 0.279,
       "patterns_to_predict": [
-        "STOCH_RSI_Volume24",
-        "Pattern_Volume24"
+        "STOCH_RSI_Volume24"
+      ],
+      "cols_to_scale": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "macd",
+        "macdhist",
+        "macdsignal",
+        "atr"
+      ],
+      "time_to_predict_buy": [
+        1, 2, 3, 15, 16, 21, 22, 23
+      ],
+      "time_to_predict_sell": [
+        1, 2, 11, 14, 16, 17, 19, 21
       ]
     }
   },
@@ -490,7 +504,7 @@
         "PumpDump_Trend": 192,
         "STOCH_RSI_Volume24": 192,
         "STOCH_RSI_Trend": 192,
-        "Pattern_Volume24": 192
+        "Pattern_Trend_Volume24": 192
       },
       "min_prev_candle_limit": 4,
       "min_prev_candle_limit_higher": 2,
@@ -508,8 +522,7 @@
         "ByBitPerpetual"
       ],
       "favorite_patterns": [
-        "STOCH_RSI_Volume24",
-        "Pattern_Volume24"
+        "STOCH_RSI_Volume24"
       ],
       "log_path": "telegram_log.txt",
       "chat_ids": {
@@ -520,7 +533,7 @@
         "PumpDump_Trend": "-1001757652380",
         "HighVolume": "-1001757652380",
         "MACD": "-1001757652380",
-        "Pattern_Volume24": "-1001757652380",
+        "Pattern_Trend": "-1001757652380",
         "Multiple_Patterns": "-1001757652380"
       },
       "message_thread_ids": {
@@ -541,7 +554,7 @@
         "Multiple_Patterns": "12100"
       },
       "favorite_chat_ids": {
-        "Pattern_Volume24": "-1001840430020",
+        "Pattern_Trend": "-1001840430020",
         "STOCH_RSI_Volume24": "-1001840430020",
         "MACD": "-1001840430020",
         "Multiple_Patterns": "-1001840430020"
@@ -549,8 +562,8 @@
       "favorite_message_thread_ids": {
         "STOCH_RSI_Volume24_buy": "6",
         "STOCH_RSI_Volume24_sell": "2",
-        "Pattern_Volume24_buy": "9",
-        "Pattern_Volume24_sell": "12",
+        "Pattern_Trend_buy": "9",
+        "Pattern_Trend_sell": "12",
         "MACD_buy": "10906",
         "MACD_sell": "10905",
         "Multiple_Patterns": "883"
@@ -558,13 +571,14 @@
       "min_prev_candle_limit": 4,
       "min_prev_candle_limit_higher": 2,
       "max_notifications_in_row": 3,
-      "pred_buy_thresh": 0.66,
-      "pred_sell_thresh": 0.66
+      "pred_buy_thresh": 0.5,
+      "pred_sell_thresh": 0.5
     }
   },
   "Timeframes": {
     "work_timeframe": "1h",
-    "higher_timeframe": "4h"
+    "higher_timeframe": "4h",
+    "higher_timeframe_hours": [3, 7, 11, 15, 19, 23]
   },
   "Trade": {
     "leverage": 4,
@@ -603,6 +617,9 @@
           "low_min"
         ],
         "Trend": [
+          "linear_reg"
+        ],
+        "AntiTrend": [
           "linear_reg"
         ],
         "PumpDump": [],

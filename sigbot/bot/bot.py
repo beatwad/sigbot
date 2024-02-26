@@ -11,6 +11,7 @@ from indicators.indicators import IndicatorFactory
 from telegram_api.telegram_api import TelegramBot
 from log.log import exception, logger
 from constants.constants import telegram_token
+
 from ml.inference import Model
 
 # Get configs
@@ -74,8 +75,9 @@ class SigBot:
             # Load tickers
             self.get_api_and_tickers()
             # Start Telegram bot
-            # self.trade_exchange = self.exchanges['ByBitPerpetual']['API'] !!!
-            self.trade_mode = [0]  # multiprocessing.Array("i", range(1)) !!!
+            # TODO remove this when end debugging
+            # self.trade_exchange = self.exchanges['ByBitPerpetual']['API']
+            self.trade_mode = [0]  # multiprocessing.Array("i", range(1))
             locker = multiprocessing.Lock()
             self.telegram_bot = TelegramBot(token=telegram_token,
                                             database=self.database,
@@ -83,7 +85,8 @@ class SigBot:
                                             locker=locker,
                                             **configs)
             # run polling in the separate process
-            # pr = multiprocessing.Process(target=self.telegram_bot.polling) !!!
+            # TODO remove this when end debugging
+            # pr = multiprocessing.Process(target=self.telegram_bot.polling)
             # pr.start()
         else:
             buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
@@ -96,6 +99,8 @@ class SigBot:
         self.fut_ex_monitor_list = list()
         # dictionary that is used to determine too late signals according to current work_timeframe
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
+        # indicators of BTC dominance
+        self.btcd, self.btcdom = None, None
         # model for price prediction
         if opt_type:
             self.model = None
@@ -155,7 +160,7 @@ class SigBot:
         return not_used_tickers, not_used_ticker_vols
 
     def get_data(self, exchange_api: GetData, ticker: str, timeframe: str,
-                 dt_now: datetime, add_funding_rate: bool = False) -> tuple[pd.DataFrame, int]:
+                 dt_now: datetime) -> tuple[pd.DataFrame, int]:
         """ Check if new data appeared. If it is - return dataframe with the new data and amount of data
         Parameters
         ----------
@@ -167,8 +172,6 @@ class SigBot:
             Time frame value (e.g. 5m, 1h, 4h, 1d).
         dt_now
             Current datetime value.
-        add_funding_rate
-            Flag that indicates if funding rate data should be added.
         Returns
         -------
         df
@@ -179,10 +182,27 @@ class SigBot:
         df = self.database.get(ticker, dict()).get(timeframe, dict())\
             .get('data', pd.DataFrame()).get('buy', pd.DataFrame())
         # Write data to the dataframe
-        df, data_qty = exchange_api.get_data(df, ticker, timeframe, dt_now, add_funding_rate)
+        df, data_qty = exchange_api.get_data(df, ticker, timeframe, dt_now)
         return df, data_qty
 
-    def get_historical_data(self, exchange_api, ticker: str,
+    @staticmethod
+    def get_btc_dominance(exchange_api: GetData) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """ Get two types of BTC dominance indicators
+        Parameters
+        ----------
+        exchange_api
+            Class for current exchange access through API.
+        Returns
+        -------
+        btcd
+            Dataframe that contains the indicator of BTC dominance of type 1 (CryptoCap)
+        btcdom
+            Dataframe that contains the indicator of BTC dominance of type 2 (Binance)
+        """
+        btcd, btcdom = exchange_api.get_btc_dom()
+        return btcd, btcdom
+
+    def get_historical_data(self, exchange_api: GetData, ticker: str,
                             timeframe: str, min_time: datetime) -> tuple[pd.DataFrame, int]:
         """ Collect historical candle data from min_time and until now
             Parameters
@@ -578,13 +598,18 @@ class SigBot:
                 ttype = 'sell'
             else:
                 ttype = 'buy'
-        sig_points = self.model.make_prediction(df, sig_points, ttype)
+        sig_points = self.model.make_prediction(df, self.btcd, self.btcdom, sig_points, ttype)
         return sig_points
 
     @exception
     def main_cycle(self):
         """ Create and run exchange monitors """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
+        # get BTC dominance
+        for ex in self.spot_ex_monitor_list:
+            if ex.exchange_data['API'].name == 'Binance':
+                binance_exchange_data = ex.exchange_data['API']
+                self.btcd, self.btcdom = self.get_btc_dominance(binance_exchange_data)
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
             monitor.run_cycle()
@@ -638,7 +663,7 @@ class MonitorExchange:
                     # get historical data for some period (before min_time)
                     df, data_qty = self.sigbot.get_historical_data(exchange_api, ticker, timeframe, min_time)
                 else:
-                    df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now, add_funding_rate=True)
+                    df, data_qty = self.sigbot.get_data(exchange_api, ticker, timeframe, dt_now)
                 # If we previously download this dataframe to the disk - update it with new data
                 if data_qty > 1:
                     tmp_ticker = self.sigbot.delete_redundant_symbols_from_ticker(ticker)
@@ -783,7 +808,8 @@ class MonitorExchange:
                                 # send Telegram notification, create separate process for each notification
                                 # to run processes of signal search and signal notification simultaneously
                                 for sig_point in sig_points:
-                                    # self.sigbot.trade_exchange.api.check_open_positions() # !!!
+                                    # TODO remove this when end debugging
+                                    # self.sigbot.trade_exchange.api.check_open_positions()
                                     ticker = sig_point[0]
                                     sig_type = sig_point[3].capitalize()
                                     sig_time = sig_point[4]
@@ -796,7 +822,8 @@ class MonitorExchange:
                                         if pattern.startswith('STOCH_RSI'):
                                             # for STOCH_RSI pattern buy / sell trades are inverted
                                             sig_type = 'Sell' if sig_type == 'Buy' else 'Buy'
-                                        # self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type) !!!
+                                        # TODO remove this when end debugging
+                                        # self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type)
                                     pr = multiprocessing.Process(target=self.sigbot.telegram_bot.send_notification,
                                                                  args=(sig_point,))
                                     processes.append(pr)
@@ -820,7 +847,8 @@ class MonitorExchange:
         # save buy and sell statistics to files
         self.mon_save_statistics()
         # find open orders (not TP / SL) that weren't triggered within an hour and cancel them
-        # if self.exchange == 'ByBitPerpetual': !!!
+        # TODO remove this when end debugging
+        # if self.exchange == 'ByBitPerpetual':
         #     self.sigbot.trade_exchange.api.find_open_orders()
         #     self.sigbot.trade_exchange.api.check_open_positions()
 

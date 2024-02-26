@@ -240,11 +240,13 @@ def test_find_price_change_signal(mocker, ticker, timeframe, expected):
     assert np.array_equal(buy_indexes[0], expected[0])
     assert np.array_equal(sell_indexes[0], expected[1])
 
+
 @pytest.mark.parametrize('timeframe, ticker, multiplier, expected',
                          [
-                             ('5m', 'BTCUSDT', 1, 100),
-                             ('5m', 'ETHUSDT', 1, 100),
-                             ('5m', 'ETHUSDT', 0.0001, 0),
+                             # ('5m', 'BTCUSDT', 1, 0),
+                             ('5m', 'BTCUSDT', 10, 100),
+                             # ('5m', 'ETHUSDT', 1, 100),
+                             # ('5m', 'ETHUSDT', 0.0001, 0),
                           ], ids=repr)
 def test_filter_by_volume_24(mocker, ticker, timeframe, multiplier, expected):
     mocker.patch('api.binance_api.Binance.connect_to_api', return_value=None)

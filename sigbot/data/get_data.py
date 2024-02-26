@@ -13,6 +13,8 @@ from datetime import datetime
 from log.log import logger
 from constants.constants import bybit_key, bybit_secret, bybit_test_key, bybit_test_secret
 from constants.constants import binance_key, binance_secret, binance_perp_key, binance_perp_secret
+from api.tvdatafeed.main import TvDatafeed, Interval
+from constants.constants import tv_username, tv_password
 
 env = environ.get("ENV", "debug")
 
@@ -57,6 +59,11 @@ class GetData:
         self.work_timeframe = configs['Timeframes']['work_timeframe']
         # number of tries to get candles
         self.num_retries = 3
+        # TradingView class for obtaining BTC dominance
+        if self.name == 'Binance':
+            self.tv_data = TvDatafeed(username=tv_username, password=tv_password)
+        else:
+            self.tv_data = None
 
     @staticmethod
     def load_saved_data(df: pd.DataFrame, ticker: str, timeframe: str) -> pd.DataFrame:
@@ -81,7 +88,7 @@ class GetData:
         return df
 
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
-                 dt_now: datetime, add_funding_rate_: bool = False) -> tuple[pd.DataFrame, int]:
+                 dt_now: datetime) -> tuple[pd.DataFrame, int]:
         """ Get data from exchange """
         limit = self.get_limit(df, ticker, timeframe, dt_now)
         # get data from exchange only when there is at least one interval to get
@@ -103,12 +110,32 @@ class GetData:
             return df, 0
         df = self.process_data(klines, df)
 
-        if add_funding_rate_:
+        # add funding rate
+        if timeframe == self.work_timeframe:
             min_time = klines['time'].min()
             funding_rates = self.api.get_historical_funding_rate(ticker, self.limit, min_time)
             df = self.add_funding_rate(df, funding_rates, timeframe)
 
         return df, limit
+
+    def get_btc_dom(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """ Get two types of BTC dominance indicators """
+        btcd_cols = ['time', 'btcd_open', 'btcd_high', 'btcd_low', 'btcd_close', 'btcd_volume']
+        btcdom_cols = ['time', 'btcdom_open', 'btcdom_high', 'btcdom_low', 'btcdom_close', 'btcdom_volume']
+
+        btcd = self.tv_data.get_hist('BTC.D', 'CRYPTOCAP', interval=Interval.in_daily, n_bars=50,
+                                     extended_session=True).reset_index()
+        btcd = btcd.drop(columns='symbol')
+        btcd.columns = btcd_cols
+        btcd['time'] = btcd['time'] + pd.to_timedelta(23, unit='h')
+
+        btcdom = self.tv_data.get_hist('BTCDOMUSDT.P', 'BINANCE', interval=Interval.in_4_hour, n_bars=200,
+                                       extended_session=True).reset_index()
+        btcdom = btcdom.drop(columns='symbol')
+        btcdom.columns = btcdom_cols
+        btcdom['time'] = btcdom['time'] + pd.to_timedelta(3, unit='h')
+
+        return btcd[:-1], btcdom[:-1]
 
     def get_historical_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
                             min_time: datetime) -> tuple[pd.DataFrame, int]:
@@ -139,14 +166,15 @@ class GetData:
         if timeframe == self.work_timeframe:
             if funding_rates.shape[0] > 0:
                 funding_rates = self.process_funding_rate_data(funding_rates)
+                if 'funding_rate' in df.columns:
+                    df = df.drop(columns='funding_rate')
                 df = pd.merge(df, funding_rates, how='left', on='time')
                 df['funding_rate'] = df['funding_rate'].ffill()
-                if self.name == 'OKEXSwap': # OKEXSwap funding rate history is capped with 3 months
+                if self.name == 'OKEXSwap':  # OKEXSwap funding rate history is capped with 3 months
                     df['funding_rate'] = df['funding_rate'].fillna(0)
             else:
                 df['funding_rate'] = 0
         return df
-
     
     def get_historical_funding_rate_data(self, ticker: str, min_time: datetime) -> tuple[pd.DataFrame, int]:
         """ Get historical funding rate data from exchange for some period """

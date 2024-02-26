@@ -22,23 +22,31 @@ class Model:
         self.time_to_predict_sell = configs['Model']['params']['time_to_predict_sell']
         self.cols_to_scale = configs['Model']['params']['cols_to_scale']
 
-    def prepare_data(self, df: pd.DataFrame, signal_points: list, ttype: str) -> pd.DataFrame:
+    def prepare_data(self, df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFrame,
+                     signal_points: list, ttype: str) -> pd.DataFrame:
         """ Get data from ticker dataframe and prepare it for model prediction """
+        btcd_cols = list(btcd.columns)
+        btcdom_cols = list(btcdom.columns)
         rows = pd.DataFrame()
         # bring columns with highly different absolute values (for different tickers) to similar scale
-        tmp_df = df[self.cols_to_scale].copy()
+        tmp_df = df.copy()
         for c in self.cols_to_scale:
-            df[c] = df[c].pct_change() * 100
+            tmp_df[c] = tmp_df[c].pct_change() * 100
+        # merge with BTC dominance dataframes
+        tmp_df[btcd_cols] = pd.merge(tmp_df[['time']], btcd[btcd_cols], how='left', on='time')
+        tmp_df[btcdom_cols] = pd.merge(tmp_df[['time']], btcdom[btcdom_cols], how='left', on='time')
+        btcd_btcdom_cols = btcd_cols + btcdom_cols[1:]
+        tmp_df[btcd_btcdom_cols] = tmp_df[btcd_btcdom_cols].ffill()
         # create dataframe for prediction
         for i, point in enumerate(signal_points):
             row = pd.DataFrame()
             point_idx = point[2]
-            point_time = df.iloc[point_idx, df.columns.get_loc('time')]
+            point_time = tmp_df.iloc[point_idx, tmp_df.columns.get_loc('time')]
             for key, features in self.feature_dict.items():
                 if key.isdigit():
                     try:
-                        tmp_row = df.loc[df['time'] == point_time -
-                                         pd.to_timedelta(int(key), unit='h'), features].reset_index(drop=True)
+                        tmp_row = tmp_df.loc[tmp_df['time'] == point_time -
+                                             pd.to_timedelta(int(key), unit='h'), features].reset_index(drop=True)
                     except KeyError:
                         return pd.DataFrame()
                     row = pd.concat([row, tmp_row], axis=1)
@@ -54,17 +62,18 @@ class Model:
             # predict only for favorite exchanges
             pattern = point[5]
             exchange_list = point[7]
-            # if pattern in self.patterns_to_predict and set(exchange_list).intersection(set(self.favorite_exchanges)): !!!
+            # TODO remove this when end debugging
+            # if pattern in self.patterns_to_predict and set(exchange_list).intersection(set(self.favorite_exchanges)):
             if pattern in self.patterns_to_predict:
                 rows = pd.concat([rows, row])
                 rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i
         rows = rows.reset_index(drop=True).fillna(0)
-        df[self.cols_to_scale] = tmp_df[self.cols_to_scale]
         return rows
 
-    def make_prediction(self, df: pd.DataFrame, signal_points: list, ttype: str) -> list:
+    def make_prediction(self, df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFrame,
+                        signal_points: list, ttype: str) -> list:
         """ Make prediction with model """
-        rows = self.prepare_data(df, signal_points, ttype)
+        rows = self.prepare_data(df, btcd, btcdom, signal_points, ttype)
         if rows.shape[0] == 0:
             return signal_points
         # make predictions and average them

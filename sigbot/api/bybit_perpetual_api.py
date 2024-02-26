@@ -6,12 +6,12 @@ from time import sleep
 from api.api_base import ApiBase
 from pybit import unified_trading
 from pybit.exceptions import InvalidRequestError
-# from log.log import logger
-logger = None
+from log.log import logger
+# logger = None
 from config.config import ConfigFactory
 
 # Set environment variable
-environ["ENV"] = "debug"
+# environ["ENV"] = "debug"
 configs = ConfigFactory.factory(environ).configs
 
 
@@ -35,7 +35,8 @@ class ByBitPerpetual(ApiBase):
         self.position_timeout_hours = configs['Trade']['position_timeout_hours']
 
     def connect_to_api(self, api_key, api_secret):
-        # if environ['ENV'] == 'debug': !!!
+        # TODO remove this when end debugging
+        # if environ['ENV'] == 'debug':
         #     test = True
         # else:
         test = False
@@ -425,8 +426,9 @@ if __name__ == '__main__':
     bybit_api = ByBitPerpetual()
     # tickers = bybit_api.get_ticker_names(500000)
     # print(tickers)
-    min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    klines_ = bybit_api.get_klines(symbol='BTCUSDT', interval='1h', limit=200)
+    min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(5 * 5, unit='D')
+    # klines_ = bybit_api.get_klines(symbol='BTCUSDT', interval='1h', limit=200)
+    klines_ = bybit_api.get_historical_funding_rate('BTCUSDT', 200, min_time_)
     klines_['time'] = pd.to_datetime(klines_['time'], unit='ms')
     klines_['time'] = klines_['time'] + pd.to_timedelta(3, unit='h')
     pass

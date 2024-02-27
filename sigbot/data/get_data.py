@@ -113,7 +113,7 @@ class GetData:
         # add funding rate
         if timeframe == self.work_timeframe:
             min_time = klines['time'].min()
-            funding_rates = self.api.get_historical_funding_rate(ticker, self.limit, min_time)
+            funding_rates = self.api.get_historical_funding_rate(ticker, min(limit + 2, self.limit // 2), min_time)
             df = self.add_funding_rate(df, funding_rates, timeframe)
 
         return df, limit

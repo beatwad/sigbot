@@ -817,12 +817,10 @@ class MonitorExchange:
                                             # for STOCH_RSI pattern buy / sell trades are inverted
                                             sig_type = 'Sell' if sig_type == 'Buy' else 'Buy'
                                         self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type)
-                                    pr = multiprocessing.Process(target=self.sigbot.telegram_bot.send_notification,
-                                                                 args=(sig_point,))
-                                    processes.append(pr)
-                                    pr.start()
-                                    import time
-                                    time.sleep(10000)
+                                        pr = multiprocessing.Process(target=self.sigbot.telegram_bot.send_notification,
+                                                                     args=(sig_point,))
+                                        processes.append(pr)
+                                        pr.start()
                             # Log the signals
                             for sig_point in sig_points:
                                 sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \

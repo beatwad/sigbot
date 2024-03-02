@@ -273,6 +273,11 @@ class ByBitPerpetual(ApiBase):
     def place_conditional_order(self, symbol, side, price, trigger_direction, trigger_price, quantity, stop_loss,
                                 take_profit) -> str:
         """ Place conditional order """
+        if side == 'Buy':
+            position_idx = 1  # hedge-mode Buy side
+        else:
+            position_idx = 2  # hedge-mode Sell side
+
         self.client.place_order(
             category='linear',
             symbol=symbol,
@@ -284,7 +289,7 @@ class ByBitPerpetual(ApiBase):
             triggerPrice=trigger_price,
             triggerBy='LastPrice',
             timeInForce='GTC',
-            positionIdx=0,
+            positionIdx=position_idx,
             takeProfit=take_profit,
             stopLoss=stop_loss,
             tpTriggerBy='LastPrice',
@@ -371,10 +376,10 @@ class ByBitPerpetual(ApiBase):
 
     def place_all_conditional_orders(self, symbol, side) -> (bool, str):
         """ Place all necessary conditional orders for symbol """
-        if not self.check_open_positions(symbol):
-            message = f"There are opened positions for ticker {symbol}, don't open the new one."
-            logger.info(message)
-            return False, message
+        self.check_open_positions(symbol)
+        # message = f"There are opened positions for ticker {symbol}, don't open the new one."
+        # logger.info(message)
+        # return False, message
 
         self.set_settings(symbol)
         ts_round_digits_num, tick_size = self.get_round_digits_tick_size(symbol)

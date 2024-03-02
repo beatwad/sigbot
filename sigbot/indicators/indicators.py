@@ -145,12 +145,12 @@ class ATR(Indicator):
         super(ATR, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        """ Add ATR indicator to the dataframe """
         try:
             atr = ta.ATR(df['high'], df['low'], df['close'], **self.configs)
         except:
             atr = 0
         df['atr'] = atr
-        # column for statistic counting
         df['close_smooth'] = df['close'].rolling(self.configs['timeperiod']).mean()
         return df
 
@@ -163,13 +163,16 @@ class SMA(Indicator):
         super(SMA, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        """ Add SMA indicator to the dataframe """
         timeperiod = self.configs['timeperiod']
         try:
             sma = ta.SMA(df['close'], timeperiod)
+            sma_7 = ta.SMA(df['close'], timeperiod * 7)
         except:
             sma = 0
+            sma_7 = 0
         df['sma'] = sma
-        # column for statistic counting
+        df['sma_7'] = sma_7
         return df
 
 
@@ -199,7 +202,7 @@ class SAR(Indicator):
         super(SAR, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        """ Add CCI indicator to the dataframe """
+        """ Add SAR indicator to the dataframe """
         acceleration = self.configs['acceleration']
         maximum = self.configs['maximum']
         try:

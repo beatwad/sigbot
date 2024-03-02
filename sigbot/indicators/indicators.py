@@ -138,7 +138,7 @@ class MACD(Indicator):
 
 
 class ATR(Indicator):
-    """ ATR indicator, default settings: timeperiod: 24 """
+    """ Average True Range indicator """
     name = 'ATR'
 
     def __init__(self, ttype: str, configs: dict):
@@ -165,36 +165,48 @@ class SMA(Indicator):
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
         timeperiod = self.configs['timeperiod']
         try:
-            sma_24 = ta.SMA(df['close'], timeperiod)
-            # sma_168 = ta.SMA(df['close'], timeperiod * 7)
+            sma = ta.SMA(df['close'], timeperiod)
         except:
-            sma_24 = 0
-            # sma_168 = 0
-        df['sma_24'] = sma_24
-        # df['sma_168'] = sma_168
+            sma = 0
+        df['sma'] = sma
         # column for statistic counting
         return df
 
 
-class PivotPoints(Indicator):
-    """ Pivot point indicator """
-    name = 'ATR'
+class CCI(Indicator):
+    """ Commodity Channel Index (Momentum Indicators), default settings: timeperiod: 24 """
+    name = 'CCI'
 
     def __init__(self, ttype: str, configs: dict):
-        super(PivotPoints, self).__init__(ttype, configs)
+        super(CCI, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        """ Add PP indicator to the dataframe """
-        PP = pd.Series((df['high'] + df['low'] + df['close']) / 3)
-        R1 = pd.Series(2 * PP - df['low'])
-        S1 = pd.Series(2 * PP - df['high'])
-        R2 = pd.Series(PP + df['high'] - df['low'])
-        S2 = pd.Series(PP - df['high'] + df['low'])
-        R3 = pd.Series(df['high'] + 2 * (PP - df['low']))
-        S3 = pd.Series(df['low'] - 2 * (df['high'] - PP))
-        psr = {'PP': PP, 'R1': R1, 'S1': S1, 'R2': R2, 'S2': S2, 'R3': R3, 'S3': S3}
-        PSR = pd.DataFrame(psr)
-        df = df.join(PSR)
+        """ Add CCI indicator to the dataframe """
+        timeperiod = self.configs['timeperiod']
+        try:
+            cci = ta.CCI(df['high'], df['low'], df['close'], timeperiod)
+        except:
+            cci = 0
+        df['cci'] = cci
+        return df
+
+
+class SAR(Indicator):
+    """ Parabolic Stop and Reverse indicator, default settings: acceleration: 0.02, maximum: 0.2 """
+    name = 'SAR'
+
+    def __init__(self, ttype: str, configs: dict):
+        super(SAR, self).__init__(ttype, configs)
+
+    def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        """ Add CCI indicator to the dataframe """
+        acceleration = self.configs['acceleration']
+        maximum = self.configs['maximum']
+        try:
+            sar = ta.SAR(df['high'], df['low'], acceleration, maximum)
+        except:
+            sar = 0
+        df['sar'] = sar
         return df
 
 

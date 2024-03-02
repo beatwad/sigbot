@@ -232,6 +232,17 @@
           "timeperiod": 24
         }
       },
+      "CCI": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
+      "SAR": {
+        "params": {
+          "acceleration": 0.02,
+          "maximum": 0.2
+        }
+      },
       "PumpDump": {
         "params": {
           "round_decimals": 6,
@@ -291,6 +302,17 @@
       "SMA": {
         "params": {
           "timeperiod": 24
+        }
+      },
+      "CCI": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
+      "SAR": {
+        "params": {
+          "acceleration": 0.02,
+          "maximum": 0.2
         }
       },
       "PumpDump": {
@@ -434,7 +456,7 @@
   "Main": {
     "params": {
       "bot_cycle_length_sec": 5,
-      "cycle_length_hours": 24,
+      "cycle_length_hours": 120,
       "time_period_minutes": 60,
       "first_cycle_qty_miss": 1
     }
@@ -458,10 +480,10 @@
         "atr"
       ],
       "time_to_predict_buy":  [
-        1, 2, 4, 9, 14, 15, 16, 17, 18, 19, 21, 22, 23
+        0, 1, 2, 3, 16, 17, 21, 22, 23
       ],
       "time_to_predict_sell": [
-        1, 9, 16, 17, 18, 19, 21, 23
+        1, 4, 14, 16, 17, 18, 19, 21, 23
       ]
     }
   },
@@ -551,7 +573,7 @@
     "risk": 0.001,
     "quote_coin": "USDT",
     "currency": "USD",
-    "one_way_mode": 1,
+    "one_way_mode": 0,
     "is_isolated": 1,
     "order_timeout_hours": 1,
     "position_timeout_hours": 96

@@ -75,9 +75,8 @@ class SigBot:
             # Load tickers
             self.get_api_and_tickers()
             # Start Telegram bot
-            # TODO remove this when end debugging
-            # self.trade_exchange = self.exchanges['ByBitPerpetual']['API']
-            self.trade_mode = [0]  # multiprocessing.Array("i", range(1))
+            self.trade_exchange = self.exchanges['ByBitPerpetual']['API']
+            self.trade_mode = multiprocessing.Array("i", range(1))
             locker = multiprocessing.Lock()
             self.telegram_bot = TelegramBot(token=telegram_token,
                                             database=self.database,
@@ -85,9 +84,8 @@ class SigBot:
                                             locker=locker,
                                             **configs)
             # run polling in the separate process
-            # TODO remove this when end debugging
-            # pr = multiprocessing.Process(target=self.telegram_bot.polling)
-            # pr.start()
+            pr = multiprocessing.Process(target=self.telegram_bot.polling)
+            pr.start()
         else:
             buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
             sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
@@ -808,26 +806,23 @@ class MonitorExchange:
                                 # send Telegram notification, create separate process for each notification
                                 # to run processes of signal search and signal notification simultaneously
                                 for sig_point in sig_points:
-                                    # TODO remove this when end debugging
-                                    # self.sigbot.trade_exchange.api.check_open_positions()
+                                    self.sigbot.trade_exchange.api.check_open_positions()
                                     ticker = sig_point[0]
                                     sig_type = sig_point[3].capitalize()
                                     sig_time = sig_point[4]
                                     pattern = sig_point[5]
                                     prediction = sig_point[9]
                                     if self.sigbot.trade_mode[0] and prediction > 0:
-                                        # miss the signals that don't happen at 3, 7, 11, 15, 19 or 23 hour
-                                        if sig_time.hour not in [3, 7, 11, 15, 19, 23]:
-                                            continue
                                         if pattern.startswith('STOCH_RSI'):
                                             # for STOCH_RSI pattern buy / sell trades are inverted
                                             sig_type = 'Sell' if sig_type == 'Buy' else 'Buy'
-                                        # TODO remove this when end debugging
-                                        # self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type)
+                                        self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type)
                                     pr = multiprocessing.Process(target=self.sigbot.telegram_bot.send_notification,
                                                                  args=(sig_point,))
                                     processes.append(pr)
                                     pr.start()
+                                    import time
+                                    time.sleep(10000)
                             # Log the signals
                             for sig_point in sig_points:
                                 sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
@@ -835,22 +830,15 @@ class MonitorExchange:
                                               f'pattern is {sig_point[5]}, time is {sig_point[4]}, ' \
                                               f'model confidence is {sig_point[9]}'
                                 logger.info(sig_message)
-                    # TODO remove this when end debugging
-                    # if self.sigbot.main.cycle_number > self.sigbot.main.first_cycle_qty_miss:
-                    #     self.sigbot.database[ticker][timeframe]['data']['buy'].to_csv(
-                    #         f'bot/ticker_dataframes/{ticker}_{timeframe}_buy_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
-                    #     self.sigbot.database[ticker][timeframe]['data']['sell'].to_csv(
-                    #         f'bot/ticker_dataframes/{ticker}_{timeframe}_sell_{dt_now.month}_{dt_now.day}_{dt_now.hour}.csv')
         # wait until all processes finish
         for pr in processes:
             pr.join()
         # save buy and sell statistics to files
         self.mon_save_statistics()
         # find open orders (not TP / SL) that weren't triggered within an hour and cancel them
-        # TODO remove this when end debugging
-        # if self.exchange == 'ByBitPerpetual':
-        #     self.sigbot.trade_exchange.api.find_open_orders()
-        #     self.sigbot.trade_exchange.api.check_open_positions()
+        if self.exchange == 'ByBitPerpetual':
+            self.sigbot.trade_exchange.api.find_open_orders()
+            self.sigbot.trade_exchange.api.check_open_positions()
 
 
 # if __name__ == "__main__":

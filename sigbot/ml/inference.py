@@ -39,9 +39,14 @@ class Model:
         tmp_df[btcd_btcdom_cols] = tmp_df[btcd_btcdom_cols].ffill()
         # create dataframe for prediction
         for i, point in enumerate(signal_points):
-            row = pd.DataFrame()
             point_idx = point[2]
             point_time = tmp_df.iloc[point_idx, tmp_df.columns.get_loc('time')]
+            # predict only at selected hours
+            if ttype == 'buy' and point_time.hour not in self.time_to_predict_buy:
+                continue
+            if ttype == 'sell' and point_time.hour not in self.time_to_predict_sell:
+                continue
+            row = pd.DataFrame()
             for key, features in self.feature_dict.items():
                 if key.isdigit():
                     try:
@@ -54,17 +59,10 @@ class Model:
             row.columns = self.feature_dict['features'] + ['weekday']
             # add number of signal point for which prediction is made
             row['sig_point_num'] = 0
-            # do not predict at "bad" hours
-            if ttype == 'buy' and point_time.hour not in self.time_to_predict_buy:
-                continue
-            if ttype == 'sell' and point_time.hour not in self.time_to_predict_sell:
-                continue
             # predict only for favorite exchanges
             pattern = point[5]
             exchange_list = point[7]
-            # TODO remove this when end debugging
-            # if pattern in self.patterns_to_predict and set(exchange_list).intersection(set(self.favorite_exchanges)):
-            if pattern in self.patterns_to_predict:
+            if pattern in self.patterns_to_predict and set(exchange_list).intersection(set(self.favorite_exchanges)):
                 rows = pd.concat([rows, row])
                 rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i
         rows = rows.reset_index(drop=True).fillna(0)

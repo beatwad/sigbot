@@ -34,6 +34,10 @@ class IndicatorFactory(object):
             return SMA(ttype, configs)
         elif indicator.startswith('Volume24'):
             return Volume24(ttype, configs)
+        elif indicator.startswith('CCI'):
+            return CCI(ttype, configs)
+        elif indicator.startswith('SAR'):
+            return SAR(ttype, configs)
 
 
 class Indicator:

@@ -1,10 +1,12 @@
 import json
 import joblib
 import pandas as pd
+from indicators import indicators
 
 
 class Model:
     def __init__(self, **configs):
+        self.configs = configs
         # load buy and sell models
         model_lgb_path = configs['Model']['params']['model_path']
         self.model_lgb = joblib.load(model_lgb_path)
@@ -28,8 +30,15 @@ class Model:
         btcd_cols = list(btcd.columns)
         btcdom_cols = list(btcdom.columns)
         rows = pd.DataFrame()
-        # bring columns with highly different absolute values (for different tickers) to similar scale
         tmp_df = df.copy()
+        # add CCI and SAR indicators
+        # add CCI
+        cci = indicators.CCI(ttype, self.configs)
+        tmp_df = cci.get_indicator(tmp_df, '', '', 0)
+        # add SAR
+        sar = indicators.SAR(ttype, self.configs)
+        tmp_df = sar.get_indicator(tmp_df, '', '', 0)
+        # bring columns with highly different absolute values (for different tickers) to similar scale
         for c in self.cols_to_scale:
             tmp_df[c] = tmp_df[c].pct_change() * 100
         # merge with BTC dominance dataframes
@@ -39,6 +48,7 @@ class Model:
         tmp_df[btcd_btcdom_cols] = tmp_df[btcd_btcdom_cols].ffill()
         # create dataframe for prediction
         for i, point in enumerate(signal_points):
+            ticker = point[0]
             point_idx = point[2]
             point_time = tmp_df.iloc[point_idx, tmp_df.columns.get_loc('time')]
             # predict only at selected hours
@@ -66,6 +76,8 @@ class Model:
                 rows = pd.concat([rows, row])
                 rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i
         rows = rows.reset_index(drop=True).fillna(0)
+        df.to_csv(f'ticker_preds/{ticker}_df_hist.csv')
+        rows.to_csv(f'ticker_preds/{ticker}_preds_hist.csv')
         return rows
 
     def make_prediction(self, df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFrame,

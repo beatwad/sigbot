@@ -35,10 +35,10 @@ class ByBitPerpetual(ApiBase):
         self.position_timeout_hours = configs['Trade']['position_timeout_hours']
 
     def connect_to_api(self, api_key, api_secret):
-        if environ['ENV'] == 'debug':
-            test = True
-        else:
-            test = False
+        # if environ['ENV'] == 'debug':  # TODO uncomment this when you end
+        #     test = True
+        # else:
+        test = False
         self.client = unified_trading.HTTP(api_key=api_key, api_secret=api_secret, testnet=test)
 
     def get_ticker_names(self, min_volume) -> (list, list, list):
@@ -351,6 +351,7 @@ class ByBitPerpetual(ApiBase):
 
         for pos in positions_to_close:
             symbol, side, size = pos
+            # for STOCH_RSI indicator trade sides are inverted
             side = 'Sell' if side == 'Buy' else 'Buy'
             self.place_market_order(symbol, side, size)
 
@@ -389,12 +390,12 @@ class ByBitPerpetual(ApiBase):
             direction = 'Fall'
             prices = [price - 2 * tick_size]
             take_profits = [price * 1.03]
-            stop_loss = price * 0.969
+            stop_loss = price * 0.97
         else:
             direction = 'Rise'
             prices = [price + 2 * tick_size]
             take_profits = [price * 0.97]
-            stop_loss = price * 1.031
+            stop_loss = price * 1.03
 
         quantity, message = self.get_quantity(symbol, prices, take_profits, stop_loss, side,
                                               len(take_profits) * len(prices))

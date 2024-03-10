@@ -2,7 +2,7 @@
   "Data": {
     "Basic": {
       "params": {
-        "limit": 300,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -24,7 +24,7 @@
     },
     "Binance": {
       "params": {
-        "limit": 300,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -46,7 +46,7 @@
     },
     "ByBit": {
       "params": {
-        "limit": 300,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -66,7 +66,7 @@
     },
     "OKEX": {
       "params": {
-        "limit": 150,
+        "limit": 200,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -87,7 +87,7 @@
     },
     "MEXC": {
       "params": {
-        "limit": 300,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "5m": 300,
@@ -102,7 +102,7 @@
     },
     "BinanceFutures": {
       "params": {
-        "limit": 300,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -124,7 +124,7 @@
     },
     "ByBitPerpetual": {
       "params": {
-        "limit": 300,
+        "limit": 400,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -232,6 +232,17 @@
           "timeperiod": 24
         }
       },
+      "CCI": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
+      "SAR": {
+        "params": {
+          "acceleration": 0.02,
+          "maximum": 0.2
+        }
+      },
       "PumpDump": {
         "params": {
           "round_decimals": 6,
@@ -291,6 +302,17 @@
       "SMA": {
         "params": {
           "timeperiod": 24
+        }
+      },
+      "CCI": {
+        "params": {
+          "timeperiod": 24
+        }
+      },
+      "SAR": {
+        "params": {
+          "acceleration": 0.02,
+          "maximum": 0.2
         }
       },
       "PumpDump": {
@@ -457,11 +479,11 @@
         "macdsignal",
         "atr"
       ],
-      "time_to_predict_buy": [
-        1, 2, 3, 15, 16, 21, 22, 23
+      "time_to_predict_buy":  [
+        0, 1, 2, 3, 16, 17, 21, 22, 23
       ],
       "time_to_predict_sell": [
-        1, 2, 11, 14, 16, 17, 19, 21
+        1, 4, 14, 16, 17, 18, 19, 21, 22, 23
       ]
     }
   },
@@ -585,7 +607,7 @@
     "risk": 0.001,
     "quote_coin": "USDT",
     "currency": "USD",
-    "one_way_mode": 1,
+    "one_way_mode": 0,
     "is_isolated": 1,
     "order_timeout_hours": 1,
     "position_timeout_hours": 96

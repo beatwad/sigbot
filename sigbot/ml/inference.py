@@ -23,6 +23,7 @@ class Model:
         self.time_to_predict_buy = configs['Model']['params']['time_to_predict_buy']
         self.time_to_predict_sell = configs['Model']['params']['time_to_predict_sell']
         self.cols_to_scale = configs['Model']['params']['cols_to_scale']
+        self.pred_thresh = configs['Model']['params']['pred_thresh']
 
     def prepare_data(self, df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFrame,
                      signal_points: list, ttype: str) -> pd.DataFrame:
@@ -91,5 +92,6 @@ class Model:
         sig_point_nums = rows['sig_point_num'].tolist()
         # add predictions to signal points
         for s_p_n, pred in zip(sig_point_nums, preds):
-            signal_points[s_p_n][9] = pred
+            if pred > self.pred_thresh:
+                signal_points[s_p_n][9] = pred
         return signal_points

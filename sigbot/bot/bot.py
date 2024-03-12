@@ -734,7 +734,6 @@ class MonitorExchange:
         # list of processes
         processes = list()
         for ticker in tickers:
-            ticker = 'SANDUSDT'  # !!!
             data_qty_higher = 0
             # flag that allows to pass the ticker in case of errors
             pass_the_ticker = False
@@ -807,10 +806,9 @@ class MonitorExchange:
                                 # send Telegram notification, create separate process for each notification
                                 # to run processes of signal search and signal notification simultaneously
                                 for sig_point in sig_points:
-                                    # self.sigbot.trade_exchange.api.check_open_positions() # TODO uncomment this
+                                    self.sigbot.trade_exchange.api.check_open_positions()
                                     ticker = sig_point[0]
                                     sig_type = sig_point[3].capitalize()
-                                    sig_time = sig_point[4]
                                     pattern = sig_point[5]
                                     prediction = sig_point[9]
                                     if self.sigbot.trade_mode[0] and prediction > 0:
@@ -818,10 +816,10 @@ class MonitorExchange:
                                             # for STOCH_RSI pattern buy / sell trades are inverted
                                             sig_type = 'Sell' if sig_type == 'Buy' else 'Buy'
                                         self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type)
-                                    # pr = multiprocessing.Process(target=self.sigbot.telegram_bot.send_notification,
-                                    #                              args=(sig_point,))
-                                    # processes.append(pr) # TODO uncomment this
-                                    # pr.start()
+                                    pr = multiprocessing.Process(target=self.sigbot.telegram_bot.send_notification,
+                                                                 args=(sig_point,))
+                                    processes.append(pr)
+                                    pr.start()
                             # Log the signals
                             for sig_point in sig_points:
                                 sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
@@ -835,9 +833,9 @@ class MonitorExchange:
         # save buy and sell statistics to files
         self.mon_save_statistics()
         # find open orders (not TP / SL) that weren't triggered within an hour and cancel them
-        # if self.exchange == 'ByBitPerpetual': # TODO uncomment this
-        #     self.sigbot.trade_exchange.api.find_open_orders()
-        #     self.sigbot.trade_exchange.api.check_open_positions()
+        if self.exchange == 'ByBitPerpetual':
+            self.sigbot.trade_exchange.api.find_open_orders()
+            self.sigbot.trade_exchange.api.check_open_positions()
 
 
 # if __name__ == "__main__":

@@ -76,8 +76,6 @@ class Model:
                 rows = pd.concat([rows, row])
                 rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i
         rows = rows.reset_index(drop=True).fillna(0)
-        df.to_csv(f'ticker_preds/{ticker}_df_hist.csv')
-        rows.to_csv(f'ticker_preds/{ticker}_preds_hist.csv')
         return rows
 
     def make_prediction(self, df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFrame,

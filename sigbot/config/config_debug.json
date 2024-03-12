@@ -458,13 +458,13 @@
       "bot_cycle_length_sec": 5,
       "cycle_length_hours": 120,
       "time_period_minutes": 60,
-      "first_cycle_qty_miss": 0
+      "first_cycle_qty_miss": 1
     }
   },
   "Model": {
     "params": {
-      "model_path": "ml/lgbm.pkl",
-      "feature_path": "ml/features.json",
+      "model_path": "ml/model/lgbm.pkl",
+      "feature_path": "ml/model/features.json",
       "weight": 0.279,
       "patterns_to_predict": [
         "STOCH_RSI_Volume24"
@@ -507,7 +507,7 @@
         "PumpDump_Trend": 192,
         "STOCH_RSI_Volume24": 192,
         "STOCH_RSI_Trend": 192,
-        "Pattern_Trend_Volume24": 192
+        "Pattern_Trend": 192
       },
       "min_prev_candle_limit": 4,
       "min_prev_candle_limit_higher": 2,
@@ -516,7 +516,7 @@
   },
   "Signal_params": {
     "params": {
-      "max_prev_candle_limit": 50
+      "max_prev_candle_limit": 1
     }
   },
   "Telegram": {
@@ -550,8 +550,8 @@
       "favorite_message_thread_ids": {
         "STOCH_RSI_Volume24_buy": "6",
         "STOCH_RSI_Volume24_sell": "2",
-        "Pattern_Trend_Volume24_buy": "9",
-        "Pattern_Trend_Volume24_sell": "12",
+        "Pattern_Trend_buy": "9",
+        "Pattern_Trend_sell": "12",
         "MACD_buy": "10906",
         "MACD_sell": "10905",
         "Multiple_Patterns": "883"
@@ -559,8 +559,8 @@
       "min_prev_candle_limit": 4,
       "min_prev_candle_limit_higher": 2,
       "max_notifications_in_row": 3,
-      "pred_buy_thresh": 0,
-      "pred_sell_thresh": 0
+      "pred_buy_thresh": 0.5,
+      "pred_sell_thresh": 0.5
     }
   },
   "Timeframes": {

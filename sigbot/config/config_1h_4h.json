@@ -463,8 +463,8 @@
   },
   "Model": {
     "params": {
-      "model_path": "ml/lgbm.pkl",
-      "feature_path": "ml/features.json",
+      "model_path": "ml/model/lgbm.pkl",
+      "feature_path": "ml/model/features.json",
       "weight": 0.279,
       "patterns_to_predict": [
         "STOCH_RSI_Volume24"
@@ -526,7 +526,7 @@
         "PumpDump_Trend": 192,
         "STOCH_RSI_Volume24": 192,
         "STOCH_RSI_Trend": 192,
-        "Pattern_Trend_Volume24": 192
+        "Pattern_Trend": 192
       },
       "min_prev_candle_limit": 4,
       "min_prev_candle_limit_higher": 2,
@@ -571,8 +571,8 @@
         "HighVolume_sell": "86",
         "MACD_buy": "99",
         "MACD_sell": "96",
-        "Pattern_Volume24_buy": "105",
-        "Pattern_Volume24_sell": "102",
+        "Pattern_Trend_buy": "105",
+        "Pattern_Trend_sell": "102",
         "Multiple_Patterns": "12100"
       },
       "favorite_chat_ids": {

@@ -35,10 +35,10 @@ class ByBitPerpetual(ApiBase):
         self.position_timeout_hours = configs['Trade']['position_timeout_hours']
 
     def connect_to_api(self, api_key, api_secret):
-        # if environ['ENV'] == 'debug':  # TODO uncomment this when you end
-        #     test = True
-        # else:
-        test = False
+        if environ['ENV'] == 'debug':
+            test = True
+        else:
+            test = False
         self.client = unified_trading.HTTP(api_key=api_key, api_secret=api_secret, testnet=test)
 
     def get_ticker_names(self, min_volume) -> (list, list, list):

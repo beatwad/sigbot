@@ -2,6 +2,7 @@ import json
 import joblib
 import pandas as pd
 from indicators import indicators
+from log.log import logger
 
 
 class Model:
@@ -54,8 +55,10 @@ class Model:
             point_time = tmp_df.iloc[point_idx, tmp_df.columns.get_loc('time')]
             # predict only at selected hours
             if ttype == 'buy' and point_time.hour not in self.time_to_predict_buy:
+                logger.info(f'Hour {point_time.hour} is not in list of hours when model can predict for buy trades')
                 continue
             if ttype == 'sell' and point_time.hour not in self.time_to_predict_sell:
+                logger.info(f'Hour {point_time.hour} is not in list of hours when model can predict for sell trades')
                 continue
             row = pd.DataFrame()
             for key, features in self.feature_dict.items():
@@ -92,6 +95,7 @@ class Model:
         sig_point_nums = rows['sig_point_num'].tolist()
         # add predictions to signal points
         for s_p_n, pred in zip(sig_point_nums, preds):
+            logger.info(f'Prediction score is {pred}')
             if pred > self.pred_thresh:
                 signal_points[s_p_n][9] = pred
         return signal_points

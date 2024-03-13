@@ -113,7 +113,21 @@ class GetData:
         # add funding rate
         if timeframe == self.work_timeframe:
             min_time = klines['time'].min()
-            funding_rates = self.api.get_historical_funding_rate(ticker, min(limit + 2, self.limit // 2), min_time)
+            for i in range(self.num_retries):
+                try:
+                    funding_rates = self.api.get_historical_funding_rate(ticker, min(limit + 2, self.limit // 2),
+                                                                         min_time)
+                except:
+                    if i == self.num_retries - 1:
+                        logger.exception(f'Catch an exception while trying to get funding rate. '
+                                         f'API is {self.api}, ticker is {ticker}')
+                    sleep(1)
+                    continue
+                else:
+                    break
+            else:
+                return df, 0
+
             df = self.add_funding_rate(df, funding_rates, timeframe)
 
         return df, limit

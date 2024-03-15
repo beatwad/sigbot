@@ -1,3 +1,4 @@
+import pybit
 import pandas as pd
 from os import environ
 from datetime import datetime
@@ -33,6 +34,8 @@ class ByBitPerpetual(ApiBase):
         self.is_isolated = configs['Trade']['is_isolated']
         self.order_timeout_hours = configs['Trade']['order_timeout_hours']
         self.position_timeout_hours = configs['Trade']['position_timeout_hours']
+        # number of tries to place an order
+        self.num_retries = 3
 
     def connect_to_api(self, api_key, api_secret):
         if environ['ENV'] == 'debug':
@@ -403,7 +406,7 @@ class ByBitPerpetual(ApiBase):
             logger.info(message)
             return False, message
 
-        for i, price in enumerate(prices):
+        for _, price in enumerate(prices):
             if quantity > 0:
                 if direction == 'Rise':  # price rises to trigger level, hits stop_px, then price
                     # stop_px > max(market_price, base_price)
@@ -418,9 +421,19 @@ class ByBitPerpetual(ApiBase):
                 stop_loss = round(stop_loss, ts_round_digits_num)
                 for take_profit in take_profits:
                     take_profit = round(take_profit, ts_round_digits_num)
-                    print(symbol, side, direction)
-                    message += self.place_conditional_order(symbol, side, price, trigger_direction,
-                                                            trigger_price, quantity, stop_loss, take_profit)
+                    logger.info(f'Place conditional order for ticker {symbol}')
+                    for i in range(self.num_retries):
+                        try:
+                            message += self.place_conditional_order(symbol, side, price, trigger_direction,
+                                                                    trigger_price, quantity, stop_loss, take_profit)
+                        except pybit.exceptions.InvalidRequestError:
+                            if i == self.num_retries - 1:
+                                logger.exception(f'Catch an exception while trying place conditional order '
+                                                 f'for ticker {symbol}')
+                            sleep(1)
+                            continue
+                        else:
+                            break
                 sleep(0.1)
         return True, message
 

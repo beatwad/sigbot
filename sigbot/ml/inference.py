@@ -95,7 +95,7 @@ class Model:
         sig_point_nums = rows['sig_point_num'].tolist()
         # add predictions to signal points
         for s_p_n, pred in zip(sig_point_nums, preds):
-            logger.info(f'Prediction score is {pred}')
+            logger.info(f'Prediction score for ticker {signal_points[s_p_n][0]} is {pred}')
             if pred > self.pred_thresh:
                 signal_points[s_p_n][9] = pred
         return signal_points

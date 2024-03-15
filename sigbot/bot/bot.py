@@ -798,6 +798,7 @@ class MonitorExchange:
                             sig_points = self.sigbot.calc_statistics(sig_points)
                             # Send Telegram notification
                             if sig_points:
+                                logger.info('Find the signal point(s).')
                                 sig_points = self.sigbot.make_prediction(sig_points)
                                 # if trade mode is enabled and model has made prediction - place an order
                                 print(self.exchange,
@@ -822,7 +823,7 @@ class MonitorExchange:
                                     pr.start()
                             # Log the signals
                             for sig_point in sig_points:
-                                sig_message = f'Find the signal point. Exchange is {self.exchange}, ticker is ' \
+                                sig_message = f'Exchange is {self.exchange}, ticker is ' \
                                               f'{ticker}, timeframe is {timeframe}, type is {sig_point[3]}, ' \
                                               f'pattern is {sig_point[5]}, time is {sig_point[4]}, ' \
                                               f'model confidence is {sig_point[9]}'

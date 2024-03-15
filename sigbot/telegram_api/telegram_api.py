@@ -6,7 +6,7 @@ from constants.constants import telegram_token
 
 # environ["ENV"] = "debug"
 
-from log.log import exception
+from log.log import logger, exception
 from time import sleep
 import pandas as pd
 
@@ -166,23 +166,15 @@ class TelegramBot:
         """ Send notification separately """
         # Get info from signal
         ticker = self.process_ticker(message[0])
-        timeframe = message[1]
-        sig_type = message[3]
-        sig_time = message[4]
-        sig_pattern = message[5]
-        # get list of available exchanges
-        sig_exchanges = message[7]
-        # get price prediction of model
-        prediction = message[9]
+        timeframe, sig_type, sig_pattern, sig_exchanges = message[1], message[3], message[5], message[7]
         # get chat and thread ids
         chat_id = self.chat_ids[sig_pattern]
         message_thread_id = self.message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
         if message_thread_id is not None:
             message_thread_id = int(message_thread_id)
+        # get price and round it
         price = self.database[message[0]][timeframe]['data'][sig_type]['close'].iloc[-1]
         price = self.round_price(price)
-        # Check if the same message wasn't send short time ago
-        # if self.check_previous_notifications(sig_time, sig_type, ticker, timeframe, sig_pattern):
         # create image and return path to it
         sig_img_path = self.add_plot(message)
         # Form text message
@@ -191,16 +183,17 @@ class TelegramBot:
             text = f'#{cleaned_ticker[:-6]}\n'
         else:
             text = f'#{cleaned_ticker[:-4]}\n'
-        # we do not need Volume24 in pattern's name
+        # remove Volume24 word from pattern name
         cleaned_sig_pattern = sig_pattern[:-9] if sig_pattern.endswith('Volume24') else sig_pattern
+        # create message
         text += ' + '.join(cleaned_sig_pattern.split('_')) + '\n'
         text += f'Price / Цена: ${price}\n'
-        if sig_pattern == 'HighVolume':
-            pass
-        elif sig_type == 'buy':
-            text += 'Buy / Покупка\n'
-        else:
-            text += 'Sell / Продажа\n'
+        # we do not need Volume24 in pattern's name
+        if sig_pattern != 'HighVolume':
+            if sig_type == 'buy':
+                text += 'Buy / Покупка\n'
+            else:
+                text += 'Sell / Продажа\n'
         text += 'Exchanges / Биржи:\n'
         for exchange in sig_exchanges:
             text += f' • {exchange}\n'
@@ -209,6 +202,8 @@ class TelegramBot:
         if cleaned_ticker[:-4] != 'BTC' and not cleaned_ticker.endswith('.P'):
             text += f'{cleaned_ticker[:-4]}/BTC:\n'
             text += f"https://ru.tradingview.com/symbols/{cleaned_ticker[:-4]}BTC\n"
+        # get price prediction of model
+        prediction = message[9]
         # send ML model prediction
         if prediction > 0:
             text += 'AI confidence / Уверенность AI:\n'
@@ -217,10 +212,12 @@ class TelegramBot:
         if sig_img_path:
             # if exchange is in the list of favorite exchanges and pattern is in list of your favorite patterns
             # send the signal to special group
+            logger.info(f"Telegram: exchanges - {sig_exchanges}, pattern - {sig_pattern}, prediction - {prediction}")
             if set(sig_exchanges).intersection(set(self.favorite_exchanges)) and \
                     sig_pattern in self.favorite_patterns and prediction > 0:
                 favorite_chat_id = self.favorite_chat_ids[sig_pattern]
                 favorite_message_thread_id = self.favorite_message_thread_ids.get(f'{sig_pattern}_{sig_type}', None)
+                logger.info(f"Telegram: fav chat id - {favorite_chat_id}, fav thread id - {favorite_message_thread_id}")
                 if favorite_message_thread_id is not None:
                     favorite_message_thread_id = int(favorite_message_thread_id)
                 self.send_photo(favorite_chat_id, favorite_message_thread_id, sig_img_path, text)

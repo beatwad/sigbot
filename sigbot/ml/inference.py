@@ -70,7 +70,7 @@ class Model:
                         return pd.DataFrame()
                     row = pd.concat([row, tmp_row], axis=1)
             row['weekday'] = point_time.weekday()
-            row.columns = self.feature_dict['features'] + ['weekday']
+            row.columns = self.feature_dict['features']
             # add number of signal point for which prediction is made
             row['sig_point_num'] = 0
             # predict only for favorite exchanges

@@ -576,12 +576,14 @@ class SigBot:
         df_work.reset_index(drop=True, inplace=True)
         return
 
-    def make_prediction(self, sig_points: list) -> list:
+    def make_prediction(self, sig_points: list, exchange_name: str) -> list:
         """ Get dataset and use ML model to make price prediction for current signal points
             Parameters
             ----------
             sig_points
                 List of signal points.
+            exchange_name
+                Name of the current exchange. We should predict and trade only if it's exchange we can trade on.
             Returns
             ----------
             sig_points
@@ -596,7 +598,7 @@ class SigBot:
                 ttype = 'sell'
             else:
                 ttype = 'buy'
-        sig_points = self.model.make_prediction(df, self.btcd, self.btcdom, sig_points, ttype)
+        sig_points = self.model.make_prediction(df, self.btcd, self.btcdom, sig_points, ttype, exchange_name)
         return sig_points
 
     @exception
@@ -799,7 +801,7 @@ class MonitorExchange:
                             # Send Telegram notification
                             if sig_points:
                                 logger.info('Find the signal point(s).')
-                                sig_points = self.sigbot.make_prediction(sig_points)
+                                sig_points = self.sigbot.make_prediction(sig_points, self.exchange)
                                 # if trade mode is enabled and model has made prediction - place an order
                                 print(self.exchange,
                                       [[sp[0], sp[1], sp[2], sp[3], sp[4], sp[5], sp[9]] for sp in sig_points],

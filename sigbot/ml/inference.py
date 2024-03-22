@@ -27,7 +27,7 @@ class Model:
         self.pred_thresh = configs['Model']['params']['pred_thresh']
 
     def prepare_data(self, df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFrame,
-                     signal_points: list, ttype: str) -> pd.DataFrame:
+                     signal_points: list, ttype: str, exchange_name: str) -> pd.DataFrame:
         """ Get data from ticker dataframe and prepare it for model prediction """
         btcd_cols = list(btcd.columns)
         btcdom_cols = list(btcdom.columns)
@@ -76,16 +76,18 @@ class Model:
             # predict only for favorite exchanges
             pattern = point[5]
             exchange_list = point[7]
-            if pattern in self.patterns_to_predict and set(exchange_list).intersection(set(self.favorite_exchanges)):
+            if point[0] == 'SCA_USDT':
+                pass
+            if pattern in self.patterns_to_predict and exchange_name in self.favorite_exchanges:
                 rows = pd.concat([rows, row])
                 rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i
         rows = rows.reset_index(drop=True).fillna(0)
         return rows
 
     def make_prediction(self, df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFrame,
-                        signal_points: list, ttype: str) -> list:
+                        signal_points: list, ttype: str, exchange_name: str) -> list:
         """ Make prediction with model """
-        rows = self.prepare_data(df, btcd, btcdom, signal_points, ttype)
+        rows = self.prepare_data(df, btcd, btcdom, signal_points, ttype, exchange_name)
         if rows.shape[0] == 0:
             return signal_points
         # make predictions and average them

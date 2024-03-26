@@ -34,7 +34,6 @@ class Model:
         rows = pd.DataFrame()
         tmp_df = df.copy()
         # add CCI and SAR indicators
-        # add CCI
         cci = indicators.CCI(ttype, self.configs)
         tmp_df = cci.get_indicator(tmp_df, '', '', 0)
         # add SAR
@@ -75,9 +74,7 @@ class Model:
             row['sig_point_num'] = 0
             # predict only for favorite exchanges
             pattern = point[5]
-            exchange_list = point[7]
-            if point[0] == 'SCA_USDT':
-                pass
+            # we want to predict only for selected patterns and exchanges
             if pattern in self.patterns_to_predict and exchange_name in self.favorite_exchanges:
                 rows = pd.concat([rows, row])
                 rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i

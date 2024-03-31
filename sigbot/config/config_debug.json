@@ -469,7 +469,7 @@
       "patterns_to_predict": [
         "STOCH_RSI_Volume24"
       ],
-      "pred_thresh": 0.4995,
+      "pred_thresh": 0.5,
       "cols_to_scale": [
         "open",
         "high",
@@ -575,7 +575,7 @@
     "one_way_mode": 0,
     "is_isolated": 1,
     "order_timeout_hours": 1,
-    "position_timeout_hours": 96
+    "position_timeout_hours": 1
   },
   "Visualizer": {
     "params": {

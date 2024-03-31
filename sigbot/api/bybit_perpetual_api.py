@@ -179,7 +179,7 @@ class ByBitPerpetual(ApiBase):
 
     def set_settings(self, symbol: str) -> None:
         """ Set all necessary settings before making order """
-        self.pos_mode_switch(symbol)
+        # self.pos_mode_switch(symbol)
         self.get_round_digits_qty(symbol)
         self.set_margin(symbol)
         self.set_leverage(symbol)
@@ -264,7 +264,7 @@ class ByBitPerpetual(ApiBase):
                    f'{round(self.risk * divide * 100, 2)}%\n' \
                    f'{round(quantity * divide * price, 2)} {self.quote_coin} will be used as margin ' \
                    f'to {side} {round(quantity * divide * self.leverage, round_digits_num)} '\
-                   f'{self.currency} at price ${price} ' \
+                   f'{symbol[:-4]} at price ${price} ' \
                    f'with leverage {self.leverage}x\n'
         logger.info(message)
         quantity = round(quantity * self.leverage, round_digits_num)
@@ -335,35 +335,57 @@ class ByBitPerpetual(ApiBase):
     def check_open_positions(self, symbol=None) -> bool:
         """ Check if there are open positions. If they are, and we can't cancel them because of position timeout -
             don't open the new one. If there are positions that weren't closed within a certain time - close them """
-        ts_now = self.get_timestamp()
+        ts_now = self.get_timestamp() // 3600
         positions_to_close = list()
         if symbol:
             positions = self.client.get_positions(category='linear', symbol=symbol)['result']['list']
         else:
             positions = self.client.get_positions(category='linear', settleCoin=self.quote_coin)['result']['list']
+
         for p in positions:
-            created_time = int(p['updatedTime']) // 1000
             symbol = p['symbol']
             side = p['side']
             size = p['size']
-            status = p['positionStatus']
+            # get time of the last similar trade
+            last_similar_trade = self.get_last_similar_trade(symbol, side, size)
+            if not last_similar_trade:
+                positions_to_close.append((symbol, side, size))
+                continue
             # check the amount of time passed
-            time_span = (ts_now - created_time) // 3600
-            if time_span >= self.position_timeout_hours and status == 'Normal':
+            created_time = int(last_similar_trade['execTime']) // (3600 * 1000)
+            logger.info(f'Check time position: {symbol}, current time: {ts_now}, created time: {created_time}')
+            time_span = ts_now - created_time
+            if time_span >= self.position_timeout_hours and float(size) > 0 and side in ['Buy', 'Sell']:
                 positions_to_close.append((symbol, side, size))
 
         for pos in positions_to_close:
             symbol, side, size = pos
             # for STOCH_RSI indicator trade sides are inverted
             side = 'Sell' if side == 'Buy' else 'Buy'
-            self.place_market_order(symbol, side, size)
+            self.close_order(symbol, side, size)
 
         if len(positions) == 0 or len(positions) == len(positions_to_close):
             return True
         return False
 
-    def place_market_order(self, symbol, side, size) -> str:
+    def get_last_similar_trade(self, symbol: str, side: str, size: str) -> [dict, None]:
+        trade_history = self.client.get_executions(
+                                            category='linear',
+                                            symbol=symbol
+                                            )['result']['list']
+        trade_history = [t_h for t_h in trade_history if t_h['execType'] == 'Trade' and t_h['side'] == side and
+                         t_h['orderQty'] == size]
+        if trade_history:
+            return trade_history[0]
+        return None
+
+    def place_market_order(self, symbol, side, size) -> None:
         """ Place market order to close position """
+        if side == 'Buy':
+            position_idx = 1  # hedge-mode Buy side
+        else:
+            position_idx = 2  # hedge-mode Sell side
+
         self.client.place_order(
             category='linear',
             symbol=symbol,
@@ -371,8 +393,25 @@ class ByBitPerpetual(ApiBase):
             orderType='Market',
             qty=size,
             timeInForce='GTC',
-            positionIdx=0,
-            reduceOnly=False
+            positionIdx=position_idx
+        )
+
+    def close_order(self, symbol, side, size) -> str:
+        """ Place market order to close position """
+        if side == 'Buy':
+            position_idx = 2  # hedge-mode Buy side
+        else:
+            position_idx = 1  # hedge-mode Sell side
+
+        self.client.place_order(
+            category='linear',
+            symbol=symbol,
+            side=side,
+            orderType='Market',
+            qty=size,
+            timeInForce='GTC',
+            positionIdx=position_idx,
+            reduceOnly=True
         )
         message = f'\nPosition timeout. Market {side} order for ticker {symbol} is placed\n'
         logger.info(message)
@@ -380,11 +419,6 @@ class ByBitPerpetual(ApiBase):
 
     def place_all_conditional_orders(self, symbol, side) -> (bool, str):
         """ Place all necessary conditional orders for symbol """
-        self.check_open_positions(symbol)
-        # message = f"There are opened positions for ticker {symbol}, don't open the new one."
-        # logger.info(message)
-        # return False, message
-
         self.set_settings(symbol)
         ts_round_digits_num, tick_size = self.get_round_digits_tick_size(symbol)
         price = self.get_price(symbol)
@@ -439,14 +473,8 @@ class ByBitPerpetual(ApiBase):
 
 
 if __name__ == '__main__':
-    key = ""
-    secret = ""
-    bybit_api = ByBitPerpetual()
-    # tickers = bybit_api.get_ticker_names(500000)
-    # print(tickers)
-    min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(5 * 5, unit='D')
-    # klines_ = bybit_api.get_klines(symbol='BTCUSDT', interval='1h', limit=200)
-    klines_ = bybit_api.get_historical_funding_rate('BTCUSDT', 200, min_time_)
-    klines_['time'] = pd.to_datetime(klines_['time'], unit='ms')
-    klines_['time'] = klines_['time'] + pd.to_timedelta(3, unit='h')
-    pass
+    key = "INbDeJnuoSOZ1HjVSP"
+    secret = "xMY2XnyNAG8dkrNpu2gdkz3c6ESNINCnU2k2"
+
+    bybit = ByBitPerpetual(api_key=key, api_secret=secret)
+    bybit.check_open_positions()

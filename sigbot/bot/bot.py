@@ -809,7 +809,6 @@ class MonitorExchange:
                                 # send Telegram notification, create separate process for each notification
                                 # to run processes of signal search and signal notification simultaneously
                                 for sig_point in sig_points:
-                                    self.sigbot.trade_exchange.api.check_open_positions()
                                     ticker = sig_point[0]
                                     sig_type = sig_point[3].capitalize()
                                     pattern = sig_point[5]

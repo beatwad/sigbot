@@ -369,6 +369,8 @@ class ByBitPerpetual(ApiBase):
         return False
 
     def get_last_similar_trade(self, symbol: str, side: str, size: str) -> [dict, None]:
+        """ Get trade history for the current symbol and select only similar (by side and size) trades.
+        Then return the last similar trade """
         trade_history = self.client.get_executions(
                                             category='linear',
                                             symbol=symbol,
@@ -473,6 +475,8 @@ class ByBitPerpetual(ApiBase):
 
 
 if __name__ == '__main__':
+    # from log.log import logger
+
     key = "INbDeJnuoSOZ1HjVSP"
     secret = "xMY2XnyNAG8dkrNpu2gdkz3c6ESNINCnU2k2"
 

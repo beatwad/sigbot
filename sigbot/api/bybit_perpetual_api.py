@@ -273,8 +273,8 @@ class ByBitPerpetual(ApiBase):
                        f'Minimal trading quantity for ticker {symbol} is {self.get_min_trading_qty(symbol)}'
         return quantity, message
 
-    def place_conditional_order(self, symbol, side, price, trigger_direction, trigger_price, quantity, stop_loss,
-                                take_profit) -> str:
+    def place_conditional_order(self, symbol: str, side: str, price: float, trigger_direction: int,
+                                trigger_price: float,  quantity: float, stop_loss: float, take_profit: float) -> str:
         """ Place conditional order """
         if side == 'Buy':
             position_idx = 1  # hedge-mode Buy side
@@ -332,7 +332,7 @@ class ByBitPerpetual(ApiBase):
             logger.info(message)
             self.client.cancel_order(category='linear', symbol=symbol, orderId=order_id)
 
-    def check_open_positions(self, symbol=None) -> bool:
+    def check_open_positions(self, symbol: str = None) -> bool:
         """ Check if there are open positions. If they are, and we can't cancel them because of position timeout -
             don't open the new one. If there are positions that weren't closed within a certain time - close them """
         ts_now = self.get_timestamp() // 3600
@@ -371,15 +371,15 @@ class ByBitPerpetual(ApiBase):
     def get_last_similar_trade(self, symbol: str, side: str, size: str) -> [dict, None]:
         trade_history = self.client.get_executions(
                                             category='linear',
-                                            symbol=symbol
+                                            symbol=symbol,
+                                            execType='Trade'
                                             )['result']['list']
-        trade_history = [t_h for t_h in trade_history if t_h['execType'] == 'Trade' and t_h['side'] == side and
-                         t_h['orderQty'] == size]
+        trade_history = [t_h for t_h in trade_history if t_h['side'] == side and t_h['orderQty'] == size]
         if trade_history:
             return trade_history[0]
         return None
 
-    def place_market_order(self, symbol, side, size) -> None:
+    def place_market_order(self, symbol: str, side: str, size: str) -> None:
         """ Place market order to close position """
         if side == 'Buy':
             position_idx = 1  # hedge-mode Buy side
@@ -396,7 +396,7 @@ class ByBitPerpetual(ApiBase):
             positionIdx=position_idx
         )
 
-    def close_order(self, symbol, side, size) -> str:
+    def close_order(self, symbol: str, side: str, size: str) -> str:
         """ Place market order to close position """
         if side == 'Buy':
             position_idx = 2  # hedge-mode Buy side
@@ -417,7 +417,7 @@ class ByBitPerpetual(ApiBase):
         logger.info(message)
         return message
 
-    def place_all_conditional_orders(self, symbol, side) -> (bool, str):
+    def place_all_conditional_orders(self, symbol: str, side: str) -> (bool, str):
         """ Place all necessary conditional orders for symbol """
         self.set_settings(symbol)
         ts_round_digits_num, tick_size = self.get_round_digits_tick_size(symbol)

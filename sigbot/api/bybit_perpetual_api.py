@@ -337,16 +337,17 @@ class ByBitPerpetual(ApiBase):
             don't open the new one. If there are positions that weren't closed within a certain time - close them """
         ts_now = self.get_timestamp() // 3600
         positions_to_close = list()
+        # get opened positions list
         if symbol:
             positions = self.client.get_positions(category='linear', symbol=symbol)['result']['list']
         else:
             positions = self.client.get_positions(category='linear', settleCoin=self.quote_coin)['result']['list']
-
+        # for every opened position
         for p in positions:
             symbol = p['symbol']
             side = p['side']
             size = p['size']
-            # get time of the last similar trade
+            # get time when this position was opened
             last_similar_trade = self.get_last_similar_trade(symbol, side, size)
             if not last_similar_trade:
                 positions_to_close.append((symbol, side, size))
@@ -355,9 +356,11 @@ class ByBitPerpetual(ApiBase):
             created_time = int(last_similar_trade['execTime']) // (3600 * 1000)
             logger.info(f'Check time position: {symbol}, current time: {ts_now}, created time: {created_time}')
             time_span = ts_now - created_time
+            # if enough time passed - add this position to the list of positions that should be closed
             if time_span >= self.position_timeout_hours and float(size) > 0 and side in ['Buy', 'Sell']:
                 positions_to_close.append((symbol, side, size))
 
+        # close all positions that should be closed
         for pos in positions_to_close:
             symbol, side, size = pos
             # for STOCH_RSI indicator trade sides are inverted
@@ -477,8 +480,8 @@ class ByBitPerpetual(ApiBase):
 if __name__ == '__main__':
     # from log.log import logger
 
-    key = "INbDeJnuoSOZ1HjVSP"
-    secret = "xMY2XnyNAG8dkrNpu2gdkz3c6ESNINCnU2k2"
+    key = ""
+    secret = ""
 
     bybit = ByBitPerpetual(api_key=key, api_secret=secret)
     bybit.check_open_positions()

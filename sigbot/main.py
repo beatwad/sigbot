@@ -5,7 +5,7 @@ from datetime import datetime
 from os import environ, remove
 
 # Set environment variable
-environ["ENV"] = "1h_4h"
+environ["ENV"] = "debug"
 
 from bot.bot import SigBot
 from config.config import ConfigFactory
@@ -41,12 +41,13 @@ class Main:
         try:
             dt1 = datetime.now()
             if self.check_time(dt1, self.time_period) or self.cycle_number == 1:
-                print(dt1)
+                print(dt1, flush=True)
                 dt1 = datetime.now()
                 self.sigbot.main_cycle()
                 dt2 = datetime.now()
                 dtm, dts = divmod((dt2 - dt1).total_seconds(), 60)
-                print(f'Cycle is {self.cycle_number}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}')
+                print(f'Cycle is {self.cycle_number}, time for the cycle (min:sec) - {int(dtm)}:{round(dts, 2)}',
+                      flush=True)
                 self.cycle_number += 1
                 self.new_data_flag = True
                 sleep(60)

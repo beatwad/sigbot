@@ -735,7 +735,7 @@ class MonitorExchange:
         dt_now = datetime.now()
         # list of processes
         processes = list()
-        print(f'Exchange: {self.exchange}, number of tickers: {len(tickers)}')
+        print(f'Exchange: {self.exchange}, number of tickers: {len(tickers)}', flush=True)
         for ticker in tickers:
             data_qty_higher = 0
             # flag that allows to pass the ticker in case of errors

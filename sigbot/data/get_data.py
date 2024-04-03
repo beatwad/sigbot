@@ -136,15 +136,27 @@ class GetData:
         """ Get two types of BTC dominance indicators """
         btcd_cols = ['time', 'btcd_open', 'btcd_high', 'btcd_low', 'btcd_close', 'btcd_volume']
         btcdom_cols = ['time', 'btcdom_open', 'btcdom_high', 'btcdom_low', 'btcdom_close', 'btcdom_volume']
+        # if there are errors in connection, try 3 times and only then log exception
+        for i in range(self.num_retries):
+            try:
+                btcd = self.tv_data.get_hist('BTC.D', 'CRYPTOCAP', interval=Interval.in_daily, n_bars=50,
+                                             extended_session=True).reset_index()
+                btcdom = self.tv_data.get_hist('BTCDOMUSDT.P', 'BINANCE', interval=Interval.in_4_hour, n_bars=200,
+                                               extended_session=True).reset_index()
+            except:
+                if i == self.num_retries - 1:
+                    logger.exception(f'Catch an exception while trying to get BTC dominance.')
+                sleep(1)
+                continue
+            else:
+                break
+        else:
+            return pd.DataFrame(columns=btcd_cols), pd.DataFrame(columns=btcdom_cols)
 
-        btcd = self.tv_data.get_hist('BTC.D', 'CRYPTOCAP', interval=Interval.in_daily, n_bars=50,
-                                     extended_session=True).reset_index()
         btcd = btcd.drop(columns='symbol')
         btcd.columns = btcd_cols
         btcd['time'] = btcd['time'] + pd.to_timedelta(23, unit='h')
 
-        btcdom = self.tv_data.get_hist('BTCDOMUSDT.P', 'BINANCE', interval=Interval.in_4_hour, n_bars=200,
-                                       extended_session=True).reset_index()
         btcdom = btcdom.drop(columns='symbol')
         btcdom.columns = btcdom_cols
         btcdom['time'] = btcdom['time'] + pd.to_timedelta(3, unit='h')

@@ -430,12 +430,13 @@
   },
   "Model": {
     "params": {
-      "model_path": "ml/lgbm.pkl",
-      "feature_path": "ml/features.json",
+      "model_path": "ml/model/lgbm.pkl",
+      "feature_path": "ml/model/features.json",
       "weight": 0.279,
       "patterns_to_predict": [
         "STOCH_RSI_Volume24"
       ],
+      "pred_thresh": 0.5,
       "cols_to_scale": [
         "open",
         "high",
@@ -446,11 +447,11 @@
         "macdsignal",
         "atr"
       ],
-      "time_to_predict_buy": [
-        1, 2, 3, 15, 16, 21, 22, 23
+      "time_to_predict_buy":  [
+        0, 1, 2, 3, 16, 17, 21, 22, 23
       ],
       "time_to_predict_sell": [
-        1, 2, 11, 14, 16, 17, 19, 21
+        1, 4, 14, 16, 17, 18, 19, 21, 22, 23
       ]
     }
   },

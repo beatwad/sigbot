@@ -383,7 +383,7 @@
       },
       "Volume24": {
         "params": {
-          "min_volume_24": 2000000
+          "min_volume_24": 250000
         }
       },
       "Trend": {
@@ -431,7 +431,7 @@
       },
       "Volume24": {
         "params": {
-          "min_volume_24": 2000000
+          "min_volume_24": 250000
         }
       },
       "Trend": {

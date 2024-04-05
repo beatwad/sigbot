@@ -609,7 +609,12 @@ class SigBot:
         for ex in self.spot_ex_monitor_list:
             if ex.exchange_data['API'].name == 'Binance':
                 binance_exchange_data = ex.exchange_data['API']
-                self.btcd, self.btcdom = self.get_btc_dominance(binance_exchange_data)
+                btcd, btcdom = self.get_btc_dominance(binance_exchange_data)
+                # update BTC dominance info only when there are new information
+                if btcd.shape[0] > 0 or (btcd.shape[0] == 0 and self.btcd is None):
+                    self.btcd = btcd
+                if btcdom.shape[0] > 0 or (btcdom.shape[0] == 0 and self.btcdom is None):
+                    self.btcdom = btcdom
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
             monitor.run_cycle()

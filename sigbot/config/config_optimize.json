@@ -383,7 +383,7 @@
       },
       "Volume24": {
         "params": {
-          "min_volume_24": 2000000
+          "min_volume_24": 250000
         }
       },
       "Trend": {
@@ -431,7 +431,7 @@
       },
       "Volume24": {
         "params": {
-          "min_volume_24": 2000000
+          "min_volume_24": 250000
         }
       },
       "Trend": {
@@ -456,7 +456,7 @@
   "Main": {
     "params": {
       "bot_cycle_length_sec": 5,
-      "cycle_length_hours": 24,
+      "cycle_length_hours": 48,
       "time_period_minutes": 60,
       "first_cycle_qty_miss": 1
     }
@@ -511,8 +511,7 @@
     ],
     [
       "Pattern",
-      "Trend",
-      "Volume24"
+      "Trend"
     ]
   ],
   "SignalStat": {

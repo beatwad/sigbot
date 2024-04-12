@@ -1,7 +1,6 @@
 import re
 import time
 import asyncio
-import traceback
 from os import environ, remove
 from constants.constants import telegram_token
 

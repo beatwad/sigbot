@@ -51,6 +51,7 @@ class Model:
         for i, point in enumerate(signal_points):
             ticker = point[0]
             point_idx = point[2]
+            pattern = point[5]
             point_time = tmp_df.iloc[point_idx, tmp_df.columns.get_loc('time')]
             # predict only at selected hours
             if ttype == 'buy' and point_time.hour not in self.time_to_predict_buy:
@@ -58,6 +59,11 @@ class Model:
                 continue
             if ttype == 'sell' and point_time.hour not in self.time_to_predict_sell:
                 logger.info(f'Hour {point_time.hour} is not in list of hours when model can predict for sell trades')
+                continue
+            # predict only for selected patterns and exchanges
+            if pattern not in self.patterns_to_predict or exchange_name not in self.favorite_exchanges:
+                logger.info(f'Hour {exchange_name} is not in the list of favorite exchanges '
+                            f'or {pattern} not in the list of favorite patterns')
                 continue
             row = pd.DataFrame()
             for key, features in self.feature_dict.items():
@@ -74,12 +80,8 @@ class Model:
             row.columns = self.feature_dict['features']
             # add number of signal point for which prediction is made
             row['sig_point_num'] = 0
-            # predict only for favorite exchanges
-            pattern = point[5]
-            # we want to predict only for selected patterns and exchanges
-            if pattern in self.patterns_to_predict and exchange_name in self.favorite_exchanges:
-                rows = pd.concat([rows, row])
-                rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i
+            rows = pd.concat([rows, row])
+            rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i
         rows = rows.reset_index(drop=True).fillna(0)
         return rows
 

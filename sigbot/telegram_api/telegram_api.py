@@ -1,6 +1,7 @@
 import re
 import time
 import asyncio
+import traceback
 from os import environ, remove
 from constants.constants import telegram_token
 
@@ -22,6 +23,7 @@ configs = ConfigFactory.factory(environ).configs
 # Disable SettingWithCopyWarning because it's not necessary here
 pd.options.mode.chained_assignment = None
 
+ERROR_CHAT_ID = None
 
 class TelegramBot:
     type = 'Telegram'
@@ -41,6 +43,7 @@ class TelegramBot:
         self.loop = asyncio.new_event_loop()
         self.configs = configs[self.type]['params']
         self.chat_ids = self.configs['chat_ids']
+        ERROR_CHAT_ID = self.chat_ids['Errors']
         self.message_thread_ids = self.configs['message_thread_ids']
         # get lists of favorite patterns, excahnges and chats
         self.favorite_exchanges = self.configs['favorite_exchanges']
@@ -117,12 +120,27 @@ class TelegramBot:
         x = await context.bot.send_message(chat_id=chat_id, message_thread_id=message_thread_id, text=text)
         return x
 
+    @staticmethod
+    async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Log the error and send a telegram message to notify the developer."""
+        # Log the error before we do anything else, so we can see it even if something breaks.
+        logger.error("Exception while handling an update:", exc_info=context.error)
+
+        # Build the message with about what happened.
+        message = (
+            "An exception occurred while PTB was handling an update"
+        )
+
+        # Finally, send the message
+        await context.bot.send_message(
+            chat_id=ERROR_CHAT_ID, text=message
+        )
+
     @exception
     def polling(self) -> None:
         """ Start the bot polling """
-        # if __name__ == '__main__':
         # Create the Application and pass it your bot's token.
-        application = Application.builder().token(self.token).build()
+        application = Application.builder().token(self.token).read_timeout(60).get_updates_read_timeout(60).build()
         # on non command i.e. message - echo the message on Telegram
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.get_trade_mode))
         application.add_handler(CommandHandler("start", self.start))

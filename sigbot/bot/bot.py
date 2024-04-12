@@ -624,6 +624,16 @@ class SigBot:
 
     @staticmethod
     def delete_redundant_symbols_from_ticker(ticker: str) -> str:
+        """ Delete symbols like '-' or 'SWAP' from name of the ticker
+                Parameters
+                ----------
+                ticker
+                    Name of ticker.
+                Returns
+                ----------
+                ticker
+                    Cleaned name of the ticker.
+            """
         ticker = ticker.replace('-', '').replace('_USDT', 'USDT')
         if not ticker.startswith('SWAP'):
             ticker = ticker.replace('SWAP', '')
@@ -643,7 +653,26 @@ class MonitorExchange:
 
     def mon_add_indicators(self, df: pd.DataFrame, ttype: str, ticker: str, timeframe: str, data_qty: int, 
                            opt_flag: bool = False) -> int:
-        """ Add indicators and return quantity of data """
+        """ Add indicators and return quantity of data
+            Parameters
+            ----------
+            df
+                Dataframe that contains the historical data.
+            ttype
+                Type of trade (buy or sell).
+            ticker
+                Name of ticker (e.g. BTCUSDT, ETHUSDT).
+            timeframe
+                Time frame value (e.g. 5m, 1h, 4h, 1d).
+            data_qty
+                Amount of data from working timeframe (default is 1h) to which indicators will be added.
+            opt_flag
+                Flag that is used in optimization process.
+            Returns
+            ----------
+            data_qty
+                Quantity of the new data (number of candles)
+        """
         self.sigbot.database, data_qty = self.sigbot.add_indicators(df, ttype, ticker, timeframe, self.exchange_data,
                                                                     data_qty, opt_flag)
         return data_qty

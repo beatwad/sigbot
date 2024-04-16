@@ -1,5 +1,4 @@
 import re
-import sys
 import time
 import asyncio
 from os import environ, remove

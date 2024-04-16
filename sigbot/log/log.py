@@ -1,11 +1,15 @@
+from typing import Callable
+
 import inspect
 import logging
+from logging import Logger
+from logging.handlers import RotatingFileHandler
+
 import functools
 import threading
 from os import path, environ
 
 from config.config import ConfigFactory
-from logging.handlers import RotatingFileHandler
 
 
 # Get configs
@@ -21,8 +25,8 @@ def create_logger():
     # create the logging file handler
     basedir = path.abspath(path.dirname(__file__))
     log_path = configs['Log']['params']['log_path']
-    logFile = f'{basedir}/{log_path}'
-    fh = RotatingFileHandler(logFile, mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding=None, delay=False)
+    log_file = f'{basedir}/{log_path}'
+    fh = RotatingFileHandler(log_file, mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding=None, delay=False)
     fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     formatter = logging.Formatter(fmt)
     fh.setFormatter(formatter)
@@ -35,9 +39,25 @@ def create_logger():
 logger = create_logger()
 
 
-def exception(function):
+def format_exception(function: Callable = None) -> None:
     """
-    A decorator that wraps the passed in function and logs
+    Format exception text and log it
+    """
+    # get module name
+    frm = inspect.trace()[-1]
+    mod = inspect.getmodule(frm[0])
+    modname = mod.__name__ if mod else frm[1]
+    # log the exception
+    err = f"{threading.current_thread().name} : There was an exception in "
+    if function is not None:
+        err += function.__name__
+    err += f', module {modname}.'
+    logger.exception(err)
+
+
+def exception(function: Callable):
+    """
+    A decorator that wraps passed function and logs
     exceptions should one occur
     """
     @functools.wraps(function)
@@ -47,19 +67,12 @@ def exception(function):
         except KeyboardInterrupt:
             err = "KeyboardInterrupt"
             logger.info(err)
-            raise
+            # raise
         except:
-            # get module name
-            frm = inspect.trace()[-1]
-            mod = inspect.getmodule(frm[0])
-            modname = mod.__name__ if mod else frm[1]
-            # log the exception
-            err = f"{threading.current_thread().name} : There was an exception in "
-            err += function.__name__
-            err += f', module {modname}.'
-            logger.exception(err)
+            # format and log exception
+            format_exception(function)
             # re-raise the exception
-            raise
+            # raise
     return wrapper
 
 

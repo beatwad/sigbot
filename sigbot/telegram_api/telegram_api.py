@@ -1,4 +1,5 @@
 import re
+import sys
 import time
 import asyncio
 from os import environ, remove
@@ -7,7 +8,6 @@ from constants.constants import telegram_token
 # environ["ENV"] = "debug"
 
 from log.log import logger, exception
-from time import sleep
 import pandas as pd
 
 from config.config import ConfigFactory
@@ -23,6 +23,7 @@ configs = ConfigFactory.factory(environ).configs
 pd.options.mode.chained_assignment = None
 
 ERROR_CHAT_ID = None
+
 
 class TelegramBot:
     type = 'Telegram'
@@ -255,13 +256,10 @@ class TelegramBot:
     async def bot_send_message(bot: Bot, chat_id: str, message_thread_id: int, text: str) -> telegram.Message:
         return await bot.send_message(chat_id=chat_id, message_thread_id=message_thread_id, text=text)
 
+    @exception
     def send_message(self, chat_id: str, message_thread_id: int, text: str):
         tasks = [self.loop.create_task(self.bot_send_message(self.bot, chat_id, message_thread_id, text))]
-        try:
-            self.loop.run_until_complete(asyncio.wait(tasks))
-        except (telegram.error.RetryAfter, telegram.error.NetworkError, telegram.error.BadRequest):
-            sleep(30)
-            self.loop.run_until_complete(asyncio.wait(tasks))
+        self.loop.run_until_complete(asyncio.wait(tasks))
 
     @staticmethod
     async def bot_send_photo(bot: Bot, chat_id: str, message_thread_id: int,
@@ -269,13 +267,10 @@ class TelegramBot:
         return await bot.send_photo(chat_id=chat_id, message_thread_id=message_thread_id,
                                     photo=open(img_path, 'rb'), caption=text)
 
+    @exception
     def send_photo(self, chat_id: str, message_thread_id: int, img_path: str, text: str):
         tasks = [self.loop.create_task(self.bot_send_photo(self.bot, chat_id, message_thread_id, img_path, text))]
-        try:
-            self.loop.run_until_complete(asyncio.wait(tasks))
-        except (telegram.error.RetryAfter, telegram.error.NetworkError, telegram.error.BadRequest):
-            sleep(30)
-            self.loop.run_until_complete(asyncio.wait(tasks))
+        self.loop.run_until_complete(asyncio.wait(tasks))
 
     def delete_images(self):
         """ Remove images after we send them, because we don't need them anymore """

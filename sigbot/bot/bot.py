@@ -32,7 +32,6 @@ class SigBot:
         configs
             Dictionary of configs which is loaded from file config/config_*env*.json
     """
-    @exception
     def __init__(self, main_class, load_tickers=True, opt_type=None, **configs):
         self.configs = configs
         # Get main bot class
@@ -84,8 +83,8 @@ class SigBot:
                                             locker=locker,
                                             **configs)
             # run polling in the separate process
-            pr = multiprocessing.Process(target=self.telegram_bot.polling)
-            pr.start()
+            self.telegram_bot_process = multiprocessing.Process(target=self.telegram_bot.polling)
+            self.telegram_bot_process.start()
         else:
             buy_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
             sell_stat = pd.DataFrame(columns=['time', 'ticker', 'timeframe', 'pattern'])
@@ -421,7 +420,7 @@ class SigBot:
             filtered_points.append(point)
         return filtered_points
 
-    def add_statistics(self, sig_points: list, data_qty_higher=None) -> dict:
+    def sb_add_statistics(self, sig_points: list, data_qty_higher=None) -> dict:
         """ Write statistics for signal points to the database
             Parameters
             ----------
@@ -437,7 +436,7 @@ class SigBot:
         database = self.stat.write_stat(self.database, sig_points, data_qty_higher)
         return database
 
-    def save_statistics(self) -> None:
+    def sb_save_statistics(self) -> None:
         self.stat.save_statistics(self.database)
 
     def calc_statistics(self, sig_points: list) -> list:
@@ -601,7 +600,6 @@ class SigBot:
         sig_points = self.model.make_prediction(df, self.btcd, self.btcdom, sig_points, ttype, exchange_name)
         return sig_points
 
-    @exception
     def main_cycle(self):
         """ Create and run exchange monitors """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self.create_exchange_monitors()
@@ -678,10 +676,18 @@ class MonitorExchange:
         return data_qty
 
     def mon_add_statistics(self, sig_points: list, data_qty_higher=None) -> None:
-        self.sigbot.database = self.sigbot.add_statistics(sig_points, data_qty_higher)
+        """ Write statistics for signal points to the database
+            Parameters
+            ----------
+            sig_points
+                List of signal points to be added to statistics.
+            data_qty_higher
+                Amount of data from higher timeframe (default is 4h) to which indicators will be added.
+        """
+        self.sigbot.database = self.sigbot.sb_add_statistics(sig_points, data_qty_higher)
 
     def mon_save_statistics(self) -> None:
-        self.sigbot.save_statistics()
+        self.sigbot.sb_save_statistics()
     
     def mon_save_opt_dataframes(self, dt_now: datetime, historical: bool, min_time: datetime) -> None:
         """ Save dataframe for every ticker for further indicator/signal optimization """
@@ -750,7 +756,6 @@ class MonitorExchange:
         # Save statistics
         self.mon_save_statistics()
 
-    @exception
     def run_cycle(self) -> None:
         """ For every exchange, ticker, timeframe and indicator patterns in the database find the latest signals and
             send them to the Telegram module

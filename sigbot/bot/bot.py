@@ -9,7 +9,7 @@ from signals.find_signal import FindSignal
 from signal_stat.signal_stat import SignalStat
 from indicators.indicators import IndicatorFactory
 from telegram_api.telegram_api import TelegramBot
-from log.log import exception, logger
+from log.log import logger
 from constants.constants import telegram_token
 
 from ml.inference import Model
@@ -833,7 +833,7 @@ class MonitorExchange:
                             sig_points = self.sigbot.filter_old_signals(sig_points)
                             # Send higher signals in Telegram notification only if their hour time
                             # is in 3, 7, 11, 15, 19, 23
-                            sig_points = self.sigbot.filter_higher_tf_signals(sig_points)
+                            # sig_points = self.sigbot.filter_higher_tf_signals(sig_points)
                             # Add list of exchanges where this ticker is available and has a good liquidity
                             sig_points = self.sigbot.get_exchange_list(ticker, sig_points)
                             # Add pattern and ticker statistics

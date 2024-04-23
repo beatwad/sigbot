@@ -478,10 +478,10 @@ class ByBitPerpetual(ApiBase):
 
 
 if __name__ == '__main__':
-    # from log.log import logger
+    bybit_key = "P25RcaWlvR7T5t6RDk"
+    bybit_secret = "np6urXPKXBMpkRULWYScERCBGlPQOg5ZV2as"
 
-    key = ""
-    secret = ""
-
-    bybit = ByBitPerpetual(api_key=key, api_secret=secret)
-    bybit.check_open_positions()
+    bybit = ByBitPerpetual(api_key=bybit_key, api_secret=bybit_secret)
+    klines = bybit.get_klines('FUNUSDT', '1h', 1000)
+    klines['time'] = pd.to_datetime(klines['time'], unit='ms')
+    print(bybit.get_ticker_names(250000))

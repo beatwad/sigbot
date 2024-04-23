@@ -1,5 +1,7 @@
+import json
 import multiprocessing
 import pandas as pd
+
 from os import environ
 from datetime import datetime
 
@@ -695,6 +697,9 @@ class MonitorExchange:
         tickers = self.exchange_data['tickers']
         print(80 * '=')
         print(f'{self.exchange}')
+        if self.exchange == 'ByBitPerpetual':
+            with open(f'model/bybit_tickers.json', 'w+') as f:
+                 json.dump(list(tickers.keys()), f)
         for ticker in tickers:
             print(ticker)
             # For every timeframe get the data and find the signal

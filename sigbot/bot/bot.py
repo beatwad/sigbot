@@ -882,12 +882,8 @@ class MonitorExchange:
         # find open orders (not TP / SL) that weren't triggered within an hour and cancel them
         if self.exchange == 'ByBitPerpetual':
             if self.sigbot.trade_mode[0]:
-                try:
-                    self.sigbot.trade_exchange.api.find_open_orders()
-                    self.sigbot.trade_exchange.api.check_open_positions()
-                except Exception as e:
-                    logger.exception(f'Something bad has happened when try to find open orders / positions on Bybit. '
-                                     f'\nException is {e}')
+                self.sigbot.trade_exchange.api.find_open_orders()
+                self.sigbot.trade_exchange.api.check_open_positions()
 
 
 # if __name__ == "__main__":

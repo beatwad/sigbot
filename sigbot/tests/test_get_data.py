@@ -1,4 +1,6 @@
 import datetime
+
+import numpy as np
 import pytest
 import pandas as pd
 from os import environ
@@ -97,8 +99,8 @@ def test_process_data(mocker, df, index, limit, expected):
 
 @pytest.mark.parametrize('df, ticker, timeframe, index, limit, expected',
                          [
-                          # (pd.DataFrame(), 'BTCUSDT', '5m', 0, 1000,
-                          #  (df.loc[498:498].reset_index(drop=True), 1000)),
+                          (pd.DataFrame(), 'BTCUSDT', '5m', 0, 1000,
+                           (df.loc[498:498].reset_index(drop=True), 1000)),
                           (df.loc[:499], 'BTCUSDT', '5m', 0, 0, (pd.DataFrame(), 0)),
                           (df.loc[:499], 'BTCUSDT', '5m', 0, 1, (pd.DataFrame(), 1)),
                           (df.loc[:499], 'BTCUSDT', '5m', 1, 2,
@@ -119,7 +121,10 @@ def test_get_data(mocker, df, ticker, timeframe, index, limit, expected):
     gd.fill_ticker_dict(tickers)
 
     res = gd.get_data(df, ticker, timeframe, datetime.datetime.now())
-    assert res[0][:-1].equals(expected[0][:-1])
+    assert res[0].iloc[:-1, :-1].equals(expected[0][:-1])
+    # if funding rate is added - get sure it's added correctly
+    if res[0].shape[1] == 7:
+        assert np.all(res[0].iloc[:, -1].values == np.zeros(len(res[0])))
     assert res[1] == expected[1]
 
 

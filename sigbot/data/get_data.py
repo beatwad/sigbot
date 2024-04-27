@@ -188,7 +188,7 @@ class GetData:
         return df, self.limit
 
     def add_funding_rate(self, df: pd.DataFrame, funding_rates: pd.DataFrame, timeframe: str) -> pd.DataFrame:
-        """ Add funding rate data to the kandle dataframe """
+        """ Add funding rate data to the candle dataframe """
         if timeframe == self.work_timeframe:
             if funding_rates.shape[0] > 0:
                 funding_rates = self.process_funding_rate_data(funding_rates)

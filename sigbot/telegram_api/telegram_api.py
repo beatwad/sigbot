@@ -32,6 +32,9 @@ class TelegramBot:
         # trade mode - if it's activated, bot will use its own signals to trade on exchange
         self.trade_mode = trade_mode
         self.locker = locker
+        # load default value of trade mode
+        with locker:
+            self.trade_mode[0] = configs['Main']['params']['trade_mode']
         # ticker database
         self.database = database
         # visualizer class

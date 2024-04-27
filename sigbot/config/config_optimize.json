@@ -455,6 +455,7 @@
   },
   "Main": {
     "params": {
+      "trade_mode": 1,
       "bot_cycle_length_sec": 5,
       "cycle_length_hours": 48,
       "time_period_minutes": 60,

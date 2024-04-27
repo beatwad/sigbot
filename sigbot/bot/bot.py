@@ -116,9 +116,9 @@ class SigBot:
             # get ticker list
             try:
                 tickers, ticker_vols, all_tickers = self.exchanges[ex]['API'].get_tickers()
-            except:
+            except Exception as e:
                 del self.exchanges[ex]
-                logger.exception(f'Catch an exception while accessing to exchange {ex}')
+                logger.exception(f'Catch an exception while accessing to exchange {ex}. \nException is {e}')
                 continue
             # filter tickers that were used by previous exchanges
             tickers, ticker_vols = self.filter_used_tickers(tickers, ticker_vols)
@@ -699,7 +699,7 @@ class MonitorExchange:
         print(f'{self.exchange}')
         if self.exchange == 'ByBitPerpetual':
             with open(f'model/bybit_tickers.json', 'w+') as f:
-                 json.dump(list(tickers.keys()), f)
+                json.dump(list(tickers.keys()), f)
         for ticker in tickers:
             print(ticker)
             # For every timeframe get the data and find the signal
@@ -801,9 +801,9 @@ class MonitorExchange:
                     try:
                         data_qty_buy = self.mon_add_indicators(df, 'buy', ticker, timeframe, data_qty)
                         data_qty_sell = self.mon_add_indicators(df, 'sell', ticker, timeframe, data_qty)
-                    except:
+                    except Exception as e:
                         logger.exception(f'Something bad has happened to ticker {ticker} on timeframe {timeframe} '
-                                         f'while getting the indicator data.')
+                                         f'while getting the indicator data. \nException is {e}')
                         pass_the_ticker = True
                         continue
                     # If current timeframe is working timeframe
@@ -818,9 +818,9 @@ class MonitorExchange:
                                                                          data_qty_higher)
                             sig_sell_points = self.sigbot.get_sell_signals(ticker, timeframe, data_qty_sell,
                                                                            data_qty_higher)
-                        except:
+                        except Exception as e:
                             logger.exception(f'Something bad has happened to ticker {ticker} on timeframe {timeframe} '
-                                             f'while getting the signals.')
+                                             f'while getting the signals. \nException is {e}')
                             pass_the_ticker = True
                             continue
                         # If similar signal was added to stat dataframe not too long time ago (<= 3-5 ticks before) -
@@ -881,8 +881,9 @@ class MonitorExchange:
         self.mon_save_statistics()
         # find open orders (not TP / SL) that weren't triggered within an hour and cancel them
         if self.exchange == 'ByBitPerpetual':
-            self.sigbot.trade_exchange.api.find_open_orders()
-            self.sigbot.trade_exchange.api.check_open_positions()
+            if self.sigbot.trade_mode[0]:
+                self.sigbot.trade_exchange.api.find_open_orders()
+                self.sigbot.trade_exchange.api.check_open_positions()
 
 
 # if __name__ == "__main__":

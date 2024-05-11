@@ -190,11 +190,12 @@ class ByBitPerpetual(ApiBase):
         for i in info['list']:
             self.symbols_info[i['symbol']] = i
 
-    def get_min_trading_qty(self, symbol) -> float:
+    def get_min_trading_qty(self, symbol) -> (float, float):
         """ Get minimal amount of currency, that can be used for trading """
         s_i = self.symbols_info[symbol]
-        qty = s_i['lotSizeFilter']['minOrderQty']
-        return qty
+        min_qty = s_i['lotSizeFilter']['minOrderQty']
+        min_quot_qty = s_i['lotSizeFilter']['minNotionalValue']
+        return float(min_qty), float(min_quot_qty)
 
     def get_tick_size(self, symbol) -> float:
         """ Get currency's tick size """
@@ -225,8 +226,8 @@ class ByBitPerpetual(ApiBase):
 
     def get_round_digits_qty(self, symbol) -> int:
         """ Get number of digits for trade quantity rounding """
-        min_trading_qty = float(self.get_min_trading_qty(symbol))
-        round_digits_num = max(int(-log10(min_trading_qty)), 0)
+        min_qty, _ = self.get_min_trading_qty(symbol)
+        round_digits_num = max(int(-log10(min_qty)), 0)
         return round_digits_num
 
     def get_balance(self, coin) -> float:
@@ -256,7 +257,8 @@ class ByBitPerpetual(ApiBase):
         # get change of price from entry to SL and multiply it by leverage
         price_change = abs(price - stop_loss) / price * self.leverage
         # use price change to find the amount of balance that will be used in the trade
-        quantity = ((free_balance * self.risk / price_change) / price)
+        quantity = (free_balance * self.risk / price_change) / price
+        quote_quantity = (free_balance * self.risk / price_change) * self.leverage
         message += f'Symbol is {symbol}\n' \
                    f'Min trading quantity is {round(quantity, round_digits_num + 1)}\n' \
                    f'Free balance is {round(free_balance, 2)} {self.quote_coin}\n' \
@@ -268,9 +270,16 @@ class ByBitPerpetual(ApiBase):
                    f'with leverage {self.leverage}x\n'
         logger.info(message)
         quantity = round(quantity * self.leverage, round_digits_num)
+        min_qty, min_quote_qty = self.get_min_trading_qty(symbol)
         if quantity == 0:
-            message += f'Minimal available trade quantity is 0. Increase trade volume or leverage or both. ' \
-                       f'Minimal trading quantity for ticker {symbol} is {self.get_min_trading_qty(symbol)}'
+            message += f'Minimal available trade quantity is 0. Increase trade volume or leverage or both. '\
+                       f'Minimal trading quantity for ticker {symbol} is {min_qty}'
+        elif quote_quantity < min_quote_qty:
+            message += f'Minimal available quote trade quantity {quote_quantity} '\
+                       'is less than minimal quote trade quantity. '\
+                       'Increase trade volume or leverage or both. '\
+                       f'Minimal quote trade quantity for ticker {symbol} is {min_quote_qty}'
+            quantity = 0
         return quantity, message
 
     def place_conditional_order(self, symbol: str, side: str, price: float, trigger_direction: int,
@@ -478,9 +487,12 @@ class ByBitPerpetual(ApiBase):
 
 
 if __name__ == '__main__':
-    from constants.constants import bybit_key, bybit_secret
+    bybit_key = ""
+    bybit_secret = ""
+    _symbol = "AERGOUSDT"
+    _side = "Sell"
+    _size = "5"
 
     bybit = ByBitPerpetual(api_key=bybit_key, api_secret=bybit_secret)
-    # klines = bybit.get_klines('FUNUSDT', '1h', 1000)
-    # klines['time'] = pd.to_datetime(klines['time'], unit='ms')
-    print(bybit.get_ticker_names(250000))
+    bybit.place_all_conditional_orders(_symbol, _side)
+    bybit.place_market_order(_symbol, _side, _size)

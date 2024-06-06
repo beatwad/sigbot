@@ -299,8 +299,8 @@ def test_find_linear_reg_signal(mocker, ticker, offset1, offset2, expected):
     df_working[higher_features] = pd.merge(df_working[['time']], df_higher[higher_features], how='left', on='time')
     higher_features.remove('time')
     for f in higher_features:
-        df_working[f].ffill(inplace=True)
-        df_working[f].bfill(inplace=True)
+        df_working[f] = df_working[f].ffill()
+        df_working[f] = df_working[f].bfill()
     # test find_signal function
     buy_points = linear_reg_sig_buy.find_signal(df_working)
     sell_points = linear_reg_sig_sell.find_signal(df_working)

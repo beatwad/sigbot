@@ -1,3 +1,5 @@
+from typing import Tuple, List, Union
+
 import pybit
 import pandas as pd
 from os import environ
@@ -44,7 +46,7 @@ class ByBitPerpetual(ApiBase):
             test = False
         self.client = unified_trading.HTTP(api_key=api_key, api_secret=api_secret, testnet=test)
 
-    def get_ticker_names(self, min_volume) -> (list, list, list):
+    def get_ticker_names(self, min_volume) -> Tuple[List[str], List[float], List[str]]:
         tickers = pd.DataFrame(self.client.get_tickers(category="linear")['result']['list'])
         all_tickers = tickers['symbol'].to_list()
 
@@ -190,7 +192,7 @@ class ByBitPerpetual(ApiBase):
         for i in info['list']:
             self.symbols_info[i['symbol']] = i
 
-    def get_min_trading_qty(self, symbol) -> (float, float):
+    def get_min_trading_qty(self, symbol) -> Tuple[float, float]:
         """ Get minimal amount of currency, that can be used for trading """
         s_i = self.symbols_info[symbol]
         min_qty = s_i['lotSizeFilter']['minOrderQty']
@@ -203,7 +205,7 @@ class ByBitPerpetual(ApiBase):
         tick_size = s_i['priceFilter']['tickSize']
         return float(tick_size)
 
-    def get_round_digits_tick_size(self, symbol) -> (int, float):
+    def get_round_digits_tick_size(self, symbol) -> Tuple[int, float]:
         """ Get number of digits for price rounding """
         tick_size = self.get_tick_size(symbol)
         ts_round_digits_num = max(ceil(-log10(tick_size)), 0)
@@ -241,7 +243,7 @@ class ByBitPerpetual(ApiBase):
         return free_balance
 
     def get_quantity(self, symbol: str, prices: list, take_profits: list,
-                     stop_loss: float, side: str, divide: int) -> (float, str):
+                     stop_loss: float, side: str, divide: int) -> Tuple[float, str]:
         """ Calculate quantity of currency, that will be used for trade, considering available balance, risk value
         and minimal quantity that is needed for trading """
         message = ''
@@ -380,7 +382,7 @@ class ByBitPerpetual(ApiBase):
             return True
         return False
 
-    def get_last_similar_trade(self, symbol: str, side: str, size: str) -> [dict, None]:
+    def get_last_similar_trade(self, symbol: str, side: str, size: str) -> Union[dict, None]:
         """ Get trade history for the current symbol and select only similar (by side and size) trades.
         Then return the last similar trade """
         trade_history = self.client.get_executions(
@@ -431,7 +433,7 @@ class ByBitPerpetual(ApiBase):
         logger.info(message)
         return message
 
-    def place_all_conditional_orders(self, symbol: str, side: str) -> (bool, str):
+    def place_all_conditional_orders(self, symbol: str, side: str) -> Tuple[bool, str]:
         """ Place all necessary conditional orders for symbol """
         self.set_settings(symbol)
         ts_round_digits_num, tick_size = self.get_round_digits_tick_size(symbol)

@@ -163,8 +163,8 @@ class GetData:
 
         return btcd[:-1], btcdom[:-1]
 
-    def get_historical_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
-                            min_time: datetime) -> tuple[pd.DataFrame, int]:
+    def get_hist_data(self, df: pd.DataFrame, ticker: str, timeframe: str, 
+                      min_time: datetime) -> tuple[pd.DataFrame, int]:
         """ Get historical data from exchange for some period and also add funding rate data """
         for i in range(self.num_retries):
             try:
@@ -202,7 +202,7 @@ class GetData:
                 df['funding_rate'] = 0
         return df
     
-    def get_historical_funding_rate_data(self, ticker: str, min_time: datetime) -> tuple[pd.DataFrame, int]:
+    def get_hist_funding_rate_data(self, ticker: str, min_time: datetime) -> tuple[pd.DataFrame, int]:
         """ Get historical funding rate data from exchange for some period """
         for i in range(self.num_retries):
             try:

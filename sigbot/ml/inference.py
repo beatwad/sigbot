@@ -73,7 +73,6 @@ class Model:
                                              pd.to_timedelta(int(key), unit='h'), features].reset_index(drop=True)
                     except KeyError as key_err:
                         logger.exception(key_err)
-                        tmp_df.to_csv(f'tmp_{ticker}.csv')  # TODO: remove this when finish debugging
                         return pd.DataFrame()
                     row = pd.concat([row, tmp_row], axis=1)
             row['weekday'] = point_time.weekday()

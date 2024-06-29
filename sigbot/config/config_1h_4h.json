@@ -455,7 +455,7 @@
   },
   "Main": {
     "params": {
-      "trade_mode": 0,
+      "trade_mode": 1,
       "bot_cycle_length_sec": 5,
       "cycle_length_hours": 24,
       "time_period_minutes": 60,
@@ -482,10 +482,10 @@
         "atr"
       ],
       "time_to_predict_buy":  [
-        0, 1, 2, 3, 16, 17, 21, 22, 23
+        0, 1, 2, 3, 4, 15, 16, 17, 18, 22, 23
       ],
       "time_to_predict_sell": [
-        1, 4, 14, 16, 17, 18, 19, 21, 22, 23
+        9, 14, 17, 23
       ]
     }
   },

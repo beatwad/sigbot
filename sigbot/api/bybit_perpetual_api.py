@@ -307,7 +307,7 @@ class ByBitPerpetual(ApiBase):
             takeProfit=take_profit,
             stopLoss=stop_loss,
             tpTriggerBy='LastPrice',
-            slTriggerBy='MarkPrice',
+            slTriggerBy='LastPrice',
             reduceOnly=False,
             closeOnTrigger=False,
             tpslMode='Partial'

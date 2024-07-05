@@ -124,7 +124,7 @@
     },
     "ByBitPerpetual": {
       "params": {
-        "limit": 450,
+        "limit": 500,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,
@@ -470,7 +470,7 @@
       "patterns_to_predict": [
         "STOCH_RSI_Volume24"
       ],
-      "pred_thresh": 0.518,
+      "pred_thresh": 0.5519495920809027,
       "cols_to_scale": [
         "open",
         "high",
@@ -519,7 +519,7 @@
     "params": {
       "take_profit_multiplier": 2,
       "stop_loss_multiplier": 2,
-      "test": 0,
+      "test": 1,
       "stat_limit_hours": {
         "PumpDump": 96,
         "HighVolume": 96,

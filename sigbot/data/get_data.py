@@ -1,3 +1,4 @@
+import os
 from os import environ
 from time import sleep
 import pandas as pd
@@ -11,11 +12,20 @@ from api.mexc_api import MEXC
 from api.mexc_futures_api import MEXCFutures
 from datetime import datetime
 from log.log import logger
-from constants.constants import bybit_key, bybit_secret, bybit_test_key, bybit_test_secret
-from constants.constants import binance_key, binance_secret, binance_perp_key, binance_perp_secret
 from api.tvdatafeed.main import TvDatafeed, Interval
-from constants.constants import tv_username, tv_password
 
+bybit_key = os.getenv("BYBIT_KEY")
+bybit_secret = os.getenv("BYBIT_SECRET")
+bybit_test_key = os.getenv("BYBIT_TEST_KEY")
+bybit_test_secret = os.getenv("BYBIT_TEST_SECRET")
+
+binance_key = os.getenv("BINANCE_KEY")
+binance_secret = os.getenv("BINANCE_SECRET")
+binance_perp_key = os.getenv("BINANCE_PERP_KEY")
+binance_perp_secret = os.getenv("BINANCE_PERP_SECRET")
+
+tv_username = os.getenv("TV_USERNAME")
+tv_password = os.getenv("TV_PASSWORD")
 env = environ.get("ENV", "debug")
 
 

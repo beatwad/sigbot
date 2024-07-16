@@ -2,9 +2,7 @@ import re
 import time
 import asyncio
 from os import environ, remove
-from constants.constants import telegram_token
 
-# environ["ENV"] = "debug"
 
 from log.log import logger, exception
 import pandas as pd
@@ -285,6 +283,11 @@ class TelegramBot:
 
 
 if __name__ == '__main__':
+    from dotenv import load_dotenv, find_dotenv
+
+    # here we load environment variables from .env, must be called before init. class
+    load_dotenv(find_dotenv('../.env'), verbose=True)
+
     configs = ConfigFactory.factory(environ).configs
 
     telegram_bot = TelegramBot(token=telegram_token, database=None, trade_mode=True, locker=None, **configs)

@@ -5,9 +5,6 @@ import itertools as it
 from tqdm import tqdm
 from os import environ, remove
 
-# Set environment variable
-environ["ENV"] = "optimize"
-
 from bot.bot import SigBot
 from config.config import ConfigFactory
 

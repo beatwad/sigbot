@@ -4,9 +4,6 @@ from time import sleep
 from datetime import datetime
 from os import environ, remove
 
-# Set environment variable
-environ["ENV"] = "1h_4h"
-
 from bot.bot import SigBot
 from config.config import ConfigFactory
 from log.log import format_exception

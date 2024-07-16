@@ -1,3 +1,4 @@
+import os
 from typing import Tuple
 
 import json
@@ -14,13 +15,22 @@ from signal_stat.signal_stat import SignalStat
 from indicators.indicators import IndicatorFactory
 from telegram_api.telegram_api import TelegramBot
 from log.log import logger
-from constants.constants import telegram_token
 
 from ml.inference import Model
 
 # Get configs
 configs_ = ConfigFactory.factory(environ).configs
 
+from dotenv import load_dotenv, find_dotenv
+# here we load environment variables from .env, must be called before init. class
+load_dotenv(find_dotenv('../.env'), verbose=True)
+
+# load Telegram token
+env = os.getenv("ENV")
+if env == 'debug' or env == 'optimize':
+    telegram_token = os.getenv("TELEGRAM_TOKEN_DEBUG")
+else:
+    telegram_token = os.getenv("TELEGRAM_TOKEN")
 
 class SigBot:
     """ 

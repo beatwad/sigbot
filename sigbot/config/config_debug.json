@@ -124,7 +124,7 @@
     },
     "ByBitPerpetual": {
       "params": {
-        "limit": 400,
+        "limit": 500,
         "timeframe_div": {
           "1m": 60,
           "3m": 180,

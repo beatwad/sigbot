@@ -55,15 +55,15 @@ class Model:
             point_time = tmp_df.iloc[point_idx, tmp_df.columns.get_loc('time')]
             # predict only at selected hours
             if ttype == 'buy' and point_time.hour not in self.time_to_predict_buy:
-                logger.info(f'Hour {point_time.hour} is not in list of hours when model can predict for buy trades')
+                # logger.info(f'Hour {point_time.hour} is not in list of hours when model can predict for buy trades')
                 continue
             if ttype == 'sell' and point_time.hour not in self.time_to_predict_sell:
-                logger.info(f'Hour {point_time.hour} is not in list of hours when model can predict for sell trades')
+                # logger.info(f'Hour {point_time.hour} is not in list of hours when model can predict for sell trades')
                 continue
             # predict only for selected patterns and exchanges
             if pattern not in self.patterns_to_predict or exchange_name not in self.favorite_exchanges:
-                logger.info(f'Hour {exchange_name} is not in the list of favorite exchanges '
-                            f'or {pattern} not in the list of favorite patterns')
+                # logger.info(f'Hour {exchange_name} is not in the list of favorite exchanges '
+                #             for {pattern} not in the list of favorite patterns')
                 continue
             row = pd.DataFrame()
             for key, features in self.feature_dict.items():

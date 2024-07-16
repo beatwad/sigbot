@@ -596,6 +596,8 @@ class SigBot:
 
         df_work = df_work.ffill()
         df_work = df_work.reset_index(drop=True)
+        self.database[ticker][self.work_timeframe]['data'][ttype] = df_work
+        self.database[ticker][self.higher_timeframe]['data'][ttype] = df_higher
         return
 
     def make_prediction(self, sig_points: list, exchange_name: str) -> list:
@@ -913,6 +915,18 @@ class MonitorExchange:
                                     sig_type = sig_point[3].capitalize()
                                     pattern = sig_point[5]
                                     prediction = sig_point[9]
+                                    # debug
+                                    # if prediction > 0:
+                                    #     time = sig_point[4]
+                                    #     month = time.month
+                                    #     day = time.day
+                                    #     hour = time.hour
+                                    #     df.to_csv(
+                                    #         f"./bot/ticker_dataframes/{ticker}_1h_{ttype}_{month}_{day}_{hour}.csv")
+                                    #     df_higher = self.sigbot.database[ticker][self.sigbot.higher_timeframe]\
+                                    #         ['data'][ttype]
+                                    #     df_higher.to_csv(
+                                    #         f"./bot/ticker_dataframes/{ticker}_4h_{ttype}_{month}_{day}_{hour}.csv")
                                     if self.sigbot.trade_mode[0] and prediction > 0:
                                         if pattern.startswith('STOCH_RSI'):
                                             # for STOCH_RSI pattern buy / sell trades are inverted

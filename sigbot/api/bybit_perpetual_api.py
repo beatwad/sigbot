@@ -10,11 +10,9 @@ from api.api_base import ApiBase
 from pybit import unified_trading
 from pybit.exceptions import InvalidRequestError
 from log.log import logger
-# logger = None
 from config.config import ConfigFactory
 
 # Set environment variable
-# environ["ENV"] = "debug"
 configs = ConfigFactory.factory(environ).configs
 
 
@@ -482,6 +480,7 @@ class ByBitPerpetual(ApiBase):
                                                  f'for ticker {symbol}')
                             sleep(0.5)
                             price = self.get_price(symbol)
+                            logger.info(f"Ticker price is {price}")
                             continue
                         else:
                             break
@@ -490,12 +489,13 @@ class ByBitPerpetual(ApiBase):
 
 
 if __name__ == '__main__':
-    bybit_key = ""
-    bybit_secret = ""
-    _symbol = "AERGOUSDT"
+    import os
+    environ["ENV"] = "1h_4h"
+    _symbol = "MOCAUSDT"
     _side = "Sell"
     _size = "5"
+    bybit_key = os.getenv("BYBIT_KEY")
+    bybit_secret = os.getenv("BYBIT_SECRET")
 
     bybit = ByBitPerpetual(api_key=bybit_key, api_secret=bybit_secret)
     bybit.place_all_conditional_orders(_symbol, _side)
-    bybit.place_market_order(_symbol, _side, _size)

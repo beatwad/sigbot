@@ -478,9 +478,9 @@ class ByBitPerpetual(ApiBase):
                             if i == self.num_retries - 1:
                                 logger.exception(f'Catch an exception while trying place conditional order '
                                                  f'for ticker {symbol}')
-                            sleep(0.5)
+                            sleep(1)
                             price = self.get_price(symbol)
-                            logger.info(f"Ticker price is {price}")
+                            logger.info(f"Attempt number {i+1}, ticker price is {price}")
                             continue
                         else:
                             break

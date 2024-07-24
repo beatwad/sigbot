@@ -135,7 +135,8 @@ class Visualizer:
             return f'= increased on / вырос на {stat_diff}'
         return '= no change / без изменений'
 
-    def find_price(self, df: pd.DataFrame) -> float:
+    def round_price(self, df: pd.DataFrame) -> float:
+        """Round the price"""
         price = df["close"].iloc[-1]
         if price > 1:
             price = round(price, 3)
@@ -242,7 +243,7 @@ class Visualizer:
             axs_higher[1].spines['right'].set_color(self.border_color)
             axs_higher[1].spines['left'].set_color(self.border_color)
             # plot titles
-            price = self.find_price(df_working)
+            price = self.round_price(df_working)
             axs_higher[0].set_title(f'{self.process_ticker(ticker)} - {timeframe} - ${price} - '
                                     f'{df_working["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
                                     color=self.ticker_color)
@@ -449,7 +450,7 @@ class Visualizer:
             axs1_0.set_xticklabels(newlabels, rotation=0)
 
             # plot titles
-            price = self.find_price(df_working)
+            price = self.round_price(df_working)
             axs1_0.set_title(f'{self.process_ticker(ticker)} - {timeframe} - ${price} - '
                              f'{df_working["time"].iloc[-1].date().strftime("%d.%m.%Y")}', fontsize=14,
                              color=self.ticker_color)

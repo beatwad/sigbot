@@ -363,7 +363,7 @@ class ByBitPerpetual(ApiBase):
                 continue
             # check the amount of time passed
             created_time = int(last_similar_trade['execTime']) // (3600 * 1000)
-            logger.info(f'Check time position: {symbol}, current time: {ts_now}, created time: {created_time}')
+            # logger.info(f'Check time position: {symbol}, current time: {ts_now}, created time: {created_time}')
             time_span = ts_now - created_time
             # if enough time passed - add this position to the list of positions that should be closed
             if time_span >= self.position_timeout_hours and float(size) > 0 and side in ['Buy', 'Sell']:
@@ -475,9 +475,8 @@ class ByBitPerpetual(ApiBase):
                             message += self.place_conditional_order(symbol, side, price, trigger_direction,
                                                                     trigger_price, quantity, stop_loss, take_profit)
                         except pybit.exceptions.InvalidRequestError:
-                            if i == self.num_retries - 1:
-                                logger.exception(f'Catch an exception while trying place conditional order '
-                                                 f'for ticker {symbol}')
+                            logger.exception(f'Catch an exception while trying place conditional order '
+                                             f'for ticker {symbol}')
                             sleep(1)
                             price = self.get_price(symbol)
                             logger.info(f"Attempt number {i+1}, ticker price is {price}")

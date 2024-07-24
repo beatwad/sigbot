@@ -1,3 +1,4 @@
+import os
 import re
 import time
 import asyncio
@@ -225,7 +226,7 @@ class TelegramBot:
         # send ML model prediction
         if prediction > 0:
             text += 'AI confidence / Уверенность AI:\n'
-            text += f'{round(prediction * 100, 0)}%'
+            text += f'{round(prediction * 100, 2)}%'
         # Send message + image
         if sig_img_path:
             # if exchange is in the list of favorite exchanges and pattern is in list of your favorite patterns
@@ -284,9 +285,9 @@ class TelegramBot:
 
 if __name__ == '__main__':
     from dotenv import load_dotenv, find_dotenv
-
     # here we load environment variables from .env, must be called before init. class
     load_dotenv(find_dotenv('../.env'), verbose=True)
+    telegram_token = os.getenv("TELEGRAM_TOKEN")
 
     configs = ConfigFactory.factory(environ).configs
 

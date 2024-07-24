@@ -31,7 +31,7 @@ class Model:
         """ Get data from ticker dataframe and prepare it for model prediction """
         btcd_cols = list(btcd.columns)
         btcdom_cols = list(btcdom.columns)
-        rows = pd.DataFrame()
+        rows = []
         tmp_df = df.copy()
         # add CCI and SAR indicators
         cci = indicators.CCI(ttype, self.configs)
@@ -75,14 +75,21 @@ class Model:
                         logger.exception(key_err)
                         return pd.DataFrame()
                     row = pd.concat([row, tmp_row], axis=1)
+            # if row contains NaNs - skip it
+            if row.isnull().sum().sum() > 0:
+                logger.info(f"Ticker {ticker} signal with time {point_time} contains NaNs, skip it")
+                continue
             row['weekday'] = point_time.weekday()
             row['hour'] = point_time.hour
             row.columns = self.feature_dict['features']
             # add number of signal point for which prediction is made
-            row['sig_point_num'] = 0
-            rows = pd.concat([rows, row])
-            rows.iloc[-1, rows.columns.get_loc('sig_point_num')] = i
-        rows = rows.reset_index(drop=True).fillna(0)
+            row['sig_point_num'] = i
+            rows.append(row)
+
+        if len(rows) > 0:
+            rows = pd.concat(rows).reset_index(drop=True)
+        else:
+            rows = pd.DataFrame()
         return rows
 
     def make_prediction(self, df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFrame,

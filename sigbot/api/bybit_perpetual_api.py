@@ -431,6 +431,19 @@ class ByBitPerpetual(ApiBase):
         logger.info(message)
         return message
 
+    @staticmethod
+    def set_trigger_price(price: float, direction: str, tick_size: float):
+        """Set trigger price according to ticker price, ticker size and trade direction"""
+        if direction == 'Rise':  # price rises to trigger level, hits stop_px, then price
+            # stop_px > max(market_price, base_price)
+            trigger_direction = 1
+            trigger_price = price - tick_size
+        else:  # price falls to trigger level, hits stop_px, then price
+            # stop_px < min(market_price, base_price)
+            trigger_direction = 2
+            trigger_price = price + tick_size
+        return trigger_direction, trigger_price
+
     def place_all_conditional_orders(self, symbol: str, side: str) -> Tuple[bool, str]:
         """ Place all necessary conditional orders for symbol """
         self.set_settings(symbol)
@@ -456,14 +469,7 @@ class ByBitPerpetual(ApiBase):
 
         for _, price in enumerate(prices):
             if quantity > 0:
-                if direction == 'Rise':  # price rises to trigger level, hits stop_px, then price
-                    # stop_px > max(market_price, base_price)
-                    trigger_direction = 1
-                    trigger_price = price - tick_size
-                else:  # price falls to trigger level, hits stop_px, then price
-                    # stop_px < min(market_price, base_price)
-                    trigger_direction = 2
-                    trigger_price = price + tick_size
+                trigger_direction, trigger_price = self.set_trigger_price(price, direction, tick_size)
                 price = round(price, ts_round_digits_num)
                 trigger_price = round(trigger_price, ts_round_digits_num)
                 stop_loss = round(stop_loss, ts_round_digits_num)
@@ -477,9 +483,11 @@ class ByBitPerpetual(ApiBase):
                         except pybit.exceptions.InvalidRequestError:
                             logger.exception(f'Catch an exception while trying place conditional order '
                                              f'for ticker {symbol}')
-                            sleep(1)
+                            sleep(0.5)
                             price = self.get_price(symbol)
-                            logger.info(f"Attempt number {i+1}, ticker price is {price}")
+                            trigger_direction, trigger_price = self.set_trigger_price(price, direction, tick_size)
+                            logger.info(f"Attempt number {i+1}, ticker price is {price}, "
+                                        f"trigger price is {trigger_price}")
                             continue
                         else:
                             break

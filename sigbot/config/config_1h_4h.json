@@ -470,7 +470,7 @@
       "patterns_to_predict": [
         "STOCH_RSI_Volume24"
       ],
-      "pred_thresh": 0.5519495920809027,
+      "pred_thresh": 0.5480965,
       "cols_to_scale": [
         "open",
         "high",

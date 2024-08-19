@@ -453,12 +453,12 @@ class ByBitPerpetual(ApiBase):
         if side == 'Buy':
             direction = 'Fall'
             prices = [price - 2 * tick_size]
-            take_profits = [price * 1.03]
+            take_profits = [price * 1.05]
             stop_loss = price * 0.97
         else:
             direction = 'Rise'
             prices = [price + 2 * tick_size]
-            take_profits = [price * 0.97]
+            take_profits = [price * 0.95]
             stop_loss = price * 1.03
 
         quantity, message = self.get_quantity(symbol, prices, take_profits, stop_loss, side,

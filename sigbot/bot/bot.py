@@ -938,7 +938,7 @@ class MonitorExchange:
                                     #     df_higher.to_csv(
                                     #         f"./bot/ticker_dataframes/{ticker}_4h_{ttype}_{month}_{day}_{hour}.csv")
                                     if self.sigbot.trade_mode[0] and prediction > 0:
-                                        if pattern.startswith('STOCH_RSI'):
+                                        if pattern == 'STOCH_RSI_Volume24':
                                             # for STOCH_RSI pattern buy / sell trades are inverted
                                             sig_type = 'Sell' if sig_type == 'Buy' else 'Buy'
                                         self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type)

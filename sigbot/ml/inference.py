@@ -18,8 +18,6 @@ class Model:
         feature_path = configs['Model']['params']['feature_path']
         with open(feature_path) as f:
             self.feature_dict = json.load(f)
-        # models relative weights
-        self.weight = configs['Model']['params']['weight']
         # time (hour) when model is allowed to predict
         self.time_to_predict_buy = configs['Model']['params']['time_to_predict_buy']
         self.time_to_predict_sell = configs['Model']['params']['time_to_predict_sell']

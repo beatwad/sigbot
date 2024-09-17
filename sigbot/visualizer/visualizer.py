@@ -1,3 +1,6 @@
+from typing import Union
+
+import json
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -35,8 +38,8 @@ class Visualizer:
         # Max number of previous candles for which signal can be searched for
         self.max_prev_candle_limit = self.configs.get('max_prev_candle_limit', 0)
         # dict for storing previous statistics values
-        self.prev_e_ratio_stat_dict = dict()
-        self.prev_mar_stat_dict = dict()
+        self.prev_e_ratio_path = self.configs['prev_e_ratio_path']
+        self.prev_mar_path = self.configs['prev_mar_path']
         # list of indicator parameters that can be plotted
         self.indicator_params = configs['Indicator_signal']
         self.indicators_to_plot = ['RSI', 'STOCH']
@@ -103,28 +106,56 @@ class Visualizer:
             key = str(pattern)
         return key
     
+    def load_prev_e_ratio_dict(self) -> dict:
+        """Load E-ratio coefficients dict from file"""
+        try:
+            with open(self.prev_e_ratio_path, "r+") as f:
+                prev_e_ratio_stat_dict = json.load(f)
+        except FileNotFoundError:
+            prev_e_ratio_stat_dict = dict()
+        return prev_e_ratio_stat_dict
+
+    def load_prev_mar_dict(self) -> dict:
+        """Load MAR coefficients dict from file"""
+        try:
+            with open(self.prev_mar_path, "r+") as f:
+                prev_mar_stat_dict = json.load(f)
+        except FileNotFoundError:
+            prev_mar_stat_dict = dict()
+        return prev_mar_stat_dict
+
     def get_prev_avg_e_ratio_coef(self, key: str, point_type: str, avg_e_ratio_coef: float) -> float:
         """ Get previous E-ratio coefficient and fill the statistic dict by current value of E-ratio """
-        if key in self.prev_e_ratio_stat_dict:
-            prev_avg_e_ratio_coef = self.prev_e_ratio_stat_dict[key][point_type]
+        prev_e_ratio_stat_dict = self.load_prev_e_ratio_dict()
+        if key in prev_e_ratio_stat_dict:
+            prev_avg_e_ratio_coef = prev_e_ratio_stat_dict[key][point_type]
         else:
             prev_avg_e_ratio_coef = avg_e_ratio_coef
-            self.prev_e_ratio_stat_dict[key] = {'sell': None, 'buy': None}
-        self.prev_e_ratio_stat_dict[key][point_type] = avg_e_ratio_coef
+            prev_e_ratio_stat_dict[key] = {'sell': None, 'buy': None}
+        # update previous E-ratio coefficients dict and save it to file
+        if prev_e_ratio_stat_dict[key][point_type] != avg_e_ratio_coef:
+            prev_e_ratio_stat_dict[key][point_type] = avg_e_ratio_coef
+            with open(self.prev_e_ratio_path, "w+") as f:
+                json.dump(prev_e_ratio_stat_dict, f)
         return prev_avg_e_ratio_coef
 
     def get_prev_avg_mar_coef(self, key: str, point_type: str, avg_mar_coef: float) -> float:
-        """ Get previous E-ratio coefficient and fill the statistic dict by current value of E-ratio """
-        if key in self.prev_mar_stat_dict:
-            prev_avg_mar_coef = self.prev_mar_stat_dict[key][point_type]
+        """ Get previous MAR coefficient and fill the statistic dict by current value of E-ratio """
+        prev_mar_stat_dict = self.load_prev_mar_dict()
+        if key in prev_mar_stat_dict:
+            prev_avg_mar_coef = prev_mar_stat_dict[key][point_type]
         else:
             prev_avg_mar_coef = avg_mar_coef
-            self.prev_mar_stat_dict[key] = {'sell': None, 'buy': None}
-        self.prev_mar_stat_dict[key][point_type] = avg_mar_coef
+            prev_mar_stat_dict[key] = {'sell': None, 'buy': None}
+        # update previous MAR coefficients dict and save it to file
+        if prev_mar_stat_dict[key][point_type] != avg_mar_coef:
+            prev_mar_stat_dict[key][point_type] = avg_mar_coef
+            with open(self.prev_mar_path, "w+") as f:
+                json.dump(prev_mar_stat_dict, f)
         return prev_avg_mar_coef
 
     @staticmethod
-    def statistics_change(prev_avg_coef: [None, float], avg_coef: [None, float]) -> str:
+    def statistics_change(prev_avg_coef: Union[None, float], avg_coef: Union[None, float]) -> str:
         """ Measure statistics difference between previous signal and current signal """
         if prev_avg_coef is None:
             return '= no change / без изменений'
@@ -135,7 +166,8 @@ class Visualizer:
             return f'= increased on / вырос на {stat_diff}'
         return '= no change / без изменений'
 
-    def round_price(self, df: pd.DataFrame) -> float:
+    @staticmethod
+    def round_price(df: pd.DataFrame) -> float:
         """Round the price"""
         price = df["close"].iloc[-1]
         if price > 1:

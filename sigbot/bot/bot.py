@@ -946,6 +946,7 @@ class MonitorExchange:
                                                                  args=(sig_point,))
                                     processes.append(pr)
                                     pr.start()
+                                    # self.sigbot.telegram_bot.send_notification(sig_point)
                             # Log the signals
                             for sig_point in sig_points:
                                 sig_message = f'Exchange is {self.exchange}, ticker is ' \

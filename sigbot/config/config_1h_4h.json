@@ -466,11 +466,10 @@
     "params": {
       "model_path": "ml/model/lgbm.pkl",
       "feature_path": "ml/model/features.json",
-      "weight": 0.279,
       "patterns_to_predict": [
         "STOCH_RSI_Volume24"
       ],
-      "pred_thresh": 0.5480965,
+      "pred_thresh": 0.53726,
       "cols_to_scale": [
         "open",
         "high",
@@ -482,10 +481,10 @@
         "atr"
       ],
       "time_to_predict_buy":  [
-        0, 1, 2, 3, 4, 15, 16, 17, 18, 22, 23
+        0, 1, 2, 3, 15, 16, 17, 18, 19, 20, 21, 22, 23
       ],
       "time_to_predict_sell": [
-        9, 14, 17, 23
+        5, 8, 9, 11, 14, 17
       ]
     }
   },
@@ -615,6 +614,8 @@
   "Visualizer": {
     "params": {
       "plot_width": 30,
+      "prev_e_ratio_path": "visualizer/prev_e_ratio.json",
+      "prev_mar_path": "visualizer/prev_mar_ratio.json",
       "image_path": "visualizer/images",
       "level_indicators": [],
       "boundary_indicators": [

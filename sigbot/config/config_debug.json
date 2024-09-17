@@ -466,7 +466,6 @@
     "params": {
       "model_path": "ml/model/lgbm.pkl",
       "feature_path": "ml/model/features.json",
-      "weight": 0.279,
       "patterns_to_predict": [
         "STOCH_RSI_Volume24"
       ],
@@ -581,6 +580,8 @@
   "Visualizer": {
     "params": {
       "plot_width": 30,
+      "prev_e_ratio_path": "visualizer/prev_e_ratio.json",
+      "prev_mar_path": "visualizer/prev_mar_ratio.json",
       "image_path": "visualizer/images",
       "level_indicators": [],
       "boundary_indicators": [

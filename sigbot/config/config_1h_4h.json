@@ -609,7 +609,7 @@
     "one_way_mode": 0,
     "is_isolated": 1,
     "order_timeout_hours": 1,
-    "position_timeout_hours": 96
+    "position_timeout_hours": 128
   },
   "Visualizer": {
     "params": {

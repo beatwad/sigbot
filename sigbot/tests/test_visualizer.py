@@ -5,6 +5,8 @@ import pandas as pd
 from config.config import ConfigFactory
 from visualizer.visualizer import Visualizer
 
+from unittest.mock import patch, mock_open
+
 environ["ENV"] = "test"
 # Get configs
 configs = ConfigFactory.factory(environ).configs
@@ -81,7 +83,11 @@ prev_mean_pct_right_forecasts = [25, 10, 58.91, None, 15, 40, 15]
                           (points[2], prev_stat_dicts[1], prev_mean_pct_right_forecasts[5]),
                           (points[2], prev_stat_dicts[3], prev_mean_pct_right_forecasts[6])
                           ], ids=repr)
-def test_get_prev_mean_pct_right_forecast(point, prev_stat_dict, expected):
+@patch('json.load')
+@patch('builtins.open', new_callabale=mock_open)
+def test_get_prev_mean_pct_right_forecast(mock_file, mock_json, point, prev_stat_dict, expected):
+    mock_json.return_value = prev_stat_dict
+
     vis = Visualizer(**configs)
     vis.prev_e_ratio_stat_dict = prev_stat_dict
 

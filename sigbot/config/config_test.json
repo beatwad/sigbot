@@ -574,6 +574,8 @@
   "Visualizer": {
     "params": {
       "plot_width": 30,
+      "prev_e_ratio_path": "visualizer/prev_e_ratio.json",
+      "prev_mar_path": "visualizer/prev_mar_ratio.json",
       "image_path": "images",
       "level_indicators": [],
       "boundary_indicators": [

@@ -1,8 +1,7 @@
 import pytest
 import pandas as pd
 from os import environ
-from unittest.mock import patch, MagicMock
-
+from unittest.mock import MagicMock
 from config.config import ConfigFactory
 
 # Set environment variable
@@ -79,13 +78,9 @@ buy_eth_df = pd.read_pickle('test_ETHUSDT_5m_telegram_notifications.pkl')
                           ('BTCUSDT', 'BTC-USDT')
                           ],
                          ids=repr)
-@patch('telegram.Bot.__init__', return_value=None)
-@patch('multiprocessing.Lock')
-def test_process_ticker(mock_init, mock_locker, ticker, expected):
-    mock_locker_return_value = MagicMock()
-    mock_locker.__enter__.return_value = mock_locker_return_value
-
-    tb = TelegramBot('', database={}, trade_mode=[0], locker=mock_locker, **configs)
+def test_process_ticker(mocker, ticker, expected):
+    mocker.patch('telegram.Bot.__init__', return_value=None)
+    tb = TelegramBot('', database={}, trade_mode=[0], locker=MagicMock(), **configs)
     assert tb.process_ticker(ticker) == expected
 
 
@@ -99,11 +94,7 @@ def test_process_ticker(mock_init, mock_locker, ticker, expected):
                           ('100BTC-USDT', '100BTCUSDT'),
                           ],
                          ids=repr)
-@patch('telegram.Bot.__init__', return_value=None)
-@patch('multiprocessing.Lock')
-def test_clean_ticker(mock_init, mock_locker, ticker, expected):
-    mock_locker_return_value = MagicMock()
-    mock_locker.__enter__.return_value = mock_locker_return_value
-
-    tb = TelegramBot('', database={}, trade_mode=[0], locker=mock_locker, **configs)
+def test_clean_ticker(mocker, ticker, expected):
+    mocker.patch('telegram.Bot.__init__', return_value=None)
+    tb = TelegramBot('', database={}, trade_mode=[0], locker=MagicMock(), **configs)
     assert tb.clean_ticker(ticker) == expected

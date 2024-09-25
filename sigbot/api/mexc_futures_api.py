@@ -1,3 +1,5 @@
+from typing import Tuple, List
+
 from datetime import datetime
 import requests
 import pandas as pd
@@ -9,8 +11,23 @@ class MEXCFutures(ApiBase):
     interval_dict = {'1m': 'Min1', '5m': 'Min5', '15m': 'Min15', '30m': 'Min30', '1h': 'Min60', '4h': 'Hour4',
                      '8h': 'Hour8', '1d': 'Day1', '1w': 'Week1'}
 
-    def get_ticker_names(self, min_volume) -> (list, list, list):  # ok
-        """ Get tickers from spot, futures and swap exchanges and get tickers with big enough 24h volume """
+    def get_ticker_names(self, min_volume: float) -> Tuple[List[str], List[float], List[str]]:
+        """
+        Get ticker symbols and their corresponding volumes, filtering by a minimum volume.
+
+        Parameters
+        ----------
+        min_volume : float
+            The minimum volume to filter tickers.
+
+        Returns
+        -------
+        tuple of lists
+            A tuple containing:
+            - A list of filtered symbols.
+            - A list of their respective volumes.
+            - A list of all symbols before filtering.
+        """
         tickers = pd.DataFrame(requests.get(self.URL + '/ticker', timeout=3).json()['data'])
         tickers = tickers[tickers['symbol'].str.endswith('USDT')]
 
@@ -25,8 +42,24 @@ class MEXCFutures(ApiBase):
 
         return tickers['symbol'].to_list(), tickers['volume24'].to_list(), all_tickers
 
-    def get_klines(self, symbol, interval, limit=300) -> pd.DataFrame:
-        """ Save time, price and volume info to CryptoCurrency structure """
+    def get_klines(self, symbol: str, interval: int, limit: int = 300) -> pd.DataFrame:
+        """
+        Retrieve K-line (candlestick) data for a given symbol and interval.
+
+        Parameters
+        ----------
+        symbol : str
+            The symbol of the cryptocurrency (e.g., 'BTCUSDT').
+        interval : str
+            The interval for the K-lines (e.g., '1h', '1d').
+        limit : int
+            The maximum number of data points to retrieve.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing time, open, high, low, close, and volume for the specified symbol.
+        """
         interval_secs = self.convert_interval_to_secs(interval)
         start = (self.get_timestamp() - (limit * interval_secs))
         interval = self.interval_dict[interval]
@@ -37,8 +70,25 @@ class MEXCFutures(ApiBase):
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
 
     def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
-        """ Save historical time, price and volume info to CryptoCurrency structure
-            for some period (earlier than min_time) """
+        """
+        Retrieve historical K-line data for a given symbol and interval before a specified minimum time.
+
+        Parameters
+        ----------
+        symbol : str
+            The symbol of the cryptocurrency (e.g., 'BTCUSDT').
+        interval : str
+            The interval for the K-lines (e.g., '1h', '1d').
+        limit : int
+            The maximum number of data points to retrieve in each request.
+        min_time : datetime
+            The earliest time for which data should be retrieved.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing historical time, open, high, low, close, and volume for the specified symbol.
+        """
         interval_secs = self.convert_interval_to_secs(interval)
         interval = self.interval_dict[interval]
         params = {'interval': interval, 'limit': limit}
@@ -73,8 +123,23 @@ class MEXCFutures(ApiBase):
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
 
     def get_historical_funding_rate(self, symbol: str, limit: int, min_time: datetime) -> pd.DataFrame:
-        """ Save historical funding rate info to CryptoCurrency structure
-            for some period (earlier than min_time) """
+        """
+        Retrieve historical funding rate information for a cryptocurrency pair before a specified minimum time.
+
+        Parameters
+        ----------
+        symbol : str
+            The symbol of the cryptocurrency pair (e.g., 'BTCUSDT').
+        limit : int
+            The maximum number of data points to retrieve in each request.
+        min_time : datetime
+            The earliest time for which data should be retrieved.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing time and funding rate for the specified symbol.
+        """
         params = {'symbol': symbol, 'page_num': 1, 'page_size': 100}
         prev_time, earliest_time = None, datetime.now()
         funding_rates = pd.DataFrame()

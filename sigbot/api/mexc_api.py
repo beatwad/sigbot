@@ -1,3 +1,5 @@
+from typing import Tuple, List
+
 from datetime import datetime
 import requests
 import pandas as pd
@@ -7,8 +9,23 @@ from api.api_base import ApiBase
 class MEXC(ApiBase):
     URL = 'https://api.mexc.com/api/v3'
 
-    def get_ticker_names(self, min_volume) -> (list, list, list):  # ok
-        """ Get tickers from spot, futures and swap exchanges and get tickers with big enough 24h volume """
+    def get_ticker_names(self, min_volume: float) -> Tuple[List[str], List[float], List[str]]:
+        """
+        Get ticker symbols and their corresponding volumes, filtering by a minimum volume.
+
+        Parameters
+        ----------
+        min_volume : float
+            The minimum volume to filter tickers.
+
+        Returns
+        -------
+        tuple of lists
+            A tuple containing:
+            - A list of filtered symbols.
+            - A list of their respective volumes.
+            - A list of all symbols before filtering.
+        """
         tickers = pd.DataFrame(requests.get(self.URL + '/ticker/24hr', timeout=3).json())
         tickers = tickers[(tickers['symbol'].str.endswith('USDT')) | (tickers['symbol'].str.endswith('USDC'))]
 
@@ -24,8 +41,24 @@ class MEXC(ApiBase):
 
         return tickers['symbol'].to_list(), tickers['volume'].to_list(), all_tickers
 
-    def get_klines(self, symbol, interval, limit=300) -> pd.DataFrame:
-        """ Save time, price and volume info to CryptoCurrency structure """
+    def get_klines(self, symbol: str, interval: int, limit: int = 300) -> pd.DataFrame:
+        """
+        Retrieve K-line (candlestick) data for a given symbol and interval.
+
+        Parameters
+        ----------
+        symbol : str
+            The symbol of the cryptocurrency (e.g., 'BTCUSDT').
+        interval : str
+            The interval for the K-lines (e.g., '1h', '1d').
+        limit : int
+            The maximum number of data points to retrieve.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing time, open, high, low, close, and volume for the specified symbol.
+        """
         if interval == '1h':
             interval = '60m'
         params = {'symbol': symbol, 'interval': interval, 'limit': limit}
@@ -34,8 +67,25 @@ class MEXC(ApiBase):
         return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
 
     def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
-        """ Save historical time, price and volume info to CryptoCurrency structure
-            for some period (earlier than min_time) """
+        """
+        Retrieve historical K-line data for a given symbol and interval before a specified minimum time.
+
+        Parameters
+        ----------
+        symbol : str
+            The symbol of the cryptocurrency (e.g., 'BTCUSDT').
+        interval : str
+            The interval for the K-lines (e.g., '1h', '1d').
+        limit : int
+            The maximum number of data points to retrieve in each request.
+        min_time : datetime
+            The earliest time for which data should be retrieved.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing historical time, open, high, low, close, and volume for the specified symbol.
+        """
         interval_secs = self.convert_interval_to_secs(interval)
         if interval == '1h':
             interval = '60m'

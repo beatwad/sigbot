@@ -17,8 +17,6 @@ class Main:
     error_notification_sent = False
 
     def __init__(self, load_tickers=True, **configs):
-        """ Initialize separate thread the Telegram bot, so it can work independently
-            event for stopping bot thread """
         self.cycle_number = 1
         self.bot_cycle_length = configs[self.type]['params']['bot_cycle_length_sec']
         self.time_period = configs[self.type]['params']['time_period_minutes']
@@ -36,6 +34,7 @@ class Main:
         return False
 
     def cycle(self):
+        """Main program cycle"""
         dt1 = datetime.now()
         if self.check_time(dt1, self.time_period) or self.cycle_number == 1:
             print(dt1, flush=True)

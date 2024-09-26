@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import os
 from os import environ
 from time import sleep
@@ -30,8 +32,25 @@ env = environ.get("ENV", "debug")
 
 
 class DataFactory(object):
+    """Factory class to generate instances of different exchange data classes."""
+
     @staticmethod
     def factory(exchange, **configs):
+        """
+        Create an instance of the data class for the given exchange.
+
+        Parameters
+        ----------
+        exchange : str
+            Name of the exchange (e.g., 'Binance', 'ByBit').
+        **configs
+            Configuration parameters for the data classes.
+
+        Returns
+        -------
+        GetData
+            An instance of the corresponding data class.
+        """
         if exchange == 'Binance':
             return GetBinanceData(**configs)
         elif exchange == 'BinanceFutures':
@@ -51,10 +70,20 @@ class DataFactory(object):
 
 
 class GetData:
+    """Base class for fetching and processing cryptocurrency exchange data."""
+
     type = 'Data'
     name = 'Basic'
 
     def __init__(self, **configs):
+        """
+        Initialize with configuration parameters.
+
+        Parameters
+        ----------
+        **configs : dict
+            Configuration parameters such as limit, min_volume, etc.
+        """
         self.configs = configs[self.type][self.name]['params']
         # basic interval (number of candles) to upload at startup
         self.limit = self.configs.get('limit', 0)
@@ -77,19 +106,22 @@ class GetData:
 
     @staticmethod
     def load_saved_data(df: pd.DataFrame, ticker: str, timeframe: str) -> pd.DataFrame:
-        """ If there is a previously saved dataframe in our base - load it
-            Parameters
-                ----------
-                df
-                    Dataframe with candles.
-                ticker
-                    Name of ticker (e.g. BTCUSDT, ETHUSDT).
-                timeframe
-                    Timeframe value (e.g. 5m, 1h, 4h, 1d).
-                Returns
-                -------
-                df
-                    List of higher timeframe indicators, list of working timeframe indicators
+        """
+        Load previously saved data for a specific ticker and timeframe if available.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe containing existing candle data.
+        ticker : str
+            Ticker symbol (e.g., BTCUSDT, ETHUSDT).
+        timeframe : str
+            Timeframe for the candles (e.g., '5m', '1h', '4h').
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataframe with the saved candlestick data if available.
         """
         try:
             df = pd.read_pickle(f'optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl')
@@ -98,8 +130,26 @@ class GetData:
         return df
 
     def get_data(self, df: pd.DataFrame, ticker: str, timeframe: str,
-                 dt_now: datetime) -> tuple[pd.DataFrame, int]:
-        """ Get data from exchange """
+                 dt_now: datetime) -> Tuple[pd.DataFrame, int]:
+        """
+        Retrieve candlestick data from the exchange for a specific ticker and timeframe.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Existing dataframe with candle data.
+        ticker : str
+            Ticker symbol (e.g., BTCUSDT).
+        timeframe : str
+            Timeframe for the candles.
+        dt_now : datetime
+            Current datetime used to determine the time intervals.
+
+        Returns
+        -------
+        Tuple[pd.DataFrame, int]
+            Updated dataframe and the data retrieval limit.
+        """
         limit = self.get_limit(df, ticker, timeframe, dt_now)
         # get data from exchange only when there is at least one interval to get
         if limit < 2:
@@ -142,8 +192,15 @@ class GetData:
 
         return df, limit
 
-    def get_btc_dom(self) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """ Get two types of BTC dominance indicators """
+    def get_btc_dom(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Retrieve BTC dominance data from TradingView.
+
+        Returns
+        -------
+        Tuple[pd.DataFrame, pd.DataFrame]
+            Two dataframes containing BTC dominance data.
+        """
         btcd_cols = ['time', 'btcd_open', 'btcd_high', 'btcd_low', 'btcd_close', 'btcd_volume']
         btcdom_cols = ['time', 'btcdom_open', 'btcdom_high', 'btcdom_low', 'btcdom_close', 'btcdom_volume']
         # if there are errors in connection, try 3 times and only then log exception
@@ -174,8 +231,26 @@ class GetData:
         return btcd[:-1], btcdom[:-1]
 
     def get_hist_data(self, df: pd.DataFrame, ticker: str, timeframe: str, 
-                      min_time: datetime) -> tuple[pd.DataFrame, int]:
-        """ Get historical data from exchange for some period and also add funding rate data """
+                      min_time: datetime) -> Tuple[pd.DataFrame, int]:
+        """
+        Retrieve historical data and funding rate for a given period.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Existing dataframe with candle data.
+        ticker : str
+            Ticker symbol (e.g., BTCUSDT).
+        timeframe : str
+            Timeframe for the candles.
+        min_time : datetime
+            Minimum time for historical data retrieval.
+
+        Returns
+        -------
+        tuple[pd.DataFrame, int]
+            Updated dataframe and the retrieval limit.
+        """
         for i in range(self.num_retries):
             try:
                 klines = self.api.get_historical_klines(ticker, timeframe, self.limit, min_time)
@@ -198,7 +273,23 @@ class GetData:
         return df, self.limit
 
     def add_funding_rate(self, df: pd.DataFrame, funding_rates: pd.DataFrame, timeframe: str) -> pd.DataFrame:
-        """ Add funding rate data to the candle dataframe """
+        """
+        Add funding rate data to the existing dataframe.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Existing dataframe with candle data.
+        funding_rates : pd.DataFrame
+            Dataframe with funding rate data.
+        timeframe : str
+            Timeframe for the candles.
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataframe with funding rate data merged.
+        """
         if timeframe == self.work_timeframe:
             if funding_rates.shape[0] > 0:
                 funding_rates = self.process_funding_rate_data(funding_rates)
@@ -213,7 +304,21 @@ class GetData:
         return df
     
     def get_hist_funding_rate_data(self, ticker: str, min_time: datetime) -> tuple[pd.DataFrame, int]:
-        """ Get historical funding rate data from exchange for some period """
+        """
+        Get historical funding rate data from the exchange for a given period.
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker symbol (e.g., BTCUSDT).
+        min_time : datetime
+            The earliest time from which to retrieve funding rate data.
+
+        Returns
+        -------
+        tuple[pd.DataFrame, int]
+            A tuple containing the dataframe with funding rate data and the retrieval limit.
+        """
         for i in range(self.num_retries):
             try:
                 funding_rates = self.api.get_historical_funding_rate(ticker, self.limit, min_time)
@@ -231,12 +336,30 @@ class GetData:
         return funding_rates, self.limit
 
     def get_tickers(self) -> list:
-        """ Get list of available ticker names """
+        """
+        Get a list of available ticker names from the exchange.
+
+        Returns
+        -------
+        list
+            A list of available ticker symbols that meet the minimum volume criteria.
+        """
         tickers = self.api.get_ticker_names(self.min_volume)
         return tickers
 
     def fill_ticker_dict(self, tickers: str) -> None:
-        """ For every ticker set timestamp of the current time """
+        """
+        Initialize the ticker dictionary with the current timestamp for each ticker and timeframe.
+
+        Parameters
+        ----------
+        tickers : str
+            List of tickers to initialize in the dictionary.
+
+        Returns
+        -------
+        None
+        """
         # dt = datetime.now()
         for ticker in tickers:
             self.ticker_dict[ticker] = dict()
@@ -245,11 +368,38 @@ class GetData:
 
     @staticmethod
     def add_utc_3(df):
+        """
+        Adjust the time in the dataframe by adding 3 hours (UTC+3).
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe containing time data.
+
+        Returns
+        -------
+        pd.DataFrame
+            Updated dataframe with the time shifted by 3 hours.
+        """
         df['time'] = df['time'] + pd.to_timedelta(3, unit='h')
         return df
 
     def process_data(self, klines: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
-        """ Update dataframe for current ticker or create new dataframe if it's first run """
+        """
+        Process the retrieved candlestick data and merge with existing dataframe.
+
+        Parameters
+        ----------
+        klines : pd.DataFrame
+            Dataframe containing candlestick data from the exchange.
+        df : pd.DataFrame
+            Existing dataframe with candle data.
+
+        Returns
+        -------
+        pd.DataFrame
+            Updated dataframe with new kline data merged.
+        """
         # convert numeric data to float type
         klines[['open', 'high', 'low', 'close', 'volume']] = klines[['open', 'high', 'low',
                                                                      'close', 'volume']].astype(float)
@@ -274,7 +424,22 @@ class GetData:
         return df
 
     def process_funding_rate_data(self, funding_rates) -> pd.DataFrame:
-        """ Update dataframe for current ticker or create new dataframe if it's first run """
+        """
+        Process the funding rate data by updating or creating a dataframe.
+
+        This function converts numeric data to float, processes the timestamp,
+        and adjusts it to UTC+3 for consistency.
+
+        Parameters
+        ----------
+        funding_rates : pd.DataFrame
+            Dataframe containing funding rate data with columns such as 'funding_rate' and 'time'.
+
+        Returns
+        -------
+        pd.DataFrame
+            Processed dataframe with adjusted time and converted funding rates.
+        """
         # convert numeric data to float type
         funding_rates[['funding_rate']] = funding_rates[['funding_rate']].astype(float)
         # convert time to UTC+3
@@ -285,7 +450,37 @@ class GetData:
     @staticmethod
     def add_indicator_data(dfs: dict, df: pd.DataFrame, ttype: str, indicators: list, ticker: str, timeframe: str,
                            data_qty: int, opt_flag: bool = False) -> dict:
-        """ Add indicator data to cryptocurrency dataframe """
+        """
+        Add indicator data to the cryptocurrency dataframe and update the dataframe dictionary.
+
+        This method processes a list of indicators, applying them to the dataframe, and updates the dictionary
+        of dataframes with the new indicator data.
+
+        Parameters
+        ----------
+        dfs : dict
+            Dictionary to store dataframes for different tickers, timeframes and trade types.
+        df : pd.DataFrame
+            Dataframe to which indicators will be added.
+        ttype : str
+            Type of trade ('buy' or 'sell').
+        indicators : list
+            List of indicator objects to be applied to the dataframe.
+        ticker : str
+            The cryptocurrency ticker symbol (e.g., BTCUSDT).
+        timeframe : str
+            Time interval for the data (e.g., '5m', '1h').
+        data_qty : int
+            Quantity of data points to be used for calculations.
+        opt_flag : bool, optional
+            Optimization flag, in this method it's used to skip certain indicators
+            like 'Pattern' if True (default is False).
+
+        Returns
+        -------
+        dict
+            Updated dictionary with the processed dataframe and indicator levels.
+        """
         levels = list()
         indicators = [i for i in indicators if i.ttype == ttype]
         # Add indicators
@@ -306,7 +501,24 @@ class GetData:
 
     @staticmethod
     def get_time_label(dt_now: datetime, timeframe: str) -> int:
-        """ Define time label according to the timeframe """
+        """
+        Define a time label based on the timeframe and current time.
+
+        This function divides the time into intervals (e.g., 5-minute, 15-minute)
+        depending on the timeframe provided.
+
+        Parameters
+        ----------
+        dt_now : datetime
+            Current datetime object.
+        timeframe : str
+            Time interval (e.g., '5m', '15m', '1h').
+
+        Returns
+        -------
+        int
+            The time label for the given timeframe, representing which part of the time interval we are in.
+        """
         if timeframe == '5m':
             return dt_now.minute // 5
         elif timeframe == '15m':
@@ -325,7 +537,25 @@ class GetData:
             return dt_now.day
 
     def get_limit(self, df: pd.DataFrame, ticker: str, timeframe: str, dt_now: datetime) -> int:
-        """ Get interval needed to download from exchange according to time label """
+        """
+        Determine the limit for how much data to retrieve based on the existing data and the current time.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Existing dataframe with candle data.
+        ticker : str
+            Ticker symbol.
+        timeframe : str
+            Timeframe for the candles.
+        dt_now : datetime
+            Current datetime used to determine the time intervals.
+
+        Returns
+        -------
+        int
+            The number of candles to retrieve from the exchange.
+        """
         dt_measure = self.get_time_label(dt_now, timeframe)
         if df.shape[0] == 0:
             self.ticker_dict[ticker][timeframe] = dt_measure
@@ -341,6 +571,23 @@ class GetData:
 
 
 class GetBinanceData(GetData):
+    """
+    Class to retrieve spot data from Binance exchange.
+
+    Inherits from GetData and sets up Binance-specific API key, secret,
+    and initializes the Binance API client.
+
+    Attributes
+    ----------
+    name : str
+        Name of the exchange (Binance).
+    key : str
+        API key for Binance.
+    secret : str
+        API secret for Binance.
+    api : Binance
+        Binance API client for interacting with the Binance exchange.
+    """
     name = 'Binance'
 
     def __init__(self, **configs):
@@ -351,6 +598,23 @@ class GetBinanceData(GetData):
 
 
 class GetBinanceFuturesData(GetData):
+    """
+    Class to retrieve futures data from Binance Futures exchange.
+
+    Inherits from GetData and sets up Binance Futures-specific API key, secret,
+    and initializes the BinanceFutures API client.
+
+    Attributes
+    ----------
+    name : str
+        Name of the exchange (BinanceFutures).
+    key : str
+        API key for Binance Futures.
+    secret : str
+        API secret for Binance Futures.
+    api : BinanceFutures
+        Binance Futures API client for interacting with Binance Futures exchange.
+    """
     name = 'BinanceFutures'
 
     def __init__(self, **configs):
@@ -361,6 +625,18 @@ class GetBinanceFuturesData(GetData):
 
 
 class GetOKEXData(GetData):
+    """
+    Class to retrieve spot data from OKEX exchange.
+
+    Inherits from GetData and initializes the OKEX API client.
+
+    Attributes
+    ----------
+    name : str
+        Name of the exchange (OKEX).
+    api : OKEX
+        OKEX API client for interacting with OKEX exchange.
+    """
     name = 'OKEX'
 
     def __init__(self, **configs):
@@ -369,6 +645,18 @@ class GetOKEXData(GetData):
 
 
 class GetOKEXSwapData(GetData):
+    """
+    Class to retrieve swap data from OKEX Swap exchange.
+
+    Inherits from GetData and initializes the OKEXSwap API client.
+
+    Attributes
+    ----------
+    name : str
+        Name of the exchange (OKEXSwap).
+    api : OKEXSwap
+        OKEXSwap API client for interacting with OKEX Swap exchange.
+    """
     name = 'OKEXSwap'
 
     def __init__(self, **configs):
@@ -377,6 +665,18 @@ class GetOKEXSwapData(GetData):
 
 
 class GetByBitData(GetData):
+    """
+    Class to retrieve spot data from ByBit exchange.
+
+    Inherits from GetData and initializes the ByBit API client.
+
+    Attributes
+    ----------
+    name : str
+        Name of the exchange (ByBit).
+    api : ByBit
+        ByBit API client for interacting with ByBit exchange.
+    """
     name = 'ByBit'
 
     def __init__(self, **configs):
@@ -385,6 +685,23 @@ class GetByBitData(GetData):
 
 
 class GetByBitPerpetualData(GetData):
+    """
+    Class to retrieve perpetual futures data from ByBit Futures exchange.
+
+    Inherits from GetData and sets up API key, secret based on environment
+    and initializes the ByBitPerpetual API client.
+
+    Attributes
+    ----------
+    name : str
+        Name of the exchange (ByBitPerpetual).
+    key : str
+        API key for ByBit Perpetual, varies between test and production environments.
+    secret : str
+        API secret for ByBit Perpetual, varies between test and production environments.
+    api : ByBitPerpetual
+        ByBit Perpetual API client for interacting with ByBit Perpetual exchange.
+    """
     name = 'ByBitPerpetual'
 
     def __init__(self, **configs):
@@ -399,6 +716,18 @@ class GetByBitPerpetualData(GetData):
 
 
 class GetMEXCData(GetData):
+    """
+    Class to retrieve spot data from MEXC exchange.
+
+    Inherits from GetData and initializes the MEXC API client.
+
+    Attributes
+    ----------
+    name : str
+        Name of the exchange (MEXC).
+    api : MEXC
+        MEXC API client for interacting with MEXC exchange.
+    """
     name = 'MEXC'
 
     def __init__(self, **configs):
@@ -407,6 +736,18 @@ class GetMEXCData(GetData):
 
 
 class GetMEXCFuturesData(GetData):
+    """
+    Class to retrieve futures data from MEXC Futures exchange.
+
+    Inherits from GetData and initializes the MEXCFutures API client.
+
+    Attributes
+    ----------
+    name : str
+        Name of the exchange (MEXCFutures).
+    api : MEXCFutures
+        MEXCFutures API client for interacting with MEXC Futures exchange.
+    """
     name = 'MEXCFutures'
 
     def __init__(self, **configs):

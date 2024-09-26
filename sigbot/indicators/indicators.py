@@ -11,9 +11,26 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 class IndicatorFactory(object):
-    """ Return indicator according to 'indicator' variable value """
+    """Factory class to return specific indicator object based on input value."""
     @staticmethod
     def factory(indicator, ttype, configs):
+        """
+        Factory method to select the appropriate indicator class.
+
+        Parameters
+        ----------
+        indicator : str
+            Name of the indicator to return.
+        ttype : str
+            Type of the trade ('buy', 'sell').
+        configs : dict
+            Configuration settings for the indicators.
+
+        Returns
+        -------
+        Indicator
+            The corresponding indicator object.
+        """
         if indicator.startswith('RSI'):
             return RSI(ttype, configs)
         elif indicator.startswith('STOCH'):
@@ -41,11 +58,19 @@ class IndicatorFactory(object):
 
 
 class Indicator:
-    """ Abstract indicator class """
+    """Abstract base class for indicators"""
     type = 'Indicator'
     name = 'Base'
 
     def __init__(self, ttype, configs):
+        """Initialize the Indicator class.
+        Parameters
+        ----------
+        ttype : str
+            Type of the trade ('buy', 'sell').
+        configs : dict
+            Configuration settings for the indicators.
+        """
         self.ttype = ttype
         self.configs = configs[self.type][self.ttype][self.name]['params']
 
@@ -63,6 +88,25 @@ class RSI(Indicator):
         super(RSI, self).__init__(ttype, configs)
 
     def get_indicator(self, df, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        """
+        Calculate RSI indicator and append to DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        ticker : str
+            Ticker symbol.
+        timeframe : str
+            Timeframe for data (e.g., 5m, 1H, 4H, 1D).
+        data_qty : int
+            The number of the most recent data to return.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with calculated RSI values.
+        """
         # if mean close price value is too small, RSI indicator can become zero,
         # so we should increase it to at least 1e-4
         try:
@@ -85,6 +129,25 @@ class STOCH(Indicator):
         super(STOCH, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        """
+        Calculate STOCH indicator and append to DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        ticker : str
+            Ticker symbol.
+        timeframe : str
+            Timeframe for data (e.g., 5m, 1H, 4H, 1D).
+        data_qty : int
+            The number of the most recent data to return.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with calculated STOCH values.
+        """
         try:
             slowk, slowd = ta.STOCH(df['high'], df['low'], df['close'], **self.configs)
         except:
@@ -107,6 +170,25 @@ class Trend(Indicator):
         super(Trend, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        """
+        Calculate Trend indicator and append to DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        ticker : str
+            Ticker symbol.
+        timeframe : str
+            Timeframe for data (e.g., 5m, 1H, 4H, 1D).
+        data_qty : int
+            The number of the most recent data to return.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with calculated STOCH values.
+        """
         try:
             adx = ta.ADX(df['high'], df['low'], df['close'], **self.configs)
             plus_di = ta.PLUS_DI(df['high'], df['low'], df['close'], **self.configs)
@@ -126,6 +208,25 @@ class MACD(Indicator):
         super(MACD, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        """
+        Calculate MACD indicator and append to DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        ticker : str
+            Ticker symbol.
+        timeframe : str
+            Timeframe for data (e.g., 5m, 1H, 4H, 1D).
+        data_qty : int
+            The number of the most recent data to return.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with calculated STOCH values.
+        """
         try:
             macd, macdsignal, macdhist = ta.MACD(df['close'], **self.configs)
         except:
@@ -149,7 +250,25 @@ class ATR(Indicator):
         super(ATR, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        """ Add ATR indicator to the dataframe """
+        """
+        Calculate ATR indicator and append to DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        ticker : str
+            Ticker symbol.
+        timeframe : str
+            Timeframe for data (e.g., 5m, 1H, 4H, 1D).
+        data_qty : int
+            The number of the most recent data to return.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with calculated STOCH values.
+        """
         try:
             atr = ta.ATR(df['high'], df['low'], df['close'], **self.configs)
         except:
@@ -167,7 +286,25 @@ class SMA(Indicator):
         super(SMA, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        """ Add SMA indicator to the dataframe """
+        """
+        Calculate SMA indicator and append to DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        ticker : str
+            Ticker symbol.
+        timeframe : str
+            Timeframe for data (e.g., 5m, 1H, 4H, 1D).
+        data_qty : int
+            The number of the most recent data to return.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with calculated STOCH values.
+        """
         timeperiod = self.configs['timeperiod']
         try:
             sma = ta.SMA(df['close'], timeperiod)
@@ -188,7 +325,25 @@ class CCI(Indicator):
         super(CCI, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        """ Add CCI indicator to the dataframe """
+        """
+        Calculate CCI indicator and append to DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        ticker : str
+            Ticker symbol.
+        timeframe : str
+            Timeframe for data (e.g., 5m, 1H, 4H, 1D).
+        data_qty : int
+            The number of the most recent data to return.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with calculated STOCH values.
+        """
         timeperiod = self.configs['timeperiod']
         try:
             cci = ta.CCI(df['high'], df['low'], df['close'], timeperiod)
@@ -206,7 +361,25 @@ class SAR(Indicator):
         super(SAR, self).__init__(ttype, configs)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        """ Add SAR indicator to the dataframe """
+        """
+        Calculate SAR indicator and append to DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        ticker : str
+            Ticker symbol.
+        timeframe : str
+            Timeframe for data (e.g., 5m, 1H, 4H, 1D).
+        data_qty : int
+            The number of the most recent data to return.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with calculated STOCH values.
+        """
         acceleration = self.configs['acceleration']
         maximum = self.configs['maximum']
         try:
@@ -241,7 +414,12 @@ class PumpDump(Indicator):
         # self.get_price_stat()
 
     def get_price_stat(self) -> None:
-        """ Load price statistics from file """
+        """ 
+        Load price statistics from file.
+
+        This method attempts to read price statistics from a JSON file. If the file is not found,
+        it will silently pass. Otherwise, it updates the statistics .
+        """
         try:
             with open(self.stat_file_path, 'r') as f:
                 self.price_stat = json.load(f)
@@ -254,18 +432,62 @@ class PumpDump(Indicator):
                 self.price_stat[key] = Counter(self.price_stat[key])
 
     def save_price_stat(self) -> None:
-        """ Save price statistics to file """
+        """
+        Save price statistics to file.
+
+        This method writes the current price statistics to a JSON file specified by the
+        stat_file_path attribute.
+        """
         with open(self.stat_file_path, 'w+') as f:
             json.dump(self.price_stat, f)
 
     def get_price_change(self, df: pd.DataFrame, data_qty: int, lag: int) -> list:
-        """ Get difference between current price and previous price """
+        """
+        Get difference between current price and previous price.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        data_qty : int
+            The number of the most recent data to return.
+        lag : int
+            The number of periods to look back for price changes.
+
+        Returns
+        -------
+        list
+            A list of rounded price changes.
+        """
         close_prices = (df['close'] - df['close'].shift(lag)) / df['close'].shift(lag)
         df[f'price_change_{lag}'] = np.round(close_prices.values, self.round_decimals)
         return df[f'price_change_{lag}'][max(df.shape[0] - data_qty + 1, 0):].values
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        """ Measure degree of ticker price change """
+        """
+        Measure degree of ticker price change.
+
+        This method calculates price changes, updates the price statistics, and computes
+        the quantiles for the specified lag periods.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        ticker : str
+            The ticker symbol of the asset.
+        timeframe : str
+            Timeframe for data (e.g., 5m, 1H, 4H, 1D).
+        data_qty : int
+            The number of the most recent data to return.
+        args : tuple
+            Additional arguments (currently unused).
+
+        Returns
+        -------
+        pd.DataFrame
+            The updated DataFrame with quantile values for the specified lags.
+        """
         for i in range(1, 2):
             # get statistics
             close_prices = self.get_price_change(df, data_qty, lag=i)
@@ -315,24 +537,73 @@ class HighVolume(Indicator):
         # self.get_vol_stat()
 
     def get_vol_stat(self) -> None:
-        """ Load volume statistics from file """
+        """
+        Load volume statistics from file.
+
+        This method attempts to read volume statistics from a NumPy binary file. If the file
+        is not found, it will silently pass.
+        """
         try:
             self.vol_stat = np.load(self.vol_stat_file_path)
         except FileNotFoundError:
             pass
 
     def save_vol_stat(self, quantile_vol: np.array) -> None:
-        """ Save volume statistics to file """
+        """
+        Save volume statistics to file.
+
+        Parameters
+        ----------
+        quantile_vol : np.array
+            The quantile volume statistics to save.
+        """
         np.save(self.vol_stat_file_path, quantile_vol)
 
     def get_volume(self, df: pd.DataFrame, data_qty: int) -> list:
-        """ Get MinMax normalized volume """
+        """
+        Get MinMax normalized volume.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        data_qty : int
+            The number of the most recent data to return.
+
+        Returns
+        -------
+        list
+            A list of normalized volumes.
+        """
         normalized_vol = df['volume'] / df['volume'].sum()
         df[f'normalized_vol'] = np.round(normalized_vol.values, self.round_decimals)
         return df[f'normalized_vol'][max(df.shape[0] - data_qty + 1, 0):].values
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        """ Measure degree of ticker volume change """
+        """
+        Measure degree of ticker volume change.
+
+        This method calculates normalized volumes, updates the volume statistics, and computes
+        the quantile for high volume.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        ticker : str
+            Ticker symbol.
+        timeframe : str
+            Timeframe for data (e.g., 5m, 1H, 4H, 1D).
+        data_qty : int
+            The number of the most recent data to return.
+        args : tuple
+            Additional arguments (currently unused).
+
+        Returns
+        -------
+        pd.DataFrame
+            The updated DataFrame with quantile volume value.
+        """
         # get frequency counter
         vol = self.get_volume(df, data_qty)
         # add price statistics, if statistics size is enough - add data to temp file to prevent high load of CPU
@@ -375,7 +646,30 @@ class Pattern(Indicator):
         self.last_candles_ext_num = self.configs.get('number_last_ext', 100)
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
-        """ Get main minimum and maximum extremums """
+        """
+        Get main minimum and maximum extremes.
+
+        This method identifies the relative maxima and minima in the price data and updates
+        the DataFrame with these extreme points.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        ticker : str
+            Ticker symbol.
+        timeframe : str
+            Timeframe for data (e.g., 5m, 1H, 4H, 1D).
+        data_qty : int
+            The number of the most recent data to return.
+        args : tuple
+            Additional arguments (currently unused).
+
+        Returns
+        -------
+        pd.DataFrame
+            The updated DataFrame with extremum indicators.
+        """
         high_max = argrelmax(df['high'].values, order=4)[0]
         low_min = argrelmin(df['low'].values, order=4)[0]
         min_max_len = min(high_max.shape[0], low_min.shape[0])
@@ -399,6 +693,25 @@ class Volume24(Indicator):
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
 
     def get_indicator(self, df: pd.DataFrame, ticker: str, timeframe: str, data_qty: int, *args) -> pd.DataFrame:
+        """
+        Calculate indicator of high volume for the last 24 hours and append to DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame with candlestick data.
+        ticker : str
+            Ticker symbol.
+        timeframe : str
+            Timeframe for data (e.g., 5m, 1H, 4H, 1D).
+        data_qty : int
+            The number of the most recent data to return.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with calculated STOCH values.
+        """
         # get quantity of candles in 24 hours
         avg_period = int(24 / (self.timeframe_div[timeframe] / 3600))
         # get average volume for 24 hours

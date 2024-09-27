@@ -1,5 +1,5 @@
 import os
-from typing import Tuple
+from typing import Tuple, Union
 
 import json
 import multiprocessing
@@ -47,7 +47,7 @@ class SigBot:
     configs
         Dictionary of configs which is loaded from file config/config_*env*.json
     """
-    def __init__(self, main_class, load_tickers=True, opt_type=None, **configs):
+    def __init__(self, main_class, load_tickers: bool = True, opt_type: Union[str, None] = None, **configs):
         self.configs = configs
         # Get main bot class
         self.main = main_class
@@ -529,7 +529,7 @@ class SigBot:
                 spot_ex_monitor_list.append(monitor)
         return spot_ex_monitor_list, fut_ex_monitor_list
 
-    def save_opt_dataframes(self, load=False, historical=False, min_time=None) -> None:
+    def save_opt_dataframes(self, load: bool = False, historical: bool = False, min_time: datetime = None) -> None:
         """ 
         Save all ticker dataframes for further indicator/signal optimization
         Parameters
@@ -676,7 +676,7 @@ class SigBot:
 
 class MonitorExchange:
     """Class for monitoring of signals from current exchange"""
-    def __init__(self, sigbot, exchange, exchange_data):
+    def __init__(self, sigbot: SigBot, exchange: str, exchange_data: dict):
         # initialize separate thread the Telegram bot, so it can work independently
         # instance of main class
         self.sigbot = sigbot
@@ -715,7 +715,7 @@ class MonitorExchange:
                                                                     data_qty, opt_flag)
         return data_qty
 
-    def mon_add_statistics(self, sig_points: list, data_qty_higher=None) -> None:
+    def mon_add_statistics(self, sig_points: list, data_qty_higher: Union[int, None] = None) -> None:
         """
         Write statistics for signal points to the database
         Parameters

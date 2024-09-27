@@ -244,7 +244,7 @@ class GetData:
         timeframe : str
             Timeframe for the candles.
         min_time : datetime
-            Minimum time for historical data retrieval.
+            The earliest time from which historical data are retrieved.
 
         Returns
         -------
@@ -312,7 +312,7 @@ class GetData:
         ticker : str
             Ticker symbol (e.g., BTCUSDT).
         min_time : datetime
-            The earliest time from which to retrieve funding rate data.
+            The earliest time from which historical funding rate data are retrieved.
 
         Returns
         -------

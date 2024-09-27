@@ -1,32 +1,8 @@
+from typing import Tuple, List
+
 import numpy as np
 import pandas as pd
 from abc import abstractmethod
-
-
-class SignalFactory(object):
-    """ Return indicator according to 'indicator' variable value """
-
-    @staticmethod
-    def factory(indicator, ttype, configs):
-        if indicator == 'RSI':
-            return RSISignal(ttype, **configs)
-        elif indicator == 'STOCH':
-            return STOCHSignal(ttype, **configs)
-        elif indicator == 'MACD':
-            return MACDSignal(ttype, **configs)
-        elif indicator == 'Pattern':
-            return PatternSignal(ttype, **configs)
-        elif indicator == 'PumpDump':
-            return PumpDumpSignal(ttype, **configs)
-        elif indicator == 'Trend':
-            return TrendSignal(ttype, **configs)
-        elif indicator == 'AntiTrend':
-            return AntiTrendSignal(ttype, **configs)
-        elif indicator == 'HighVolume':
-            return HighVolumeSignal(ttype, **configs)
-        elif indicator == 'Volume24':
-            return Volume24Signal(ttype, **configs)
-
 
 class SignalBase:
     """ Base signal searching class """
@@ -34,6 +10,16 @@ class SignalBase:
     name = 'Base'
 
     def __init__(self, ttype, configs):
+        """
+        Initialize the SignalBase class.
+
+        Parameters
+        ----------
+        ttype : str
+            Trade type ('buy', 'sell').
+        configs : dict
+            Dictionary with indicator parameters.
+        """
         self.ttype = ttype
         self.configs = configs[self.type][self.ttype]
         self.vol_q_high = 0
@@ -44,12 +30,32 @@ class SignalBase:
 
     @abstractmethod
     def find_signal(self, *args, **kwargs):
+        """Abstract method for signal detection, to be implemented by derived classes."""
         return False, '', []
 
     @staticmethod
     def lower_bound(low_bound: float, indicator: pd.Series, indicator_lag_1: pd.Series,
                     indicator_lag_2: pd.Series) -> np.ndarray:
-        """ Returns True if at least two of three last points of indicator are higher than high_bound param """
+        """
+        Returns an array indicating if at least two of the last three points of the indicator
+        are below the given low bound.
+
+        Parameters
+        ----------
+        low_bound : float
+            The lower bound threshold.
+        indicator : pd.Series
+            The current indicator series.
+        indicator_lag_1 : pd.Series
+            The indicator series lagged by one time step.
+        indicator_lag_2 : pd.Series
+            The indicator series lagged by two time steps.
+
+        Returns
+        -------
+        np.ndarray
+            An array indicating where the condition is met.
+        """
         indicator = np.where(indicator < low_bound, 1, 0)
         indicator_lag_1 = np.where(indicator_lag_1 < low_bound, 1, 0)
         indicator_lag_2 = np.where(indicator_lag_2 < low_bound, 1, 0)
@@ -59,7 +65,26 @@ class SignalBase:
     @staticmethod
     def higher_bound(high_bound: float, indicator: pd.Series, indicator_lag_1: pd.Series,
                      indicator_lag_2: pd.Series) -> np.ndarray:
-        """ Returns True if at least two of three last points of indicator are higher than high_bound param """
+        """
+        Returns an array indicating if at least two of the last three points of the indicator
+        are above the given low bound.
+
+        Parameters
+        ----------
+        high_bound : float
+            The lower bound threshold.
+        indicator : pd.Series
+            The current indicator series.
+        indicator_lag_1 : pd.Series
+            The indicator series lagged by one time step.
+        indicator_lag_2 : pd.Series
+            The indicator series lagged by two time steps.
+
+        Returns
+        -------
+        np.ndarray
+            An array indicating where the condition is met.
+        """
         indicator = np.where(indicator > high_bound, 1, 0)
         indicator_lag_1 = np.where(indicator_lag_1 > high_bound, 1, 0)
         indicator_lag_2 = np.where(indicator_lag_2 > high_bound, 1, 0)
@@ -69,7 +94,25 @@ class SignalBase:
     @staticmethod
     def crossed_lines(up: bool, indicator: pd.Series,
                       indicator_lag_1: pd.Series, indicator_lag_2: pd.Series) -> np.ndarray:
-        """ Returns True if slowk and slowd lines have crossed """
+        """
+        Returns an array indicating if slowk and slowd lines have crossed based on the given direction (up or down).
+
+        Parameters
+        ----------
+        up : bool
+            Direction of the crossing; True for upward cross, False for downward cross.
+        indicator : pd.Series
+            The current indicator series.
+        indicator_lag_1 : pd.Series
+            The indicator series lagged by one time step.
+        indicator_lag_2 : pd.Series
+            The indicator series lagged by two time steps.
+
+        Returns
+        -------
+        np.ndarray
+            An array indicating whether the lines have crossed.
+        """
         if up:
             indicator = np.where(indicator < 0, 1, 0)
             indicator_lag_1 = np.where(indicator_lag_1 > 0, 1, 0)
@@ -87,26 +130,94 @@ class SignalBase:
 
     @staticmethod
     def lower_bound_robust(low_bound: float, indicator: pd.Series) -> np.ndarray:
-        """ Returns True if indicator is lower than low bound """
+        """
+        Returns an array indicating if the indicator is below the given low bound.
+
+        Parameters
+        ----------
+        low_bound : float
+            The lower bound threshold.
+        indicator : pd.Series
+            The current indicator series.
+
+        Returns
+        -------
+        np.ndarray
+            An array indicating where the condition is met.
+        """
         return np.where(indicator < low_bound, 1, 0)
 
     @staticmethod
     def higher_bound_robust(high_bound: float, indicator: pd.Series) -> np.ndarray:
-        """ Returns True if indicator is lower than low bound """
+        """
+        Returns an array indicating if the indicator is above the given high bound.
+
+        Parameters
+        ----------
+        high_bound : float
+            The upper bound threshold.
+        indicator : pd.Series
+            The current indicator series.
+
+        Returns
+        -------
+        np.ndarray
+            An array indicating where the condition is met.
+        """
         return np.where(indicator > high_bound, 1, 0)
 
     @staticmethod
     def up_direction(indicator: pd.Series) -> np.ndarray:
-        """ Returns True if indicator is lower than low bound """
+        """
+        Returns an array indicating if the indicator is moving in an upward direction.
+
+        Parameters
+        ----------
+        indicator : pd.Series
+            The indicator series.
+
+        Returns
+        -------
+        np.ndarray
+            An array indicating where upward movement happens.
+        """
         return np.where(indicator > 0, 1, 0)
 
     @staticmethod
     def down_direction(indicator: pd.Series) -> np.ndarray:
-        """ Return True if indicator values are moving down """
+        """
+        Returns an array indicating if the indicator is moving in a downward direction.
+
+        Parameters
+        ----------
+        indicator : pd.Series
+            The indicator series.
+
+        Returns
+        -------
+        np.ndarray
+            An array indicating where downward movement happens.
+        """
         return np.where(indicator < 0, 1, 0)
 
     def two_good_candles(self, df: pd.DataFrame, ttype: str) -> np.ndarray:
         """ Get two candles that confirm pattern movement """
+        """
+        Returns an array indicating if two candles confirm a pattern movement 
+        and corresponding volume is high or low enough.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame containing candlestick and volume data.
+        ttype : str
+            Trade type ('buy' or 'sell').
+
+        Returns
+        -------
+        np.ndarray
+            An array indicating where two good candles pattern is present.
+        """
         # use high/low volume to confirm pattern
         vol_q_high = df['volume'].rolling(self.vol_window).quantile(self.vol_q_high)
         vol_q_low = df['volume'].rolling(self.vol_window).quantile(self.vol_q_low)
@@ -135,20 +246,85 @@ class SignalBase:
                         1, 0)
 
 
+class SignalFactory(object):
+    """Factory class to return the appropriate signal object based on the 'indicator' value."""
+
+    @staticmethod
+    def factory(indicator: str, ttype: str, configs: dict) -> SignalBase:
+        """
+        Factory method to create and return an instance of a signal class based on the indicator type.
+
+        Parameters
+        ----------
+        indicator : str
+            The type of indicator (e.g., 'RSI', 'STOCH').
+        ttype : str
+            Trade type ('buy', 'sell').
+        configs : dict
+            Dictionary with indicator parameters.
+
+        Returns
+        -------
+        SignalBase
+            An instance of the appropriate signal class.
+        """
+        if indicator == 'RSI':
+            return RSISignal(ttype, **configs)
+        elif indicator == 'STOCH':
+            return STOCHSignal(ttype, **configs)
+        elif indicator == 'MACD':
+            return MACDSignal(ttype, **configs)
+        elif indicator == 'Pattern':
+            return PatternSignal(ttype, **configs)
+        elif indicator == 'PumpDump':
+            return PumpDumpSignal(ttype, **configs)
+        elif indicator == 'Trend':
+            return TrendSignal(ttype, **configs)
+        elif indicator == 'AntiTrend':
+            return AntiTrendSignal(ttype, **configs)
+        elif indicator == 'HighVolume':
+            return HighVolumeSignal(ttype, **configs)
+        elif indicator == 'Volume24':
+            return Volume24Signal(ttype, **configs)
+
+
 class STOCHSignal(SignalBase):
     """ Check if STOCH is in overbuy/oversell zone and is going to change its direction to opposite """
     type = 'Indicator_signal'
     name = 'STOCH'
 
     def __init__(self, ttype: str, **configs):
+        """
+        Initialize the STOCHSignal class with trade type and configuration parameters.
+
+        Parameters
+        ----------
+        ttype : str
+            Trade type ('buy' or 'sell').
+        configs : dict
+            Dictionary with parameters for the STOCH indicator.
+        """
         super(STOCHSignal, self).__init__(ttype, configs)
         self.configs = self.configs[self.name]['params']
         self.low_bound = self.configs.get('low_bound', 20)
         self.high_bound = self.configs.get('high_bound', 80)
 
     def find_signal(self, df: pd.DataFrame, *args) -> np.ndarray:
-        """ 1 - Return true if Stochastic is lower than low bound, lines have crossed and look up (buy signal)
-            2 - Return true if Stochastic is higher than high bound, lines have crossed and look down (sell signal)  """
+        """
+        Find STOCH signal.
+        Return true if Stochastic is lower than low bound, lines have crossed and look up (buy signal)
+        Return true if Stochastic is higher than high bound, lines have crossed and look down (sell signal)
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame containing STOCH indicator data.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating the presence of a STOCH signal.
+        """
         # Find STOCH signal
         stoch_slowk = df['stoch_slowk']
         stoch_slowk_lag_1 = df['stoch_slowk'].shift(1)
@@ -186,14 +362,37 @@ class RSISignal(SignalBase):
     name = "RSI"
 
     def __init__(self, ttype: str, **configs):
+        """
+        Initialize the STOCHSignal class with trade type and configuration parameters.
+
+        Parameters
+        ----------
+        ttype : str
+            Trade type ('buy' or 'sell').
+        configs : dict
+            Dictionary with parameters for the RSI indicator.
+        """
         super(RSISignal, self).__init__(ttype, configs)
         self.configs = self.configs[self.name]['params']
         self.low_bound = self.configs.get('low_bound', 25)
         self.high_bound = self.configs.get('high_bound', 75)
 
     def find_signal(self, df: pd.DataFrame, *args) -> np.ndarray:
-        """ 1 - Return true if RSI is lower than low bound (buy signal)
-            2 - Return true if RSI is higher than low bound (sell signal)  """
+        """
+        Find RSI signal.
+        Return true if RSI is lower than low bound (buy signal)
+        Return true if RSI is higher than low bound (sell signal)
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame containing RSI indicator data.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating the presence of a RSI signal.
+        """
         # Find RSI signal
         rsi = df['rsi']
         rsi_lag_1 = df['rsi'].shift(1)
@@ -208,17 +407,40 @@ class RSISignal(SignalBase):
 class TrendSignal(SignalBase):
     """ Check trend using linear regression indicator """
     type = 'Indicator_signal'
-    name = "Trend"
+    name = 'Trend'
 
     def __init__(self, ttype, **configs):
+        """
+        Initialize the TrendSignal class with trade type and configuration parameters.
+
+        Parameters
+        ----------
+        ttype : str
+            Trade type ('buy' or 'sell').
+        configs : dict
+            Dictionary with parameters for the Trend indicator.
+        """
         super(TrendSignal, self).__init__(ttype, configs)
         self.configs = self.configs[self.name]['params']
         self.low_bound = self.configs.get('low_bound', 0)
         self.high_bound = self.configs.get('high_bound', 0)
 
     def find_signal(self, df: pd.DataFrame, *args) -> np.ndarray:
-        """ 1 - Return true if trend is moving up (buy signal)
-            2 - Return true if trend is moving down (sell signal)  """
+        """
+        Find Trend signal.
+        Return true if trend is moving up (buy signal)
+        Return true if trend is moving down (sell signal)
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame containing Trend indicator data.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating the presence of a Trend signal.
+        """
         # According to difference between working timeframe and higher timeframe for every point on working timeframe
         # find corresponding value of Linear Regression from higher timeframe
         # buy trade
@@ -239,14 +461,37 @@ class AntiTrendSignal(SignalBase):
     name = "AntiTrend"
 
     def __init__(self, ttype, **configs):
+        """
+        Initialize the AntiTrendSignal class with trade type and configuration parameters.
+
+        Parameters
+        ----------
+        ttype : str
+            Trade type ('buy' or 'sell').
+        configs : dict
+            Configuration dictionary for the AntiTrend indicator.
+        """
         super(AntiTrendSignal, self).__init__(ttype, configs)
         self.configs = self.configs[self.name]['params']
         self.low_bound = self.configs.get('low_bound', 0)
         self.high_bound = self.configs.get('high_bound', 0)
 
     def find_signal(self, df: pd.DataFrame, *args) -> np.ndarray:
-        """ 1 - Return true if trend is moving down (buy signal)
-            2 - Return true if trend is moving up (sell signal)  """
+        """
+        Find Trend signal.
+        Return true if trend is moving down (buy signal)
+        Return true if trend is moving up (sell signal)
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame containing Trend indicator data.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating the presence of an AntiTrend signal.
+        """
         # According to difference between working timeframe and higher timeframe for every point on working timeframe
         # find corresponding value of Linear Regression from higher timeframe
         # buy trade
@@ -266,11 +511,34 @@ class PumpDumpSignal(SignalBase):
     name = 'PumpDump'
 
     def __init__(self, ttype, **configs):
+        """
+        Initialize the PumpDumpSignal class with trade type and configuration parameters.
+
+        Parameters
+        ----------
+        ttype : str
+            Trade type ('buy' or 'sell').
+        configs : dict
+            Configuration dictionary for the PumpDump indicator.
+        """
         super(PumpDumpSignal, self).__init__(ttype, configs)
 
     def find_signal(self, df: pd.DataFrame) -> np.ndarray:
-        """ 1 - Price rapidly moves down in one candle (buy signal)
-            2 - Price rapidly moves up  in one candle (sell signal)  """
+        """
+        Find Trend signal.
+        Return true if the price rapidly moves down in one candle (buy signal)
+        Return true if the price rapidly moves up in one candle (sell signal)
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame containing Trend indicator data.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating the presence of a PumpDump signal.
+        """
         # Find price change signal
         # buy trade
         if self.ttype == 'buy':
@@ -296,10 +564,32 @@ class HighVolumeSignal(SignalBase):
     name = 'HighVolume'
 
     def __init__(self, ttype, **configs):
+        """
+        Initialize the HighVolumeSignal class with trade type and configuration parameters.
+
+        Parameters
+        ----------
+        ttype : str
+            Trade type ('buy' or 'sell').
+        configs : dict
+            Configuration dictionary for the HighVolume indicator.
+        """
         super(HighVolumeSignal, self).__init__(ttype, configs)
 
     def find_signal(self, df: pd.DataFrame) -> np.ndarray:
-        """ Find high volume signal  """
+        """
+        Find if ticker volume for the last 24 hours exceeds the min_volume_24 threshold.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe containing 'volume_24' column.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating the presence of a HighVolume signal.
+        """
         # Find high volume signal
         try:
             high_vol = self.higher_bound_robust(df['quantile_vol'].loc[0], df['normalized_vol'])
@@ -313,13 +603,37 @@ class MACDSignal(SignalBase):
     name = 'MACD'
 
     def __init__(self, ttype, **configs):
+        """
+        Initialize MACDSignal.
+
+        Parameters
+        ----------
+        ttype : str
+            Trade type ('buy' or 'sell').
+        configs : dict
+            Configuration parameters for the MACD signal.
+        """
         super(MACDSignal, self).__init__(ttype, configs)
         self.configs = self.configs[self.name]['params']
         self.low_bound = self.configs.get('low_bound', 20)
         self.high_bound = self.configs.get('high_bound', 80)
 
     def find_signal(self, df: pd.DataFrame, timeframe_ratio: int) -> np.ndarray:
-        """ Find MACD signal """
+        """
+        Find MACD signal.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe containing 'macdhist', 'macd_dir', and 'macdsignal_dir' columns.
+        timeframe_ratio : int
+            Ratio of higher timeframe to working timeframe.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating the presence of a MACD signal.
+        """
         macd_df = df[['macdhist', 'macd_dir', 'macdsignal_dir']].copy()
         macd_df['macdhist_1'] = macd_df['macdhist'].shift(timeframe_ratio)
         macd_df['macdhist_2'] = macd_df['macdhist'].shift(timeframe_ratio * 2)
@@ -346,12 +660,34 @@ class Volume24Signal(SignalBase):
     name = 'Volume24'
 
     def __init__(self, ttype, **configs):
+        """
+        Initialize Volume24Signal.
+
+        Parameters
+        ----------
+        ttype : str
+            Trade type ('buy' or 'sell').
+        configs : dict
+            Configuration parameters for the Volume24 signal.
+        """
         super(Volume24Signal, self).__init__(ttype, configs)
         self.configs = self.configs[self.name]['params']
         self.min_volume_24 = self.configs.get('min_volume_24', 500000)
 
     def find_signal(self, df: pd.DataFrame) -> np.ndarray:
-        """ Find if ticker volume for the last 24 hours more than min_volume_24 threshold """
+        """
+        Find if ticker volume for the last 24 hours exceeds the min_volume_24 threshold.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe containing 'volume_24' column.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating the presence of a Volume24 signal.
+        """
         volume_24 = df['volume_24']
         return np.where(volume_24 >= self.min_volume_24, 1, 0)
 
@@ -361,6 +697,16 @@ class PatternSignal(SignalBase):
     name = 'Pattern'
 
     def __init__(self, ttype, **configs):
+        """
+        Initialize PatternSignal.
+
+        Parameters
+        ----------
+        ttype : str
+            Trade type ('buy' or 'sell').
+        configs : dict
+            Configuration parameters for the Pattern signal.
+        """
         super(PatternSignal, self).__init__(ttype, configs)
         self.ttype = ttype
         self.configs = self.configs[self.name]['params']
@@ -373,7 +719,24 @@ class PatternSignal(SignalBase):
         self.second_candle = self.configs.get('second_candle', 0.5)
 
     def get_min_max_indexes(self, df: pd.DataFrame, gmax: pd.DataFrame.index,
-                            gmin: pd.DataFrame.index) -> (tuple, tuple):
+                            gmin: pd.DataFrame.index) -> Tuple[Tuple, Tuple]:
+        """
+        Find min/max indexes based on trade type for H&S pattern detection.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe containing 'high' and 'low' columns.
+        gmax : pd.DataFrame.index
+            Indexes of global maximum points.
+        gmin : pd.DataFrame.index
+            Indexes of global minimum points.
+
+        Returns
+        -------
+        tuple
+            A tuple containing min and max indexes and corresponding values.
+        """
         if self.ttype == 'buy':  # find H&S
             # find 3 last global maximum
             ei = gmax
@@ -408,8 +771,22 @@ class PatternSignal(SignalBase):
             fiv = df.loc[fi, 'high'].values
         return (ai, bi, ci, di, ei, fi), (aiv, biv, civ, div, eiv, fiv)
 
-    def create_pattern_vector(self, df: pd.DataFrame, res: np.ndarray):
-        """ Create vector that shows potential places where we can enter the trade after pattern appearance """
+    def create_pattern_vector(self, df: pd.DataFrame, res: np.ndarray) -> np.ndarray:
+        """
+        Create vector showing potential trade entry points after pattern appearance.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe for the pattern vector creation.
+        res : np.ndarray
+            Results of the pattern search.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating trade entry points.
+        """
         v = np.zeros(df.shape[0], dtype=int)
         for i in range(self.window_low_bound, self.window_high_bound):
             try:
@@ -419,7 +796,23 @@ class PatternSignal(SignalBase):
         return v
 
     def head_and_shoulders(self, df: pd.DataFrame, min_max_idxs: tuple, min_max_vals: tuple) -> np.ndarray:
-        """ Find H&S/inverted H&S pattern """
+        """
+        Find H&S or inverted H&S pattern.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe for the pattern detection.
+        min_max_idxs : tuple
+            Tuple of minimum and maximum indexes.
+        min_max_vals : tuple
+            Tuple of minimum and maximum values.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating H&S pattern occurrences.
+        """
         ai, bi, ci, di, ei, fi = min_max_idxs
         aiv, biv, civ, div, eiv, fiv = min_max_vals
         if self.ttype == 'buy':  # inverted H&S
@@ -432,7 +825,23 @@ class PatternSignal(SignalBase):
         return v
 
     def hlh_lhl(self, df: pd.DataFrame, min_max_idxs: tuple, min_max_vals: tuple) -> np.ndarray:
-        """ Find HLH/LHL pattern """
+        """
+        Find HLH/LHL pattern.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe for the pattern detection.
+        min_max_idxs : tuple
+            Tuple of minimum and maximum indexes.
+        min_max_vals : tuple
+            Tuple of minimum and maximum values.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating HLH/LHL pattern occurrences.
+        """
         _, __, ci, di, ei, fi = min_max_idxs
         _, __, civ, div, eiv, fiv = min_max_vals
         if self.ttype == 'buy':  # LHL
@@ -445,7 +854,23 @@ class PatternSignal(SignalBase):
         return v
 
     def dt_db(self, df: pd.DataFrame, min_max_idxs: tuple, min_max_vals: tuple) -> np.ndarray:
-        """ Find Double Top/Double Bottom pattern """
+        """
+        Find Double Top/Double Bottom pattern.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe for the pattern detection.
+        min_max_idxs : tuple
+            Tuple of minimum and maximum indexes.
+        min_max_vals : tuple
+            Tuple of minimum and maximum values.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating Double Top/Bottom pattern occurrences.
+        """
         _, __, ci, di, ei, fi = min_max_idxs
         _, __, civ, div, eiv, fiv = min_max_vals
         if self.ttype == 'buy':  # LHL
@@ -458,7 +883,23 @@ class PatternSignal(SignalBase):
         return v
 
     def triangle(self, df: pd.DataFrame, min_max_idxs: tuple, min_max_vals: tuple) -> np.ndarray:
-        """ Find ascending/descending triangle pattern """
+        """
+        Find ascending/descending triangle pattern.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe for the pattern detection.
+        min_max_idxs : tuple
+            Tuple of minimum and maximum indexes.
+        min_max_vals : tuple
+            Tuple of minimum and maximum values.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating ascending/descending triangle pattern occurrences.
+        """
         ai, bi, ci, di, ei, fi = min_max_idxs
         aiv, biv, civ, div, eiv, fiv = min_max_vals
         if self.ttype == 'buy':  # ascending triangle
@@ -473,7 +914,25 @@ class PatternSignal(SignalBase):
         return v
 
     def swing(self, df: pd.DataFrame, min_max_idxs: tuple, min_max_vals: tuple, avg_gap: float) -> np.ndarray:
-        """ Find swing patter """
+        """
+        Find swing pattern.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe for the pattern detection.
+        min_max_idxs : tuple
+            Tuple of minimum and maximum indexes.
+        min_max_vals : tuple
+            Tuple of minimum and maximum values.
+        avg_gap : float
+            Average gap value for swing pattern detection.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating swing pattern occurrences.
+        """
         ai, bi, ci, di, ei, fi = min_max_idxs
         aiv, biv, civ, div, eiv, fiv = min_max_vals
         res = np.where((np.abs(aiv - civ) / aiv < 0.0025) & (np.abs(civ - eiv) / civ < 0.0025) &
@@ -484,6 +943,19 @@ class PatternSignal(SignalBase):
         return v
 
     def find_signal(self, df: pd.DataFrame) -> np.ndarray:
+        """
+        Find one of TA patterns like H&S, HLH/LHL, DT/DB and good candles that confirm that pattern.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe containing market data for pattern detection.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array indicating the detected trading signals based on patterns.
+        """
         # Find one of TA patterns like H&S, HLH/LHL, DT/DB and good candles that confirm that pattern
         avg_gap = (df['high'] - df['low']).mean()
         high_max = df[df['high_max'] > 0].index
@@ -508,6 +980,16 @@ class FindSignal:
     """ Class for searching of the indicator combination """
 
     def __init__(self, ttype, configs):
+        """
+        Initialize the FindSignal instance.
+
+        Parameters
+        ----------
+        ttype : str
+            The type of trade ('buy' or 'sell').
+        configs : dict
+            Configuration parameters including indicators, patterns, and timeframes.
+        """
         self.ttype = ttype
         self.configs = configs
         self.indicator_list = configs['Indicator_list']
@@ -517,8 +999,15 @@ class FindSignal:
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
         self.timeframe_div = configs['Data']['Basic']['params']['timeframe_div']
 
-    def prepare_indicator_signals(self) -> list:
-        """ Get all indicator signal classes """
+    def prepare_indicator_signals(self) -> List[SignalBase]:
+        """
+        Prepare all indicator signal classes.
+
+        Returns
+        -------
+        list
+            A list of initialized indicator signal objects.
+        """
         indicator_signals = list()
         for indicator in self.indicator_list:
             if (indicator == 'HighVolume' and self.ttype == 'sell') or indicator == 'ATR':
@@ -526,9 +1015,28 @@ class FindSignal:
             indicator_signals.append(SignalFactory.factory(indicator, self.ttype, self.configs))
         return indicator_signals
 
-    def find_signal(self, dfs: dict, ticker: str, timeframe: str, data_qty: int, data_qty_higher: int) -> list:
-        """ Search for the signals through the dataframe, if found - add its index and trade type to the list.
-            If dataset was updated - don't search through the whole dataset, only through updated part.
+    def find_signal(self, dfs: dict, ticker: str, timeframe: str, data_qty: int, data_qty_higher: int) -> List[List]:
+        """
+        Search for the signals through the dataframe, if found - add its index and trade type to the list.
+        If dataset was updated - don't search through the whole dataset, only through updated part.
+
+        Parameters
+        ----------
+        dfs : dict
+            A dictionary containing dataframes for different tickers and timeframes.
+        ticker : str
+            The ticker symbol for the asset.
+        timeframe : str
+            The timeframe for the signals to be searched.
+        data_qty : int
+            The quantity of data to consider for finding signals.
+        data_qty_higher : int
+            The quantity of data from the higher timeframe to consider.
+
+        Returns
+        -------
+        list
+            A list of detected trading signals including their respective indexes and metadata.
         """
         points = list()
 

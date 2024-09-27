@@ -1,8 +1,11 @@
+from typing import  Union
+
 import glob
 import copy
 import pandas as pd
 import itertools as it
 from tqdm import tqdm
+from datetime import datetime
 from os import environ, remove
 
 from bot.bot import SigBot
@@ -14,11 +17,33 @@ configs_ = ConfigFactory.factory(environ).configs
 
 # mock class
 class Main:
+    """
+    A mock class to simulate the main application state.
+
+    Attributes
+    ----------
+    cycle_number : int
+        Tracks the number of cycles.
+    """
     def __init__(self):
         self.cycle_number = 1
 
 
 class Optimizer:
+    """
+    Class responsible for optimizing and managing configurations of signals.
+
+    Parameters
+    ----------
+    pattern : list
+        List of signal patterns used for optimization.
+    optim_dict : dict
+        Dictionary containing indicator parameters.
+    clean : bool, optional
+        Whether to clean previous statistics or not (default is True).
+    configs : dict
+        Configuration settings.
+    """
     def __init__(self, pattern, optim_dict, clean=True, **configs):
         self.statistics = dict()
         self.clean = clean
@@ -28,8 +53,15 @@ class Optimizer:
         self.remove_path = optim_dict
 
     @staticmethod
-    def clean_prev_stat(ttype):
-        """ Clean previous statistics files """
+    def clean_prev_stat(ttype: str):
+        """
+        Clean previous statistics files.
+
+        Parameters
+        ----------
+        ttype : str
+            Trade types for which statistics are being cleaned ('buy', 'sell').
+        """
         files = glob.glob(f'signal_stat/{ttype}_stat*.pkl')
         for f in files:
             remove(f)
@@ -42,6 +74,19 @@ class Optimizer:
             remove(f)
 
     def clean_dict(self, dict1):
+        """
+        Clean optimization dictionary by removing unwanted parameters and keeping necessary parameters.
+
+        Parameters
+        ----------
+        dict1 : dict
+            Dictionary to clean.
+
+        Returns
+        -------
+        dict
+            Cleaned optimization dictionary with only necessary parameters.
+        """
         res_dict = dict()
         for key, value in dict1.items():
             if key in self.pattern_list:
@@ -57,7 +102,22 @@ class Optimizer:
                     i += 1
         return res_dict
 
-    def merge_dicts(self, dict1, dict2):
+    def merge_dicts(self, dict1: dict, dict2: dict):
+        """
+        Merge two cleaned dictionaries, combine values for matching keys.
+
+        Parameters
+        ----------
+        dict1 : dict
+            First dictionary to merge.
+        dict2 : dict
+            Second dictionary to merge.
+
+        Returns
+        -------
+        dict
+            Merged dictionary with combined values.
+        """
         res_dict1 = self.clean_dict(dict1)
         res_dict2 = self.clean_dict(dict2)
 
@@ -69,6 +129,14 @@ class Optimizer:
         return res_dict1
 
     def get_product_dicts(self):
+        """
+        Generate all possible combinations of signal pattern parameters.
+
+        Returns
+        -------
+        list
+            List of dictionaries representing all combinations of pattern settings.
+        """
         res_dict = {k: v for k, v in self.optim_dict.items() if k in self.pattern_list}
         perm_values = list()
         for key, value in res_dict.items():
@@ -79,6 +147,21 @@ class Optimizer:
         return product_dict
 
     def set_configs(self, prod_dict: dict, ttype: str):
+        """
+        Set configuration values based on the provided product dictionary.
+
+        Parameters
+        ----------
+        prod_dict : dict
+            Dictionary containing indicator parameters.
+        ttype : str
+            Type of the signal or configuration.
+
+        Returns
+        -------
+        dict
+            Updated configuration dictionary.
+        """
         confs = self.configs.copy()
         for key in confs:
             if key == 'Patterns':
@@ -100,6 +183,21 @@ class Optimizer:
         return confs
 
     def save_configs(self, prod_dict: dict, ttype: str):
+        """
+        Save updated configuration based on the provided dictionary with indicator parameters.
+
+        Parameters
+        ----------
+        prod_dict : dict
+            Dictionary containing parameters for indicators.
+        ttype : str
+            Type of the trade ('buy', 'sell').
+
+        Returns
+        -------
+        dict
+            Saved configuration dictionary.
+        """
         confs = self.configs.copy()
         for key in confs:
             if key in ['Indicator', 'Indicator_signal']:
@@ -118,9 +216,23 @@ class Optimizer:
 
     @staticmethod
     def get_headers_from_dict(prod_dict: dict) -> list:
+        """
+        Retrieve headers from the dictionary with indicator parameters.
+
+        Parameters
+        ----------
+        prod_dict : dict
+            Dictionary containing indicator parameters.
+
+        Returns
+        -------
+        list
+            List of headers extracted from the dictionary.
+        """
         headers = list()
 
         def helper(prod_dict_, header):
+            """Function for recursive retrieving of headers"""
             for key in prod_dict_:
                 if not isinstance(prod_dict_[key], dict):
                     headers.append(header + key)
@@ -132,6 +244,19 @@ class Optimizer:
 
     @staticmethod
     def get_values_from_dict(prod_dict: dict) -> list:
+        """
+        Retrieve values from the product dictionary.
+
+        Parameters
+        ----------
+        prod_dict : dict
+            Dictionary containing indicator parameters.
+
+        Returns
+        -------
+        list
+            List of values extracted from the dictionary.
+        """
         headers = list()
 
         def helper(prod_dict_):
@@ -144,7 +269,35 @@ class Optimizer:
         helper(prod_dict)
         return headers
 
-    def optimize(self, pattern, ttype, opt_limit, load, op_type, historical=False, min_time=None):
+    def optimize(self, pattern: str, ttype: str, opt_limit: int, load: bool, op_type: Union[str, None],
+                 historical: bool = False, min_time: Union[datetime, None] = None):
+        """
+        Perform indicator parameter optimization based on the given pattern and trade type.
+
+        Parameters
+        ----------
+        pattern : list
+            List of signal patterns for optimization.
+        ttype : str
+            Type of the trade ('buy', 'sell').
+        opt_limit: int
+            Amount of the last data for which we look for the signals and collect signal statistics.
+            This parameter is added to speed up finding the signals and signal statistic collection.
+        load : bool
+            Whether to load new data from exchanges.
+        op_type: bool
+            Flag that shows if SigBot class is used in optimization mode or not.
+            If it's used in optimization mode than some class instances aren't need to be initialized.
+        historical : bool, optional
+            Whether to use historical data (default is False).
+        min_time :datetime, optional
+            The earliest time from which historical data are retrieved.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing optimization results and statistics.
+        """
         main = Main()
         if self.clean:
             self.clean_prev_stat(ttype)
@@ -158,7 +311,7 @@ class Optimizer:
         result_statistics = None
         # flag that helps to prevent not necessary exchange data and indicator loading
         load_tickers, exchanges, database = True, None, None
-        # if load flag set to True - load fresh data from exchanges, else get data from dist
+        # if load flag set to True - load fresh data from exchanges, else get data from dict
         for prod_dict in tqdm(product_dicts):
             # load data
             confs = self.set_configs(prod_dict, ttype)

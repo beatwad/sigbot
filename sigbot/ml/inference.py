@@ -6,6 +6,30 @@ from log.log import logger
 
 
 class Model:
+    """
+        A class to represent a trading model.
+
+        Attributes
+        ----------
+        configs : dict
+            Configuration settings for the model.
+        model_lgb : object
+            Loaded LightGBM model for predictions.
+        patterns_to_predict : list
+            List of signal patterns for which models will make predictions.
+        favorite_exchanges : list
+            List of favorite exchanges to filter predictions.
+        feature_dict : dict
+            Dictionary of features which are used for model prediction.
+        time_to_predict_buy : list
+            List of hours when the model is allowed to make buy predictions.
+        time_to_predict_sell : list
+            List of hours when the model is allowed to make sell predictions.
+        cols_to_scale : list
+            List of numerical columns to be scaled.
+        pred_thresh : float
+            Prediction threshold for making a trade decision.
+        """
     def __init__(self, **configs):
         self.configs = configs
         # load buy and sell models
@@ -26,7 +50,29 @@ class Model:
 
     def prepare_data(self, df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFrame,
                      signal_points: list, ttype: str, exchange_name: str) -> pd.DataFrame:
-        """ Get data from ticker dataframe and prepare it for model prediction """
+        """
+        Get data from ticker DataFrame and prepare it for model prediction.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame containing ticker data.
+        btcd : pd.DataFrame
+            DataFrame containing BTC dominance data.
+        btcdom : pd.DataFrame
+            DataFrame containing BTC dominance data for the market.
+        signal_points : list
+            List of signal points to analyze.
+        ttype : str
+            Type of trade, either 'buy' or 'sell'.
+        exchange_name : str
+            Name of the exchange to filter predictions by exchange.
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame containing prepared data for model prediction.
+        """
         btcd_cols = list(btcd.columns)
         btcdom_cols = list(btcdom.columns)
         rows = []
@@ -92,7 +138,29 @@ class Model:
 
     def make_prediction(self, df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFrame,
                         signal_points: list, ttype: str, exchange_name: str) -> list:
-        """ Make prediction with model """
+        """
+        Make prediction using the model.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame containing ticker data.
+        btcd : pd.DataFrame
+            DataFrame containing BTC dominance data.
+        btcdom : pd.DataFrame
+            DataFrame containing BTC dominance data for the market.
+        signal_points : list
+            List of signal points to analyze.
+        ttype : str
+            Type of trade, either 'buy' or 'sell'.
+        exchange_name : str
+            Name of the exchange to filter predictions by exchange.
+
+        Returns
+        -------
+        list
+            Updated list of signal points with model prediction scores.
+        """
         rows = self.prepare_data(df, btcd, btcdom, signal_points, ttype, exchange_name)
         if rows.shape[0] == 0:
             return signal_points

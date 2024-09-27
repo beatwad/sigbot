@@ -695,10 +695,12 @@ class SigBot:
     def delete_redundant_symbols_from_ticker(ticker: str) -> str:
         """
         Delete symbols like '-' or 'SWAP' from name of the ticker
+
         Parameters
         ----------
         ticker
             Name of ticker.
+
         Returns
         ----------
         ticker
@@ -725,6 +727,7 @@ class MonitorExchange:
                            opt_flag: bool = False) -> int:
         """ 
         Add indicators and return quantity of data
+
         Parameters
         ----------
         df
@@ -742,6 +745,7 @@ class MonitorExchange:
             if it's False - Pattern indicator will be added. This flag is True for the first optimization iteration
             and False for any next iteration. This was done because Pattern indicator doesn't have parameters
             and thus doesn't need to be optimized, so we may add it only one time during the first iteration.
+
         Returns
         ----------
         data_qty
@@ -754,6 +758,7 @@ class MonitorExchange:
     def mon_add_statistics(self, sig_points: list, data_qty_higher: Union[int, None] = None) -> None:
         """
         Write statistics for signal points to the database
+
         Parameters
         ----------
         sig_points
@@ -770,6 +775,7 @@ class MonitorExchange:
     def mon_save_opt_dataframes(self, dt_now: datetime, historical: bool, min_time: datetime) -> None:
         """
         Save dataframe for every ticker for further indicator/signal optimization
+
         Parameters
         ----------
         dt_now
@@ -817,6 +823,7 @@ class MonitorExchange:
     def mon_save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool) -> None:
         """
         Save statistics data for every ticker for further indicator/signal optimization
+
         Parameters
         ----------
         ttype

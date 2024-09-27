@@ -1,9 +1,10 @@
+from typing import Union, Dict
+
 import os
 import re
 import time
 import asyncio
 from os import environ, remove
-
 
 from log.log import logger, exception
 import pandas as pd
@@ -27,7 +28,23 @@ class TelegramBot:
     type = 'Telegram'
 
     # constructor
-    def __init__(self, token,  database, trade_mode, locker, **configs):
+    def __init__(self, token: str,  database: dict, trade_mode: list, locker: asyncio.Lock, **configs):
+        """
+        Initialize the Telegram Bot.
+
+        Parameters
+        ----------
+        token : str
+            The bot's token for authentication.
+        database : Union[Dict, None]
+            A dictionary representing the ticker database.
+        trade_mode : list
+            A list containing the current trade mode state (bot trade enabled / disabled).
+        locker : asyncio.Lock
+            A lock for managing access to shared resources.
+        configs : dict
+            Configuration parameters for the bot, including chat IDs and other settings.
+        """
         # trade mode - if it's activated, bot will use its own signals to trade on exchange
         self.trade_mode = trade_mode
         self.locker = locker
@@ -70,7 +87,7 @@ class TelegramBot:
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """ Enable trade mode """
+        """Enable trade mode."""
         if self.trade_mode[0] == 0:
             with self.locker:
                 self.trade_mode[0] = 1
@@ -153,7 +170,19 @@ class TelegramBot:
 
     @staticmethod
     def process_ticker(ticker: str) -> str:
-        """ Bring ticker to more convenient view """
+        """
+        Bring ticker to a more convenient view.
+
+        Parameters
+        ----------
+        ticker : str
+            The original ticker string.
+
+        Returns
+        -------
+        str
+            The processed ticker string.
+        """
         if '-' in ticker:
             return ticker
         if '/' in ticker:
@@ -164,7 +193,19 @@ class TelegramBot:
 
     @staticmethod
     def clean_ticker(ticker: str) -> str:
-        """ Clean ticker of not necessary symbols (SWAP, -, _, etc.) """
+        """
+        Clean ticker from unnecessary symbols (SWAP, -, _, etc.).
+
+        Parameters
+        ----------
+        ticker : str
+            The original ticker string.
+
+        Returns
+        -------
+        str
+            The cleaned ticker string.
+        """
         # if ticker has 1000 in its name - apparently it belongs to perpetual futures, add .P to it's name
         if '1000' in ticker:
             ticker = ticker + '.P'
@@ -175,14 +216,33 @@ class TelegramBot:
         return ticker
 
     def add_plot(self, message: list) -> str:
-        """ Generate signal plot, save it to file and add this filepath to the signal point data """
+        """
+        Generate plot, save it to file and add its filepath to the signal point data.
+
+        Parameters
+        ----------
+        message : list
+            A list containing message details.
+
+        Returns
+        -------
+        str
+            The identifier of the stored plot/message.
+        """
         sig_img_path = self.visualizer.create_plot(self.database, message, levels=[])
         # add image to set of images which we are going to delete
         self.images_to_delete.add(sig_img_path)
         return sig_img_path
 
     def send_notification(self, message: list) -> None:
-        """ Send notification separately """
+        """
+        Send notification regarding a specific ticker and message.
+
+        Parameters
+        ----------
+        message : str
+            The notification message.
+        """
         # Get info from signal
         ticker = self.process_ticker(message[0])
         timeframe, sig_type, sig_pattern, sig_exchanges = message[1], message[3], message[5], message[7]
@@ -246,7 +306,19 @@ class TelegramBot:
 
     @staticmethod
     def round_price(price: float) -> float:
-        """ Function for price rounding """
+        """
+        Function for price rounding.
+
+        Parameters
+        ----------
+        price : float
+            The ticker price.
+
+        Returns
+        -------
+        float
+            Rounded ticker price.
+        """
         if price > 1:
             price = round(price, 3)
         else:
@@ -255,26 +327,94 @@ class TelegramBot:
 
     @staticmethod
     async def bot_send_message(bot: Bot, chat_id: str, message_thread_id: int, text: str) -> telegram.Message:
+        """
+        Send a message via bot.
+
+        Parameters
+        ----------
+        bot : Bot
+            The telegram bot instance.
+        chat_id : str
+            The chat ID where the message will be sent.
+        message_thread_id : int
+            The ID of the message thread.
+        text : str
+            The message text to be sent.
+
+        Returns
+        -------
+        telegram.Message
+            Sent message.
+        """
         return await bot.send_message(chat_id=chat_id, message_thread_id=message_thread_id, text=text)
 
     @exception
     def send_message(self, chat_id: str, message_thread_id: int, text: str):
+        """
+        Send a message to a specified chat and thread.
+
+        Parameters
+        ----------
+        chat_id : str
+            The chat ID where the message will be sent.
+        message_thread_id : int
+            The ID of the message thread.
+        text : str
+            The message text to be sent.
+        """
         tasks = [self.loop.create_task(self.bot_send_message(self.bot, chat_id, message_thread_id, text))]
         self.loop.run_until_complete(asyncio.wait(tasks))
 
     @staticmethod
     async def bot_send_photo(bot: Bot, chat_id: str, message_thread_id: int,
                              img_path: str, text: str) -> telegram.Message:
+        """ Send a photo via bot.
+
+            Parameters
+            ----------
+            bot : Bot
+                The telegram bot instance.
+            chat_id : str
+                The chat ID where the photo will be sent.
+            message_thread_id : int
+                The ID of the message thread.
+            img_path : str
+                The file path to the image to be sent.
+            text : str
+                The caption text for the photo.
+
+            Returns
+            -------
+            telegram.Message
+                Sent photo message.
+            """
         return await bot.send_photo(chat_id=chat_id, message_thread_id=message_thread_id,
                                     photo=open(img_path, 'rb'), caption=text)
 
     @exception
     def send_photo(self, chat_id: str, message_thread_id: int, img_path: str, text: str):
+        """
+        Send a photo to a specified chat and thread.
+
+        Parameters
+        ----------
+        chat_id : str
+            The chat ID where the photo will be sent.
+        message_thread_id : int
+            The ID of the message thread.
+        img_path : str
+            The file path to the image to be sent.
+        text : str
+            The caption text for the photo.
+        """
         tasks = [self.loop.create_task(self.bot_send_photo(self.bot, chat_id, message_thread_id, img_path, text))]
         self.loop.run_until_complete(asyncio.wait(tasks))
 
     def delete_images(self):
-        """ Remove images after we send them, because we don't need them anymore """
+        """
+        Remove images after sending them.
+        This method deletes images that are no longer needed from the local storage.
+        """
         while self.images_to_delete:
             img_path = self.images_to_delete.pop()
             try:
@@ -283,13 +423,13 @@ class TelegramBot:
                 pass
 
 
-if __name__ == '__main__':
-    from dotenv import load_dotenv, find_dotenv
-    # here we load environment variables from .env, must be called before init. class
-    load_dotenv(find_dotenv('../.env'), verbose=True)
-    telegram_token = os.getenv("TELEGRAM_TOKEN")
-
-    configs = ConfigFactory.factory(environ).configs
-
-    telegram_bot = TelegramBot(token=telegram_token, database=None, trade_mode=True, locker=None, **configs)
-    telegram_bot.polling()
+# if __name__ == '__main__':
+#     from dotenv import load_dotenv, find_dotenv
+#     # here we load environment variables from .env, must be called before init. class
+#     load_dotenv(find_dotenv('../.env'), verbose=True)
+#     telegram_token = os.getenv("TELEGRAM_TOKEN")
+#
+#     configs = ConfigFactory.factory(environ).configs
+#
+#     telegram_bot = TelegramBot(token=telegram_token, database=None, trade_mode=True, locker=None, **configs)
+#     telegram_bot.polling()

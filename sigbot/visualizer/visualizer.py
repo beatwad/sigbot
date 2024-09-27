@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 
 import json
 import numpy as np
@@ -23,6 +23,15 @@ class Visualizer:
     stat_color_2 = '#EE4B1A'
 
     def __init__(self, **configs):
+        """
+        Initialize the Visualizer with given configurations.
+
+        Parameters
+        ----------
+        configs : dict
+            A dictionary containing configuration parameters, including timeframes,
+            plot settings, indicator settings, and file paths for previous statistics.
+        """
         # Get working and higher timeframes
         self.working_timeframe = configs['Timeframes']['work_timeframe']
         self.higher_timeframe = configs['Timeframes']['higher_timeframe']
@@ -46,7 +55,20 @@ class Visualizer:
 
     def plot_indicator_parameters(self, point_type: str, index: int,
                                   axs: plt.axis, indicator_list: list) -> None:
-        """ Plot parameters of indicator (like low or high boundary, etc.)"""
+        """
+        Plot parameters of indicator (like low or high boundary, etc.)
+
+        Parameters
+        ----------
+        point_type : str
+            The type of point to plot ('buy' or 'sell').
+        index : int
+            The index of the indicator in the indicator list.
+        axs : plt.axis
+            The axis to plot on.
+        indicator_list : list
+            A list of indicators to plot.
+        """
         indicator = indicator_list[index]
         if indicator in self.indicators_to_plot:
             indicator_params = list(self.indicator_params[point_type][indicator]['params'].values())
@@ -57,8 +79,24 @@ class Visualizer:
                     else:
                         axs[index + 1].axhline(y=indicator_params[1], color='r', linestyle='--', linewidth=1.5)
 
-    def plot_point(self, point_type: str, data: pd.DataFrame, ax: plt.axis, index=0, higher=False) -> None:
-        """ Plot trade point """
+    def plot_point(self, point_type: str, data: pd.DataFrame, ax: plt.axis,
+                   index: int = 0, higher: bool = False) -> None:
+        """
+        Plot trade point.
+
+        Parameters
+        ----------
+        point_type : str
+            The type of point to plot (e.g., 'buy' or 'sell').
+        data : pd.DataFrame
+            The data containing the price information.
+        ax : plt.axis
+            The axis to plot on.
+        index : int, optional
+            The index of the point to plot (default is 0).
+        higher : bool, optional
+            Whether to plot on a higher timeframe (default is False).
+        """
         if index > 0:
             color = 'blue'
         elif point_type == 'buy':
@@ -76,19 +114,61 @@ class Visualizer:
 
     @staticmethod
     def plot_levels(data: pd.DataFrame, levels: list, axs: plt.axis) -> None:
-        """ Plot support and resistance levels"""
+        """
+        Plot support and resistance levels.
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            The data containing price information.
+        levels : list
+            A list of levels to plot.
+        axs : plt.axis
+            The axis to plot on.
+        """
         for level in levels:
             if data['low'].min() <= level[0] <= data['high'].max():  # and level[1] == 3:
                 axs[0].axhline(y=level[0], color='b', linestyle='dotted', linewidth=1.5)
 
     def save_plot(self, ticker, timeframe, pattern, data):
+        """
+        Save the plot as an image file.
+
+        Parameters
+        ----------
+        ticker : str
+            The ticker symbol of the asset to plot.
+        timeframe : str
+            The timeframe of the data (e.g., '1h', '1d').
+        pattern : str
+            The trading pattern or signal represented by the plot.
+        data : pd.DataFrame
+            The data containing price information.
+
+        Returns
+        -------
+        str
+            The file path of the saved plot image.
+        """
         filename = f"{self.image_path}/{ticker}_{timeframe}_{pattern}_{data['time'].iloc[-1]}.png"
         plt.savefig(filename, bbox_inches='tight')
         return filename
 
     @staticmethod
     def process_ticker(ticker: str) -> str:
-        """ Bring ticker to more convenient view """
+        """
+        Bring ticker to more convenient view.
+
+        Parameters
+        ----------
+        ticker : str
+            The ticker symbol.
+
+        Returns
+        -------
+        str
+            The formatted ticker symbol.
+        """
         if '-' in ticker:
             return ticker
         if '/' in ticker:
@@ -98,8 +178,20 @@ class Visualizer:
         return ticker
 
     @staticmethod
-    def get_statistics_dict_key(pattern: list) -> str:
-        """ Get previous avg E-ratio coefficient and save current E-ratio to statistics dictionary """
+    def get_statistics_dict_key(pattern: List[str]) -> str:
+        """
+        Get previous avg E-ratio coefficient and save current E-ratio to statistics dictionary.
+
+        Parameters
+        ----------
+        pattern : list
+            A list representing the pattern for which the key is generated.
+
+        Returns
+        -------
+        str
+            The generated key for the statistics dictionary.
+        """
         if 'PumpDump' in str(pattern[0][0]):
             key = str([pattern[0][0]] + pattern[1:])
         else:
@@ -107,7 +199,14 @@ class Visualizer:
         return key
     
     def load_prev_e_ratio_dict(self) -> dict:
-        """Load E-ratio coefficients dict from file"""
+        """
+        Load E-ratio coefficients dict from file.
+
+        Returns
+        -------
+        dict
+            A dictionary containing previous E-ratio coefficients.
+        """
         try:
             with open(self.prev_e_ratio_path, "r+") as f:
                 prev_e_ratio_stat_dict = json.load(f)
@@ -116,7 +215,14 @@ class Visualizer:
         return prev_e_ratio_stat_dict
 
     def load_prev_mar_dict(self) -> dict:
-        """Load MAR coefficients dict from file"""
+        """
+        Load MAR coefficients dict from file.
+
+        Returns
+        -------
+        dict
+            A dictionary containing previous MAR coefficients.
+        """
         try:
             with open(self.prev_mar_path, "r+") as f:
                 prev_mar_stat_dict = json.load(f)
@@ -125,7 +231,23 @@ class Visualizer:
         return prev_mar_stat_dict
 
     def get_prev_avg_e_ratio_coef(self, key: str, point_type: str, avg_e_ratio_coef: float) -> float:
-        """ Get previous E-ratio coefficient and fill the statistic dict by current value of E-ratio """
+        """
+        Get previous E-ratio coefficient and fill the statistic dict by current value of E-ratio.
+
+        Parameters
+        ----------
+        key : str
+            The key for the E-ratio in the statistics dictionary.
+        point_type : str
+            The type of point ('buy' or 'sell').
+        avg_e_ratio_coef : float
+            The current average E-ratio coefficient.
+
+        Returns
+        -------
+        float
+            The previous average E-ratio coefficient.
+        """
         prev_e_ratio_stat_dict = self.load_prev_e_ratio_dict()
         if key in prev_e_ratio_stat_dict:
             prev_avg_e_ratio_coef = prev_e_ratio_stat_dict[key][point_type]
@@ -140,7 +262,23 @@ class Visualizer:
         return prev_avg_e_ratio_coef
 
     def get_prev_avg_mar_coef(self, key: str, point_type: str, avg_mar_coef: float) -> float:
-        """ Get previous MAR coefficient and fill the statistic dict by current value of E-ratio """
+        """
+        Get previous MAR coefficient and fill the statistic dict by current value of MAR.
+
+        Parameters
+        ----------
+        key : str
+            The key for the MAR in the statistics dictionary.
+        point_type : str
+            The type of point ('buy' or 'sell').
+        avg_mar_coef : float
+            The current average MAR coefficient.
+
+        Returns
+        -------
+        float
+            The previous average MAR coefficient.
+        """
         prev_mar_stat_dict = self.load_prev_mar_dict()
         if key in prev_mar_stat_dict:
             prev_avg_mar_coef = prev_mar_stat_dict[key][point_type]
@@ -156,7 +294,21 @@ class Visualizer:
 
     @staticmethod
     def statistics_change(prev_avg_coef: Union[None, float], avg_coef: Union[None, float]) -> str:
-        """ Measure statistics difference between previous signal and current signal """
+        """
+        Measure statistics difference between previous signal and current signal.
+
+        Parameters
+        ----------
+        prev_avg_coef : Union[None, float]
+            The previous average coefficient.
+        avg_coef : Union[None, float]
+            The current average coefficient.
+
+        Returns
+        -------
+        str
+            A string representing the change in statistics.
+        """
         if prev_avg_coef is None:
             return '= no change / без изменений'
         stat_diff = round(avg_coef - prev_avg_coef, 4)
@@ -168,7 +320,19 @@ class Visualizer:
 
     @staticmethod
     def round_price(df: pd.DataFrame) -> float:
-        """Round the price"""
+        """
+        Round the price.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The dataframe containing price information.
+
+        Returns
+        -------
+        float
+            The rounded price.
+        """
         price = df["close"].iloc[-1]
         if price > 1:
             price = round(price, 3)
@@ -176,7 +340,19 @@ class Visualizer:
             price = round(price, 9)
         return price
 
-    def create_plot(self, dfs, point, levels):
+    def create_plot(self, dfs: dict, point: list, levels: list):
+        """
+        Round the price.
+
+        Parameters
+        ----------
+        dfs : dict
+            The dictionary containing price information about ticker.
+        point : list
+            List containing the information about signal (ticker, timeframe, type, etc.)
+        levels : list
+            The list of price levels.
+        """
         # get necessary info
         ticker, timeframe, point_index, point_type, sig_time, pattern, plot_path, exchange_list, statistics, pred = point
         df_working = dfs[ticker][self.working_timeframe]['data'][point_type]

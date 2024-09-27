@@ -35,6 +35,7 @@ else:
 class SigBot:
     """ 
     Class with methods for collecting and processing trading signals
+
     Parameters
     ----------
     main_class
@@ -146,12 +147,14 @@ class SigBot:
     def filter_used_tickers(self, tickers: list, ticker_vols: list) -> Tuple[list, list]:
         """ 
         Check if ticker was already used by previous exchange and add only unused tickers.
+
         Parameters
         ----------
         tickers
             List of tickers from the current exchange.
         ticker_vols
             List of corresponding ticker volumes.
+
         Returns
         -------
         not_used_tickers
@@ -176,6 +179,7 @@ class SigBot:
                      dt_now: datetime) -> Tuple[pd.DataFrame, int]:
         """ 
         Check if new data appeared. If it is - return dataframe with the new data and amount of data
+
         Parameters
         ----------
         exchange_api
@@ -186,6 +190,7 @@ class SigBot:
             Time frame value (e.g. 5m, 1h, 4h, 1d).
         dt_now
             Current datetime value.
+
         Returns
         -------
         df
@@ -203,10 +208,12 @@ class SigBot:
     def get_btc_dominance(exchange_api: GetData) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """ 
         Get two types of BTC dominance indicators
+
         Parameters
         ----------
         exchange_api
             Class for current exchange access through API.
+
         Returns
         -------
         btcd
@@ -221,6 +228,7 @@ class SigBot:
                             timeframe: str, min_time: datetime) -> Tuple[pd.DataFrame, int]:
         """ 
         Collect historical candle data from min_time and until now
+
         Parameters
         ----------
         exchange_api
@@ -231,6 +239,7 @@ class SigBot:
             Time frame value (e.g. 5m, 1h, 4h, 1d).
         min_time
             Time before which data will be collected.
+
         Returns
         -------
         df
@@ -247,10 +256,12 @@ class SigBot:
     def create_indicators(self, configs: dict) -> Tuple[list, list]:
         """ 
         Create indicators list for higher and working timeframes 
+
         Parameters
         ----------
         configs
             Configuration dictionary.
+
         Returns
         -------
         higher_tf_indicators
@@ -284,6 +295,7 @@ class SigBot:
                        exchange_data: dict, data_qty: int, opt_flag: bool = False) -> Tuple[dict, int]:
         """ 
         Create indicators and add them to data
+
         Parameters
         ----------
         df
@@ -303,6 +315,7 @@ class SigBot:
             if it's False - Pattern indicator will be added. This flag is True for the first optimization iteration
             and False for any next iterations. This was done because Pattern indicator doesn't have parameters
             and thus doesn't need to be optimized, so we may add it only one time during the first iteration.
+
         Returns
         -------
         database
@@ -326,6 +339,7 @@ class SigBot:
     def get_buy_signals(self, ticker: str, timeframe: str, data_qty: int, data_qty_higher: int) -> list:
         """ 
         Try to find the buy signals and if succeed - return them
+
         Parameters
         ----------
         ticker
@@ -336,6 +350,7 @@ class SigBot:
             Amount of data from working timeframe (default is 1h) to which indicators will be added.
         data_qty_higher
             Amount of data from higher timeframe (default is 4h) to which indicators will be added.
+
         Returns
         -------
         sig_points_buy
@@ -347,6 +362,7 @@ class SigBot:
     def get_sell_signals(self, ticker: str, timeframe: str, data_qty: int, data_qty_higher: int) -> list:
         """ 
         Try to find the sell signals and if succeed - return them
+
         Parameters
         ----------
         ticker
@@ -357,6 +373,7 @@ class SigBot:
             Amount of data from working timeframe (default is 1h) to which indicators will be added.
         data_qty_higher
             Amount of data from higher timeframe (default is 4h) to which indicators will be added.
+
         Returns
         -------
         sig_points_sell
@@ -368,10 +385,12 @@ class SigBot:
     def filter_sig_points(self, sig_points: list) -> list:
         """ 
         Don't add signal if relatively fresh similar signal was already added to the statistics dataframe before
+
         Parameters
         ----------
         sig_points
             List of signal points to be filtered.
+
         Returns
         -------
         filtered_points
@@ -398,10 +417,12 @@ class SigBot:
     def filter_old_signals(self, sig_points: list) -> list:
         """ 
         Don't send Telegram notification for the old signals (older than 1-2 candles ago)
+
         Parameters
         ----------
         sig_points
             List of signal points to be filtered.
+
         Returns
         -------
         filtered_points
@@ -427,10 +448,12 @@ class SigBot:
         """ 
         If higher tf signal was found but new higher tf candle wasn't 
         closed at the time of this signal - don't add it.
+
         Parameters
         ----------
         sig_points
             List of signal points to be filtered.
+
         Returns
         -------
         filtered_points
@@ -449,12 +472,14 @@ class SigBot:
     def sb_add_statistics(self, sig_points: list, data_qty_higher=None) -> dict:
         """ 
         Write statistics for signal points to the database
+
         Parameters
         ----------
         sig_points
             List of signal points to be filtered.
         data_qty_higher
             Amount of data from higher timeframe (default is 4h) to which indicators will be added.
+
         Returns
         -------
         filtered_points
@@ -469,10 +494,12 @@ class SigBot:
     def calc_statistics(self, sig_points: list) -> list:
         """ 
         Calculate statistics and write it for every signal in signal points list
+
         Parameters
         ----------
         sig_points
             List of signal points.
+
         Returns
         -------
         sig_points
@@ -488,12 +515,14 @@ class SigBot:
     def get_exchange_list(self, ticker: str, sig_points: list) -> list:
         """ 
         Add list of exchanges where this ticker can be traded
+
         Parameters
         ----------
         ticker
             Name of ticker (e.g. BTCUSDT, ETHUSDT).
         sig_points
             List of signal points.
+
         Returns
         -------
         sig_points
@@ -512,6 +541,7 @@ class SigBot:
     def create_exchange_monitors(self) -> Tuple[list, list]:
         """ 
         Create two lists of instances for ticker monitoring for every exchange
+
         Returns
         -------
         spot_ex_monitor_list
@@ -532,6 +562,7 @@ class SigBot:
     def save_opt_dataframes(self, load: bool = False, historical: bool = False, min_time: datetime = None) -> None:
         """ 
         Save all ticker dataframes for further indicator/signal optimization
+
         Parameters
         ----------
         load
@@ -556,6 +587,7 @@ class SigBot:
     def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool) -> None:
         """ 
         Save statistics in program memory for further indicator/signal optimization
+
         Parameters
         ----------
         ttype
@@ -580,6 +612,7 @@ class SigBot:
     def add_higher_time(self, ticker: str, ttype: str) -> None:
         """ 
         Add time from higher timeframe to dataframe with working timeframe data
+
         Parameters
         ----------
         ticker
@@ -613,12 +646,14 @@ class SigBot:
     def make_prediction(self, sig_points: list, exchange_name: str) -> list:
         """ 
         Get dataset and use ML model to make price prediction for current signal points
+
         Parameters
         ----------
         sig_points
             List of signal points.
         exchange_name
             Name of the current exchange. We should predict and trade only if it's exchange we can trade on.
+
         Returns
         ----------
         sig_points
@@ -658,16 +693,17 @@ class SigBot:
 
     @staticmethod
     def delete_redundant_symbols_from_ticker(ticker: str) -> str:
-        """ Delete symbols like '-' or 'SWAP' from name of the ticker
-                Parameters
-                ----------
-                ticker
-                    Name of ticker.
-                Returns
-                ----------
-                ticker
-                    Cleaned name of the ticker.
-            """
+        """
+        Delete symbols like '-' or 'SWAP' from name of the ticker
+        Parameters
+        ----------
+        ticker
+            Name of ticker.
+        Returns
+        ----------
+        ticker
+            Cleaned name of the ticker.
+        """
         ticker = ticker.replace('-', '').replace('_USDT', 'USDT')
         if not ticker.startswith('SWAP'):
             ticker = ticker.replace('SWAP', '')

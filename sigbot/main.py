@@ -16,7 +16,17 @@ class Main:
     type = 'Main'
     error_notification_sent = False
 
-    def __init__(self, load_tickers=True, **configs):
+    def __init__(self, load_tickers: bool = True, **configs):
+        """
+        Initialize the Main class.
+
+        Parameters
+        ----------
+        load_tickers : bool, optional
+            Whether to load tickers at startup (default is True).
+        configs : dict
+            Configuration parameters for the bot.
+        """
         self.cycle_number = 1
         self.bot_cycle_length = configs[self.type]['params']['bot_cycle_length_sec']
         self.time_period = configs[self.type]['params']['time_period_minutes']
@@ -27,16 +37,34 @@ class Main:
         self.new_data_flag = False
 
     @staticmethod
-    def check_time(dt, time_period):
-        """ Check if time in minutes is a multiple of a period """
+    def check_time(dt: datetime):
+        """
+        Check if the current time (in minutes) is a multiple of a specific period.
+
+        Parameters
+        ----------
+        dt : datetime
+            The current datetime object.
+
+        Returns
+        -------
+        bool
+            True if the time is a multiple of 60 minutes, otherwise False.
+        """
         if (dt.hour * 60 + dt.minute) % 60 == 0:
             return True
         return False
 
     def cycle(self):
-        """Main program cycle"""
+        """
+        Main program cycle for processing bot logic.
+
+        This method checks the time, runs the bot's main cycle, and handles
+        exceptions such as termination and other errors. It logs the cycle duration
+        and controls when to sleep and proceed to the next cycle.
+        """
         dt1 = datetime.now()
-        if self.check_time(dt1, self.time_period) or self.cycle_number == 1:
+        if self.check_time(dt1) or self.cycle_number == 1:
             print(dt1, flush=True)
             dt1 = datetime.now()
             try:
@@ -75,7 +103,7 @@ if __name__ == "__main__":
     # sigbot init
     main = Main(load_tickers=True, **configs)
     # close the bot after some time (default is 24 hours) and only after it get new candle data
-    while int((dt2 - dt1).total_seconds() / 3600) <= main.cycle_length or not main.new_data_flag:
+    while (dt2 - dt1).total_seconds() // 3600 <= main.cycle_length or not main.new_data_flag:
         main.cycle()
         dt2 = datetime.now()
     print('End of cycle', flush=True)

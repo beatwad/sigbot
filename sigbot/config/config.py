@@ -24,7 +24,7 @@ class ConfigFactory(object):
 
         Parameters
         ----------
-        environ : dict
+        environ : _Environ
             A dictionary representing the environment variables.
 
         Returns

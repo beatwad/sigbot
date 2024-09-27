@@ -42,7 +42,7 @@ class MEXCFutures(ApiBase):
 
         return tickers['symbol'].to_list(), tickers['volume24'].to_list(), all_tickers
 
-    def get_klines(self, symbol: str, interval: int, limit: int = 300) -> pd.DataFrame:
+    def get_klines(self, symbol: str, interval: str, limit: int = 300) -> pd.DataFrame:
         """
         Retrieve K-line (candlestick) data for a given symbol and interval.
 

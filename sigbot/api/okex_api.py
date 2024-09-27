@@ -43,7 +43,7 @@ class OKEX(ApiBase):
 
         return tickers['instId'].to_list(), tickers['vol24h'].to_list(), all_tickers
 
-    def get_klines(self, symbol: str, interval: int, limit: int = 200) -> pd.DataFrame:
+    def get_klines(self, symbol: str, interval: str, limit: int = 200) -> pd.DataFrame:
         """
         Retrieve K-line (candlestick) data for a given symbol and interval.
 

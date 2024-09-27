@@ -7,7 +7,7 @@ from typing import List
 
 class ApiBase(metaclass=ABCMeta):
     @staticmethod
-    def delete_duplicate_symbols(symbols: List[str]) -> List[str]:
+    def delete_duplicate_symbols(symbols: pd.Series[str]) -> List[str]:
         """
         Remove duplicate symbols where pairs with USDC are replaced by pairs with USDT.
 

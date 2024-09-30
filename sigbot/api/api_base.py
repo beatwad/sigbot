@@ -16,7 +16,7 @@ class ApiBase:
     """Class for accessing cryptocurrency exchange APIs"""
 
     @staticmethod
-    def delete_duplicate_symbols(symbols: pd.Series[str]) -> List[str]:
+    def delete_duplicate_symbols(symbols: pd.Series) -> List[str]:
         """
         Remove duplicate symbols where pairs with USDC are replaced by pairs with USDT.
 

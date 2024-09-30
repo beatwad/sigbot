@@ -1,17 +1,29 @@
-from typing import Tuple, List
+"""
+This module provides functionality for interacting with the Binance cryptocurrency
+exchange API. It defines the `MEXC` class, which extends the `ApiBase` class to
+retrieve and manipulate market data such as ticker symbols, K-line (candlestick)
+data, and historical data for specified intervals.
+"""
 
 from datetime import datetime
-import requests
+from typing import List, Tuple
+
 import pandas as pd
+import requests
 from api.api_base import ApiBase
 
 
 class MEXC(ApiBase):
-    URL = 'https://api.mexc.com/api/v3'
+    """Class for accessing MEXC cryptocurrency exchange API"""
 
-    def get_ticker_names(self, min_volume: float) -> Tuple[List[str], List[float], List[str]]:
+    URL = "https://api.mexc.com/api/v3"
+
+    def get_ticker_names(
+        self, min_volume: float
+    ) -> Tuple[List[str], List[float], List[str]]:
         """
-        Get ticker symbols and their corresponding volumes, filtering by a minimum volume.
+        Get ticker symbols and their corresponding volumes,
+        filtering by a minimum volume.
 
         Parameters
         ----------
@@ -26,20 +38,27 @@ class MEXC(ApiBase):
             - A list of their respective volumes.
             - A list of all symbols before filtering.
         """
-        tickers = pd.DataFrame(requests.get(self.URL + '/ticker/24hr', timeout=3).json())
-        tickers = tickers[(tickers['symbol'].str.endswith('USDT')) | (tickers['symbol'].str.endswith('USDC'))]
+        tickers = pd.DataFrame(
+            requests.get(self.URL + "/ticker/24hr", timeout=3).json()
+        )
+        tickers = tickers[
+            (tickers["symbol"].str.endswith("USDT"))
+            | (tickers["symbol"].str.endswith("USDC"))
+        ]
 
-        all_tickers = tickers['symbol'].to_list()
+        all_tickers = tickers["symbol"].to_list()
 
-        tickers['quoteVolume'] = tickers['quoteVolume'].astype(float)
-        tickers = tickers[tickers['quoteVolume'] >= min_volume // 2]
+        tickers["quoteVolume"] = tickers["quoteVolume"].astype(float)
+        tickers = tickers[tickers["quoteVolume"] >= min_volume // 2]
 
-        filtered_symbols = self.check_symbols(tickers['symbol'])
-        tickers = tickers[tickers['symbol'].isin(filtered_symbols)]
-        filtered_symbols = self.delete_duplicate_symbols(tickers['symbol'])
-        tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
+        filtered_symbols = self.check_symbols(tickers["symbol"])
+        tickers = tickers[tickers["symbol"].isin(filtered_symbols)]
+        filtered_symbols = self.delete_duplicate_symbols(tickers["symbol"])
+        tickers = tickers[tickers["symbol"].isin(filtered_symbols)].reset_index(
+            drop=True
+        )
 
-        return tickers['symbol'].to_list(), tickers['volume'].to_list(), all_tickers
+        return tickers["symbol"].to_list(), tickers["volume"].to_list(), all_tickers
 
     def get_klines(self, symbol: str, interval: str, limit: int = 300) -> pd.DataFrame:
         """
@@ -57,18 +76,26 @@ class MEXC(ApiBase):
         Returns
         -------
         pd.DataFrame
-            DataFrame containing time, open, high, low, close, and volume for the specified symbol.
+            DataFrame containing time, open, high, low, close, and
+            volume for the specified symbol.
         """
-        if interval == '1h':
-            interval = '60m'
-        params = {'symbol': symbol, 'interval': interval, 'limit': limit}
-        tickers = pd.DataFrame(requests.get(self.URL + '/klines', params=params).json())
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 7: 'volume'}, axis=1)
-        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
+        if interval == "1h":
+            interval = "60m"
+        params = {"symbol": symbol, "interval": interval, "limit": limit}
+        tickers = pd.DataFrame(
+            requests.get(self.URL + "/klines", params=params, timeout=3).json()
+        )
+        tickers = tickers.rename(
+            {0: "time", 1: "open", 2: "high", 3: "low", 4: "close", 7: "volume"}, axis=1
+        )
+        return tickers[["time", "open", "high", "low", "close", "volume"]]
 
-    def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
+    def get_historical_klines(
+        self, symbol: str, interval: str, limit: int, min_time: datetime
+    ) -> pd.DataFrame:
         """
-        Retrieve historical K-line data for a given symbol and interval before a specified minimum time.
+        Retrieve historical K-line data for a given symbol and
+        interval before a specified minimum time.
 
         Parameters
         ----------
@@ -84,46 +111,44 @@ class MEXC(ApiBase):
         Returns
         -------
         pd.DataFrame
-            DataFrame containing historical time, open, high, low, close, and volume for the specified symbol.
+            DataFrame containing historical time, open, high, low, close, and
+            volume for the specified symbol.
         """
         interval_secs = self.convert_interval_to_secs(interval)
-        if interval == '1h':
-            interval = '60m'
-        params = {'symbol': symbol, 'interval': interval, 'limit': limit}
+        if interval == "1h":
+            interval = "60m"
+        params = {"symbol": symbol, "interval": interval, "limit": limit, "timeout": 3}
         tmp_limit = limit
         prev_time, earliest_time = None, datetime.now()
-        ts = int(self.get_timestamp() / 3600) * 3600
+        timestamp_ = int(self.get_timestamp() / 3600) * 3600
         tickers = pd.DataFrame()
-        
+
         while earliest_time > min_time:
-            start_time = (ts - (tmp_limit * interval_secs)) * 1000
-            end_time = (ts - ((tmp_limit - limit) * interval_secs)) * 1000
-            params['startTime'] = start_time
-            params['endTime'] = end_time
-            tmp = pd.DataFrame(requests.get(self.URL + '/klines', params=params).json())
+            start_time = (timestamp_ - (tmp_limit * interval_secs)) * 1000
+            end_time = (timestamp_ - ((tmp_limit - limit) * interval_secs)) * 1000
+            params["startTime"] = start_time
+            params["endTime"] = end_time
+            tmp = pd.DataFrame(
+                requests.get(self.URL + "/klines", params=params, timeout=3).json()
+            )
             if tmp.shape[0] == 0:
                 break
             prev_time, earliest_time = earliest_time, tmp[0].min()
-            earliest_time = self.convert_timstamp_to_time(earliest_time, unit='ms')
+            earliest_time = self.convert_timestamp_to_time(earliest_time, unit="ms")
             # prevent endless cycle if there are no candles that earlier than min_time
             if prev_time == earliest_time:
                 break
-            
+
             # drop duplicated rows
             if tickers.shape[0] > 0:
                 tickers = tickers[tickers[0] > tmp[0].max()]
             tickers = pd.concat([tmp, tickers])
             tmp_limit += limit
 
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 7: 'volume'}, axis=1)
-        tickers = tickers.sort_values('time', ignore_index=True)
-        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
-
-
-if __name__ == '__main__':
-    mexc = MEXC()
-    min_time_ = datetime.now().replace(microsecond=0, second=0, minute=0) - pd.to_timedelta(365 * 5, unit='D')
-    klines_ = mexc.get_klines('BTCUSDT', '1h', 300)
-    klines_['time'] = pd.to_datetime(klines_['time'], unit='ms')
-    klines_['time'] = klines_['time'] + pd.to_timedelta(3, unit='h')
-    pass
+        tickers = tickers.rename(
+            {0: "time", 1: "open", 2: "high", 3: "low", 4: "close", 7: "volume"}, axis=1
+        )
+        tickers = tickers.sort_values("time", ignore_index=True)
+        return tickers[["time", "open", "high", "low", "close", "volume"]].reset_index(
+            drop=True
+        )

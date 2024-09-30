@@ -1,26 +1,37 @@
-from typing import Tuple, List
+"""
+This module provides functionality for interacting with the Binance cryptocurrency
+exchange API. It defines the `Binance` class, which extends the `ApiBase` class to
+retrieve and manipulate market data such as ticker symbols, K-line (candlestick)
+data, and historical data for specified intervals.
+"""
 
 from datetime import datetime
+from typing import List, Tuple, Union
+
 import pandas as pd
 from api.api_base import ApiBase
 from binance.client import Client
 
 
 class Binance(ApiBase):
+    """Class for accessing Binance cryptocurrency exchange API"""
+
     client: Client = ""
 
-    def __init__(self, api_key: str = "Key", api_secret: str = "Secret"):
+    def __init__(
+        self, api_key: Union[str, None] = None, api_secret: Union[str, None] = None
+    ):
         """
         Initialize the Binance API connection.
 
         Parameters
         ----------
         api_key : str, optional
-            The API key for the Binance account (default is "Key").
+            The API key for the Binance account.
         api_secret : str, optional
-            The API secret for the Binance account (default is "Secret").
+            The API secret for the Binance account.
         """
-        if api_key != "Key" and api_secret != "Secret":
+        if api_key is not None and api_secret is not None:
             self.connect_to_api(api_key, api_secret)
         else:
             self.api_key = api_key
@@ -44,7 +55,8 @@ class Binance(ApiBase):
     @staticmethod
     def delete_duplicate_symbols(symbols: pd.Series) -> list:
         """
-        Remove duplicate symbols where pairs with USDT exist and delete the corresponding BUSD pairs.
+        Remove duplicate symbols where pairs with USDT exist
+        and delete the corresponding BUSD pairs.
 
         Parameters
         ----------
@@ -54,23 +66,27 @@ class Binance(ApiBase):
         Returns
         -------
         list
-            A list of filtered symbols without duplicates (BUSD pairs removed if USDT exists).
+            A list of filtered symbols without duplicates
+            (BUSD pairs removed if USDT exists).
         """
-        filtered_symbols = list()
+        filtered_symbols = []
         symbols = symbols.to_list()
 
         for symbol in symbols:
-            if symbol.endswith('BUSD'):
+            if symbol.endswith("BUSD"):
                 prefix = symbol[:-4]
-                if prefix + 'USDT' not in symbols:
+                if prefix + "USDT" not in symbols:
                     filtered_symbols.append(symbol)
             else:
                 filtered_symbols.append(symbol)
         return filtered_symbols
 
-    def get_ticker_names(self, min_volume: float) -> Tuple[List[str], List[float], List[str]]:
+    def get_ticker_names(
+        self, min_volume: float
+    ) -> Tuple[List[str], List[float], List[str]]:
         """
-        Get ticker symbols and their corresponding volumes, filtering by a minimum volume.
+        Get ticker symbols and their corresponding volumes,
+        filtering by a minimum volume.
 
         Parameters
         ----------
@@ -86,18 +102,23 @@ class Binance(ApiBase):
             - A list of all symbols before filtering.
         """
         tickers = pd.DataFrame(self.client.get_ticker())
-        all_tickers = tickers['symbol'].to_list()
+        all_tickers = tickers["symbol"].to_list()
 
-        tickers = tickers[(tickers['symbol'].str.endswith('USDT')) | (tickers['symbol'].str.endswith('BUSD'))]
-        tickers.loc[:, 'quoteVolume'] = tickers.loc[:, 'quoteVolume'].astype(float)
-        tickers = tickers[tickers['quoteVolume'] >= min_volume // 2]
+        tickers = tickers[
+            (tickers["symbol"].str.endswith("USDT"))
+            | (tickers["symbol"].str.endswith("BUSD"))
+        ]
+        tickers.loc[:, "quoteVolume"] = tickers.loc[:, "quoteVolume"].astype(float)
+        tickers = tickers[tickers["quoteVolume"] >= min_volume // 2]
 
-        filtered_symbols = self.check_symbols(tickers['symbol'])
-        tickers = tickers[tickers['symbol'].isin(filtered_symbols)]
-        filtered_symbols = self.delete_duplicate_symbols(tickers['symbol'])
-        tickers = tickers[tickers['symbol'].isin(filtered_symbols)].reset_index(drop=True)
+        filtered_symbols = self.check_symbols(tickers["symbol"])
+        tickers = tickers[tickers["symbol"].isin(filtered_symbols)]
+        filtered_symbols = self.delete_duplicate_symbols(tickers["symbol"])
+        tickers = tickers[tickers["symbol"].isin(filtered_symbols)].reset_index(
+            drop=True
+        )
 
-        return tickers['symbol'].to_list(), tickers['volume'].to_list(), all_tickers
+        return tickers["symbol"].to_list(), tickers["volume"].to_list(), all_tickers
 
     def get_klines(self, symbol: str, interval: str, limit: int) -> pd.DataFrame:
         """
@@ -115,15 +136,23 @@ class Binance(ApiBase):
         Returns
         -------
         pd.DataFrame
-            DataFrame containing time, open, high, low, close, and volume for the specified symbol.
+            DataFrame containing time, open, high, low, close, and volume
+            for the specified symbol.
         """
-        tickers = pd.DataFrame(self.client.get_klines(symbol=symbol, interval=interval, limit=limit))
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 7: 'volume'}, axis=1)
-        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']]
+        tickers = pd.DataFrame(
+            self.client.get_klines(symbol=symbol, interval=interval, limit=limit)
+        )
+        tickers = tickers.rename(
+            {0: "time", 1: "open", 2: "high", 3: "low", 4: "close", 7: "volume"}, axis=1
+        )
+        return tickers[["time", "open", "high", "low", "close", "volume"]]
 
-    def get_historical_klines(self, symbol: str, interval: str, limit: int, min_time: datetime) -> pd.DataFrame:
+    def get_historical_klines(
+        self, symbol: str, interval: str, limit: int, min_time: datetime
+    ) -> pd.DataFrame:
         """
-        Retrieve historical K-line data for a given symbol and interval before a specified minimum time.
+        Retrieve historical K-line data for a given symbol and
+        interval before a specified minimum time.
 
         Parameters
         ----------
@@ -139,23 +168,27 @@ class Binance(ApiBase):
         Returns
         -------
         pd.DataFrame
-            DataFrame containing historical time, open, high, low, close, and volume for the specified symbol.
+            DataFrame containing historical time, open, high, low, close,
+            and volume for the specified symbol.
         """
         interval_secs = self.convert_interval_to_secs(interval)
         tmp_limit = limit
         prev_time, earliest_time = None, datetime.now()
-        ts = int(self.get_timestamp() / 3600) * 3600
+        timestamp_ = int(self.get_timestamp() / 3600) * 3600
         tickers = pd.DataFrame()
 
         # Get historical data in a loop until the min_time is reached
         while earliest_time > min_time:
-            start_time = (ts - (tmp_limit * interval_secs)) * 1000
-            tmp = pd.DataFrame(self.client.get_klines(symbol=symbol, interval=interval, startTime=start_time,
-                                                      limit=limit))
+            start_time = (timestamp_ - (tmp_limit * interval_secs)) * 1000
+            tmp = pd.DataFrame(
+                self.client.get_klines(
+                    symbol=symbol, interval=interval, startTime=start_time, limit=limit
+                )
+            )
             if tmp.shape[0] == 0:
                 break
             prev_time, earliest_time = earliest_time, tmp[0].min()
-            earliest_time = self.convert_timstamp_to_time(earliest_time, unit='ms')
+            earliest_time = self.convert_timestamp_to_time(earliest_time, unit="ms")
 
             # Prevent an endless loop if no earlier candles exist
             if prev_time == earliest_time:
@@ -167,13 +200,9 @@ class Binance(ApiBase):
             tickers = pd.concat([tmp, tickers])
             tmp_limit += limit
 
-        tickers = tickers.rename({0: 'time', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 7: 'volume'}, axis=1)
-        return tickers[['time', 'open', 'high', 'low', 'close', 'volume']].reset_index(drop=True)
-
-
-if __name__ == '__main__':
-    key = "7arxKITvadhYavxsQr5dZelYK4kzyBGM4rsjDCyJiPzItNlAEdlqOzibV7yVdnNy"
-    secret = "3NvopCGubDjCkF4SzqP9vj9kU2UIhE4Qag9ICUdESOBqY16JGAmfoaUIKJLGDTr4"
-    binance_api = Binance(key, secret)
-    binance_api.get_ticker_names(1e1)
-    klines = binance_api.get_klines('BTCUSDT', '1h', 300)
+        tickers = tickers.rename(
+            {0: "time", 1: "open", 2: "high", 3: "low", 4: "close", 7: "volume"}, axis=1
+        )
+        return tickers[["time", "open", "high", "low", "close", "volume"]].reset_index(
+            drop=True
+        )

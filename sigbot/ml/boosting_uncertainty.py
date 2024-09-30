@@ -20,7 +20,20 @@ class PredictionDict:
 def virtual_ensemble_iterations(
     model: LGBMClassifier, k: int = 20
 ) -> List[int]:
-    """Define number of trees in each model of virtual ensemble"""
+    """
+    Define number of trees in each model of virtual ensemble
+
+    Parameters
+    ----------
+    model: LGBMClassifier
+        lightgbm classifier model
+
+    k: int 
+        the number of virtual ensembles (Default value = 20)
+
+    Returns
+    -------
+    """
     n_estimators = model.n_estimators_
     first_iter = n_estimators // 2 - 1
     iterations = list(range(first_iter, n_estimators, k))
@@ -30,7 +43,23 @@ def virtual_ensemble_iterations(
 def virtual_ensemble_predict(
     model: LGBMClassifier, X: np.ndarray, k: int = 20
 ) -> np.ndarray:
-    """Make prediction for each virtual ensemble"""
+    """
+    Make prediction for each virtual ensemble
+
+    Parameters
+    ----------
+    model: LGBMClassifier
+        lightgbm classifier model
+        
+    X: np.ndarray
+        input train data array
+        
+    k: int 
+        the number of virtual ensembles (Default value = 20)
+
+    Returns
+    -------
+    """
     iterations = virtual_ensemble_iterations(model, k)
     stage_preds = np.array([model.predict_proba(X, num_iteration=i)[:,-1] for i in iterations])
     stage_preds = stage_preds.T
@@ -40,9 +69,22 @@ def virtual_ensemble_predict(
 def predict_with_uncertainty(
     model: LGBMClassifier, X: np.ndarray, k: int = 20
 ) -> PredictionDict:
-    """
-    Make prediction and calculate model uncertainty 
+    """Make prediction and calculate model uncertainty
     and lower/upper uncertainty bound for each object
+
+    Parameters
+    ----------
+    model: LGBMClassifier
+        lightgbm classifier model
+        
+    X: np.ndarray
+        input train data array
+        
+    k: int 
+        the number of virtual ensembles (Default value = 20)
+
+    Returns
+    -------
     """
     stage_preds = virtual_ensemble_predict(model, X, k)
 

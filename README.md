@@ -1,6 +1,6 @@
 # Cryptocurrency Signal Bot with Indicators and Profitability Statistics
 
-This project is for the purpose of searching of the signals and analysing their profitability using 
+This project is for the purpose of searching of the signals and analysing their profitability using
 technical indicators on cryptocurrency exchanges and statistics.
 Works with Binance API
 

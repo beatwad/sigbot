@@ -424,6 +424,8 @@ disable=raw-checker-failed,
         too-many-locals,
         too-few-public-methods,
         too-many-return-statements,
+        no-member,
+        invalid-name,
 
 
 # Enable the message, report, category or checker with the given id(s). You can

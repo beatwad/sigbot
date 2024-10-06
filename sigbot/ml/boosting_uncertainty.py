@@ -10,6 +10,7 @@ from lightgbm import LGBMClassifier
 @dataclass
 class PredictionDict:
     """Class for storing model uncertainty"""
+
     pred: np.ndarray = field(default_factory=lambda: np.array([]))
     uncertainty: np.ndarray = field(default_factory=lambda: np.array([]))
     pred_virt: np.ndarray = field(default_factory=lambda: np.array([]))
@@ -17,9 +18,7 @@ class PredictionDict:
     ucb: np.ndarray = field(default_factory=lambda: np.array([]))
 
 
-def virtual_ensemble_iterations(
-    model: LGBMClassifier, k: int = 20
-) -> List[int]:
+def virtual_ensemble_iterations(model: LGBMClassifier, k: int = 20) -> List[int]:
     """
     Define number of trees in each model of virtual ensemble
 
@@ -28,7 +27,7 @@ def virtual_ensemble_iterations(
     model: LGBMClassifier
         lightgbm classifier model
 
-    k: int 
+    k: int
         the number of virtual ensembles (Default value = 20)
 
     Returns
@@ -50,18 +49,20 @@ def virtual_ensemble_predict(
     ----------
     model: LGBMClassifier
         lightgbm classifier model
-        
+
     X: np.ndarray
         input train data array
-        
-    k: int 
+
+    k: int
         the number of virtual ensembles (Default value = 20)
 
     Returns
     -------
     """
     iterations = virtual_ensemble_iterations(model, k)
-    stage_preds = np.array([model.predict_proba(X, num_iteration=i)[:,-1] for i in iterations])
+    stage_preds = np.array(
+        [model.predict_proba(X, num_iteration=i)[:, -1] for i in iterations]
+    )
     stage_preds = stage_preds.T
     return stage_preds
 
@@ -76,11 +77,11 @@ def predict_with_uncertainty(
     ----------
     model: LGBMClassifier
         lightgbm classifier model
-        
+
     X: np.ndarray
         input train data array
-        
-    k: int 
+
+    k: int
         the number of virtual ensembles (Default value = 20)
 
     Returns

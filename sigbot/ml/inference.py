@@ -206,6 +206,6 @@ class Model:
             logger.info(
                 f"Prediction score for ticker {signal_points[s_p_n][0]} is {pred}"
             )
-            if pred > self.pred_thresh:
-                signal_points[s_p_n][9] = pred
+            # if pred > self.pred_thresh:
+            signal_points[s_p_n][9] = pred
         return signal_points

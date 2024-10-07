@@ -49,6 +49,8 @@ class ByBitPerpetual(ApiBase):
         self.query_symbols_info()
         self.leverage = configs["Trade"]["leverage"]
         self.risk = configs["Trade"]["risk"]
+        self.TP = configs["Trade"]["TP"]
+        self.SL = configs["Trade"]["SL"]
         self.quote_coin = configs["Trade"]["quote_coin"]
         self.currency = configs["Trade"]["currency"]
         self.one_way_mode = configs["Trade"]["one_way_mode"]
@@ -843,13 +845,13 @@ class ByBitPerpetual(ApiBase):
         if side == "Buy":
             direction = "Fall"
             prices = [price - 2 * tick_size]
-            take_profits = [price * 1.08]
-            stop_loss = price * 0.95
+            take_profits = [price * (1 + self.TP)]
+            stop_loss = price * (1 - self.SL)
         else:
             direction = "Rise"
             prices = [price + 2 * tick_size]
-            take_profits = [price * 0.92]
-            stop_loss = price * 1.05
+            take_profits = [price * (1 - self.TP)]
+            stop_loss = price * (1 + self.SL)
 
         quantity, message = self._get_quantity(
             symbol,

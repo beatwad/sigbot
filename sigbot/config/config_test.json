@@ -564,6 +564,8 @@
     "Trade": {
     "leverage": 4,
     "risk": 0.001,
+    "TP": 0.08,
+    "SL": 0.05,
     "quote_coin": "USDT",
     "currency": "USD",
     "one_way_mode": 1,

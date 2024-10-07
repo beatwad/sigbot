@@ -81,6 +81,8 @@ Possible values of ENV variable:
 
 - `optimize` - mode that is used to find out the optimal indicator parameters
 
+Example of .env file configuration can be found in `.env_example` file
+
 All other settings are stored at `config` folder in `config_<ENV_variable_value>.json` file.
 
 # Requirements

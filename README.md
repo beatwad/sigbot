@@ -35,7 +35,7 @@ Example of working bot can be found at https://t.me/crypto_signal_bot_group
 - Pump-Dump – looks for the big price moves that are bigger than 99% of all other moves. Timeframe is 1 hour.
 - High Volume – looks for the high trade volume that is bigger than 99% of all other trade volumes. Timeframe is 1 hour.
 
-###  Indicator combinations.
+### Indicator combinations.
 For signal search the following indicator combinations are used (each combination and each trade side has it’s own chat topic):
 - Pattern + Trend
 - Stochastic + RSI
@@ -105,7 +105,7 @@ All other settings are stored at `config` folder in `config_<ENV_variable_value>
 * lightgbm `4.0.0`
 
 
-# Install
+# Install and Run
 
 ### Build Docker image
 

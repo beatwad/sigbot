@@ -119,6 +119,7 @@ class SigBot:
             self.model = None
         else:
             self.model = Model(**configs)
+        # model prediction threshold
         self.pred_thresh = configs["Model"]["params"]["pred_thresh"]
 
     def get_api_and_tickers(self) -> None:

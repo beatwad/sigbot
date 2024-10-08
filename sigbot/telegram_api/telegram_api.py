@@ -71,6 +71,8 @@ class TelegramBot:
         # load default value of trade mode
         with locker:
             self.trade_mode[0] = configs["Main"]["params"]["trade_mode"]
+        # model prediction threshold
+        self.pred_thresh = configs["Model"]["params"]["pred_thresh"]
         # ticker database
         self.database = database
         # visualizer class
@@ -331,7 +333,7 @@ class TelegramBot:
         # get price prediction of model
         prediction = message[9]
         # send ML model prediction
-        if prediction > 0:
+        if prediction > self.pred_thresh:
             text += "AI confidence / Уверенность AI:\n"
             text += f"{round(prediction * 100, 2)}%"
         # Send message + image
@@ -346,7 +348,7 @@ class TelegramBot:
             if (
                 set(sig_exchanges).intersection(set(self.favorite_exchanges))
                 and sig_pattern in self.favorite_patterns
-                and prediction > 0
+                and prediction > self.pred_thresh
             ):
                 favorite_chat_id = self.favorite_chat_ids[sig_pattern]
                 favorite_message_thread_id = self.favorite_message_thread_ids.get(

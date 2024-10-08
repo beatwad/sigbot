@@ -111,6 +111,8 @@ class Model:
         )
         btcd_btcdom_cols = btcd_cols + btcdom_cols[1:]
         tmp_df[btcd_btcdom_cols] = tmp_df[btcd_btcdom_cols].ffill()
+        tmp_df["weekday"] = 0
+        tmp_df["hour"] = 0
         # create dataframe for prediction
         for i, point in enumerate(signal_points):
             ticker = point[0]
@@ -128,6 +130,9 @@ class Model:
                 or exchange_name not in self.favorite_exchanges
             ):
                 continue
+            # add weekday and hour features
+            tmp_df.loc[tmp_df["time"] == point_time, "weekday"] = point_time.weekday()
+            tmp_df.loc[tmp_df["time"] == point_time, "hour"] = point_time.hour
             row = pd.DataFrame()
             for key, features in self.feature_dict.items():
                 if key.isdigit():
@@ -148,8 +153,6 @@ class Model:
                     f"{point_time} contains NaNs, skip it"
                 )
                 continue
-            row["weekday"] = point_time.weekday()
-            row["hour"] = point_time.hour
             row.columns = self.feature_dict["features"]
             # add number of signal point for which prediction is made
             row["sig_point_num"] = i

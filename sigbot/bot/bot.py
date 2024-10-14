@@ -174,7 +174,7 @@ class SigBot:
                 del self.exchanges[ex]
                 logger.exception(
                     f"Catch an exception while accessing"
-                    f"to exchange {ex}. \nException is {exc}"
+                    f"the exchange {ex}. \nException is {exc}"
                 )
                 continue
             # filter tickers that were used by previous exchanges

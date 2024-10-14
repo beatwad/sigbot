@@ -464,8 +464,8 @@
   },
   "Model": {
     "params": {
-      "model_path": "ml/model/lgbm.pkl",
-      "feature_path": "ml/model/features.json",
+      "model_path": "model/lgbm.pkl",
+      "feature_path": "model/features.json",
       "patterns_to_predict": [
         "STOCH_RSI_Volume24"
       ],

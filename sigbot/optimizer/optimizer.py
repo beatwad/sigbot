@@ -351,7 +351,7 @@ class Optimizer:
                 sb.save_opt_dataframes(ttype, historical, min_time)
                 load = False
             sb.save_opt_statistics(ttype, opt_limit, not load_tickers)
-            # save candle data from exchanges only second and next times
+            # save candle data from exchanges only at second and next times
             if load_tickers:
                 exchanges = copy.deepcopy(sb.exchanges)
                 database = copy.deepcopy(sb.database)

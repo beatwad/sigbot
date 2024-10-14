@@ -16,7 +16,7 @@ from api.api_base import ApiBase
 class OKEXSwap(ApiBase):
     """Class for accessing OKEXSwap cryptocurrency exchange API"""
 
-    URL = "https://www.okex.com"
+    URL = "https://www.okx.com"
 
     def get_ticker_names(self, min_volume) -> Tuple[List[str], List[float], List[str]]:
         """

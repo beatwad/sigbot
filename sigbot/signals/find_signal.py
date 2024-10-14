@@ -392,9 +392,9 @@ class STOCHSignal(SignalBase):
         stoch_slowd = df["stoch_slowd"]
         stoch_slowd_lag_1 = df["stoch_slowd"].shift(1)
         stoch_slowd_lag_2 = df["stoch_slowd"].shift(2)
-        # stoch_diff = df["stoch_diff"]
-        # stoch_diff_lag_1 = df["stoch_diff"].shift(1)
-        # stoch_diff_lag_2 = df["stoch_diff"].shift(2)
+        stoch_diff = df["stoch_diff"]
+        stoch_diff_lag_1 = df["stoch_diff"].shift(1)
+        stoch_diff_lag_2 = df["stoch_diff"].shift(2)
 
         if self.ttype == "buy":
             lower_bound_slowk = self.lower_bound(
@@ -403,15 +403,15 @@ class STOCHSignal(SignalBase):
             lower_bound_slowd = self.lower_bound(
                 self.low_bound, stoch_slowd, stoch_slowd_lag_1, stoch_slowd_lag_2
             )
-            # crossed_lines_down = self.crossed_lines(
-            #     False, stoch_diff, stoch_diff_lag_1, stoch_diff_lag_2
-            # )
+            crossed_lines_down = self.crossed_lines(
+                False, stoch_diff, stoch_diff_lag_1, stoch_diff_lag_2
+            )
             up_direction_slowk = self.up_direction(df["stoch_slowk_dir"])
             up_direction_slowd = self.up_direction(df["stoch_slowd_dir"])
             stoch_up = (
                 lower_bound_slowk
                 & lower_bound_slowd
-                # & crossed_lines_down
+                & crossed_lines_down
                 & up_direction_slowk
                 & up_direction_slowd
             )
@@ -423,15 +423,15 @@ class STOCHSignal(SignalBase):
         higher_bound_slowd = self.higher_bound(
             self.high_bound, stoch_slowd, stoch_slowd_lag_1, stoch_slowd_lag_2
         )
-        # crossed_lines_up = self.crossed_lines(
-        #     True, stoch_diff, stoch_diff_lag_1, stoch_diff_lag_2
-        # )
+        crossed_lines_up = self.crossed_lines(
+            True, stoch_diff, stoch_diff_lag_1, stoch_diff_lag_2
+        )
         down_direction_slowk = self.down_direction(df["stoch_slowk_dir"])
         down_direction_slowd = self.down_direction(df["stoch_slowd_dir"])
         stoch_down = (
             higher_bound_slowk
             & higher_bound_slowd
-            # & crossed_lines_up
+            & crossed_lines_up
             & down_direction_slowk
             & down_direction_slowd
         )

@@ -9,7 +9,7 @@ environ["ENV"] = "test"
 # Get configs
 configs = ConfigFactory.factory(environ).configs
 
-point1 = ['BNBUSDT', '5m', 816, 'sell', pd.to_datetime('2022-09-27 07:05:00'),
+point1 = ['BNBUSDT', '5m', 816, 'sell', pd.to_datetime('2022-09-27 07:05:00'), 
           [('STOCH', (15, 85)), ('RSI', (25, 75))], [],
           ['Binance', 'BinanceFutures'],
           [[(100.0, -0.21, 0.1), (100.0, -0.19, 0.12), (50.0, -0.0, 0.1),

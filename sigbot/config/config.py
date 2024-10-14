@@ -1,12 +1,22 @@
+"""
+This module provides a configuration system that dynamically loads environment-specific
+settings based on the `ENV` environment variable. It includes a `ConfigFactory` class
+that returns different configuration objects for various environments
+(e.g., development, testing, production, Docker, optimization modes, etc.), and several
+`Config` classes defining specific settings for each environment.
+"""
+
 import json
 from os import path
-from dotenv import load_dotenv, find_dotenv
+
+from dotenv import find_dotenv, load_dotenv
+
 basedir = path.abspath(path.dirname(__file__))
 # here we load environment variables from .env, must be called before init. class
-load_dotenv(find_dotenv('../.env'), verbose=True)
+load_dotenv(find_dotenv("../.env"), verbose=True)
 
 
-class ConfigFactory(object):
+class ConfigFactory:
     """
     Factory class to return the appropriate configuration settings
     based on the environment variable `ENV`.
@@ -16,6 +26,7 @@ class ConfigFactory(object):
     factory(environ: dict) -> Config:
         Returns the appropriate configuration class based on `ENV` value.
     """
+
     @staticmethod
     def factory(environ):
         """
@@ -33,24 +44,23 @@ class ConfigFactory(object):
             An instance of a configuration class based on the environment.
         """
         env = environ.get("ENV", "development")
-        if env == 'test':
+        if env == "test":
             return Testing(environ)
-        elif env == '5m_1h':
+        if env == "5m_1h":
             return Development5M1H(environ)
-        elif env == '15m_1h':
+        if env == "15m_1h":
             return Development15M1H(environ)
-        elif env == '15m_4h':
+        if env == "15m_4h":
             return Development15M4H(environ)
-        elif env == '1h_4h':
+        if env == "1h_4h":
             return Development1H4H(environ)
-        elif env == 'optimize':
+        if env == "optimize":
             return Optimize(environ)
-        elif env == 'docker':
+        if env == "docker":
             return Docker(environ)
-        elif env == 'production':
+        if env == "production":
             return Production(environ)
-        elif env == 'debug':
-            return Debug(environ)
+        return Debug(environ)
 
 
 class Config:
@@ -67,12 +77,14 @@ class Config:
     get_config(conf_path: str) -> dict:
         Loads the configuration from the given JSON file.
     """
-    CONFIG_PATH = ''
+
+    CONFIG_PATH = ""
 
     @staticmethod
     def get_config(conf_path):
-        with open(conf_path) as f:
-            bot_conf = json.load(f)
+        """Load config from JSON file"""
+        with open(conf_path) as file:
+            bot_conf = json.load(file)
         return bot_conf
 
 
@@ -92,6 +104,7 @@ class Development(Config):
     __init__(environ: dict):
         Initializes the configuration using environment variables.
     """
+
     DEBUG = True
     TESTING = False
 
@@ -104,7 +117,7 @@ class Development(Config):
         environ : dict
             A dictionary representing the environment variables.
         """
-        pth = path.join(basedir, environ.get('CONFIG_PATH'))
+        pth = path.join(basedir, environ.get("CONFIG_PATH"))
         self.configs = Config.get_config(pth)
 
 
@@ -119,6 +132,7 @@ class Development5M1H(Config):
     TESTING : bool
         Enable or disable testing mode.
     """
+
     DEBUG = True
     TESTING = False
 
@@ -131,7 +145,7 @@ class Development5M1H(Config):
         environ : dict
             A dictionary representing the environment variables.
         """
-        pth = path.join(basedir, environ.get('CONFIG_PATH_5m_1h'))
+        pth = path.join(basedir, environ.get("CONFIG_PATH_5m_1h"))
         self.configs = Config.get_config(pth)
 
 
@@ -146,6 +160,7 @@ class Development15M1H(Config):
     TESTING : bool
         Enable or disable testing mode.
     """
+
     DEBUG = True
     TESTING = False
 
@@ -158,7 +173,7 @@ class Development15M1H(Config):
         environ : dict
             A dictionary representing the environment variables.
         """
-        pth = path.join(basedir, environ.get('CONFIG_PATH_15m_1h'))
+        pth = path.join(basedir, environ.get("CONFIG_PATH_15m_1h"))
         self.configs = Config.get_config(pth)
 
 
@@ -173,6 +188,7 @@ class Development15M4H(Config):
     TESTING : bool
         Enable or disable testing mode.
     """
+
     DEBUG = True
     TESTING = False
 
@@ -185,7 +201,7 @@ class Development15M4H(Config):
         environ : dict
             A dictionary representing the environment variables.
         """
-        pth = path.join(basedir, environ.get('CONFIG_PATH_15m_4h'))
+        pth = path.join(basedir, environ.get("CONFIG_PATH_15m_4h"))
         self.configs = Config.get_config(pth)
 
 
@@ -200,6 +216,7 @@ class Development1H4H(Config):
     TESTING : bool
         Enable or disable testing mode.
     """
+
     DEBUG = True
     TESTING = False
 
@@ -212,7 +229,7 @@ class Development1H4H(Config):
         environ : dict
             A dictionary representing the environment variables.
         """
-        pth = path.join(basedir, environ.get('CONFIG_PATH_1h_4h'))
+        pth = path.join(basedir, environ.get("CONFIG_PATH_1h_4h"))
         self.configs = Config.get_config(pth)
 
 
@@ -227,6 +244,7 @@ class Testing(Config):
     TESTING : bool
         Enable or disable testing mode.
     """
+
     DEBUG = True
     TESTING = True
 
@@ -239,7 +257,7 @@ class Testing(Config):
         environ : dict
             A dictionary representing the environment variables.
         """
-        pth = path.join(basedir, environ.get('CONFIG_PATH_TEST'))
+        pth = path.join(basedir, environ.get("CONFIG_PATH_TEST"))
         self.configs = Config.get_config(pth)
 
 
@@ -254,6 +272,7 @@ class Optimize(Config):
     TESTING : bool
         Enable or disable testing mode.
     """
+
     DEBUG = True
     TESTING = False
 
@@ -266,7 +285,7 @@ class Optimize(Config):
         environ : dict
             A dictionary representing the environment variables.
         """
-        pth = path.join(basedir, environ.get('CONFIG_PATH_OPTIMIZE'))
+        pth = path.join(basedir, environ.get("CONFIG_PATH_OPTIMIZE"))
         self.configs = Config.get_config(pth)
 
 
@@ -281,6 +300,7 @@ class Docker(Config):
     TESTING : bool
         Enable or disable testing mode.
     """
+
     DEBUG = True
     TESTING = False
 
@@ -293,7 +313,7 @@ class Docker(Config):
         environ : dict
             A dictionary representing the environment variables.
         """
-        pth = path.join(basedir, environ.get('CONFIG_PATH_DOCKER'))
+        pth = path.join(basedir, environ.get("CONFIG_PATH_DOCKER"))
         self.configs = Config.get_config(pth)
 
 
@@ -308,6 +328,7 @@ class Production(Config):
     TESTING : bool
         Enable or disable testing mode.
     """
+
     DEBUG = True
     TESTING = False
 
@@ -320,7 +341,7 @@ class Production(Config):
         environ : dict
             A dictionary representing the environment variables.
         """
-        pth = path.join(basedir, environ.get('CONFIG_PATH_PROD'))
+        pth = path.join(basedir, environ.get("CONFIG_PATH_PROD"))
         self.configs = Config.get_config(pth)
 
 
@@ -335,6 +356,7 @@ class Debug(Config):
     TESTING : bool
         Enable or disable testing mode.
     """
+
     DEBUG = True
     TESTING = False
 
@@ -347,5 +369,5 @@ class Debug(Config):
         environ : dict
             A dictionary representing the environment variables.
         """
-        pth = path.join(basedir, environ.get('CONFIG_PATH_DEBUG'))
+        pth = path.join(basedir, environ.get("CONFIG_PATH_DEBUG"))
         self.configs = Config.get_config(pth)

@@ -1,13 +1,16 @@
-from typing import Tuple, Optional
+"""
+Staistical tests to determine if the data are noraml,
+unbiased or homoscedastical
+"""
+
+from typing import Optional, Tuple
 
 import numpy as np
-from scipy.stats import shapiro, ttest_1samp, bartlett, levene, fligner
+from scipy.stats import bartlett, fligner, levene, shapiro, ttest_1samp
 
 
 def test_normality(
-    y_true: np.ndarray,
-    y_pred: np.ndarray,
-    alpha: float = 0.05
+    y_true: np.ndarray, y_pred: np.ndarray, alpha: float = 0.05
 ) -> Tuple[float, bool]:
     """Normality test
 
@@ -38,7 +41,6 @@ def test_normality(
     _, p_value = shapiro(residuals)
 
     return p_value, p_value < alpha
-
 
 
 def test_unbiased(
@@ -84,8 +86,10 @@ def test_unbiased(
     elif prefer == "negative":
         alternative = "less"
     else:
-        raise ValueError("prefer can be None or 'two-sided'\
-                          or 'positive' or 'negative'")
+        raise ValueError(
+            "prefer can be None or 'two-sided'\
+                          or 'positive' or 'negative'"
+        )
     # compute residuals
     residuals = y_true - y_pred
     # compute p-value for t-test for the mean of one group of residuals
@@ -134,14 +138,20 @@ def test_homoscedasticity(
         True if the homoscedasticity hypothesis is rejected, False otherwise
 
     """
-    func_dict = {None: bartlett, "bartlett": bartlett,
-                 "levene": levene, "fligner": fligner}
+    func_dict = {
+        None: bartlett,
+        "bartlett": bartlett,
+        "levene": levene,
+        "fligner": fligner,
+    }
 
     if len(y_true) != len(y_pred):
         raise ValueError("Targets and predictions must have the same length")
     if test not in func_dict:
-        raise ValueError("Unknown test value, it can be None or 'bartlett'\
-                          or 'levene' or 'fligner'")
+        raise ValueError(
+            "Unknown test value, it can be None or 'bartlett'\
+                          or 'levene' or 'fligner'"
+        )
 
     # compute the residuals and sort them by y value
     sorted_idxs = y_true.argsort()
@@ -150,8 +160,11 @@ def test_homoscedasticity(
 
     # split residuals by bins
     bin_size = len(residuals) // bins
-    residuals = [residuals[bin_size * i : bin_size * (i + 1)] 
-                 for i in range(bins-1)] + [residuals[bin_size * (bins - 1):]]
+    residuals = [
+        residuals[bin_size * i : bin_size * (i + 1)] for i in range(bins - 1)  # noqa
+    ] + [
+        residuals[bin_size * (bins - 1) :]  # noqa
+    ]
 
     # perform homoscedasticity test
     test_func = func_dict[test]

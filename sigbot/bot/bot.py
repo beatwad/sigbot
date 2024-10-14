@@ -155,6 +155,8 @@ class SigBot:
         # model for price prediction
         if self.opt_type:
             self.model = Model(**configs)
+        # model prediction threshold
+        self.pred_thresh = configs["Model"]["params"]["pred_thresh"]
 
     def get_api_and_tickers(self) -> None:
         """Get API and ticker list for every exchange in the exchange list"""
@@ -1250,23 +1252,14 @@ class MonitorExchange:
                                     #     df_higher = self.sigbot.database[ticker]\
                                     #         [self.sigbot.higher_timeframe]['data'][ttype]
                                     #     df_higher.to_csv(
-                                    #         f"./bot/ticker_dataframes/\
-                                    #             {ticker}_4h_{ttype}_{month}_{day}_{hour}.csv"
-                                    #         )
-                                    if self.sigbot.trade_mode[0] and prediction > 0:
-                                        if pattern == "STOCH_RSI_Volume24":
-                                            # for STOCH_RSI pattern buy / sell
-                                            # trades are inverted
-                                            sig_type = (
-                                                "Sell" if sig_type == "Buy" else "Buy"
-                                            )
-                                        self.sigbot.trade_exchange.api.place_all_conditional_orders(  # noqa: E501
-                                            ticker, sig_type
-                                        )
-                                    pr = multiprocessing.Process(
-                                        target=self.sigbot.telegram_bot.send_notification,  # noqa: E501
-                                        args=(sig_point,),
-                                    )
+                                    #         f"./bot/ticker_dataframes/{ticker}_4h_{ttype}_{month}_{day}_{hour}.csv")
+                                    if self.sigbot.trade_mode[0] and prediction > self.sigbot.pred_thresh:
+                                        if pattern == 'STOCH_RSI_Volume24':
+                                            # for STOCH_RSI pattern buy / sell trades are inverted
+                                            sig_type = 'Sell' if sig_type == 'Buy' else 'Buy'
+                                        self.sigbot.trade_exchange.api.place_all_conditional_orders(ticker, sig_type)
+                                    pr = multiprocessing.Process(target=self.sigbot.telegram_bot.send_notification,
+                                                                 args=(sig_point,))
                                     processes.append(pr)
                                     pr.start()
                                     # self.sigbot.telegram_bot.send_notification(sig_point)

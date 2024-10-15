@@ -87,7 +87,7 @@
     },
     "MEXC": {
       "params": {
-        "limit": 1000,
+        "limit": 500,
         "timeframe_div": {
           "1m": 60,
           "5m": 300,

@@ -50,7 +50,8 @@ class SigBot:
     opt_type
         Flag that shows if class is used in optimization mode or not.
         If it's used in optimization mode
-        than some class instances aren't need to be initialized.
+        than some class instances aren't need to be initialized
+        (e.g. model for prediction)
     configs
         Dictionary of configs which is loaded from file config/config_*env*.json
     """
@@ -153,7 +154,7 @@ class SigBot:
         # indicators of BTC dominance
         self.btcd, self.btcdom = None, None
         # model for price prediction
-        if self.opt_type:
+        if not self.opt_type:
             self.model = Model(**configs)
         # model prediction threshold
         self.pred_thresh = configs["Model"]["params"]["pred_thresh"]
@@ -828,12 +829,12 @@ class SigBot:
         ) = sig_points[0]
         df = self.database[ticker][timeframe]["data"][ttype]
         # RSI_STOCH pattern is inverted with respect to the trade sides
-        if pattern == "STOCH_RSI":
+        if pattern == "STOCH_RSI_Volume24":
             if ttype == "buy":
                 ttype = "sell"
             else:
                 ttype = "buy"
-        if self.opt_type:
+        if not self.opt_type:
             sig_points = self.model.make_prediction(
                 df, self.btcd, self.btcdom, sig_points, ttype, exchange_name
             )

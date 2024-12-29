@@ -152,3 +152,11 @@ class MEXC(ApiBase):
         return tickers[["time", "open", "high", "low", "close", "volume"]].reset_index(
             drop=True
         )
+
+
+# if __name__ == "__main__":
+#     mexc = MEXC()
+#     min_time = datetime.now().replace(microsecond=0, second=0, minute=0) -\
+#           pd.to_timedelta(365 * 10, unit="D")
+#     data = mexc.get_historical_klines("FURUCOMBOUSDT", "4h", 200, min_time)
+#     data.to_pickle("FURUCOMBOUSDT_1h.pkl")

@@ -231,10 +231,8 @@ class SignalStat:
             # (close_smooth_price - signal_price) / close_smooth_price
             tmp["close_smooth_price"] = [close_smooth_prices[i]]
             tmp[f"pct_price_diff_{i+1}"] = (
-                (tmp["close_smooth_price"] - tmp["signal_smooth_price"])
-                / tmp["close_smooth_price"]
-                * 100
-            )
+                tmp["close_smooth_price"] - tmp["signal_smooth_price"]
+            ) + 1e-8 / (tmp["close_smooth_price"] + 1e-8) * 100
             if ttype == "buy":
                 # calculater MFE and MAE
                 mfe = max(max(high_result_prices[: i + 1]) - signal_price, 0) / atr

@@ -143,6 +143,7 @@ class MEXC(ApiBase):
             if tickers.shape[0] > 0:
                 tickers = tickers[tickers[0] > tmp[0].max()]
             tickers = pd.concat([tmp, tickers])
+
             tmp_limit += limit
 
         tickers = tickers.rename(

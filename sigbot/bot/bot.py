@@ -712,12 +712,10 @@ class SigBot:
             print("\nLoad the datasets...")
             # start all futures exchange monitors
             for monitor in self.fut_ex_monitor_list:
-                if monitor.exchange == "MEXCFutures": # !!!
-                    monitor.mon_save_opt_dataframes(dt_now, historical, min_time)
+                monitor.mon_save_opt_dataframes(dt_now, historical, min_time)
             # start all spot exchange monitors
             for monitor in self.spot_ex_monitor_list:
-                if monitor.exchange == "MEXC": # !!!
-                    monitor.mon_save_opt_dataframes(dt_now, historical, min_time)
+                monitor.mon_save_opt_dataframes(dt_now, historical, min_time)
 
     def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool) -> None:
         """

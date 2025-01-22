@@ -115,7 +115,7 @@ All other settings are stored at `config` folder in `config_<ENV_variable_value>
 
 ### Run Docker container
 
-`docker run -v ${PWD}/sigbot:/sigbot sigbot`
+`docker run --rm -v ${PWD}/:/sigbot sigbot`
 
 ### Stop Docker container
 

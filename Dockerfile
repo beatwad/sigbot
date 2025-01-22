@@ -15,7 +15,7 @@ RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
   ./configure --prefix=/usr && \
   make && \
   make install && \
-  pip install ta-lib
+  pip install TA-Lib==0.4.31
 
 # Get time and timezone from host
 ENV TZ=Europe/Moscow

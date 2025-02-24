@@ -24,4 +24,4 @@ RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /sigbot
 
-CMD ["python", "main.py"]
+CMD ["./sigbot_run.sh"]

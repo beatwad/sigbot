@@ -1,6 +1,6 @@
 #!/bin/sh
 while true
 do
-  docker run --rm -v ${PWD}/:/sigbot sigbot
+  python3 main.py
   sleep 60
 done

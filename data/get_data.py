@@ -23,7 +23,7 @@ from api.mexc_futures_api import MEXCFutures
 from api.okex_api import OKEX
 from api.okex_swap_api import OKEXSwap
 from api.tvdatafeed.main import Interval, TvDatafeed
-from log.log import logger
+from loguru import logger
 
 bybit_key = os.getenv("BYBIT_KEY")
 bybit_secret = os.getenv("BYBIT_SECRET")

@@ -5,11 +5,14 @@ import sys
 from datetime import datetime
 from os import environ, remove
 from time import sleep
+import time
+from loguru import logger
 
 from bot.bot import SigBot
 from config.config import ConfigFactory
 from log.log import format_exception
 
+logger.add("log/log.log")
 
 class Main:
     """
@@ -83,8 +86,8 @@ class Main:
                 if not self.error_notification_sent:
                     format_exception()
                     text = f"Catch an exception: {sys.exc_info()[1]}"
-                    main.sigbot.telegram_bot.send_message(
-                        main.sigbot.telegram_bot.chat_ids["Errors"], None, text
+                    self.sigbot.telegram_bot.send_message(
+                        self.sigbot.telegram_bot.chat_ids["Errors"], None, text
                     )
                     self.error_notification_sent = True
             _dt2 = datetime.now()
@@ -101,11 +104,11 @@ class Main:
             self.new_data_flag = False
             sleep(self.bot_cycle_length)
 
-
-if __name__ == "__main__":
+def main_cycle() -> None:
     # Get configs
     configs_ = ConfigFactory.factory(environ).configs
     print("Start of cycle", flush=True)
+    logger.info("Start of cycle")
     dt1 = dt2 = datetime.now()
     # sigbot init
     main = Main(load_tickers=True, **configs_)
@@ -115,6 +118,13 @@ if __name__ == "__main__":
         main.cycle()
         dt2 = datetime.now()
     print("End of cycle", flush=True)
+    logger.info("End of cycle")
     # terminate Telegram bot process
     main.sigbot.telegram_bot_process.terminate()
     main.sigbot.telegram_bot_process.join()
+
+
+if __name__ == "__main__":
+    while True:
+        main_cycle()
+        time.sleep(10)

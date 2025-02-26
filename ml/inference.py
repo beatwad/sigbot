@@ -10,7 +10,7 @@ import joblib
 import pandas as pd
 
 from indicators import indicators
-from log.log import logger
+from loguru import logger
 
 
 class Model:

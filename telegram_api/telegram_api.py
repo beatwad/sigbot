@@ -19,7 +19,8 @@ import telegram
 from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
-from log.log import exception, logger
+from loguru import logger
+from log.log import exception
 from visualizer.visualizer import Visualizer
 
 # Disable SettingWithCopyWarning because it's not necessary here

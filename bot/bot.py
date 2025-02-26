@@ -17,7 +17,7 @@ from dotenv import find_dotenv, load_dotenv
 from config.config import ConfigFactory
 from data.get_data import DataFactory, GetData
 from indicators.indicators import IndicatorFactory
-from log.log import logger
+from loguru import logger
 from ml.inference import Model
 from signal_stat.signal_stat import SignalStat
 from signals.find_signal import FindSignal

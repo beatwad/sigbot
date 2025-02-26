@@ -85,7 +85,7 @@ eth_expected = [np.array([18, 19])]
 )
 def test_higher_bound(mocker, timeframe, ticker, high_bound, expected):
     mocker.patch("api.binance_api.Binance.connect_to_api", return_value=None)
-    mocker.patch("log.log.create_logger")
+    # mocker.patch("log.log.create_logger")
     dfs = create_test_data()
     stoch_sig = SignalFactory().factory("STOCH", "sell", configs)
 

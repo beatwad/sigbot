@@ -5,7 +5,7 @@ its exceptions.
 
 import functools
 import inspect
-import logging
+from loguru import logger
 import threading
 from logging.handlers import RotatingFileHandler
 from os import environ, path
@@ -17,34 +17,34 @@ from config.config import ConfigFactory
 configs = ConfigFactory.factory(environ).configs
 
 
-def create_logger():
-    """
-    Creates a logging object and returns it
-    """
-    _logger = logging.getLogger("example_logger")
-    _logger.setLevel(logging.INFO)
-    # create the logging file handler
-    basedir = path.abspath(path.dirname(__file__))
-    log_path = configs["Log"]["params"]["log_path"]
-    log_file = f"{basedir}/{log_path}"
-    fh = RotatingFileHandler(
-        log_file,
-        mode="a",
-        maxBytes=5 * 1024 * 1024,
-        backupCount=2,
-        encoding=None,
-        delay=False,
-    )
-    fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    formatter = logging.Formatter(fmt)
-    fh.setFormatter(formatter)
-    # add handler to logger object
-    _logger.addHandler(fh)
-    return _logger
+# def create_logger():
+#     """
+#     Creates a logging object and returns it
+#     """
+#     _logger = logging.getLogger("example_logger")
+#     _logger.setLevel(logging.INFO)
+#     # create the logging file handler
+#     basedir = path.abspath(path.dirname(__file__))
+#     log_path = configs["Log"]["params"]["log_path"]
+#     log_file = f"{basedir}/{log_path}"
+#     fh = RotatingFileHandler(
+#         log_file,
+#         mode="a",
+#         maxBytes=5 * 1024 * 1024,
+#         backupCount=2,
+#         encoding=None,
+#         delay=False,
+#     )
+#     fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+#     formatter = logging.Formatter(fmt)
+#     fh.setFormatter(formatter)
+#     # add handler to logger object
+#     _logger.addHandler(fh)
+#     return _logger
 
 
-# create logger
-logger = create_logger()
+# # create logger
+# logger = create_logger()
 
 
 def format_exception(function: Union[Callable, None] = None) -> None:
@@ -60,7 +60,7 @@ def format_exception(function: Union[Callable, None] = None) -> None:
     if function is not None:
         err += function.__name__
     err += f", module {modname}."
-    logger.exception(err)
+    logger.error(err)
 
 
 def exception(function: Callable):

@@ -19,7 +19,7 @@ from pybit.exceptions import InvalidRequestError
 
 from api.api_base import ApiBase
 from config.config import ConfigFactory
-from log.log import logger
+from loguru import logger
 
 # Set environment variable
 configs = ConfigFactory.factory(environ).configs

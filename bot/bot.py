@@ -684,7 +684,7 @@ class SigBot:
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self._create_exchange_monitors()
         dt_now = datetime.now()
         if load:
-            print("\nLoad the datasets...")
+            logger.info("\nLoad the datasets...")
             # start all futures exchange monitors
             for monitor in self.fut_ex_monitor_list:
                 monitor.mon_save_opt_dataframes(dt_now, historical, min_time)
@@ -949,13 +949,13 @@ class MonitorExchange:
         """
         exchange_api = self.exchange_data["API"]
         tickers = self.exchange_data["tickers"]
-        print(80 * "=")
-        print(f"{self.exchange}")
+        logger.info(80 * "=")
+        logger.info(f"{self.exchange}")
         if self.exchange == "ByBitPerpetual":
             with open("model/bybit_tickers.json", "w+") as f:
                 json.dump(list(tickers.keys()), f)
         for ticker in tickers:
-            print(ticker)
+            logger.info(ticker)
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
                 if historical:
@@ -1074,7 +1074,7 @@ class MonitorExchange:
         dt_now = datetime.now()
         # list of processes
         processes = []
-        print(f"Exchange: {self.exchange}, number of tickers: {len(tickers)}", flush=True)
+        logger.info(f"Exchange: {self.exchange}, number of tickers: {len(tickers)}")
         for ticker in tickers:
             data_qty_higher = 0
             # flag that allows to pass the ticker in case of errors
@@ -1088,11 +1088,10 @@ class MonitorExchange:
                 )
                 if data_qty > 1:
                     if timeframe == self.sigbot.work_timeframe:
-                        print(
+                        logger.info(
                             f"Cycle number {self.sigbot.main.cycle_number}, "
                             f"exchange {self.exchange}, "
                             f"ticker {ticker}",
-                            flush=True,
                         )
                     else:
                         data_qty_higher = data_qty
@@ -1163,7 +1162,7 @@ class MonitorExchange:
                                 sig_points = self.sigbot.make_prediction(sig_points, self.exchange)
                                 # if trade mode is enabled and
                                 # model has made prediction - place an order
-                                print(
+                                logger.info(
                                     self.exchange,
                                     [
                                         [
@@ -1176,8 +1175,7 @@ class MonitorExchange:
                                             sp[9],
                                         ]
                                         for sp in sig_points
-                                    ],
-                                    flush=True,
+                                    ]
                                 )
                                 # send Telegram notification, create separate process
                                 # for each notification to run processes of signal

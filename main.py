@@ -68,7 +68,7 @@ class Main:
         """
         _dt1 = datetime.now()
         if self.check_time(_dt1) or self.cycle_number == 1:
-            print(_dt1, flush=True)
+            logger.info(_dt1)
             _dt1 = datetime.now()
             try:
                 self.sigbot.main_cycle()
@@ -92,10 +92,9 @@ class Main:
                     self.error_notification_sent = True
             _dt2 = datetime.now()
             dtm, dts = divmod((_dt2 - _dt1).total_seconds(), 60)
-            print(
+            logger.info(
                 f"Cycle is {self.cycle_number}, time for the cycle (min:sec) - "
-                f"{int(dtm)}:{round(dts, 2)}",
-                flush=True,
+                f"{int(dtm)}:{round(dts, 2)}"
             )
             self.cycle_number += 1
             self.new_data_flag = True
@@ -107,7 +106,6 @@ class Main:
 def main_cycle() -> None:
     # Get configs
     configs_ = ConfigFactory.factory(environ).configs
-    print("Start of cycle", flush=True)
     logger.info("Start of cycle")
     dt1 = dt2 = datetime.now()
     # sigbot init
@@ -117,7 +115,6 @@ def main_cycle() -> None:
     while (dt2 - dt1).total_seconds() // 3600 <= main.cycle_length or not main.new_data_flag:
         main.cycle()
         dt2 = datetime.now()
-    print("End of cycle", flush=True)
     logger.info("End of cycle")
     # terminate Telegram bot process
     main.sigbot.telegram_bot_process.terminate()

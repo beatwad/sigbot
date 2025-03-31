@@ -65,7 +65,10 @@ Both metrics are measured for 24 or 96 hours after signal (it depend on pattern)
 Trading Module is activated when specific combination of indicators (STOCH + RSI) appears at specific time on specific exchange (Bybit). It gathers corresponding ticker data (price history, volume history, funding rate, BTC dominance, etc.) and makes prediction if the price of that ticker will rise or fall. If model confidence level is more than a threshold -
 a trade is opened. Model that is used for prediction is LightGBM. Module can be found at `ml` folder.
 
-# Configuration
+
+# Install and Run
+
+### Configuration
 
 API keys for access to exchanges, Telegram and TradingView are stored in .env file.
 
@@ -84,30 +87,6 @@ Possible values of ENV variable:
 Example of .env file configuration can be found in `.env_example` file
 
 All other settings are stored at `config` folder in `config_<ENV_variable_value>.json` file.
-
-# Requirements
-
-* python `3.10`
-* pandas `1.4.3`
-* numpy `1.23.2`
-* ta-lib `0.4.19`
-* python-binance `1.0.16`
-* pybit `5.6.2`
-* python-dotenv `0.20.0`
-* jupyter `1.0.0`
-* mplfinance `0.12.9b1`
-* matplotlib `3.5.3`
-* pytest `7.1.2`
-* pytest-mock `3.12.0`
-* freezegun `1.2.2`
-* python-telegram-bot `21.1`
-* proplot `0.9.5`
-* requests `2.28.1`
-* joblib `1.2.0`
-* lightgbm `4.0.0`
-
-
-# Install and Run
 
 ### Build Docker image
 

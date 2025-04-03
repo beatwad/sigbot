@@ -68,7 +68,6 @@ class Main:
         """
         _dt1 = datetime.now()
         if self.check_time(_dt1) or self.cycle_number == 1:
-            logger.info(_dt1)
             _dt1 = datetime.now()
             try:
                 self.sigbot.main_cycle()

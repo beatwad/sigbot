@@ -14,7 +14,7 @@ Example of signal:
 
 ![Alt text](signal.jpg)
 
-Example of working bot can be found at https://t.me/crypto_signal_bot_group
+Example of working bot can be found in this Telegram group https://t.me/crypto_signal_bot_group
 
 ### Supported exchanges:
 - Binance

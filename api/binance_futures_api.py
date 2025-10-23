@@ -254,3 +254,19 @@ class BinanceFutures(ApiBase):
         )
         funding_rates["time"] = (funding_rates["time"] // 1000) * 1000
         return funding_rates[["time", "funding_rate"]].reset_index(drop=True)
+
+
+if __name__ == "__main__":
+    import os
+
+    from dotenv import find_dotenv, load_dotenv
+
+    load_dotenv(find_dotenv("../.env"), verbose=True)
+
+    ticker = "BTCUSDT"
+    key = os.getenv("BINANCE_KEY")
+    secret = os.getenv("BINANCE_SECRET")
+
+    binance = BinanceFutures(key, secret)
+    klines = binance.get_klines(ticker, "1h", 1000)
+    print(klines)

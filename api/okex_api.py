@@ -175,3 +175,11 @@ class OKEX(ApiBase):
             {0: "time", 1: "open", 2: "high", 3: "low", 4: "close", 6: "volume"}, axis=1
         )
         return tickers[["time", "open", "high", "low", "close", "volume"]].reset_index(drop=True)
+
+
+if __name__ == "__main__":
+    ticker = "BTC-USDT"
+
+    binance = OKEX()
+    klines = binance.get_klines(ticker, "1h", 1000)
+    print(klines)

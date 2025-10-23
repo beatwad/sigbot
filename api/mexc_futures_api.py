@@ -216,3 +216,11 @@ class MEXCFutures(ApiBase):
             {"settleTime": "time", "fundingRate": "funding_rate"}, axis=1
         )
         return funding_rates[["time", "funding_rate"]][::-1].reset_index(drop=True)
+
+
+if __name__ == "__main__":
+    ticker = "BTC_USDT"
+
+    mexc = MEXCFutures()
+    klines = mexc.get_klines(ticker, "1h", 1000)
+    print(klines)

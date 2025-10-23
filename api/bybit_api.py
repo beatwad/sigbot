@@ -178,3 +178,19 @@ class ByBit(ApiBase):
         return tickers[["time", "open", "high", "low", "close", "volume"]][::-1].reset_index(
             drop=True
         )
+
+
+if __name__ == "__main__":
+    import os
+
+    from dotenv import find_dotenv, load_dotenv
+
+    load_dotenv(find_dotenv("../.env"), verbose=True)
+
+    ticker = "BTCUSDT"
+    key = os.getenv("BINANCE_KEY")
+    secret = os.getenv("BINANCE_SECRET")
+
+    binance = ByBit(key, secret)
+    klines = binance.get_klines(ticker, "1h", 1000)
+    print(klines)

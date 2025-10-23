@@ -239,3 +239,11 @@ class OKEXSwap(ApiBase):
             {"fundingTime": "time", "fundingRate": "funding_rate"}, axis=1
         )
         return funding_rates[["time", "funding_rate"]][::-1].reset_index(drop=True)
+
+
+if __name__ == "__main__":
+    ticker = "BTC-USDT"
+
+    binance = OKEXSwap()
+    klines = binance.get_klines(ticker, "1h", 1000)
+    print(klines)

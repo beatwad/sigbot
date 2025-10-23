@@ -198,3 +198,19 @@ class Binance(ApiBase):
             {0: "time", 1: "open", 2: "high", 3: "low", 4: "close", 7: "volume"}, axis=1
         )
         return tickers[["time", "open", "high", "low", "close", "volume"]].reset_index(drop=True)
+
+
+if __name__ == "__main__":
+    import os
+
+    from dotenv import find_dotenv, load_dotenv
+
+    load_dotenv(find_dotenv("../.env"), verbose=True)
+
+    ticker = "BTCUSDT"
+    key = os.getenv("BINANCE_KEY")
+    secret = os.getenv("BINANCE_SECRET")
+
+    binance = Binance(key, secret)
+    klines = binance.get_klines(ticker, "1h", 1000)
+    print(klines)

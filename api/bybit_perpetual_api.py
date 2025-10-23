@@ -14,12 +14,12 @@ from typing import Dict, List, Tuple, Union
 
 import pandas as pd
 import pybit
+from loguru import logger
 from pybit import unified_trading
 from pybit.exceptions import InvalidRequestError
 
 from api.api_base import ApiBase
 from config.config import ConfigFactory
-from loguru import logger
 
 # Set environment variable
 configs = ConfigFactory.factory(environ).configs
@@ -881,7 +881,7 @@ class ByBitPerpetual(ApiBase):
                                 price, direction, tick_size
                             )
                             logger.info(
-                                f"Attempt number {i+1}, ticker price is {price}, "
+                                f"Attempt number {i + 1}, ticker price is {price}, "
                                 f"trigger price is {trigger_price}"
                             )
                             continue
@@ -889,3 +889,19 @@ class ByBitPerpetual(ApiBase):
                             break
                 sleep(0.1)
         return True, message
+
+
+if __name__ == "__main__":
+    import os
+
+    from dotenv import find_dotenv, load_dotenv
+
+    load_dotenv(find_dotenv("../.env"), verbose=True)
+
+    ticker = "BTCUSDT"
+    key = os.getenv("BINANCE_KEY")
+    secret = os.getenv("BINANCE_SECRET")
+
+    binance = ByBitPerpetual(key, secret)
+    klines = binance.get_klines(ticker, "1h", 1000)
+    print(klines)

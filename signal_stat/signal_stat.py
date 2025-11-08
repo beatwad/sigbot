@@ -46,12 +46,9 @@ class SignalStat:
         self.higher_tf_indicator_set = {
             i for i in configs["Higher_TF_indicator_list"] if i != "Trend"
         }
-        if opt_type == "ml":
+        if opt_type == "ml" or opt_type == "optimize":
             self.buy_stat_path = f"../ml/signal_stat/buy_stat_{self.work_timeframe}.pkl"
             self.sell_stat_path = f"../ml/signal_stat/sell_stat_{self.work_timeframe}.pkl"
-        elif opt_type == "optimize":
-            self.buy_stat_path = f"../optimizer/signal_stat/buy_stat_{self.work_timeframe}.pkl"
-            self.sell_stat_path = f"../optimizer/signal_stat/sell_stat_{self.work_timeframe}.pkl"
         else:
             self.buy_stat_path = f"signal_stat/buy_stat_{self.work_timeframe}.pkl"
             self.sell_stat_path = f"signal_stat/sell_stat_{self.work_timeframe}.pkl"
@@ -225,19 +222,19 @@ class SignalStat:
             # calculate price diff :
             # (close_smooth_price - signal_price) / close_smooth_price
             tmp["close_smooth_price"] = [close_smooth_prices[i]]
-            tmp[f"pct_price_diff_{i+1}"] = (
+            tmp[f"pct_price_diff_{i + 1}"] = (
                 tmp["close_smooth_price"] - tmp["signal_smooth_price"]
             ) + 1e-8 / (tmp["close_smooth_price"] + 1e-8) * 100
             if ttype == "buy":
                 # calculater MFE and MAE
                 mfe = max(max(high_result_prices[: i + 1]) - signal_price, 0) / atr
-                tmp[f"mfe_{i+1}"] = [mfe]
-                tmp[f"mae_{i+1}"] = max(signal_price - min(low_result_prices[: i + 1]), 0) / atr
+                tmp[f"mfe_{i + 1}"] = [mfe]
+                tmp[f"mae_{i + 1}"] = max(signal_price - min(low_result_prices[: i + 1]), 0) / atr
             else:
                 # calculater MFE and MAE
                 mfe = max(signal_price - min(low_result_prices[: i + 1]), 0) / atr
-                tmp[f"mfe_{i+1}"] = [mfe]
-                tmp[f"mae_{i+1}"] = max(max(high_result_prices[: i + 1]) - signal_price, 0) / atr
+                tmp[f"mfe_{i + 1}"] = [mfe]
+                tmp[f"mae_{i + 1}"] = max(max(high_result_prices[: i + 1]) - signal_price, 0) / atr
             # drop unnecessary columns
             tmp = tmp.drop(["close_smooth_price"], axis=1)
         # if can't find similar statistics in the dataset -
@@ -253,9 +250,11 @@ class SignalStat:
         ):
             stat = pd.concat([stat, tmp], ignore_index=True)
         else:
-            mfe_cols = [f"mfe_{i+1}" for i in range(len(high_result_prices))]
-            mae_cols = [f"mae_{i+1}" for i in range(len(high_result_prices))]
-            pct_price_diff_cols = [f"pct_price_diff_{i+1}" for i in range(len(high_result_prices))]
+            mfe_cols = [f"mfe_{i + 1}" for i in range(len(high_result_prices))]
+            mae_cols = [f"mae_{i + 1}" for i in range(len(high_result_prices))]
+            pct_price_diff_cols = [
+                f"pct_price_diff_{i + 1}" for i in range(len(high_result_prices))
+            ]
             stat.loc[
                 (stat["time"] == time)
                 & (stat["ticker"] == ticker)

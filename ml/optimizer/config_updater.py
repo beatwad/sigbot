@@ -60,7 +60,7 @@ class ConfigUpdater:
                 The updated dictionary.
             """
             for key, value in d.items():
-                if type(value) == list:
+                if isinstance(value, list):
                     d[key] = value[0]
                 else:
                     d[key] = helper(value)

@@ -195,6 +195,9 @@ class BinanceFutures(ApiBase):
             tickers = pd.concat([tmp, tickers])
             tmp_limit += limit
 
+        if tickers.shape[0] == 0:
+            return pd.DataFrame(columns=["time", "open", "high", "low", "close", "volume"])
+
         tickers = tickers.rename(
             {0: "time", 1: "open", 2: "high", 3: "low", 4: "close", 7: "volume"}, axis=1
         )

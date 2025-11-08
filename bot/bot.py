@@ -13,11 +13,11 @@ from typing import List, Tuple, Union
 
 import pandas as pd
 from dotenv import find_dotenv, load_dotenv
+from loguru import logger
 
 from config.config import ConfigFactory
 from data.get_data import DataFactory, GetData
 from indicators.indicators import IndicatorFactory
-from loguru import logger
 from ml.inference import Model
 from signal_stat.signal_stat import SignalStat
 from signals.find_signal import FindSignal
@@ -165,7 +165,7 @@ class SigBot:
             except Exception as exc:
                 del self.exchanges[ex]
                 logger.exception(
-                    f"Catch an exception while accessing" f"the exchange {ex}. \nException is {exc}"
+                    f"Catch an exception while accessingthe exchange {ex}. \nException is {exc}"
                 )
                 continue
             # filter tickers that were used by previous exchanges
@@ -664,7 +664,6 @@ class SigBot:
     def save_opt_dataframes(
         self,
         load: bool = False,
-        historical: bool = False,
         min_time: Union[datetime, None] = None,
     ) -> None:
         """
@@ -674,23 +673,18 @@ class SigBot:
         ----------
         load
             Flag that defines if candle data must be loaded from the internet
-        historical
-            Flag that defines if we need to load only the latest candle data (False)
-            or we need to load all available candle data (True)
-            from min_time and until current time.
         min_time
             Time from which historical candle data will be loaded.
         """
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self._create_exchange_monitors()
-        dt_now = datetime.now()
         if load:
             logger.info("\nLoad the datasets...")
             # start all futures exchange monitors
             for monitor in self.fut_ex_monitor_list:
-                monitor.mon_save_opt_dataframes(dt_now, historical, min_time)
+                monitor.mon_save_opt_dataframes(min_time)
             # start all spot exchange monitors
             for monitor in self.spot_ex_monitor_list:
-                monitor.mon_save_opt_dataframes(dt_now, historical, min_time)
+                monitor.mon_save_opt_dataframes(min_time)
 
     def save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool) -> None:
         """
@@ -930,20 +924,12 @@ class MonitorExchange:
         """Save statistics for every ticker"""
         self.sigbot.sb_save_statistics()
 
-    def mon_save_opt_dataframes(
-        self, dt_now: datetime, historical: bool, min_time: Union[datetime, None]
-    ) -> None:
+    def mon_save_opt_dataframes(self, min_time: Union[datetime, None]) -> None:
         """
         Save dataframe for every ticker for further indicator/signal optimization
 
         Parameters
         ----------
-        dt_now
-            Current datetime value.
-        historical
-            Flag that defines if we need to load only the latest candle data (False)
-            or we need to load all available candle data (True)
-            from min_time and until current time.
         min_time
             Time from which historical candle data will be loaded.
         """
@@ -958,32 +944,39 @@ class MonitorExchange:
             logger.info(ticker)
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
-                if historical:
-                    # get historical data for some period (before min_time)
-                    df, data_qty = self.sigbot.get_historical_data(
-                        exchange_api, ticker, timeframe, min_time
-                    )
+                tmp_ticker = self.sigbot.delete_redundant_symbols_from_ticker(ticker)
+                df_path = f"tickers/{tmp_ticker}_{timeframe}.pkl"
+                # try to load dataframe from the disk
+                # if file is found - load historical data until last time in the dataframe
+                try:
+                    tmp = pd.read_pickle(df_path)  # nosec
+                except FileNotFoundError:
+                    tmp = None
                 else:
-                    df, data_qty = self.sigbot.get_new_data(exchange_api, ticker, timeframe, dt_now)
+                    last_time = tmp["time"].max()
+                    min_time = last_time - pd.to_timedelta(1000, unit="minutes")
+                # get historical data for some period (before min_time)
+                df, data_qty = self.sigbot.get_historical_data(
+                    exchange_api, ticker, timeframe, min_time
+                )
                 # If we previously download this dataframe to the disk -
                 # update it with new data
                 if data_qty > 1:
-                    tmp_ticker = self.sigbot.delete_redundant_symbols_from_ticker(ticker)
-                    try:
-                        tmp = pd.read_pickle(  # nosec
-                            f"../optimizer/ticker_dataframes/" f"{tmp_ticker}_{timeframe}.pkl"
-                        )
-                    except FileNotFoundError:
-                        pass
-                    else:
-                        if not historical:
-                            first_time = df["time"].min()
-                            tmp = tmp[tmp["time"] < first_time]
-                            df = pd.concat([tmp, df], ignore_index=True)
-                    df_path = f"../optimizer/ticker_dataframes/{tmp_ticker}_{timeframe}.pkl"
+                    if tmp is not None:
+                        first_time = df["time"].min()
+                        tmp = tmp[tmp["time"] < first_time]
+                        df = pd.concat([tmp, df], ignore_index=True)
                     df = df.drop_duplicates().reset_index(drop=True)
                     df.to_pickle(df_path)
                 else:
+                    if tmp is not None:
+                        # delete dataframes for all timeframes from the disk
+                        df_path_1h = f"tickers/{tmp_ticker}_1h.pkl"
+                        df_path_4h = f"tickers/{tmp_ticker}_4h.pkl"
+                        if os.path.exists(df_path_1h):
+                            os.remove(df_path_1h)
+                        if os.path.exists(df_path_4h):
+                            os.remove(df_path_4h)
                     break
 
     def mon_save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool) -> None:
@@ -1018,9 +1011,7 @@ class MonitorExchange:
                 ):
                     try:
                         tmp_ticker = self.sigbot.delete_redundant_symbols_from_ticker(ticker)
-                        df = pd.read_pickle(  # nosec
-                            f"../optimizer/ticker_dataframes/" f"{tmp_ticker}_{timeframe}.pkl"
-                        )
+                        df = pd.read_pickle(f"tickers/{tmp_ticker}_{timeframe}.pkl")  # nosec
                     except FileNotFoundError:
                         continue
                 else:
@@ -1175,7 +1166,7 @@ class MonitorExchange:
                                             sp[9],
                                         ]
                                         for sp in sig_points
-                                    ]
+                                    ],
                                 )
                                 # send Telegram notification, create separate process
                                 # for each notification to run processes of signal

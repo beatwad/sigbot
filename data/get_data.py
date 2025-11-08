@@ -13,6 +13,7 @@ from time import sleep
 from typing import List, Tuple
 
 import pandas as pd
+from loguru import logger
 
 from api.binance_api import Binance
 from api.binance_futures_api import BinanceFutures
@@ -23,7 +24,6 @@ from api.mexc_futures_api import MEXCFutures
 from api.okex_api import OKEX
 from api.okex_swap_api import OKEXSwap
 from api.tvdatafeed.main import Interval, TvDatafeed
-from loguru import logger
 
 bybit_key = os.getenv("BYBIT_KEY")
 bybit_secret = os.getenv("BYBIT_SECRET")
@@ -111,31 +111,6 @@ class GetData:
             self.tv_data = TvDatafeed(username=tv_username, password=tv_password)
         else:
             self.tv_data = None
-
-    @staticmethod
-    def load_saved_data(df: pd.DataFrame, ticker: str, timeframe: str) -> pd.DataFrame:
-        """
-        Load previously saved data for a specific ticker and timeframe if available.
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            Dataframe containing existing candle data.
-        ticker : str
-            Ticker symbol (e.g., BTCUSDT, ETHUSDT).
-        timeframe : str
-            Timeframe for the candles (e.g., '5m', '1h', '4h').
-
-        Returns
-        -------
-        pd.DataFrame
-            Dataframe with the saved candlestick data if available.
-        """
-        try:
-            df = pd.read_pickle(f"optimizer/ticker_dataframes/{ticker}_{timeframe}.pkl")  # nosec
-        except FileNotFoundError:
-            pass
-        return df
 
     def get_data(
         self, df: pd.DataFrame, ticker: str, timeframe: str, dt_now: datetime
@@ -293,6 +268,8 @@ class GetData:
         for i in range(self.num_retries):
             try:
                 klines = self.api.get_historical_klines(ticker, timeframe, self.limit, min_time)
+                if klines.shape[0] == 0:
+                    return df, 0
                 funding_rates = self.api.get_historical_funding_rate(ticker, self.limit, min_time)
             except BaseException:  # noqa
                 if i == self.num_retries - 1:

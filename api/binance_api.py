@@ -194,6 +194,9 @@ class Binance(ApiBase):
             tickers = pd.concat([tmp, tickers])
             tmp_limit += limit
 
+        if tickers.shape[0] == 0:
+            return pd.DataFrame(columns=["time", "open", "high", "low", "close", "volume"])
+
         tickers = tickers.rename(
             {0: "time", 1: "open", 2: "high", 3: "low", 4: "close", 7: "volume"}, axis=1
         )
@@ -207,10 +210,21 @@ if __name__ == "__main__":
 
     load_dotenv(find_dotenv("../.env"), verbose=True)
 
-    ticker = "BTCUSDT"
+    ticker = "PLAUSDT"
     key = os.getenv("BINANCE_KEY")
     secret = os.getenv("BINANCE_SECRET")
 
     binance = Binance(key, secret)
-    klines = binance.get_klines(ticker, "1h", 1000)
-    print(klines)
+    # klines = binance.get_historical_klines(
+    #     ticker, "1h", 1000, datetime.now() - pd.to_timedelta(1, unit="D")
+    # )
+    # print(klines)
+
+    limit = 100
+    timestamp_ = int(binance.get_timestamp() / 3600) * 3600
+    interval_secs = binance.convert_interval_to_secs("1h")
+    start_time = (timestamp_ - (limit * interval_secs)) * 1000
+    tmp = pd.DataFrame(
+        binance.client.get_klines(symbol=ticker, interval="1h", limit=limit, startTime=start_time)
+    )
+    print(tmp)

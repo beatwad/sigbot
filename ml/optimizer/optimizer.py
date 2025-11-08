@@ -74,13 +74,6 @@ class Optimizer:
         for f in files:
             remove(f)
 
-    @staticmethod
-    def clean_prev_tickers_dfs():
-        """Clean previous ticker market data files"""
-        files = glob.glob("../optimizer/ticker_dataframes/*.pkl")
-        for f in files:
-            remove(f)
-
     def clean_dict(self, dict1: dict):
         """
         Clean optimization dictionary by removing unwanted parameters
@@ -290,7 +283,6 @@ class Optimizer:
         opt_limit: int,
         load: bool,
         op_type: Union[str, None],
-        historical: bool = False,
         min_time: Union[datetime, None] = None,
     ):
         """
@@ -314,8 +306,6 @@ class Optimizer:
             Flag that shows if SigBot class is used in optimization mode or not.
             If it's used in optimization mode than some class instances aren't
             need to be initialized.
-        historical : bool, optional
-            Whether to use historical data (default is False).
         min_time :datetime, optional
             The earliest time from which historical data are retrieved.
 
@@ -349,7 +339,7 @@ class Optimizer:
                 sb.database = copy.deepcopy(database)
             # load candle data from exchanges only at first time
             if load:
-                sb.save_opt_dataframes(ttype, historical, min_time)
+                sb.save_opt_dataframes(load, min_time)
                 load = False
             sb.save_opt_statistics(ttype, opt_limit, not load_tickers)
             # save candle data from exchanges only at second and next times

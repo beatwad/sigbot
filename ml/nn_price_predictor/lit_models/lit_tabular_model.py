@@ -1,12 +1,8 @@
-from argparse import Namespace
-
 import lightning as L
 import torch
 from models.fc_net import FCNet
 from torch import nn, optim
 from torchmetrics import Accuracy
-
-from data.tabular_data_module import TabularDataModule
 
 LR = 1e-5
 DATA_CONFIG = {

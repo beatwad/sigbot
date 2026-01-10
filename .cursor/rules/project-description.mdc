@@ -1,0 +1,147 @@
+---
+alwaysApply: true
+---
+
+# sigbot Project Rules
+
+## Project Description
+
+sigbot is a cryptocurrency signal bot that analyzes 2500+ trading pairs from 8 different crypto exchanges using technical indicators and machine learning.
+
+### Supported Exchanges
+- Binance & Binance Futures
+- Bybit & Bybit Perpetual
+- OKEX & OKEX Swap
+- MEXC & MEXC Futures
+
+### Main Modules
+
+**1. Signal Module**
+- Analyzes indicators from trading pairs and detects signal combinations
+- Sends Telegram notifications to topic-organized channels (by indicator combination and trade side)
+- Provides signal visualizations with candle/indicator plots
+- Includes profitability statistics for similar historical signals
+
+**2. Trading Module**
+- Uses LightGBM model for price prediction
+- Automatically places trades on Bybit when model confidence exceeds threshold
+- Activated for STOCH + RSI indicator combination
+
+### Supported Indicators
+- **Pattern** - Candle patterns (Head & Shoulders, Double Bottom/Top, Triangles, Swing) - 1h timeframe
+- **RSI** - RSI 14 with borders 35/65 - 1h timeframe
+- **Stochastic** - Stochastic 9/7/3 with borders 25/75 - 1h timeframe
+- **Trend** - Linear regression (20-30 candles) - 4h timeframe
+- **MACD** - MACD 12/26/9 crossovers - 4h timeframe
+- **Pump-Dump** - Price moves > 99th percentile - 1h timeframe
+- **High Volume** - Volume > 99th percentile - 1h timeframe
+
+### Signal Combinations
+- Pattern + Trend
+- Stochastic + RSI
+- Stochastic + RSI + Trend
+- MACD
+- Pump-Dump + Trend
+- High Volume
+
+### Statistics Metrics
+- **E-ratio (Edge ratio)** - MFE/MAE ratio (>1 favors trade side, <1 against)
+- **MoR (Measure of Return)** - (Current_price - Signal_price) / Signal_price * 100
+- Both metrics aggregated over 24-96 hours for pattern evaluation
+
+### Configuration
+- JSON-based config files in `config/` folder
+- Environment-based settings via ENV variable: `1h_4h`, `debug`, `test`, `optimize`
+- API keys stored in `.env` file
+- Runs in Docker containers with 24-hour cycle windows
+
+## Code Style Rules
+
+### Formatting
+- **Python version**: 3.8+
+- **Formatter**: Black with `line-length=100`
+- **Import sorting**: isort with profile "black"
+- **Line length**: 100 characters max
+- **Target version**: Python 3.12 for Black config
+
+### Documentation
+- **Module docstrings**: Required at top of every module explaining purpose
+- **Docstring style**: NumPy/Google style with sections:
+  - Parameters (with types)
+  - Returns (with types)
+  - Attributes (for classes)
+  - Raises (when applicable)
+- **Type hints**: Required for all function parameters and return types
+  - Use `typing` module: `List`, `Tuple`, `Union`, `Optional`, etc.
+
+### Architecture Patterns
+- **Factory pattern**: Use for creating exchange APIs, indicators, configs
+  - Examples: `ConfigFactory`, `DataFactory`, `IndicatorFactory`
+- **Class-based design**: One class per responsibility
+- **Abstract base classes**: Use for extensibility (e.g., `SignalBase`, `GetData`)
+- **Configuration-driven**: Settings in JSON files, loaded via `config.py`
+
+### Naming Conventions (PEP 8)
+- **Functions/variables**: `snake_case`
+- **Classes**: `PascalCase`
+- **Constants**: `UPPER_CASE`
+- **Standard variable names**:
+  - `df` - pandas DataFrames
+  - `ttype` - trade type ("buy" or "sell")
+  - `configs` - configuration dictionaries
+  - `dt_now` - datetime.now() values
+  - `sig_points` - signal points list
+  - `exchange_api` - exchange API instances
+
+### Error Handling & Logging
+- **Logger**: Use `loguru` for all logging
+- **Exception handling**:
+  - Use try/except blocks for API calls and data processing
+  - Log exceptions with `logger.exception()` for full traceback
+  - Include context (ticker, exchange, timeframe) in error messages
+- **Graceful degradation**: Allow bot to continue if single ticker/exchange fails
+
+### Testing
+- **Framework**: pytest in `tests/` directory
+- **Test files**: Prefix with `test_` (e.g., `test_sigbot.py`)
+- **Mock external APIs**: Use `pytest-mock`, `freezegun` for datetime
+- **Test data**: Store in `tests/` subdirectories
+
+### Concurrency & Performance
+- **Multiprocessing**: Use for parallel operations (Telegram notifications, exchange monitoring)
+- **Process management**: Properly terminate and join processes
+- **Data updates**: Check for new data before processing (avoid redundant API calls)
+
+### Security
+- **Pickle safety**: Use `# nosec` comment for known-safe pickle operations
+- **Secrets**: Never commit API keys - store in `.env` file
+- **Git ignore**: Exclude `.env`, `venv/`, `__pycache__/`, model files
+
+### Project Structure
+```
+sigbot/
+├── api/              # Exchange API implementations
+├── bot/              # Main bot logic (SigBot class)
+├── config/           # JSON configuration files
+├── data/             # Data fetching utilities
+├── indicators/       # Technical indicator implementations
+├── ml/               # Machine learning models and inference
+├── signals/          # Signal detection logic
+├── telegram_api/     # Telegram bot integration
+├── visualizer/       # Chart generation
+├── tests/            # Unit and integration tests
+└── main.py           # Entry point
+```
+
+### Import Organization (isort)
+1. Standard library imports
+2. Third-party imports
+3. Local application imports
+4. Use absolute imports from project root
+
+### Common Patterns
+- **Database structure**: Nested dictionaries `{ticker: {timeframe: {data: {ttype: df}}}}`
+- **Signal points**: List of tuples/lists with structure:
+  - `[ticker, timeframe, index, ttype, timestamp, pattern, image_path, exchanges, stats, prediction]`
+- **Timeframes**: Work with standard format: `5m`, `15m`, `1h`, `4h`, `1d`
+- **Filtering chains**: Filter signals through multiple stages (duplicate, old, higher_tf)

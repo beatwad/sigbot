@@ -2,10 +2,12 @@
 
 import glob
 import sys
+import time
+import traceback
 from datetime import datetime
 from os import environ, remove
 from time import sleep
-import time
+
 from loguru import logger
 
 from bot.bot import SigBot
@@ -13,6 +15,7 @@ from config.config import ConfigFactory
 from log.log import format_exception
 
 logger.add("log/log.log")
+
 
 class Main:
     """
@@ -83,8 +86,9 @@ class Main:
                 sys.exit()
             except BaseException:  # noqa
                 if not self.error_notification_sent:
-                    format_exception()
-                    text = f"Catch an exception: {sys.exc_info()[1]}"
+                    tb_str = traceback.format_exc()
+                    text = f"Runtime error\n{tb_str}"
+                    logger.error(text)
                     self.sigbot.telegram_bot.send_message(
                         self.sigbot.telegram_bot.chat_ids["Errors"], None, text
                     )
@@ -101,6 +105,7 @@ class Main:
         else:
             self.new_data_flag = False
             sleep(self.bot_cycle_length)
+
 
 def main_cycle() -> None:
     # Get configs

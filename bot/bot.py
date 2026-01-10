@@ -794,17 +794,17 @@ class SigBot:
             _,
             _,
         ) = sig_points[0]
-        df = self.database[ticker][timeframe]["data"][ttype]
+        # df = self.database[ticker][timeframe]["data"][ttype] # !
         # RSI_STOCH pattern is inverted with respect to the trade sides
         if pattern == "STOCH_RSI_Volume24":
             if ttype == "buy":
                 ttype = "sell"
             else:
                 ttype = "buy"
-        if not self.opt_type:
-            sig_points = self.model.make_prediction(
-                df, self.btcd, self.btcdom, sig_points, ttype, exchange_name
-            )
+        # if not self.opt_type: # !
+        #     sig_points = self.model.make_prediction(
+        #         df, self.btcd, self.btcdom, sig_points, ttype, exchange_name
+        #     )
         return sig_points
 
     def main_cycle(self):

@@ -1,5 +1,15 @@
-version: '3'
+version: "3"
+
+# docker run --rm -v ${PWD}/:/sigbot sigbot
 
 services:
   app:
     build: .
+    image: sigbot
+    container_name: sigbot
+    volumes:
+      - .:/sigbot
+    working_dir: /sigbot
+    env_file:
+      - .env
+    command: python3 main.py

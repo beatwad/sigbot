@@ -1,4 +1,12 @@
+.git
+.env
+__pycache__
+*.pyc
+venv
+.vscode
+.idea
+log/*.log
+tests/
 optimizer
-tests
 signal_stat/*.pkl
 visualizer/images/*

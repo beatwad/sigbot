@@ -98,8 +98,6 @@ except Exception as e:
     rsi = np.nan  # or pd.Series(np.nan, index=df.index)
 ```
 
----
-
 ## Point 10 — `CFG.last_date` is hardcoded
 
 ```python

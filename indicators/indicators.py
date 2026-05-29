@@ -16,6 +16,7 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 import talib as ta
+from loguru import logger
 from scipy.signal import argrelmax, argrelmin
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
@@ -127,8 +128,9 @@ class RSI(Indicator):
                 rsi = ta.RSI(df["close"] * multiplier, **self.configs)
             else:
                 rsi = ta.RSI(df["close"], **self.configs)
-        except BaseException:  # noqa
-            rsi = 0
+        except Exception as e:
+            logger.warning(f"RSI indicator failed for {ticker}: {e}")
+            rsi = np.nan
         df["rsi"] = rsi
         return df
 
@@ -165,8 +167,9 @@ class STOCH(Indicator):
         """
         try:
             slowk, slowd = ta.STOCH(df["high"], df["low"], df["close"], **self.configs)
-        except BaseException:  # noqa
-            slowk, slowd = 0, 0
+        except Exception as e:
+            logger.warning(f"STOCH indicator failed for {ticker}: {e}")
+            slowk, slowd = np.nan, np.nan
         df["stoch_slowk"] = slowk
         df["stoch_slowd"] = slowd
         # add auxilary data
@@ -211,8 +214,9 @@ class Trend(Indicator):
             adx = ta.ADX(df["high"], df["low"], df["close"], **self.configs)
             plus_di = ta.PLUS_DI(df["high"], df["low"], df["close"], **self.configs)
             minus_di = ta.MINUS_DI(df["high"], df["low"], df["close"], **self.configs)
-        except BaseException:  # noqa
-            adx, plus_di, minus_di = 0, 0, 0
+        except Exception as e:
+            logger.warning(f"Trend indicator failed for {ticker}: {e}")
+            adx, plus_di, minus_di = np.nan, np.nan, np.nan
         df["linear_reg"] = adx
         df["linear_reg_angle"] = plus_di - minus_di
         return df
@@ -250,8 +254,9 @@ class MACD(Indicator):
         """
         try:
             macd, macdsignal, macdhist = ta.MACD(df["close"], **self.configs)
-        except BaseException:  # noqa
-            macd, macdsignal, macdhist = 0, 0, 0
+        except Exception as e:
+            logger.warning(f"MACD indicator failed for {ticker}: {e}")
+            macd, macdsignal, macdhist = np.nan, np.nan, np.nan
         df["macd"] = macd
         df["macdsignal"] = macdsignal
         df["macdhist"] = macdhist  # macd - macdsignal
@@ -292,8 +297,9 @@ class ATR(Indicator):
         """
         try:
             atr = ta.ATR(df["high"], df["low"], df["close"], **self.configs)
-        except BaseException:  # noqa
-            atr = 0
+        except Exception as e:
+            logger.warning(f"ATR indicator failed for {ticker}: {e}")
+            atr = np.nan
         df["atr"] = atr
         df["close_smooth"] = df["close"].rolling(self.configs["timeperiod"]).mean()
         return df
@@ -333,9 +339,10 @@ class SMA(Indicator):
         try:
             sma = ta.SMA(df["close"], timeperiod)
             sma_7 = ta.SMA(df["close"], timeperiod * 7)
-        except BaseException:  # noqa
-            sma = 0
-            sma_7 = 0
+        except Exception as e:
+            logger.warning(f"SMA indicator failed for {ticker}: {e}")
+            sma = np.nan
+            sma_7 = np.nan
         df["sma"] = sma
         df["sma_7"] = sma_7
         return df
@@ -374,8 +381,9 @@ class CCI(Indicator):
         timeperiod = self.configs["timeperiod"]
         try:
             cci = ta.CCI(df["high"], df["low"], df["close"], timeperiod)
-        except BaseException:  # noqa
-            cci = 0
+        except Exception as e:
+            logger.warning(f"CCI indicator failed for {ticker}: {e}")
+            cci = np.nan
         df["cci"] = cci
         return df
 
@@ -414,8 +422,9 @@ class SAR(Indicator):
         maximum = self.configs["maximum"]
         try:
             sar = ta.SAR(df["high"], df["low"], acceleration, maximum)
-        except BaseException:  # noqa
-            sar = 0
+        except Exception as e:
+            logger.warning(f"SAR indicator failed for {ticker}: {e}")
+            sar = np.nan
         df["sar"] = sar
         return df
 

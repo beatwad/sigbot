@@ -1,46 +1,5 @@
 # train_model.ipynb — Remaining Issues
 
-Points 1, 2, 3 and 5 are already fixed.
-
-
-## Point 4 — BTC.D / BTCDOM merge assigns back `"time"` column and may explode on duplicates
-
-In `add_indicators` (cell 13):
-
-```python
-df[btcd_cols]   = pd.merge(df[["time"]], btcd[btcd_cols],   how="left", on="time")
-df[btcdom_cols] = pd.merge(df[["time"]], btcdom[btcdom_cols], how="left", on="time")
-```
-
-`btcd_cols` and `btcdom_cols` both include `"time"`, so the merge result's `"time"` column is assigned back into `df["time"]` (harmless today, but confusing). More importantly, if `btcd` or `btcdom` contain duplicate timestamps, the left merge returns more rows than `df`, and the column assignment raises `ValueError`.
-
-The same pattern appears in `inference.py` (`prepare_data`).
-
-**Fix:**
-```python
-btcd_data_cols   = [c for c in btcd_cols   if c != "time"]
-btcdom_data_cols = [c for c in btcdom_cols if c != "time"]
-
-df[btcd_data_cols]   = pd.merge(df[["time"]], btcd[btcd_cols].drop_duplicates("time"),
-                                how="left", on="time")[btcd_data_cols].values
-df[btcdom_data_cols] = pd.merge(df[["time"]], btcdom[btcdom_cols].drop_duplicates("time"),
-                                how="left", on="time")[btcdom_data_cols].values
-```
-
-Apply the same fix in `ml/inference.py` (`prepare_data`, lines 107–108).
-
----
-
-Rows that hit TP early (target already set to 1) are retained even though their price history is incomplete. Rows that ran out of data with `target=0` are dropped. This asymmetry inflates the `target=1` class rate.
-
-**Fix:** skip the row unconditionally when data ends early:
-```python
-if target_buy.shape[0] == 0 or target_sell.shape[0] == 0:
-    pass_cycle = True
-    break
-```
-
----
 
 ## Point 6 — `buy_hours_to_save` / `sell_hours_to_save` are hardcoded magic lists
 

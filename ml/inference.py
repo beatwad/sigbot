@@ -8,9 +8,9 @@ import json
 
 import joblib
 import pandas as pd
+from loguru import logger
 
 from indicators import indicators
-from loguru import logger
 
 
 class Model:
@@ -104,8 +104,14 @@ class Model:
         for c in self.cols_to_scale:
             tmp_df[c] = tmp_df[c].pct_change() * 100
         # merge with BTC dominance dataframes
-        tmp_df[btcd_cols] = pd.merge(tmp_df[["time"]], btcd[btcd_cols], how="left", on="time")
-        tmp_df[btcdom_cols] = pd.merge(tmp_df[["time"]], btcdom[btcdom_cols], how="left", on="time")
+        btcd_data_cols = [c for c in btcd_cols if c != "time"]
+        tmp_df[btcd_data_cols] = pd.merge(
+            tmp_df[["time"]], btcd[btcd_cols].drop_duplicates("time"), how="left", on="time"
+        )[btcd_data_cols].values
+        btcdom_data_cols = [c for c in btcdom_cols if c != "time"]
+        tmp_df[btcdom_data_cols] = pd.merge(
+            tmp_df[["time"]], btcdom[btcdom_cols].drop_duplicates("time"), how="left", on="time"
+        )[btcdom_data_cols].values
         btcd_btcdom_cols = btcd_cols + btcdom_cols[1:]
         tmp_df[btcd_btcdom_cols] = tmp_df[btcd_btcdom_cols].ffill()
         tmp_df["weekday"] = 0

@@ -51,9 +51,12 @@ class Model:
         feature_path = configs["Model"]["params"]["feature_path"]
         with open(feature_path) as f:
             self.feature_dict = json.load(f)
-        # time (hour) when model is allowed to predict
-        self.time_to_predict_buy = configs["Model"]["params"]["time_to_predict_buy"]
-        self.time_to_predict_sell = configs["Model"]["params"]["time_to_predict_sell"]
+        # time (hour) when model is allowed to predict — loaded from profitable hours CSV
+        profitable_hours_path = configs["Model"]["params"]["profitable_hours_path"]
+        profitable_hours = pd.read_csv(profitable_hours_path)
+        last_row = profitable_hours.iloc[-1]
+        self.time_to_predict_buy = json.loads(last_row["profitable_buy_hours"])
+        self.time_to_predict_sell = json.loads(last_row["profitable_sell_hours"])
         self.cols_to_scale = configs["Model"]["params"]["cols_to_scale"]
         self.pred_thresh = configs["Model"]["params"]["pred_thresh"]
 

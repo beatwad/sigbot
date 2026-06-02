@@ -9,8 +9,7 @@ import json
 import joblib
 import pandas as pd
 from loguru import logger
-
-from indicators import indicators
+from utils.data_utils import add_indicators, merge_btc_dominance, scale_cols
 
 
 class Model:
@@ -92,31 +91,13 @@ class Model:
         pd.DataFrame
             A DataFrame containing prepared data for model prediction.
         """
-        btcd_cols = list(btcd.columns)
-        btcdom_cols = list(btcdom.columns)
         rows = []
         tmp_df = df.copy()
-        # add CCI and SAR indicators
-        cci = indicators.CCI(ttype, self.configs)
-        tmp_df = cci.get_indicator(tmp_df, "", "", 0)
-        # add SAR
-        sar = indicators.SAR(ttype, self.configs)
-        tmp_df = sar.get_indicator(tmp_df, "", "", 0)
-        # bring columns with highly different absolute values
-        # (for different tickers) to similar scale
-        for c in self.cols_to_scale:
-            tmp_df[c] = tmp_df[c].pct_change() * 100
-        # merge with BTC dominance dataframes
-        btcd_data_cols = [c for c in btcd_cols if c != "time"]
-        tmp_df[btcd_data_cols] = pd.merge(
-            tmp_df[["time"]], btcd[btcd_cols].drop_duplicates("time"), how="left", on="time"
-        )[btcd_data_cols].values
-        btcdom_data_cols = [c for c in btcdom_cols if c != "time"]
-        tmp_df[btcdom_data_cols] = pd.merge(
-            tmp_df[["time"]], btcdom[btcdom_cols].drop_duplicates("time"), how="left", on="time"
-        )[btcdom_data_cols].values
-        btcd_btcdom_cols = btcd_cols + btcdom_cols[1:]
-        tmp_df[btcd_btcdom_cols] = tmp_df[btcd_btcdom_cols].ffill()
+        tmp_df = add_indicators(tmp_df, ttype, self.configs)
+        tmp_df = merge_btc_dominance(tmp_df, btcd, btcdom)
+        tmp_df = tmp_df.ffill()
+        tmp_df = scale_cols(tmp_df, self.cols_to_scale)
+
         tmp_df["weekday"] = 0
         tmp_df["hour"] = 0
         # create dataframe for prediction
@@ -153,9 +134,7 @@ class Model:
                     row = pd.concat([row, tmp_row], axis=1)
             # if row contains NaNs - skip it
             if row.isnull().sum().sum() > 0:
-                logger.info(
-                    f"Ticker {ticker} signal with time " f"{point_time} contains NaNs, skip it"
-                )
+                logger.info(f"Ticker {ticker} signal with time {point_time} contains NaNs, skip it")
                 continue
             row.columns = self.feature_dict["features"]
             # add number of signal point for which prediction is made

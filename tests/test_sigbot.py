@@ -36,6 +36,10 @@ def sigbot(mocker):
     mocker.patch("joblib.load", return_value=None)
     mocker.patch("builtins.open", mocker.mock_open(read_data=None))
     mocker.patch("json.load", return_value=None)
+    mocker.patch(
+        "pandas.read_csv",
+        return_value=pd.DataFrame([{"profitable_buy_hours": "[]", "profitable_sell_hours": "[]"}]),
+    )
     main = MagicMock(cycle_number=2)
     sigbot = SigBot(main, **configs)
     sigbot.exchanges = {

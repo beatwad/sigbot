@@ -17,21 +17,6 @@ except ImportError:
     PermutationImportance = None
 
 
-params = {
-    "boosting_type": "gbdt",
-    "n_estimators": 1000,
-    "learning_rate": 0.02,
-    "max_depth": 6,
-    "subsample": 0.7,
-    "colsample_bytree": 0.7,
-    "verbosity": -1,
-    "importance_type": "gain",
-    "objective": "binary",
-    "metric": "average_precison",
-    "verbose": -1,
-}
-
-
 def ppv_npv_acc(y_true, y_pred):
     """Calculate confusion matrix and return harmonic mean score of Positive Predictive Value (PPV, precisoin) and Negative Predictive Value (NPV)"""
     try:
@@ -46,27 +31,8 @@ def ppv_npv_acc_lgbm(y_true, y_pred):
     return "ppv_npv_acc", ppv_npv_acc(y_true, y_pred), False
 
 
-def boruta_selction(df, n_folds=4):
+def boruta_selction(df, features, params, n_folds=4):
     boruta_df_ = pd.DataFrame()
-
-    features = [
-        c
-        for c in df.columns
-        if c
-        not in [
-            "time",
-            "target",
-            "ticker",
-            "pattern",
-            "ttype",
-            "weight",
-            "max_price_deviation",
-            "min_price_deviation",
-            "close_time",
-            "first_price",
-            "last_price",
-        ]
-    ]
 
     X, y, time = df[features], df["target"], df["time"]
 

@@ -70,7 +70,7 @@ class Optimizer:
         ttype : str
             Trade types for which statistics are being cleaned ('buy', 'sell').
         """
-        files = glob.glob(f"signal_stat/{ttype}_stat*.pkl")
+        files = glob.glob(f"data/signal_stat/{ttype}_stat*.pkl")
         for f in files:
             remove(f)
 

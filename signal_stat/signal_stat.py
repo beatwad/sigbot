@@ -47,8 +47,8 @@ class SignalStat:
             i for i in configs["Higher_TF_indicator_list"] if i != "Trend"
         }
         if opt_type == "ml" or opt_type == "optimize":
-            self.buy_stat_path = f"../ml/signal_stat/buy_stat_{self.work_timeframe}.pkl"
-            self.sell_stat_path = f"../ml/signal_stat/sell_stat_{self.work_timeframe}.pkl"
+            self.buy_stat_path = f"../ml/data/signal_stat/buy_stat_{self.work_timeframe}.pkl"
+            self.sell_stat_path = f"../ml/data/signal_stat/sell_stat_{self.work_timeframe}.pkl"
         else:
             self.buy_stat_path = f"signal_stat/buy_stat_{self.work_timeframe}.pkl"
             self.sell_stat_path = f"signal_stat/sell_stat_{self.work_timeframe}.pkl"

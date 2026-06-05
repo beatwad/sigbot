@@ -16,10 +16,10 @@ from typing import Set
 
 import pandas as pd
 import telegram
+from loguru import logger
 from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
-from loguru import logger
 from log.log import exception
 from visualizer.visualizer import Visualizer
 
@@ -165,15 +165,14 @@ class TelegramBot:
     @staticmethod
     async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Log the error and send a telegram message to notify the developer."""
-        # Log the error before we do anything else,
-        # so we can see it even if something breaks.
+        if isinstance(context.error, telegram.error.NetworkError):
+            logger.debug(f"Transient network error in Telegram polling: {context.error}")
+            return
         logger.error("Exception while handling an update:", exc_info=context.error)
-
-        # Build the message with about what happened.
-        message = "An exception occurred while PTB was handling an update"
-
-        # Finally, send the message
-        await context.bot.send_message(chat_id=ERROR_CHAT_ID, text=message)
+        await context.bot.send_message(
+            chat_id=ERROR_CHAT_ID,
+            text="An exception occurred while PTB was handling an update",
+        )
 
     @exception
     def polling(self) -> None:
@@ -194,6 +193,7 @@ class TelegramBot:
         application.add_handler(CommandHandler("stop", self.stop))
         application.add_handler(CommandHandler("id", self.get_chat_id))
         application.add_handler(CommandHandler("help", self.help))
+        application.add_error_handler(self.error_handler)
         # Run the bot until the user presses Ctrl-C
         application.run_polling()
 

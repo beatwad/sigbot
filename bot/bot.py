@@ -61,6 +61,7 @@ class SigBot:
         self,
         main_class,
         load_tickers: bool = True,
+        start_telegram: bool = True,
         opt_type: Union[str, None] = None,
         **configs,
     ):
@@ -118,20 +119,23 @@ class SigBot:
             self.database = {"stat": {"buy": buy_stat, "sell": sell_stat}}
             # Load tickers
             self.get_api_and_tickers()
-            # Start Telegram bot
-            self.trade_exchange = self.exchanges["ByBitPerpetual"]["API"]
-            self.trade_mode = multiprocessing.Array("i", range(1))
-            locker = multiprocessing.Lock()
-            self.telegram_bot = TelegramBot(
-                token=telegram_token,
-                database=self.database,
-                trade_mode=self.trade_mode,
-                locker=locker,
-                **configs,
-            )
-            # run polling in the separate process
-            self.telegram_bot_process = multiprocessing.Process(target=self.telegram_bot.polling)
-            self.telegram_bot_process.start()
+            if start_telegram:
+                # Start Telegram bot
+                self.trade_exchange = self.exchanges["ByBitPerpetual"]["API"]
+                self.trade_mode = multiprocessing.Array("i", range(1))
+                locker = multiprocessing.Lock()
+                self.telegram_bot = TelegramBot(
+                    token=telegram_token,
+                    database=self.database,
+                    trade_mode=self.trade_mode,
+                    locker=locker,
+                    **configs,
+                )
+                # run polling in the separate process
+                self.telegram_bot_process = multiprocessing.Process(
+                    target=self.telegram_bot.polling
+                )
+                self.telegram_bot_process.start()
         else:
             buy_stat = pd.DataFrame(columns=["time", "ticker", "timeframe", "pattern"])
             sell_stat = pd.DataFrame(columns=["time", "ticker", "timeframe", "pattern"])
@@ -945,7 +949,7 @@ class MonitorExchange:
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
                 tmp_ticker = self.sigbot.delete_redundant_symbols_from_ticker(ticker)
-                df_path = f"tickers/{tmp_ticker}_{timeframe}.pkl"
+                df_path = f"data/tickers/{tmp_ticker}_{timeframe}.pkl"
                 # try to load dataframe from the disk
                 # if file is found - load historical data until last time in the dataframe
                 try:
@@ -971,8 +975,8 @@ class MonitorExchange:
                 else:
                     if tmp is not None:
                         # delete dataframes for all timeframes from the disk
-                        df_path_1h = f"tickers/{tmp_ticker}_1h.pkl"
-                        df_path_4h = f"tickers/{tmp_ticker}_4h.pkl"
+                        df_path_1h = f"data/tickers/{tmp_ticker}_1h.pkl"
+                        df_path_4h = f"data/tickers/{tmp_ticker}_4h.pkl"
                         if os.path.exists(df_path_1h):
                             os.remove(df_path_1h)
                         if os.path.exists(df_path_4h):
@@ -1008,10 +1012,11 @@ class MonitorExchange:
                 if (
                     ticker not in self.sigbot.database
                     or timeframe not in self.sigbot.database[ticker]
+                    or ttype not in self.sigbot.database[ticker][timeframe].get("data", {})
                 ):
                     try:
                         tmp_ticker = self.sigbot.delete_redundant_symbols_from_ticker(ticker)
-                        df = pd.read_pickle(f"tickers/{tmp_ticker}_{timeframe}.pkl")  # nosec
+                        df = pd.read_pickle(f"data/tickers/{tmp_ticker}_{timeframe}.pkl")  # nosec
                     except FileNotFoundError:
                         continue
                 else:

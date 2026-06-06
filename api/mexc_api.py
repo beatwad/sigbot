@@ -144,8 +144,8 @@ class MEXC(ApiBase):
 
 
 if __name__ == "__main__":
-    ticker = "BTCUSDT"
+    ticker = "FWOGUSDT"
 
-    binance = MEXC()
-    klines = binance.get_klines(ticker, "1h", 1000)
+    mexc = MEXC()
+    klines = mexc.get_klines(ticker, "1h", 1000)
     print(klines)

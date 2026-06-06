@@ -899,8 +899,8 @@ if __name__ == "__main__":
     load_dotenv(find_dotenv("../.env"), verbose=True)
 
     ticker = "BTCUSDT"
-    key = os.getenv("BINANCE_KEY")
-    secret = os.getenv("BINANCE_SECRET")
+    key = os.getenv("BYBIT_KEY")
+    secret = os.getenv("BYBIT_SECRET")
 
     binance = ByBitPerpetual(key, secret)
     klines = binance.get_klines(ticker, "1h", 1000)

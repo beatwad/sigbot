@@ -210,7 +210,7 @@ if __name__ == "__main__":
 
     load_dotenv(find_dotenv("../.env"), verbose=True)
 
-    ticker = "PLAUSDT"
+    ticker = "BTCUSDT"
     key = os.getenv("BINANCE_KEY")
     secret = os.getenv("BINANCE_SECRET")
 

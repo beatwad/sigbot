@@ -1005,8 +1005,23 @@ class MonitorExchange:
             time during the first iteration.
         """
         tickers = self.exchange_data["tickers"]
+        stat_df = self.sigbot.database["stat"][ttype]
+        # Thresholds below which the full ticker df is used (new/small tickers)
+        min_rows = {self.sigbot.work_timeframe: 2000}
+        warmup_hours = 1000
 
         for ticker in tickers:
+            tmp_ticker = self.sigbot.delete_redundant_symbols_from_ticker(ticker)
+            # Find the most recent signal time recorded for this ticker
+            ticker_clean = (
+                ticker.replace("-", "")
+                .replace("/", "")
+                .replace("_USDT", "USDT")
+                .replace("SWAP", "")
+            )
+            ticker_stat = stat_df[stat_df["ticker"] == ticker_clean]
+            last_signal_time = ticker_stat["time"].max() if not ticker_stat.empty else None
+
             # For every timeframe get the data and find the signal
             for timeframe in self.sigbot.timeframes:
                 if (
@@ -1015,12 +1030,17 @@ class MonitorExchange:
                     or ttype not in self.sigbot.database[ticker][timeframe].get("data", {})
                 ):
                     try:
-                        tmp_ticker = self.sigbot.delete_redundant_symbols_from_ticker(ticker)
                         df = pd.read_pickle(f"data/tickers/{tmp_ticker}_{timeframe}.pkl")  # nosec
                     except FileNotFoundError:
                         continue
                 else:
                     df = self.sigbot.database[ticker][timeframe]["data"][ttype].copy()
+                # Slice to [last_signal_time - warmup_hours, ...] for mature tickers to skip
+                # reprocessing history that is already in the stat dataframe
+                tf_min_rows = min_rows.get(timeframe, 500)
+                if last_signal_time is not None and len(df) >= tf_min_rows:
+                    cutoff_time = last_signal_time - pd.to_timedelta(warmup_hours, unit="h")
+                    df = df[df["time"] >= cutoff_time].reset_index(drop=True)
                 # Add indicators
                 self.mon_add_indicators(df, ttype, ticker, timeframe, 1000, opt_flag)
                 # If current timeframe is working timeframe
@@ -1045,6 +1065,9 @@ class MonitorExchange:
                         )
                     # Filter repeating signals
                     sig_points = self.sigbot.filter_sig_points(sig_points)
+                    # Keep only signals newer than the last recorded signal for this ticker
+                    if last_signal_time is not None:
+                        sig_points = [sp for sp in sig_points if sp[4] > last_signal_time]
                     # Add the signals to statistics
                     self.mon_add_statistics(sig_points)
         # Save statistics

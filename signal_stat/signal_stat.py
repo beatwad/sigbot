@@ -46,12 +46,17 @@ class SignalStat:
         self.higher_tf_indicator_set = {
             i for i in configs["Higher_TF_indicator_list"] if i != "Trend"
         }
+        self.opt_type = opt_type
         if opt_type == "ml" or opt_type == "optimize":
             self.buy_stat_path = f"../ml/data/signal_stat/buy_stat_{self.work_timeframe}.pkl"
             self.sell_stat_path = f"../ml/data/signal_stat/sell_stat_{self.work_timeframe}.pkl"
         else:
             self.buy_stat_path = f"signal_stat/buy_stat_{self.work_timeframe}.pkl"
             self.sell_stat_path = f"signal_stat/sell_stat_{self.work_timeframe}.pkl"
+
+    @staticmethod
+    def _clean_ticker(ticker: str) -> str:
+        return ticker.replace("-", "").replace("/", "").replace("_USDT", "USDT").replace("SWAP", "")
 
     def write_stat(
         self, dfs: dict, signal_points: list, data_qty_higher: Union[int, None] = None
@@ -91,30 +96,44 @@ class SignalStat:
             if pattern == "HighVolume":
                 continue
             df = dfs[ticker][timeframe]["data"][ttype]
-            # array of prices after signal
             index = df.loc[df["time"] == time, "close"].index[0]
-            signal_price = df.iloc[index]["close"]
-            signal_smooth_price = df.iloc[index]["close_smooth"]
             # If index of point was found too early - we shouldn't use it
             if index < 50:
                 continue
-            # Get statistics, process it and write into the database
-            (
-                high_result_prices,
-                low_result_prices,
-                close_smooth_prices,
-                atr,
-            ) = self.get_result_price_after_period(df, index)
-            dfs = self.process_statistics(
-                dfs,
-                point,
-                signal_price,
-                signal_smooth_price,
-                high_result_prices,
-                low_result_prices,
-                close_smooth_prices,
-                atr,
-            )
+            signal_price = df.iloc[index]["close"]
+            signal_smooth_price = df.iloc[index]["close_smooth"]
+            if self.opt_type == "ml":
+                # For ML data collection only minimal signal metadata is needed;
+                # mfe/mae/pct_price_diff are not used — target is derived from OHLCV in prepare_data.ipynb
+                ticker_clean = self._clean_ticker(ticker)
+                tmp = pd.DataFrame(
+                    {
+                        "time": [time],
+                        "ticker": [ticker_clean],
+                        "timeframe": [timeframe],
+                        "pattern": [pattern],
+                        "signal_price": [signal_price],
+                        "signal_smooth_price": [signal_smooth_price],
+                    }
+                )
+                dfs["stat"][ttype] = pd.concat([dfs["stat"][ttype], tmp], ignore_index=True)
+            else:
+                (
+                    high_result_prices,
+                    low_result_prices,
+                    close_smooth_prices,
+                    atr,
+                ) = self.get_result_price_after_period(df, index)
+                dfs = self.process_statistics(
+                    dfs,
+                    point,
+                    signal_price,
+                    signal_smooth_price,
+                    high_result_prices,
+                    low_result_prices,
+                    close_smooth_prices,
+                    atr,
+                )
         return dfs
 
     def get_result_price_after_period(
@@ -202,7 +221,7 @@ class SignalStat:
             _,
             _,
         ) = point
-        ticker = ticker.replace("-", "").replace("/", "").replace("SWAP", "")
+        ticker = SignalStat._clean_ticker(ticker)
 
         tmp = pd.DataFrame()
         tmp["time"] = [time]
@@ -309,6 +328,8 @@ class SignalStat:
         try:
             buy_stat = pd.read_pickle(self.buy_stat_path)  # nosec
             sell_stat = pd.read_pickle(self.sell_stat_path)  # nosec
+            buy_stat["ticker"] = buy_stat["ticker"].apply(self._clean_ticker)
+            sell_stat["ticker"] = sell_stat["ticker"].apply(self._clean_ticker)
         except (FileNotFoundError, EOFError):
             buy_stat = pd.DataFrame(columns=["time", "ticker", "timeframe", "pattern"])
             sell_stat = pd.DataFrame(columns=["time", "ticker", "timeframe", "pattern"])

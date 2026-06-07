@@ -1,6 +1,14 @@
+from datetime import timedelta
+
 import pandas as pd
+from tqdm.auto import tqdm
 
 from indicators import indicators
+
+real_price_cols = ["real_high", "real_low", "real_close"]
+funding_cols = ["funding_rate"]
+btcd_cols = ["time", "btcd_open", "btcd_high", "btcd_low", "btcd_close", "btcd_volume"]
+btcdom_cols = ["time", "btcdom_open", "btcdom_high", "btcdom_low", "btcdom_close", "btcdom_volume"]
 
 
 def add_indicators(
@@ -9,8 +17,29 @@ def add_indicators(
     configs: dict,
     df_higher: pd.DataFrame = None,
 ) -> pd.DataFrame:
-    """Add technical indicators to df. If df_higher is provided, also computes MACD and
-    Trend on the higher timeframe and merges the result into df (time-shifted by +3h)."""
+    """Add technical indicators to df.
+
+    Computes RSI, STOCH, ATR, CCI, and SAR on `df`. If `df_higher` is provided,
+    also computes MACD and Trend on the higher timeframe and merges the result
+    into `df` (time-shifted by +3h).
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        1h OHLCV DataFrame for one ticker.
+    ttype : str
+        Trade type, ``"buy"`` or ``"sell"``.
+    configs : dict
+        Full config dict; indicator parameters are read from ``configs["Model"]``.
+    df_higher : pd.DataFrame, optional
+        4h OHLCV DataFrame for the same ticker. When provided, MACD and Trend
+        features from this frame are merged into `df`.
+
+    Returns
+    -------
+    pd.DataFrame
+        `df` with indicator columns appended in-place.
+    """
     rsi = indicators.RSI(ttype, configs)
     df = rsi.get_indicator(df, "", "", 0)
     stoch = indicators.STOCH(ttype, configs)
@@ -41,7 +70,22 @@ def add_indicators(
 
 
 def merge_btc_dominance(df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFrame) -> pd.DataFrame:
-    """Merge BTC dominance dataframes into df and forward-fill the merged columns."""
+    """Merge BTC dominance dataframes into df and forward-fill the merged columns.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Target DataFrame with a ``time`` column.
+    btcd : pd.DataFrame
+        Daily BTC dominance OHLCV (``btcd_open/high/low/close/volume``).
+    btcdom : pd.DataFrame
+        4h BTC.D index OHLCV (``btcdom_open/high/low/close/volume``).
+
+    Returns
+    -------
+    pd.DataFrame
+        `df` with BTC dominance columns appended and forward-filled.
+    """
     btcd_cols = list(btcd.columns)
     btcdom_cols = list(btcdom.columns)
     btcd_data_cols = [c for c in btcd_cols if c != "time"]
@@ -57,7 +101,315 @@ def merge_btc_dominance(df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFra
 
 
 def scale_cols(df: pd.DataFrame, cols: list) -> pd.DataFrame:
-    """Convert columns to percent change (* 100) to normalise scale across tickers."""
+    """Convert columns to percent change (* 100) to normalise scale across tickers.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame whose columns will be transformed.
+    cols : list
+        Column names to convert.
+
+    Returns
+    -------
+    pd.DataFrame
+        `df` with the specified columns replaced by their percent-change values.
+    """
     for c in cols:
         df[c] = df[c].pct_change() * 100
     return df
+
+
+def get_file(ticker):
+    """Load 1h and 4h OHLCV pickle files for a ticker.
+
+    Parameters
+    ----------
+    ticker : str
+        Ticker symbol, e.g. ``"BTCUSDT"``.
+
+    Returns
+    -------
+    tmp_df_1h : pd.DataFrame or None
+        1h candle DataFrame, or ``None`` if the file is missing.
+    tmp_df_4h : pd.DataFrame or None
+        4h candle DataFrame, or ``None`` if the file is missing.
+    """
+    try:
+        tmp_df_1h = pd.read_pickle(f"data/tickers/{ticker}_1h.pkl")
+    except FileNotFoundError:
+        print(f"File not found: {ticker}_1h.pkl")
+        tmp_df_1h = None
+    try:
+        tmp_df_4h = pd.read_pickle(f"data/tickers/{ticker}_4h.pkl")
+    except FileNotFoundError:
+        print(f"File not found: {ticker}_4h.pkl")
+        tmp_df_4h = None
+    return tmp_df_1h, tmp_df_4h
+
+
+def create_train_df(
+    df,
+    btcd,
+    btcdom,
+    ttype,
+    configs,
+    target_offset,
+    first,
+    last,
+    step,
+    target_tp,
+    target_sl,
+    train_df_prev=None,
+):
+    """Create train dataset from signal statistics and ticker candle data.
+
+    For every signal row in `df`, looks up the corresponding OHLCV history,
+    attaches a lookback window of lagged features, and computes a binary
+    ``target`` label based on whether the trade would have hit TP or SL within
+    `target_offset` hours.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Raw signal stat DataFrame with columns ``ticker``, ``time``, ``pattern``.
+    btcd : pd.DataFrame
+        Daily BTC dominance context (passed to :func:`merge_btc_dominance`).
+    btcdom : pd.DataFrame
+        4h BTC.D index context (passed to :func:`merge_btc_dominance`).
+    ttype : str
+        Trade type, ``"buy"`` or ``"sell"``.
+    configs : dict
+        Full config dict.
+    target_offset : int
+        Number of hours ahead to evaluate the trade outcome.
+    first : int
+        First lookback step (hours).
+    last : int
+        Last lookback step (hours, inclusive).
+    step : int
+        Step size between lookback windows (hours).
+    target_tp : float
+        Take-profit multiplier relative to entry price (e.g. ``1.02`` for +2 %).
+    target_sl : float
+        Stop-loss multiplier relative to entry price (e.g. ``0.98`` for -2 %).
+    train_df_prev : pd.DataFrame, optional
+        Previously built training DataFrame. When provided, only rows with
+        ``time > max(train_df_prev.time)`` per ticker are processed, allowing
+        incremental dataset updates.
+
+    Returns
+    -------
+    pd.DataFrame
+        Training dataset with indicator features, lookback columns, and:
+
+        * ``target`` — 1 if the trade was profitable, 0 otherwise.
+        * ``first_price`` — entry price.
+        * ``last_price`` — closing price at the end of the trade window.
+        * ``close_time`` — timestamp when TP or SL was hit.
+        * ``max_price_deviation`` — max price move in the favorable direction.
+        * ``min_price_deviation`` — max price move in the adverse direction.
+    """
+    train_df = list()
+    tickers = df["ticker"].unique()
+    cols_to_scale = configs["Model"]["params"]["cols_to_scale"]
+
+    for ticker in tqdm(tickers):
+        # get signals with current ticker
+        signal_df = df[df["ticker"] == ticker]
+        times = signal_df["time"]
+
+        # load max time for that ticker from the previously created dataset
+        if train_df_prev is not None:
+            max_time = train_df_prev.loc[train_df_prev["ticker"] == ticker, "time"].max()
+        else:
+            max_time = None
+
+        # load candle history of this ticker
+        tmp_df_1h, tmp_df_4h = get_file(ticker)
+
+        # add indicators
+        try:
+            tmp_df_1h = add_indicators(tmp_df_1h, ttype, configs, tmp_df_4h)
+            tmp_df_1h = merge_btc_dominance(tmp_df_1h, btcd, btcdom)
+            tmp_df_1h = tmp_df_1h.ffill()  # for higher_features NaNs
+            tmp_df_1h[real_price_cols] = tmp_df_1h[["high", "low", "close"]]
+            tmp_df_1h = scale_cols(tmp_df_1h, cols_to_scale)
+        except TypeError as te:
+            print(f"TypeError {te}, ticker - {ticker}")
+            continue
+
+        # add historical data for current ticker
+        for i, t in enumerate(times.to_list()):
+            if max_time and t <= max_time:
+                continue
+
+            pass_cycle = False
+            pattern = signal_df.iloc[i, signal_df.columns.get_loc("pattern")]
+            row = tmp_df_1h.loc[tmp_df_1h["time"] == t, :].reset_index(drop=True)
+
+            parts = []
+            for j in range(first, last + 1, step):
+                # collect features every 4 hours, save difference between the current feature and the lagged features
+                time_prev = t + timedelta(hours=-j)
+                try:
+                    row_tmp = tmp_df_1h.loc[
+                        tmp_df_1h["time"] == time_prev,
+                        [c for c in tmp_df_1h.columns if c not in real_price_cols],
+                    ].reset_index(drop=True)
+                    if j % 8 != 0:
+                        row_tmp = row_tmp.drop(columns=funding_cols)
+                    if j % 24 != 0:
+                        row_tmp = row_tmp.drop(columns=btcd_cols)
+                    row_tmp.columns = [c + f"_prev_{j}" for c in row_tmp.columns]
+                except IndexError:
+                    pass_cycle = True
+                    break
+                parts.append(row_tmp.iloc[:, 1:])
+
+            if pass_cycle:
+                continue
+
+            row = pd.concat([row] + parts, axis=1)
+            row["ticker"] = ticker
+            row["pattern"] = pattern
+            row["target"] = 0
+            row["max_price_deviation"] = 0
+            row["min_price_deviation"] = 0
+            row["first_price"] = 0
+            row["last_price"] = 0
+            row["ttype"] = ttype
+
+            # If ttype = buy and during the selected period high price was higher than close_price * target_ratio
+            # and earlier low price wasn't lower than close_price / target_ratio, than target is True, else target is False.
+            # Similarly for ttype = sell
+            if pattern.startswith("MACD"):
+                close_price = tmp_df_1h.loc[
+                    tmp_df_1h["time"] == t + timedelta(hours=3), "real_close"
+                ]
+            else:
+                close_price = tmp_df_1h.loc[tmp_df_1h["time"] == t, "real_close"]
+
+            # move to the next ticker if can't find any data corresponding to time t
+            if close_price.shape[0] == 0:
+                continue
+
+            row["first_price"] = close_price.values[0]
+            row["close_time"] = row["time"].values[0] + pd.to_timedelta(target_offset, unit="h")
+
+            close_price = close_price.values[0]
+            if ttype == "buy":
+                target_high_price = close_price * target_tp
+                target_lower_price = close_price * target_sl
+            else:
+                target_high_price = close_price * target_tp
+                target_lower_price = close_price * target_sl
+
+            real_high_prices, real_low_prices = [], []
+            for offset in range(1, target_offset + 1):
+                if pattern.startswith("MACD"):
+                    time_next = t + timedelta(hours=3 + offset)
+                else:
+                    time_next = t + timedelta(hours=offset)
+
+                real_high_price = tmp_df_1h.loc[tmp_df_1h["time"] == time_next, "real_high"]
+                real_low_price = tmp_df_1h.loc[tmp_df_1h["time"] == time_next, "real_low"]
+
+                real_high_prices.append(real_high_price)
+                real_low_prices.append(real_low_price)
+
+                if real_high_price.shape[0] == 0 or real_low_price.shape[0] == 0:
+                    pass_cycle = True
+                    break
+
+                real_high_price = real_high_price.values[0]
+                real_low_price = real_low_price.values[0]
+
+                # set TPs and SLs
+                # IMPORTANT !!!
+                # because my experience says that buy STOCH_RSI signal sends sell signal
+                # and vise versa - sell STOCH_RSI signal sends sell signal
+                # both TP and SL are inverted
+                if ttype == "buy":
+                    if pattern.startswith("STOCH"):
+                        TP = real_low_price < target_lower_price
+                        SL = real_high_price > target_high_price
+                    else:
+                        TP = real_high_price > target_high_price
+                        SL = real_low_price < target_lower_price
+                else:
+                    if pattern.startswith("STOCH"):
+                        TP = real_high_price > target_high_price
+                        SL = real_low_price < target_lower_price
+                    else:
+                        TP = real_low_price < target_lower_price
+                        SL = real_high_price > target_high_price
+
+                # if both TP and SL flag is on - don't consider that trade
+                if TP and SL:
+                    if row["target"].values[0] == 0:
+                        pass_cycle = True
+                    break
+                elif SL:
+                    # if reach SL - write the time when the trade was closed (but only one time)
+                    if row["close_time"].values[0] == row["time"].values[0] + pd.to_timedelta(
+                        target_offset, unit="h"
+                    ):
+                        row["close_time"] = row["time"].values[0] + pd.to_timedelta(
+                            offset, unit="h"
+                        )
+                    break
+                elif TP:
+                    # if reach TP - write the time when the trade was closed (but only one time)
+                    if row["close_time"].values[0] == row["time"].values[0] + pd.to_timedelta(
+                        target_offset, unit="h"
+                    ):
+                        row["close_time"] = row["time"].values[0] + pd.to_timedelta(
+                            offset, unit="h"
+                        )
+                    row["target"] = 1
+
+                # if price doesn't reaches both TP and SL thresholds but price above / below enter price for buy / sell trade - set TP flag
+                # (depends on ttype and pattern)
+                # as mentioned above - for STOCH_RSI signal TP and SL signals are inverted
+                if offset == target_offset:
+                    last_price = tmp_df_1h.loc[tmp_df_1h["time"] == time_next, "real_close"].values[
+                        0
+                    ]
+                    if pattern.startswith("STOCH"):
+                        l1 = ttype == "buy" and last_price < close_price
+                        l2 = ttype == "sell" and last_price > close_price
+                    else:
+                        l1 = ttype == "buy" and last_price > close_price
+                        l2 = ttype == "sell" and last_price < close_price
+                    # if price doesn't reach both TP and SL - write its last price
+                    if row["target"].values[0] == 0:
+                        row["last_price"] = last_price
+
+                    if l1 or l2:
+                        row["target"] = 1
+
+                # set the maximum price deviation to the correct side for the current trade period
+                if ttype == "sell":
+                    curr_price_pos = (real_high_price - close_price) / close_price
+                    curr_price_neg = (close_price - real_low_price) / close_price
+                else:
+                    curr_price_pos = (close_price - real_low_price) / close_price
+                    curr_price_neg = (real_high_price - close_price) / close_price
+
+                row["max_price_deviation"] = max(
+                    row["max_price_deviation"].values[0], curr_price_pos
+                )
+                row["min_price_deviation"] = max(
+                    row["min_price_deviation"].values[0], curr_price_neg
+                )
+
+            if pass_cycle:
+                continue
+
+            # add data to the dataset
+            train_df.append(row)
+
+    train_df = pd.concat(train_df).reset_index(drop=True)
+    train_df = train_df.drop(columns=real_price_cols)
+    return train_df

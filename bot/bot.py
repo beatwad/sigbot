@@ -956,12 +956,13 @@ class MonitorExchange:
                     tmp = pd.read_pickle(df_path)  # nosec
                 except FileNotFoundError:
                     tmp = None
+                    cur_min_time = min_time
                 else:
                     last_time = tmp["time"].max()
-                    min_time = last_time - pd.to_timedelta(1000, unit="minutes")
+                    cur_min_time = last_time - pd.to_timedelta(1000, unit="minutes")
                 # get historical data for some period (before min_time)
                 df, data_qty = self.sigbot.get_historical_data(
-                    exchange_api, ticker, timeframe, min_time
+                    exchange_api, ticker, timeframe, cur_min_time
                 )
                 # If we previously download this dataframe to the disk -
                 # update it with new data

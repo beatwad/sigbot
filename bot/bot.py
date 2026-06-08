@@ -974,14 +974,6 @@ class MonitorExchange:
                     df = df.drop_duplicates().reset_index(drop=True)
                     df.to_pickle(df_path)
                 else:
-                    if tmp is not None:
-                        # delete dataframes for all timeframes from the disk
-                        df_path_1h = f"data/tickers/{tmp_ticker}_1h.pkl"
-                        df_path_4h = f"data/tickers/{tmp_ticker}_4h.pkl"
-                        if os.path.exists(df_path_1h):
-                            os.remove(df_path_1h)
-                        if os.path.exists(df_path_4h):
-                            os.remove(df_path_4h)
                     break
 
     def mon_save_opt_statistics(self, ttype: str, opt_limit: int, opt_flag: bool) -> None:

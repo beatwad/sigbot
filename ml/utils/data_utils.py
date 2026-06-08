@@ -158,8 +158,8 @@ def create_train_df(
     first,
     last,
     step,
-    target_tp,
-    target_sl,
+    target_high_ratio,
+    target_low_ratio,
     train_df_prev=None,
 ):
     """Create train dataset from signal statistics and ticker candle data.
@@ -189,10 +189,10 @@ def create_train_df(
         Last lookback step (hours, inclusive).
     step : int
         Step size between lookback windows (hours).
-    target_tp : float
-        Take-profit multiplier relative to entry price (e.g. ``1.02`` for +2 %).
-    target_sl : float
-        Stop-loss multiplier relative to entry price (e.g. ``0.98`` for -2 %).
+    target_high_ratio : float
+        Higher price level (e.g. ``1.02`` for +2 %).
+    target_low_ratio : float
+        Lower price level (e.g. ``0.98`` for -2 %).
     train_df_prev : pd.DataFrame, optional
         Previously built training DataFrame. When provided, only rows with
         ``time > max(train_df_prev.time)`` per ticker are processed, allowing
@@ -294,16 +294,23 @@ def create_train_df(
             if close_price.shape[0] == 0:
                 continue
 
+            # only admit signals whose full outcome window is available, so the label is
+            # final. A signal fired less than target_offset hours ago still has an open
+            # (provisional) outcome that can flip on later runs as new/revised candles
+            # arrive; admitting it would make incremental updates diverge from a fresh build.
+            if pattern.startswith("MACD"):
+                final_time = t + timedelta(hours=3 + target_offset)
+            else:
+                final_time = t + timedelta(hours=target_offset)
+            if (tmp_df_1h["time"] == final_time).sum() == 0:
+                continue
+
             row["first_price"] = close_price.values[0]
             row["close_time"] = row["time"].values[0] + pd.to_timedelta(target_offset, unit="h")
 
             close_price = close_price.values[0]
-            if ttype == "buy":
-                target_high_price = close_price * target_tp
-                target_lower_price = close_price * target_sl
-            else:
-                target_high_price = close_price * target_tp
-                target_lower_price = close_price * target_sl
+            target_high_price = close_price * target_high_ratio
+            target_lower_price = close_price * target_low_ratio
 
             real_high_prices, real_low_prices = [], []
             for offset in range(1, target_offset + 1):

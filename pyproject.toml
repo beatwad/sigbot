@@ -23,6 +23,8 @@ dependencies = [
     "seaborn==0.13.2",
     "TA-Lib==0.6.8",
     "scipy",
+    "optuna==4.9.0",
+    "icecream==2.2.0",
 ]
 
 [project.optional-dependencies]

@@ -10,7 +10,20 @@ from ml.utils.model_test_utils import backtest
 from ml.utils.model_train_utils import conf_ppv_npv_acc_score, model_train
 
 
-def load_params_from_optuna(row_num: int = 0) -> dict:
+def load_best_params(row_num: int = 0) -> dict:
+    """
+    Load the best parameters from the Optuna study.
+
+    Parameters
+    ----------
+    row_num : int, optional
+        The row number to load the parameters from (default is 0).
+
+    Returns
+    -------
+    dict
+        A dictionary containing the best parameters for the LightGBM model.
+    """
     try:
         optuna_df = pd.read_csv("optuna/optuna_lgbm.csv")
     except FileNotFoundError:

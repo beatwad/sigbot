@@ -13,6 +13,7 @@ from time import sleep
 from typing import List, Tuple
 
 import pandas as pd
+import requests
 from loguru import logger
 
 from api.binance_api import Binance
@@ -38,6 +39,50 @@ binance_perp_secret = os.getenv("BINANCE_PERP_SECRET")
 tv_username = os.getenv("TV_USERNAME")
 tv_password = os.getenv("TV_PASSWORD")
 env = environ.get("ENV", "debug")
+
+fng_cols = ["time", "fng_value"]
+fng_url = "https://api.alternative.me/fng/?limit=0&format=json"
+
+
+def get_fng(num_retries: int = 3) -> pd.DataFrame:
+    """
+    Retrieve the Crypto Fear & Greed index history from alternative.me.
+
+    The index is exchange-independent, so this is a plain module-level
+    function rather than a method of an exchange data class.
+
+    Parameters
+    ----------
+    num_retries : int
+        Number of times to retry the request before giving up.
+
+    Returns
+    -------
+    pd.DataFrame
+        Daily Fear & Greed index with columns ``time`` and ``fng_value``.
+        Empty (with those columns) if all retries fail.
+    """
+    for i in range(num_retries):
+        try:
+            resp = requests.get(fng_url, timeout=30)
+            data = resp.json()["data"]
+        except BaseException:  # noqa
+            if i == num_retries - 1:
+                logger.exception("Catch an exception while trying to get Fear & Greed index.")
+            sleep(1)
+            continue
+        else:
+            break
+    else:
+        return pd.DataFrame(columns=fng_cols)
+
+    fng = pd.DataFrame(data)
+    # +3h to match the UTC+3 basis the rest of the pipeline uses (see add_utc_3)
+    fng["time"] = pd.to_datetime(fng["timestamp"].astype(int), unit="s") + pd.to_timedelta(
+        3, unit="h"
+    )
+    fng["fng_value"] = fng["value"].astype(int)
+    return fng[fng_cols].sort_values("time").reset_index(drop=True)
 
 
 class DataFactory:

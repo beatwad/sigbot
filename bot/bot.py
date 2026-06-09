@@ -16,7 +16,7 @@ from dotenv import find_dotenv, load_dotenv
 from loguru import logger
 
 from config.config import ConfigFactory
-from data.get_data import DataFactory, GetData
+from data.get_data import DataFactory, GetData, get_fng
 from indicators.indicators import IndicatorFactory
 from ml.inference import Model
 from signal_stat.signal_stat import SignalStat
@@ -150,6 +150,8 @@ class SigBot:
         self.timeframe_div = configs["Data"]["Basic"]["params"]["timeframe_div"]
         # indicators of BTC dominance
         self.btcd, self.btcdom = None, None
+        # Fear & Greed index
+        self.fng = None
         # model for price prediction
         if not self.opt_type:
             self.model = Model(**configs)
@@ -271,6 +273,21 @@ class SigBot:
         """
         btcd, btcdom = exchange_api.get_btc_dom()
         return btcd, btcdom
+
+    @staticmethod
+    def _get_fng() -> pd.DataFrame:
+        """
+        Get the Crypto Fear & Greed index.
+
+        The index is exchange-independent, so it is fetched directly rather
+        than through an exchange API.
+
+        Returns
+        -------
+        fng
+            Dataframe that contains the Fear & Greed index.
+        """
+        return get_fng()
 
     def get_historical_data(
         self,
@@ -807,7 +824,7 @@ class SigBot:
                 ttype = "buy"
         # if not self.opt_type: # !
         #     sig_points = self.model.make_prediction(
-        #         df, self.btcd, self.btcdom, sig_points, ttype, exchange_name
+        #         df, self.btcd, self.btcdom, self.fng, sig_points, ttype, exchange_name
         #     )
         return sig_points
 
@@ -824,6 +841,10 @@ class SigBot:
                     self.btcd = btcd
                 if btcdom.shape[0] > 0 or (btcdom.shape[0] == 0 and self.btcdom is None):
                     self.btcdom = btcdom
+        # get Fear & Greed index (exchange-independent)
+        fng = self._get_fng()
+        if fng.shape[0] > 0 or (fng.shape[0] == 0 and self.fng is None):
+            self.fng = fng
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
             monitor.run_cycle()

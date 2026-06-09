@@ -9,7 +9,7 @@ import json
 import joblib
 import pandas as pd
 from loguru import logger
-from utils.data_utils import add_indicators, merge_btc_dominance, scale_cols
+from utils.data_utils import add_indicators, merge_btc_dominance, merge_fng, scale_cols
 
 
 class Model:
@@ -64,6 +64,7 @@ class Model:
         df: pd.DataFrame,
         btcd: pd.DataFrame,
         btcdom: pd.DataFrame,
+        fng: pd.DataFrame,
         signal_points: list,
         ttype: str,
         exchange_name: str,
@@ -79,6 +80,8 @@ class Model:
             DataFrame containing BTC dominance data.
         btcdom : pd.DataFrame
             DataFrame containing BTC dominance data for the market.
+        fng : pd.DataFrame
+            DataFrame containing the Fear & Greed index data.
         signal_points : list
             List of signal points to analyze.
         ttype : str
@@ -95,6 +98,7 @@ class Model:
         tmp_df = df.copy()
         tmp_df = add_indicators(tmp_df, ttype, self.configs)
         tmp_df = merge_btc_dominance(tmp_df, btcd, btcdom)
+        tmp_df = merge_fng(tmp_df, fng)
         tmp_df = tmp_df.ffill()
         tmp_df = scale_cols(tmp_df, self.cols_to_scale)
 
@@ -152,6 +156,7 @@ class Model:
         df: pd.DataFrame,
         btcd: pd.DataFrame,
         btcdom: pd.DataFrame,
+        fng: pd.DataFrame,
         signal_points: list,
         ttype: str,
         exchange_name: str,
@@ -167,6 +172,8 @@ class Model:
             DataFrame containing BTC dominance data.
         btcdom : pd.DataFrame
             DataFrame containing BTC dominance data for the market.
+        fng : pd.DataFrame
+            DataFrame containing the Fear & Greed index data.
         signal_points : list
             List of signal points to analyze.
         ttype : str
@@ -179,7 +186,7 @@ class Model:
         list
             Updated list of signal points with model prediction scores.
         """
-        rows = self.prepare_data(df, btcd, btcdom, signal_points, ttype, exchange_name)
+        rows = self.prepare_data(df, btcd, btcdom, fng, signal_points, ttype, exchange_name)
         if rows.shape[0] == 0:
             return signal_points
         # make predictions and average them

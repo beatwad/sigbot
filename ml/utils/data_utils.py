@@ -9,6 +9,7 @@ real_price_cols = ["real_high", "real_low", "real_close"]
 funding_cols = ["funding_rate"]
 btcd_cols = ["time", "btcd_open", "btcd_high", "btcd_low", "btcd_close", "btcd_volume"]
 btcdom_cols = ["time", "btcdom_open", "btcdom_high", "btcdom_low", "btcdom_close", "btcdom_volume"]
+fng_cols = ["time", "fng_value"]
 
 
 def add_indicators(
@@ -100,6 +101,29 @@ def merge_btc_dominance(df: pd.DataFrame, btcd: pd.DataFrame, btcdom: pd.DataFra
     return df
 
 
+def merge_fng(df: pd.DataFrame, fng: pd.DataFrame) -> pd.DataFrame:
+    """Merge the Crypto Fear & Greed index into df and forward-fill it.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Target DataFrame with a ``time`` column.
+    fng : pd.DataFrame
+        Daily Fear & Greed index (``time``, ``fng_value``).
+
+    Returns
+    -------
+    pd.DataFrame
+        `df` with the ``fng_value`` column appended and forward-filled.
+    """
+    fng_data_cols = [c for c in fng.columns if c != "time"]
+    df[fng_data_cols] = pd.merge(df[["time"]], fng.drop_duplicates("time"), how="left", on="time")[
+        fng_data_cols
+    ].values
+    df[fng_data_cols] = df[fng_data_cols].ffill()
+    return df
+
+
 def scale_cols(df: pd.DataFrame, cols: list) -> pd.DataFrame:
     """Convert columns to percent change (* 100) to normalise scale across tickers.
 
@@ -152,6 +176,7 @@ def create_train_df(
     df,
     btcd,
     btcdom,
+    fng,
     ttype,
     configs,
     target_offset,
@@ -177,6 +202,8 @@ def create_train_df(
         Daily BTC dominance context (passed to :func:`merge_btc_dominance`).
     btcdom : pd.DataFrame
         4h BTC.D index context (passed to :func:`merge_btc_dominance`).
+    fng : pd.DataFrame
+        Daily Fear & Greed index context (passed to :func:`merge_fng`).
     ttype : str
         Trade type, ``"buy"`` or ``"sell"``.
     configs : dict
@@ -232,6 +259,7 @@ def create_train_df(
         try:
             tmp_df_1h = add_indicators(tmp_df_1h, ttype, configs, tmp_df_4h)
             tmp_df_1h = merge_btc_dominance(tmp_df_1h, btcd, btcdom)
+            tmp_df_1h = merge_fng(tmp_df_1h, fng)
             tmp_df_1h = tmp_df_1h.ffill()  # for higher_features NaNs
             tmp_df_1h[real_price_cols] = tmp_df_1h[["high", "low", "close"]]
             tmp_df_1h = scale_cols(tmp_df_1h, cols_to_scale)
@@ -260,7 +288,7 @@ def create_train_df(
                     if j % 8 != 0:
                         row_tmp = row_tmp.drop(columns=funding_cols)
                     if j % 24 != 0:
-                        row_tmp = row_tmp.drop(columns=btcd_cols)
+                        row_tmp = row_tmp.drop(columns=btcd_cols + ["fng_value"])
                     row_tmp.columns = [c + f"_prev_{j}" for c in row_tmp.columns]
                 except IndexError:
                     pass_cycle = True

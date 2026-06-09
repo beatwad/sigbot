@@ -16,7 +16,7 @@ from dotenv import find_dotenv, load_dotenv
 from loguru import logger
 
 from config.config import ConfigFactory
-from data.get_data import DataFactory, GetData, get_fng
+from data.get_data import DataFactory, GetData, get_btc_dom, get_fng
 from indicators.indicators import IndicatorFactory
 from ml.inference import Model
 from signal_stat.signal_stat import SignalStat
@@ -255,14 +255,12 @@ class SigBot:
         return df, data_qty
 
     @staticmethod
-    def _get_btc_dominance(exchange_api: GetData) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def _get_btc_dominance() -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Get two types of BTC dominance indicators
+        Get two types of BTC dominance indicators.
 
-        Parameters
-        ----------
-        exchange_api
-            Class for current exchange access through API.
+        BTC dominance comes from TradingView, not from any exchange, so it is
+        fetched directly rather than through an exchange API.
 
         Returns
         -------
@@ -271,7 +269,7 @@ class SigBot:
         btcdom
             Dataframe that contains the indicator of BTC dominance of type 2 (Binance)
         """
-        btcd, btcdom = exchange_api.get_btc_dom()
+        btcd, btcdom = get_btc_dom()
         return btcd, btcdom
 
     @staticmethod
@@ -831,16 +829,13 @@ class SigBot:
     def main_cycle(self):
         """Create and run exchange monitors"""
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self._create_exchange_monitors()
-        # get BTC dominance
-        for ex in self.spot_ex_monitor_list:
-            if ex.exchange_data["API"].name == "Binance":
-                binance_exchange_data = ex.exchange_data["API"]
-                btcd, btcdom = self._get_btc_dominance(binance_exchange_data)
-                # update BTC dominance info only when there are new information
-                if btcd.shape[0] > 0 or (btcd.shape[0] == 0 and self.btcd is None):
-                    self.btcd = btcd
-                if btcdom.shape[0] > 0 or (btcdom.shape[0] == 0 and self.btcdom is None):
-                    self.btcdom = btcdom
+        # get BTC dominance (exchange-independent)
+        btcd, btcdom = self._get_btc_dominance()
+        # update BTC dominance info only when there are new information
+        if btcd.shape[0] > 0 or (btcd.shape[0] == 0 and self.btcd is None):
+            self.btcd = btcd
+        if btcdom.shape[0] > 0 or (btcdom.shape[0] == 0 and self.btcdom is None):
+            self.btcdom = btcdom
         # get Fear & Greed index (exchange-independent)
         fng = self._get_fng()
         if fng.shape[0] > 0 or (fng.shape[0] == 0 and self.fng is None):

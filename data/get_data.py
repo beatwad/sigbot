@@ -85,6 +85,90 @@ def get_fng(num_retries: int = 3) -> pd.DataFrame:
     return fng[fng_cols].sort_values("time").reset_index(drop=True)
 
 
+_tv_data = None
+
+
+def _get_tv_data() -> TvDatafeed:
+    """Return a lazily-created, shared TradingView client (login happens once)."""
+    global _tv_data
+    if _tv_data is None:
+        _tv_data = TvDatafeed(username=tv_username, password=tv_password)
+    return _tv_data
+
+
+def get_btc_dom(num_retries: int = 3) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Retrieve BTC dominance data from TradingView.
+
+    BTC dominance comes from TradingView, not from any exchange, so this is a
+    plain module-level function rather than a method of an exchange data class.
+
+    Parameters
+    ----------
+    num_retries : int
+        Number of times to retry the request before giving up.
+
+    Returns
+    -------
+    Tuple[pd.DataFrame, pd.DataFrame]
+        Two dataframes containing BTC dominance data. Empty (with the expected
+        columns) if all retries fail.
+    """
+    btcd_cols = [
+        "time",
+        "btcd_open",
+        "btcd_high",
+        "btcd_low",
+        "btcd_close",
+        "btcd_volume",
+    ]
+    btcdom_cols = [
+        "time",
+        "btcdom_open",
+        "btcdom_high",
+        "btcdom_low",
+        "btcdom_close",
+        "btcdom_volume",
+    ]
+    tv_data = _get_tv_data()
+    # if there are errors in connection, try 3 times and only then log exception
+    for i in range(num_retries):
+        try:
+            btcd = tv_data.get_hist(
+                "BTC.D",
+                "CRYPTOCAP",
+                interval=Interval.in_daily,
+                n_bars=50,
+                extended_session=True,
+            ).reset_index()
+            btcdom = tv_data.get_hist(
+                "BTCDOMUSDT.P",
+                "BINANCE",
+                interval=Interval.in_4_hour,
+                n_bars=200,
+                extended_session=True,
+            ).reset_index()
+        except BaseException:  # noqa
+            if i == num_retries - 1:
+                logger.exception("Catch an exception while trying to get BTC dominance.")
+            sleep(1)
+            continue
+        else:
+            break
+    else:
+        return pd.DataFrame(columns=btcd_cols), pd.DataFrame(columns=btcdom_cols)
+
+    btcd = btcd.drop(columns="symbol")
+    btcd.columns = btcd_cols
+    btcd["time"] = btcd["time"] + pd.to_timedelta(23, unit="h")
+
+    btcdom = btcdom.drop(columns="symbol")
+    btcdom.columns = btcdom_cols
+    btcdom["time"] = btcdom["time"] + pd.to_timedelta(3, unit="h")
+
+    return btcd[:-1], btcdom[:-1]
+
+
 class DataFactory:
     """Factory class to generate instances of different exchange data classes."""
 
@@ -151,11 +235,6 @@ class GetData:
         self.work_timeframe = configs["Timeframes"]["work_timeframe"]
         # number of tries to get candles
         self.num_retries = 3
-        # TradingView class for obtaining BTC dominance
-        if self.name == "Binance":
-            self.tv_data = TvDatafeed(username=tv_username, password=tv_password)
-        else:
-            self.tv_data = None
 
     def get_data(
         self, df: pd.DataFrame, ticker: str, timeframe: str, dt_now: datetime
@@ -225,68 +304,6 @@ class GetData:
             df = self.add_funding_rate(df, funding_rates, timeframe)
 
         return df, limit
-
-    def get_btc_dom(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Retrieve BTC dominance data from TradingView.
-
-        Returns
-        -------
-        Tuple[pd.DataFrame, pd.DataFrame]
-            Two dataframes containing BTC dominance data.
-        """
-        btcd_cols = [
-            "time",
-            "btcd_open",
-            "btcd_high",
-            "btcd_low",
-            "btcd_close",
-            "btcd_volume",
-        ]
-        btcdom_cols = [
-            "time",
-            "btcdom_open",
-            "btcdom_high",
-            "btcdom_low",
-            "btcdom_close",
-            "btcdom_volume",
-        ]
-        # if there are errors in connection, try 3 times and only then log exception
-        for i in range(self.num_retries):
-            try:
-                btcd = self.tv_data.get_hist(
-                    "BTC.D",
-                    "CRYPTOCAP",
-                    interval=Interval.in_daily,
-                    n_bars=50,
-                    extended_session=True,
-                ).reset_index()
-                btcdom = self.tv_data.get_hist(
-                    "BTCDOMUSDT.P",
-                    "BINANCE",
-                    interval=Interval.in_4_hour,
-                    n_bars=200,
-                    extended_session=True,
-                ).reset_index()
-            except BaseException:  # noqa
-                if i == self.num_retries - 1:
-                    logger.exception("Catch an exception while trying to get BTC dominance.")
-                sleep(1)
-                continue
-            else:
-                break
-        else:
-            return pd.DataFrame(columns=btcd_cols), pd.DataFrame(columns=btcdom_cols)
-
-        btcd = btcd.drop(columns="symbol")
-        btcd.columns = btcd_cols
-        btcd["time"] = btcd["time"] + pd.to_timedelta(23, unit="h")
-
-        btcdom = btcdom.drop(columns="symbol")
-        btcdom.columns = btcdom_cols
-        btcdom["time"] = btcdom["time"] + pd.to_timedelta(3, unit="h")
-
-        return btcd[:-1], btcdom[:-1]
 
     def get_hist_data(
         self, df: pd.DataFrame, ticker: str, timeframe: str, min_time: datetime

@@ -96,12 +96,13 @@ def _get_tv_data() -> TvDatafeed:
     return _tv_data
 
 
-def get_btc_dom(num_retries: int = 3) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def get_btcd(num_retries: int = 3) -> pd.DataFrame:
     """
-    Retrieve BTC dominance data from TradingView.
+    Retrieve BTC dominance (CRYPTOCAP BTC.D, daily) from TradingView.
 
     BTC dominance comes from TradingView, not from any exchange, so this is a
     plain module-level function rather than a method of an exchange data class.
+    The daily candle is published once a day, so it only needs refreshing daily.
 
     Parameters
     ----------
@@ -110,9 +111,8 @@ def get_btc_dom(num_retries: int = 3) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     Returns
     -------
-    Tuple[pd.DataFrame, pd.DataFrame]
-        Two dataframes containing BTC dominance data. Empty (with the expected
-        columns) if all retries fail.
+    pd.DataFrame
+        BTC dominance data. Empty (with the expected columns) if all retries fail.
     """
     btcd_cols = [
         "time",
@@ -121,14 +121,6 @@ def get_btc_dom(num_retries: int = 3) -> Tuple[pd.DataFrame, pd.DataFrame]:
         "btcd_low",
         "btcd_close",
         "btcd_volume",
-    ]
-    btcdom_cols = [
-        "time",
-        "btcdom_open",
-        "btcdom_high",
-        "btcdom_low",
-        "btcdom_close",
-        "btcdom_volume",
     ]
     tv_data = _get_tv_data()
     # if there are errors in connection, try 3 times and only then log exception
@@ -141,6 +133,51 @@ def get_btc_dom(num_retries: int = 3) -> Tuple[pd.DataFrame, pd.DataFrame]:
                 n_bars=50,
                 extended_session=True,
             ).reset_index()
+        except BaseException:  # noqa
+            if i == num_retries - 1:
+                logger.exception("Catch an exception while trying to get BTC dominance.")
+            sleep(1)
+            continue
+        else:
+            break
+    else:
+        return pd.DataFrame(columns=btcd_cols)
+
+    btcd = btcd.drop(columns="symbol")
+    btcd.columns = btcd_cols
+    btcd["time"] = btcd["time"] + pd.to_timedelta(23, unit="h")
+    return btcd[:-1]
+
+
+def get_btcdom(num_retries: int = 3) -> pd.DataFrame:
+    """
+    Retrieve the BTC dominance index (BINANCE BTCDOMUSDT.P, 4h) from TradingView.
+
+    Comes from TradingView, not from any exchange, so this is a plain module-level
+    function. The candle is 4h, so it only needs refreshing every four hours.
+
+    Parameters
+    ----------
+    num_retries : int
+        Number of times to retry the request before giving up.
+
+    Returns
+    -------
+    pd.DataFrame
+        BTC dominance index data. Empty (with the expected columns) if all retries fail.
+    """
+    btcdom_cols = [
+        "time",
+        "btcdom_open",
+        "btcdom_high",
+        "btcdom_low",
+        "btcdom_close",
+        "btcdom_volume",
+    ]
+    tv_data = _get_tv_data()
+    # if there are errors in connection, try 3 times and only then log exception
+    for i in range(num_retries):
+        try:
             btcdom = tv_data.get_hist(
                 "BTCDOMUSDT.P",
                 "BINANCE",
@@ -150,23 +187,18 @@ def get_btc_dom(num_retries: int = 3) -> Tuple[pd.DataFrame, pd.DataFrame]:
             ).reset_index()
         except BaseException:  # noqa
             if i == num_retries - 1:
-                logger.exception("Catch an exception while trying to get BTC dominance.")
+                logger.exception("Catch an exception while trying to get BTC dominance index.")
             sleep(1)
             continue
         else:
             break
     else:
-        return pd.DataFrame(columns=btcd_cols), pd.DataFrame(columns=btcdom_cols)
-
-    btcd = btcd.drop(columns="symbol")
-    btcd.columns = btcd_cols
-    btcd["time"] = btcd["time"] + pd.to_timedelta(23, unit="h")
+        return pd.DataFrame(columns=btcdom_cols)
 
     btcdom = btcdom.drop(columns="symbol")
     btcdom.columns = btcdom_cols
     btcdom["time"] = btcdom["time"] + pd.to_timedelta(3, unit="h")
-
-    return btcd[:-1], btcdom[:-1]
+    return btcdom[:-1]
 
 
 class DataFactory:

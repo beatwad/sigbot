@@ -16,7 +16,7 @@ from dotenv import find_dotenv, load_dotenv
 from loguru import logger
 
 from config.config import ConfigFactory
-from data.get_data import DataFactory, GetData, get_btc_dom, get_fng
+from data.get_data import DataFactory, GetData, get_btcd, get_btcdom, get_fng
 from indicators.indicators import IndicatorFactory
 from ml.inference import Model
 from signal_stat.signal_stat import SignalStat
@@ -255,37 +255,52 @@ class SigBot:
         return df, data_qty
 
     @staticmethod
-    def _get_btc_dominance() -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def _refresh(current: Union[pd.DataFrame, None], new: pd.DataFrame) -> pd.DataFrame:
         """
-        Get two types of BTC dominance indicators.
+        Keep the freshly fetched dataframe, falling back to the current one when
+        the fetch returned nothing, so a transient API failure doesn't wipe good data.
 
-        BTC dominance comes from TradingView, not from any exchange, so it is
-        fetched directly rather than through an exchange API.
+        Parameters
+        ----------
+        current
+            Currently stored dataframe (``None`` before the first successful fetch).
+        new
+            Freshly fetched dataframe (possibly empty if the fetch failed).
 
         Returns
         -------
-        btcd
-            Dataframe that contains the indicator of BTC dominance of type 1 (CryptoCap)
-        btcdom
-            Dataframe that contains the indicator of BTC dominance of type 2 (Binance)
+        pd.DataFrame
+            ``new`` if it has data or there is nothing stored yet, else ``current``.
         """
-        btcd, btcdom = get_btc_dom()
-        return btcd, btcdom
+        if new.shape[0] > 0 or current is None:
+            return new
+        return current
 
-    @staticmethod
-    def _get_fng() -> pd.DataFrame:
+    def _update_market_context(self) -> None:
         """
-        Get the Crypto Fear & Greed index.
+        Refresh BTC dominance and the Fear & Greed index on a throttled schedule.
 
-        The index is exchange-independent, so it is fetched directly rather
-        than through an exchange API.
+        These are market-wide series fetched from TradingView / alternative.me,
+        not from any exchange, and they update slowly, so they are refreshed only
+        when a new candle period begins. Times are in UTC+3, like the rest of the
+        pipeline (see add_utc_3):
 
-        Returns
-        -------
-        fng
-            Dataframe that contains the Fear & Greed index.
+        * BTC.D (CryptoCap, daily) and the Fear & Greed index (daily) — when a new
+          day starts at 03:00 (00:00 UTC).
+        * BTCDOMUSDT.P (Binance, 4h) — when a new 4h period starts, i.e. at one of
+          the higher-timeframe hours (03, 07, 11, 15, 19, 23).
+
+        On the first cycle everything is loaded regardless of the time.
         """
-        return get_fng()
+        first_cycle = self.main.cycle_number == 1
+        hour = datetime.now().hour
+        # daily series: a new day begins at 03:00 in UTC+3
+        if first_cycle or hour == 3:
+            self.btcd = self._refresh(self.btcd, get_btcd())
+            self.fng = self._refresh(self.fng, get_fng())
+        # 4h series: a new 4h period begins at one of the higher-timeframe hours
+        if first_cycle or hour in self.higher_timeframe_hours:
+            self.btcdom = self._refresh(self.btcdom, get_btcdom())
 
     def get_historical_data(
         self,
@@ -829,17 +844,8 @@ class SigBot:
     def main_cycle(self):
         """Create and run exchange monitors"""
         self.spot_ex_monitor_list, self.fut_ex_monitor_list = self._create_exchange_monitors()
-        # get BTC dominance (exchange-independent)
-        btcd, btcdom = self._get_btc_dominance()
-        # update BTC dominance info only when there are new information
-        if btcd.shape[0] > 0 or (btcd.shape[0] == 0 and self.btcd is None):
-            self.btcd = btcd
-        if btcdom.shape[0] > 0 or (btcdom.shape[0] == 0 and self.btcdom is None):
-            self.btcdom = btcdom
-        # get Fear & Greed index (exchange-independent)
-        fng = self._get_fng()
-        if fng.shape[0] > 0 or (fng.shape[0] == 0 and self.fng is None):
-            self.fng = fng
+        # refresh market-wide context (BTC dominance, Fear & Greed) on a throttled schedule
+        self._update_market_context()
         # start all futures exchange monitors
         for monitor in self.fut_ex_monitor_list:
             monitor.run_cycle()

@@ -46,8 +46,8 @@ def make_objective(
     test_date: pd.Timestamp,
     fi: pd.DataFrame,
     bybit_tickers: List[str],
-    tp: float,
-    sl: float,
+    TP: float,
+    SL: float,
     n_folds: int = 8,
     optimize_alpha: float = 0.2,
     min_precision: float = 0.5,
@@ -60,7 +60,7 @@ def make_objective(
             "metric": "average_precison",
             "boosting_type": trial.suggest_categorical("boosting_type", ["dart", "goss", "gbdt"]),
             "n_estimators": trial.suggest_int("n_estimators", 500, 3000),
-            "learning_rate": trial.suggest_loguniform("learning_rate", 1e-4, 3e-1),
+            "learning_rate": trial.suggest_float("learning_rate", 1e-4, 3e-1, log=True),
             "reg_alpha": trial.suggest_float("reg_alpha", 1e-8, 10.0, log=True),
             "reg_lambda": trial.suggest_float("reg_lambda", 1e-8, 10.0, log=True),
             "max_depth": trial.suggest_int("max_depth", 4, 10),
@@ -130,7 +130,7 @@ def make_objective(
         oof_conf_score, oof_conf_obj_num, _ = conf_ppv_npv_acc_score(
             y, oof_slice, low_bound, high_bound
         )
-        backtest_result, _ = backtest(df, oof_slice, val_idxs, high_bound, tp, sl)
+        backtest_result, _ = backtest(df, oof_slice, val_idxs, high_bound, TP, SL)
         result = backtest_result * oof_conf_score
 
         scores = [

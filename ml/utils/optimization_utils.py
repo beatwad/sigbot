@@ -50,7 +50,7 @@ def load_best_params(row_num: int = 0) -> dict:
         A dictionary containing the best parameters for the LightGBM model.
     """
     try:
-        optuna_df = pd.read_csv("optuna/optuna_lgbm.csv")
+        optuna_df = pd.read_csv("model/optuna/optuna_lgbm.csv")
     except FileNotFoundError:
         return {}
     columns = [c for c in optuna_df.columns if c.startswith("params_")]
@@ -90,7 +90,7 @@ def make_objective(
     def objective(trial: optuna.trial.Trial) -> float:
         params = {
             "objective": "binary",
-            "metric": "average_precison",
+            "metric": "average_precision",
             "boosting_type": trial.suggest_categorical("boosting_type", ["dart", "goss", "gbdt"]),
             "n_estimators": trial.suggest_int("n_estimators", 500, 3000),
             "learning_rate": trial.suggest_float("learning_rate", 1e-4, 3e-1, log=True),
@@ -117,7 +117,7 @@ def make_objective(
         if params["boosting_type"] != "goss":
             params["subsample"] = trial.suggest_float("subsample", 0.3, 0.9)
 
-        if params["is_unbalance"] == "True":
+        if params["is_unbalance"] is True:
             params["class_weight"] = trial.suggest_categorical("class_weight", ["balanced", None])
         else:
             params["class_weight"] = None

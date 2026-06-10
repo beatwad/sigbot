@@ -123,6 +123,10 @@ def model_train(
           2 years ending 2 weeks before its validation window. Results are aggregated across
           all inner folds of all outer folds.
     """
+    # Fold indices are used both positionally (X.iloc / oof) and by label (df.loc), so the
+    # index must be a clean 0..n-1 range. Callers pass boolean-filtered slices, so reset it here.
+    df = df.reset_index(drop=True)
+
     X, time = df[features], df["time"]
     y = df["target"]
     val_idxs = []

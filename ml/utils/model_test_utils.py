@@ -57,7 +57,13 @@ def backtest(
     show_progress: bool = False,
     max_num_simult_trades: int = 0,
 ) -> Tuple[float, pd.DataFrame]:
-    """Run a backtest on model predictions."""
+    """Run a backtest on model predictions.
+
+    Accounting mirrors live trading: at open the trade locks its margin in ``free_balance`` and
+    pays the open commission, but its PnL is realized into ``balance`` only when the trade closes
+    (``signal_time >= close_time``). Trades still open after the last signal are settled at the
+    end, since their outcome is already known. Returns ``(final_balance * 100, backtest_df)``.
+    """
     backtest_df = df.loc[
         val_idxs,
         ["target", "max_price_deviation", "time", "close_time", "first_price", "last_price"],
@@ -106,13 +112,19 @@ def backtest(
         free_balance = free_balance_arr[i - 1] if i > 0 else 1.0
 
         signal_time = signal_times[i]
-        while open_trades and open_trades[0][0] <= signal_time:
+        # close trades that were opened before current signal time
+        while open_trades and open_trades[0][0] <= signal_time:  # open_trades[0][0] - close time
             _, j = heapq.heappop(open_trades)
+            # A trade's PnL is realized only when it closes: return its capital to free cash and
+            # book its profit into equity at that moment (not at open time).
             free_balance += trade_profit_arr[j]
+            balance += profit_arr[j]
             profit_count_arr[i] += 1
 
         if free_balance >= min_free_balance * balance:
             quantity = free_balance * risk / (sl * leverage)
+            # The open commission is a real cost paid at open; the trade's PnL is held in
+            # profit_arr[i] and only added to equity once the trade closes (see the loop above).
             balance -= quantity * open_comission
             free_balance -= quantity * (1 + open_comission)
             profit, trade_profit = calculate_profit(
@@ -123,7 +135,7 @@ def backtest(
             quantity = 0.0
 
         quantity_arr[i] = quantity
-        balance_arr[i] = balance + profit
+        balance_arr[i] = balance
         free_balance_arr[i] = free_balance
         profit_arr[i] = profit
         trade_profit_arr[i] = trade_profit
@@ -132,6 +144,13 @@ def backtest(
         # behaviour), so they are simply never queued and stay open until the end.
         if not close_is_nat[i]:
             heapq.heappush(open_trades, (close_times[i], i))
+
+    # Settle trades still open after the last signal: their outcome is already known, so realize
+    # their PnL into the final equity (and return their capital) rather than dropping trades that
+    # open near the end of the window.
+    for _, j in open_trades:
+        balance_arr[-1] += profit_arr[j]
+        free_balance_arr[-1] += trade_profit_arr[j]
 
     backtest_df["balance"] = balance_arr
     backtest_df["free_balance"] = free_balance_arr

@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import log_loss, precision_score
-from sklearn.model_selection import TimeSeriesSplit
 
 
 def conf_ppv_npv_acc_score(
@@ -73,6 +72,26 @@ def _fit_score_fold(
     return model_lgb
 
 
+def _window_indices(
+    time: pd.Series,
+    df: pd.DataFrame,
+    bybit_tickers: Optional[List[str]],
+    train_start: pd.Timestamp,
+    train_end: pd.Timestamp,
+    val_start: pd.Timestamp,
+    val_end: pd.Timestamp,
+) -> Tuple[list, list]:
+    """Return (fit_idx, val_idx) for the given calendar train/validation windows."""
+    fit_idx = time[(time > train_start) & (time <= train_end)].index.tolist()
+    if bybit_tickers is not None:
+        val_idx = time[
+            (time > val_start) & (time <= val_end) & (df["ticker"].isin(bybit_tickers))
+        ].index.tolist()
+    else:
+        val_idx = time[(time > val_start) & (time <= val_end)].index.tolist()
+    return fit_idx, val_idx
+
+
 def model_train(
     df: pd.DataFrame,
     features: List[str],
@@ -83,7 +102,6 @@ def model_train(
     high_bound: float,
     train_test: str,
     bybit_tickers: Optional[List[str]],
-    max_train_size: Optional[float] = None,
     loop: str = "outer",
     verbose: bool = False,
 ) -> Tuple[lgb.LGBMClassifier, list, list, np.ndarray, list]:
@@ -93,9 +111,12 @@ def model_train(
         - list of precisions for confident objects by folds (if train_test == "fold")
         - list of profitable objects by folds (if train_test == "fold")
 
-    When ``train_test == "fold"``, ``loop`` selects the cross-validation scheme:
-        - "outer": single TimeSeriesSplit, each fold trains on ~2 years and validates on
-          ~3 months (the original behaviour).
+    All windows are calendar-based and anchored on the dataset's last date; the gap between
+    train and validation is 2 weeks. When ``train_test == "fold"``, ``loop`` selects the
+    cross-validation scheme:
+        - "outer": ``n_folds`` folds whose 3-month validation windows tile backwards from the
+          dataset's last date; each fold trains on the 2 years ending 2 weeks before its
+          validation window.
         - "inner": nested validation. For each of the ``n_folds`` outer folds, build 3 inner
           folds whose 3-month validation windows slide back one calendar month each (months
           22-24, 21-23, 20-22 of the outer fold's train block); each inner fold trains on the
@@ -107,34 +128,25 @@ def model_train(
     val_idxs = []
     conf_scores = []
     conf_object_nums = []
-    max_train_size = int(len(df) * max_train_size) if max_train_size is not None else None
 
     if train_test == "fold":
         oof = np.zeros([len(df), 1])
-
-        tss = TimeSeriesSplit(
-            gap=0,
-            max_train_size=max_train_size,
-            n_splits=n_folds,
-            test_size=(len(df) * 2) // (n_folds * 3),
-        )
+        last_date = time.max()
 
         if verbose:
             print(f"Training with {len(features)} features")
 
         if loop == "outer":
-            for fold, (fit_idx, val_idx) in enumerate(tss.split(time)):
-                max_train_time = time[fit_idx].max() + pd.to_timedelta(96, unit="h")
-                max_val_time = time[val_idx].max()
+            for fold in range(n_folds):
+                # Validation windows tile backwards from the dataset's last date.
+                val_end = last_date - pd.DateOffset(months=3 * fold)
+                val_start = val_end - pd.DateOffset(months=3)
+                train_end = val_start - pd.Timedelta(weeks=2)
+                train_start = train_end - pd.DateOffset(years=2)
 
-                if bybit_tickers is not None:
-                    val_idx = time[
-                        (time > max_train_time)
-                        & (time <= max_val_time)
-                        & (df["ticker"].isin(bybit_tickers))
-                    ].index.tolist()
-                else:
-                    val_idx = time[(time > max_train_time) & (time <= max_val_time)].index.tolist()
+                fit_idx, val_idx = _window_indices(
+                    time, df, bybit_tickers, train_start, train_end, val_start, val_end
+                )
                 val_idxs.extend(val_idx)
 
                 if verbose:
@@ -179,9 +191,11 @@ def model_train(
 
         elif loop == "inner":
             plot_pos = 0
-            for outer_fold, (outer_fit_idx, _) in enumerate(tss.split(time)):
-                # End of this outer fold's ~2-year train block; inner folds slide back from here.
-                anchor = time[outer_fit_idx].max()
+            for outer_fold in range(n_folds):
+                # Inner folds validate within this outer fold's 2-year train block, which ends
+                # 2 weeks before the outer validation window.
+                outer_val_start = last_date - pd.DateOffset(months=3 * outer_fold + 3)
+                anchor = outer_val_start - pd.Timedelta(weeks=2)
 
                 for inner_fold in range(3):
                     val_end = anchor - pd.DateOffset(months=inner_fold)
@@ -189,15 +203,9 @@ def model_train(
                     train_end = val_start - pd.Timedelta(weeks=2)
                     train_start = train_end - pd.DateOffset(years=2)
 
-                    if bybit_tickers is not None:
-                        val_idx = time[
-                            (time > val_start)
-                            & (time <= val_end)
-                            & (df["ticker"].isin(bybit_tickers))
-                        ].index.tolist()
-                    else:
-                        val_idx = time[(time > val_start) & (time <= val_end)].index.tolist()
-                    fit_idx = time[(time > train_start) & (time <= train_end)].index.tolist()
+                    fit_idx, val_idx = _window_indices(
+                        time, df, bybit_tickers, train_start, train_end, val_start, val_end
+                    )
                     val_idxs.extend(val_idx)
 
                     if verbose:
@@ -254,9 +262,8 @@ def model_train(
 
     elif train_test == "inference":
         print("Train on the latest data")
-        train_slice = df.iloc[-max_train_size:] if max_train_size else df
-        X_inf, y_inf = train_slice[features], train_slice["target"]
-        sw = train_slice["weight"] if sample_weight is not None else None
+        X_inf, y_inf = df[features], df["target"]
+        sw = df["weight"] if sample_weight is not None else None
         model_lgb = lgb.LGBMClassifier(**params)
         model_lgb.fit(
             X_inf,

@@ -293,7 +293,7 @@ def prepare_features(df, fi, feature_num, corr_thresh):
     return features, feature_dict
 
 
-def remove_feature_selection(df, test_date, features, params, high_bound, max_train_size):
+def remove_feature_selection(df, test_date, features, params, high_bound):
     """Remove features that significantly decrease fold score."""
     from tqdm.auto import tqdm
 
@@ -309,7 +309,6 @@ def remove_feature_selection(df, test_date, features, params, high_bound, max_tr
         high_bound=high_bound,
         train_test="fold",
         bybit_tickers=None,
-        max_train_size=max_train_size,
         verbose=False,
     )
 
@@ -326,7 +325,6 @@ def remove_feature_selection(df, test_date, features, params, high_bound, max_tr
             high_bound=high_bound,
             train_test="fold",
             bybit_tickers=None,
-            max_train_size=max_train_size,
             verbose=False,
         )
         p_value = ttest_rel(scores, best_scores, alternative="greater").pvalue

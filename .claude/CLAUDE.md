@@ -108,12 +108,12 @@ All runtime behaviour is driven by JSON config files in `config/`. The active co
 
 | Path | Description |
 |---|---|
-| `lgbm.pkl` | Trained LightGBM classifier (buy/sell signal quality) |
-| `bybit_tickers.json` | List of ~576 Bybit ticker symbols used for training and inference |
-| `features/features.json` | Selected feature names, keyed by feature-set index (e.g. `"0"`, `"4"`, ...) |
-| `features/feature_importance.csv` | Per-feature importance scores from the trained model |
-| `optuna/optuna_lgbm.csv` | Optuna hyperparameter trial results |
-| `optuna/optuna_lgbm_info.csv` | Optuna study metadata |
+| `model/lgbm.pkl` | Trained LightGBM classifier (buy/sell signal quality) |
+| `model/bybit_tickers.json` | List of ~576 Bybit ticker symbols used for training and inference |
+| `model/features/features.json` | Selected feature names, keyed by feature-set index (e.g. `"0"`, `"4"`, ...) |
+| `model/features/feature_importance.csv` | Per-feature importance scores from the trained model |
+| `model/optuna/optuna_lgbm.csv` | Optuna hyperparameter trial results |
+| `model/optuna/optuna_lgbm_info.csv` | Optuna study metadata |
 
 ### Signal stat dataframes (`ml/data/signal_stat/`)
 

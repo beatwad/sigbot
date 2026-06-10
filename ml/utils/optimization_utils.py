@@ -75,7 +75,6 @@ def make_objective(
             "low_bound": trial.suggest_float("low_bound", 0.0, 0.1),
             "feature_num": trial.suggest_int("feature_num", 30, 600),
             "corr_thresh": trial.suggest_float("corr_thresh", 0.5, 0.99),
-            "max_train_size": trial.suggest_float("max_train_size", 0.5, 1),
             "sample_weight": trial.suggest_categorical("sample_weight", [None, "cos", "linear"]),
         }
 
@@ -90,7 +89,6 @@ def make_objective(
         high_bound = params.pop("high_bound")
         low_bound = params.pop("low_bound")
         corr_thresh = params.pop("corr_thresh")
-        max_train_size = params.pop("max_train_size")
         sample_weight = params.pop("sample_weight")
         feature_num = params.pop("feature_num")
 
@@ -123,7 +121,6 @@ def make_objective(
             high_bound=high_bound,
             train_test="fold",
             bybit_tickers=bybit_tickers,
-            max_train_size=max_train_size,
             loop="inner",
             verbose=False,
         )
@@ -141,7 +138,7 @@ def make_objective(
             for conf_object_num, conf_score in zip(conf_object_nums, conf_scores)
         ]
 
-        df_optuna_more_info = pd.read_csv("optuna/optuna_lgbm_info.csv")
+        df_optuna_more_info = pd.read_csv("ml/model/optuna/optuna_lgbm_info.csv")
         profit_objects = round(oof_conf_obj_num * (2 * oof_conf_score - 1))
 
         if df_optuna_more_info.shape[0] > 0:
@@ -170,7 +167,7 @@ def make_objective(
         )
 
         df_optuna_more_info = pd.concat([df_optuna_more_info, tmp])
-        df_optuna_more_info.to_csv("optuna/optuna_lgbm_info.csv", index=False)
+        df_optuna_more_info.to_csv("ml/model/optuna/optuna_lgbm_info.csv", index=False)
         return result
 
     return objective

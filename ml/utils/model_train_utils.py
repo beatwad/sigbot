@@ -34,12 +34,18 @@ def _fit_score_fold(
     low_bound: float,
     high_bound: float,
     oof: np.ndarray,
+    seen: set,
     conf_scores: list,
     conf_object_nums: list,
     callbacks: list,
     verbose: bool,
 ) -> lgb.LGBMClassifier:
-    """Fit one fold, write its predictions into ``oof`` and append confident-object metrics."""
+    """Fit one fold, write its predictions into ``oof`` and append confident-object metrics.
+
+    Only oof rows not already written by an earlier fold are filled (``seen`` tracks them); folds
+    iterate newest-first, so a later, older-trained fold never overwrites a fresher prediction.
+    The confident-object metrics are still computed on the fold's full validation window.
+    """
     sw = df.loc[fit_idx, "weight"] if sample_weight is not None else None
 
     model_lgb = lgb.LGBMClassifier(**params)
@@ -53,7 +59,15 @@ def _fit_score_fold(
     )
 
     val_preds = model_lgb.predict_proba(X.iloc[val_idx])
-    oof[val_idx, 0] = val_preds[:, 1]
+    # First-writer-wins: fill only rows not yet written by an earlier (more recent) fold, so an
+    # older-trained fold can't overwrite a fresher prediction in the overlapping inner windows.
+    novel_idx, novel_pos = [], []
+    for pos, idx in enumerate(val_idx):
+        if idx not in seen:
+            novel_idx.append(idx)
+            novel_pos.append(pos)
+    oof[novel_idx, 0] = val_preds[novel_pos, 1]
+    seen.update(novel_idx)
 
     val_score = log_loss(y.iloc[val_idx], val_preds)
     conf_score, conf_obj_num, conf_obj_pct = conf_ppv_npv_acc_score(
@@ -121,7 +135,8 @@ def model_train(
           folds whose 3-month validation windows slide back one calendar month each (months
           22-24, 21-23, 20-22 of the outer fold's train block); each inner fold trains on the
           2 years ending 2 weeks before its validation window. Results are aggregated across
-          all inner folds of all outer folds.
+          all inner folds of all outer folds. Where windows overlap, oof keeps the prediction
+          of the first (most recent) fold that validated each row.
     """
     # Fold indices are used both positionally (X.iloc / oof) and by label (df.loc), so the
     # index must be a clean 0..n-1 range. Callers pass boolean-filtered slices, so reset it here.
@@ -130,6 +145,7 @@ def model_train(
     X, time = df[features], df["time"]
     y = df["target"]
     val_idxs = []
+    seen: set = set()  # oof rows already written, so later folds don't overwrite fresher preds
     conf_scores = []
     conf_object_nums = []
 
@@ -187,6 +203,7 @@ def model_train(
                     low_bound,
                     high_bound,
                     oof,
+                    seen,
                     conf_scores,
                     conf_object_nums,
                     callbacks,
@@ -247,6 +264,7 @@ def model_train(
                         low_bound,
                         high_bound,
                         oof,
+                        seen,
                         conf_scores,
                         conf_object_nums,
                         callbacks,
@@ -261,6 +279,11 @@ def model_train(
             plt.title(f"Train/Test Distribution for {split_name}")
             plt.legend(["Train", "Test"], loc="lower right")
             plt.show()
+
+        # Inner folds of different outer folds can validate overlapping calendar periods, so the
+        # accumulated val_idxs may contain duplicates (oof holds the first/newest fold's prediction
+        # for such rows). Collapse to unique indices so the pooled oof/backtest never double-counts.
+        val_idxs = sorted(set(val_idxs))
 
         return model_lgb, conf_scores, conf_object_nums, oof, val_idxs
 

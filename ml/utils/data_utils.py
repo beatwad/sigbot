@@ -282,19 +282,23 @@ def create_train_df(
             for j in range(first, last + 1, step):
                 # collect features every 4 hours, save difference between the current feature and the lagged features
                 time_prev = t + timedelta(hours=-j)
-                try:
-                    row_tmp = tmp_df_1h.loc[
-                        tmp_df_1h["time"] == time_prev,
-                        [c for c in tmp_df_1h.columns if c not in real_price_cols],
-                    ].reset_index(drop=True)
-                    if j % 8 != 0:
-                        row_tmp = row_tmp.drop(columns=funding_cols)
-                    if j % 24 != 0:
-                        row_tmp = row_tmp.drop(columns=btcd_cols + ["fng_value"])
-                    row_tmp.columns = [c + f"_prev_{j}" for c in row_tmp.columns]
-                except IndexError:
+                row_tmp = tmp_df_1h.loc[
+                    tmp_df_1h["time"] == time_prev,
+                    [c for c in tmp_df_1h.columns if c not in real_price_cols],
+                ].reset_index(drop=True)
+                # boolean .loc returns an empty frame (never raises) when the lookback
+                # timestamp is missing; skip the signal so we don't emit NaN _prev features
+                if row_tmp.empty:
                     pass_cycle = True
                     break
+                if j % 8 != 0:
+                    row_tmp = row_tmp.drop(columns=funding_cols)
+                if j % 24 != 0:
+                    row_tmp = row_tmp.drop(columns=btcd_cols + ["fng_value"])
+                row_tmp.columns = [c + f"_prev_{j}" for c in row_tmp.columns]
+                # that's a bug: drops "open_prev-j" if j % 8 == 0, but keeps "close_prev-j"
+                # should drop "open_prev-j" if j % 24 == 0, because it's already
+                # dropped when j % 8 == 0
                 parts.append(row_tmp.iloc[:, 1:])
 
             if pass_cycle:

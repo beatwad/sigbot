@@ -124,6 +124,7 @@ def make_objective(
             train_test="fold",
             bybit_tickers=bybit_tickers,
             max_train_size=max_train_size,
+            loop="inner",
             verbose=False,
         )
 

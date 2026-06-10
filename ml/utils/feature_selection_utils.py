@@ -75,7 +75,7 @@ def boruta_selction(df, features, params, n_folds=4):
 
     boruta_df_ = boruta_df_.sort_values("importance")
     boruta_df_ = boruta_df_.reset_index().rename({"index": "Feature"}, axis=1)
-
+    boruta_df_.to_csv("model/features/boruta_importances.csv", index=False)
     return boruta_df_
 
 
@@ -170,6 +170,11 @@ def lgbm_tuning(df, features, params, bybit_tickers, n_folds=4, n_repeats=1, per
         drop=True
     )
 
+    feature_importances_.to_csv("model/features/lgbm_feature_importances.csv", index=False)
+
+    if permut:
+        perm_df_.to_csv("model/features/permutation_importances.csv", index=False)
+
     return perm_df_, feature_importances_, np.mean(outer_cv_score)
 
 
@@ -189,6 +194,7 @@ def rfe_selection(df, features):
     selector = selector.fit(X, y)
     rfe_df_ = pd.DataFrame({"importance": selector.ranking_}, index=features).sort_index()
     rfe_df_ = rfe_df_.reset_index().rename({"index": "Feature"}, axis=1)
+    rfe_df_.to_csv("model/features/rfe_importances.csv", index=False)
     return rfe_df_
 
 

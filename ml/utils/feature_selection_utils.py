@@ -198,16 +198,15 @@ def rfe_selection(df, features):
     return rfe_df_
 
 
-def exclude_corr_features(df, fi, features, corr_thresh):
+def exclude_corr_features(df, fi, features, corr_thresh, corr_matrix=None):
     features_to_select = features.copy()
-    correlations = (
-        df.loc[:, features_to_select]
-        .corr()
-        .abs()
-        .unstack()
-        .sort_values(kind="quicksort", ascending=False)
-        .reset_index()
-    )
+    if corr_matrix is not None:
+        # Reuse the precomputed abs-correlation matrix (pairwise values are independent of
+        # which other columns are present, so slicing it is identical to recomputing).
+        corr_abs = corr_matrix.loc[features_to_select, features_to_select]
+    else:
+        corr_abs = df.loc[:, features_to_select].corr().abs()
+    correlations = corr_abs.unstack().sort_values(kind="quicksort", ascending=False).reset_index()
     correlations = correlations[correlations["level_0"] != correlations["level_1"]]
     correlations.columns = ["feature_1", "feature_2", "corr"]
 
@@ -233,7 +232,7 @@ def exclude_corr_features(df, fi, features, corr_thresh):
     return features_to_exclude
 
 
-def prepare_features(df, fi, feature_num, corr_thresh):
+def prepare_features(df, fi, feature_num, corr_thresh, corr_matrix=None):
     """Get features, sort them by their time appearance and return for using in train and inference."""
     fi = fi["Feature"]
     fi = fi[:feature_num]
@@ -263,6 +262,7 @@ def prepare_features(df, fi, feature_num, corr_thresh):
         fi.reset_index(drop=True).to_frame(name="Feature").assign(rank=range(len(fi))),
         features,
         corr_thresh,
+        corr_matrix=corr_matrix,
     )
     features = [f for f in features if f not in features_to_exclude]
 

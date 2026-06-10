@@ -1,3 +1,4 @@
+import os
 from typing import Callable, List
 
 import numpy as np
@@ -8,6 +9,30 @@ from scipy.stats import ttest_rel
 from ml.utils.feature_selection_utils import prepare_features
 from ml.utils.model_test_utils import backtest
 from ml.utils.model_train_utils import conf_ppv_npv_acc_score, model_train
+
+# Cache for the per-trial feature correlation matrix. Keyed on the feature set only: delete
+# this file if you rebuild the training data without changing the top-feature list.
+CORR_MATRIX_PATH = "model/optuna/corr_matrix.pkl"
+
+
+def _load_or_compute_corr_matrix(
+    train_df: pd.DataFrame, corr_candidates: List[str]
+) -> pd.DataFrame:
+    """Return the abs-correlation matrix for ``corr_candidates``, cached on disk.
+
+    Reuses the cached matrix when it exists and was built on the same set of features;
+    otherwise recomputes it and overwrites the cache.
+    Recompute takes ~30 sec for 600 features and ~100k rows
+    """
+    if os.path.exists(CORR_MATRIX_PATH):
+        cached = pd.read_pickle(CORR_MATRIX_PATH)
+        if set(cached.columns) == set(corr_candidates):
+            return cached
+
+    corr_matrix = train_df[corr_candidates].corr().abs()
+    os.makedirs(os.path.dirname(CORR_MATRIX_PATH), exist_ok=True)
+    corr_matrix.to_pickle(CORR_MATRIX_PATH)
+    return corr_matrix
 
 
 def load_best_params(row_num: int = 0) -> dict:
@@ -54,6 +79,14 @@ def make_objective(
 ) -> Callable[[optuna.trial.Trial], float]:
     """Return an Optuna objective function for LightGBM hyperparameter tuning."""
 
+    # Pairwise feature correlations don't change between trials (only corr_thresh / feature_num
+    # do), so compute the abs-correlation matrix once over the largest candidate set the search
+    # can reach (top `max_feature_num` ranked features) and reuse it in every trial. The matrix
+    # is cached on disk and only recomputed when missing or built on a different feature set.
+    max_feature_num = 600
+    corr_candidates = [f for f in fi["Feature"][:max_feature_num] if f in train_df.columns]
+    corr_matrix = _load_or_compute_corr_matrix(train_df, corr_candidates)
+
     def objective(trial: optuna.trial.Trial) -> float:
         params = {
             "objective": "binary",
@@ -78,6 +111,9 @@ def make_objective(
             "sample_weight": trial.suggest_categorical("sample_weight", [None, "cos", "linear"]),
         }
 
+        # goss is not supported by the CUDA backend; run it on CPU, GPU otherwise
+        # params["device_type"] = "cpu" if params["boosting_type"] == "goss" else "cuda"
+
         if params["boosting_type"] != "goss":
             params["subsample"] = trial.suggest_float("subsample", 0.3, 0.9)
 
@@ -92,8 +128,10 @@ def make_objective(
         sample_weight = params.pop("sample_weight")
         feature_num = params.pop("feature_num")
 
-        df = train_df.copy()
+        # Only deep-copy train_df when we need to attach a weight column; otherwise read it
+        # directly (prepare_features and model_train do not mutate it).
         if sample_weight:
+            df = train_df.copy()
             df["weight"] = df["time"].astype(np.int64) / int(1e6)
             if sample_weight == "cos":
                 df["weight"] = (
@@ -108,8 +146,10 @@ def make_objective(
                     df["weight"].max() - df["weight"].min()
                 )
             sample_weight = True
+        else:
+            df = train_df
 
-        features, _ = prepare_features(df, fi, feature_num, corr_thresh)
+        features, _ = prepare_features(df, fi, feature_num, corr_thresh, corr_matrix=corr_matrix)
 
         _, conf_scores, conf_object_nums, oof, val_idxs = model_train(
             df[df["time"] < test_date],

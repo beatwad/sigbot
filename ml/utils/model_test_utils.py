@@ -66,11 +66,11 @@ def backtest(
     if max_num_simult_trades > 0:
         backtest_df = cap_max_num_simult_trades(backtest_df, max_num_simult_trades)
     backtest_df = backtest_df.reset_index(drop=True)
-    backtest_df["balance"] = 1
-    backtest_df["free_balance"] = 1
-    backtest_df["profit"] = 0
-    backtest_df["trade_profit"] = 0
-    backtest_df["quantity"] = 0
+    backtest_df["balance"] = 1.0
+    backtest_df["free_balance"] = 1.0
+    backtest_df["profit"] = 0.0
+    backtest_df["trade_profit"] = 0.0
+    backtest_df["quantity"] = 0.0
     backtest_df["profit_count"] = 0
 
     not_closed_trade_idxs = set()

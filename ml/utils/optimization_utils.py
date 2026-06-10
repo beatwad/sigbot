@@ -138,7 +138,7 @@ def make_objective(
             for conf_object_num, conf_score in zip(conf_object_nums, conf_scores)
         ]
 
-        df_optuna_more_info = pd.read_csv("ml/model/optuna/optuna_lgbm_info.csv")
+        df_optuna_more_info = pd.read_csv("model/optuna/optuna_lgbm_info.csv")
         profit_objects = round(oof_conf_obj_num * (2 * oof_conf_score - 1))
 
         if df_optuna_more_info.shape[0] > 0:
@@ -167,7 +167,7 @@ def make_objective(
         )
 
         df_optuna_more_info = pd.concat([df_optuna_more_info, tmp])
-        df_optuna_more_info.to_csv("ml/model/optuna/optuna_lgbm_info.csv", index=False)
+        df_optuna_more_info.to_csv("model/optuna/optuna_lgbm_info.csv", index=False)
         return result
 
     return objective

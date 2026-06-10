@@ -1,4 +1,5 @@
-from typing import Tuple
+import heapq
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -63,73 +64,83 @@ def backtest(
     ]
     backtest_df["pred"] = oof
     backtest_df = backtest_df[backtest_df["pred"] >= high_bound]
+    # The simulation is path-dependent (compounding balance, free-balance position sizing,
+    # and time-based trade closing), so rows must be processed chronologically. val_idxs is
+    # built by tiling folds backwards in time, so sort here before iterating.
+    backtest_df = backtest_df.sort_values("time")
     if max_num_simult_trades > 0:
         backtest_df = cap_max_num_simult_trades(backtest_df, max_num_simult_trades)
     backtest_df = backtest_df.reset_index(drop=True)
-    backtest_df["balance"] = 1.0
-    backtest_df["free_balance"] = 1.0
-    backtest_df["profit"] = 0.0
-    backtest_df["trade_profit"] = 0.0
-    backtest_df["quantity"] = 0.0
-    backtest_df["profit_count"] = 0
 
-    not_closed_trade_idxs = set()
+    n = len(backtest_df)
+    if n == 0:
+        for col in ("balance", "free_balance", "profit", "trade_profit", "quantity"):
+            backtest_df[col] = pd.Series(dtype=float)
+        backtest_df["profit_count"] = pd.Series(dtype=int)
+        return 0, backtest_df
 
-    generator = (
-        tqdm(backtest_df.iterrows(), total=len(backtest_df))
-        if show_progress
-        else backtest_df.iterrows()
-    )
+    # Work on numpy arrays instead of per-cell .loc reads/writes, and track open trades in a
+    # min-heap keyed on close time. Rows are already sorted by time, so each step pops every
+    # trade whose close time has passed in O(log n) instead of scanning all open trades.
+    signal_times = backtest_df["time"].to_numpy().astype("int64")
+    targets = backtest_df["target"].to_numpy()
+    first_prices = backtest_df["first_price"].to_numpy()
+    last_prices = backtest_df["last_price"].to_numpy()
+    close_dt = backtest_df["close_time"].to_numpy()
+    close_is_nat = np.isnat(close_dt)
+    close_times = close_dt.astype("int64")
 
-    for i, row in generator:
-        j = i - 1
-        if j >= 0:
-            balance = backtest_df.loc[j, "balance"]
-            free_balance = backtest_df.loc[j, "free_balance"]
-        else:
-            balance = free_balance = 1
+    balance_arr = np.empty(n)
+    free_balance_arr = np.empty(n)
+    profit_arr = np.zeros(n)
+    trade_profit_arr = np.zeros(n)
+    quantity_arr = np.zeros(n)
+    profit_count_arr = np.zeros(n, dtype=int)
 
-        signal_time = row["time"]
-        target = row["target"]
-        first_price = row["first_price"]
-        last_price = row["last_price"]
+    open_trades: List[Tuple[int, int]] = []  # min-heap of (close_time_ns, row_idx)
 
-        closed_trade_idxs = []
+    iterator = tqdm(range(n)) if show_progress else range(n)
 
-        for j in not_closed_trade_idxs:
-            prev_signal_close_time = backtest_df.loc[j, "close_time"]
-            if signal_time >= prev_signal_close_time:
-                free_balance += backtest_df.loc[j, "trade_profit"]
-                backtest_df.loc[i, "trade_profit"] += backtest_df.loc[j, "trade_profit"]
-                backtest_df.loc[i, "profit_count"] += 1
-                closed_trade_idxs.append(j)
+    for i in iterator:
+        balance = balance_arr[i - 1] if i > 0 else 1.0
+        free_balance = free_balance_arr[i - 1] if i > 0 else 1.0
 
-        for j in closed_trade_idxs:
-            not_closed_trade_idxs.remove(j)
+        signal_time = signal_times[i]
+        while open_trades and open_trades[0][0] <= signal_time:
+            _, j = heapq.heappop(open_trades)
+            free_balance += trade_profit_arr[j]
+            profit_count_arr[i] += 1
 
         if free_balance >= min_free_balance * balance:
             quantity = free_balance * risk / (sl * leverage)
             balance -= quantity * open_comission
             free_balance -= quantity * (1 + open_comission)
             profit, trade_profit = calculate_profit(
-                target, quantity, first_price, last_price, tp, sl
+                targets[i], quantity, first_prices[i], last_prices[i], tp, sl
             )
         else:
-            profit, trade_profit = 0, 0
-            quantity = 0
+            profit, trade_profit = 0.0, 0.0
+            quantity = 0.0
 
-        backtest_df.loc[i, "quantity"] = quantity
-        backtest_df.loc[i, "balance"] = balance + profit
-        backtest_df.loc[i, "free_balance"] = free_balance
-        backtest_df.loc[i, "profit"] = profit
-        backtest_df.loc[i, "trade_profit"] = trade_profit
+        quantity_arr[i] = quantity
+        balance_arr[i] = balance + profit
+        free_balance_arr[i] = free_balance
+        profit_arr[i] = profit
+        trade_profit_arr[i] = trade_profit
 
-        not_closed_trade_idxs.add(i)
+        # NaT close times never satisfy the close condition (matching the original >= NaT == False
+        # behaviour), so they are simply never queued and stay open until the end.
+        if not close_is_nat[i]:
+            heapq.heappush(open_trades, (close_times[i], i))
 
-    if len(backtest_df) > 0:
-        result = round(backtest_df["balance"].iloc[-1] * 100, 2)
-    else:
-        result = 0
+    backtest_df["balance"] = balance_arr
+    backtest_df["free_balance"] = free_balance_arr
+    backtest_df["profit"] = profit_arr
+    backtest_df["trade_profit"] = trade_profit_arr
+    backtest_df["quantity"] = quantity_arr
+    backtest_df["profit_count"] = profit_count_arr
+
+    result = round(balance_arr[-1] * 100, 2)
     return result, backtest_df
 
 

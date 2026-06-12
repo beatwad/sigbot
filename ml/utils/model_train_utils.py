@@ -176,13 +176,13 @@ def model_train(
                     print(df.loc[val_idx[-1], "time"])
 
                     plt.plot(
-                        df.index[fit_idx],
+                        df.loc[fit_idx, "time"],
                         [fold + 1] * len(fit_idx),
                         label=f"Train {fold + 1}",
                         color="blue",
                     )
                     plt.plot(
-                        df.index[val_idx],
+                        df.loc[val_idx, "time"],
                         [fold + 1] * len(val_idx),
                         label=f"Test {fold + 1}",
                         color="red",
@@ -237,13 +237,13 @@ def model_train(
 
                         plot_pos += 1
                         plt.plot(
-                            df.index[fit_idx],
+                            df.loc[fit_idx, "time"],
                             [plot_pos] * len(fit_idx),
                             label=f"Train {plot_pos}",
                             color="blue",
                         )
                         plt.plot(
-                            df.index[val_idx],
+                            df.loc[val_idx, "time"],
                             [plot_pos] * len(val_idx),
                             label=f"Test {plot_pos}",
                             color="red",
@@ -273,7 +273,8 @@ def model_train(
 
         if verbose:
             plt.ylim(0.5, (n_folds if loop == "outer" else n_folds * 3) + 0.5)
-            plt.xlabel("Index")
+            plt.xlabel("Time")
+            plt.xticks(rotation=45)
             plt.ylabel("Fold")
             split_name = "Time-Series Split" if loop == "outer" else "Nested Time-Series Split"
             plt.title(f"Train/Test Distribution for {split_name}")

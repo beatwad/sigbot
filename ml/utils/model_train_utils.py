@@ -118,6 +118,7 @@ def model_train(
     bybit_tickers: Optional[List[str]],
     loop: str = "outer",
     verbose: bool = False,
+    test_time_days: Optional[int] = None,
 ) -> Tuple[lgb.LGBMClassifier, list, list, np.ndarray, list]:
     """
     Train/validate model, return:
@@ -137,6 +138,10 @@ def model_train(
           2 years ending 2 weeks before its validation window. Results are aggregated across
           all inner folds of all outer folds. Where windows overlap, oof keeps the prediction
           of the first (most recent) fold that validated each row.
+
+    When ``train_test == "inference"`` and ``test_time_days`` is set, the last ``test_time_days`` days are
+    held out as test data and the model is trained on the 2 years ending where that test period
+    begins; if ``test_time_days`` is None, it trains on the 2 years ending at the dataset's last date.
     """
     # Fold indices are used both positionally (X.iloc / oof) and by label (df.loc), so the
     # index must be a clean 0..n-1 range. Callers pass boolean-filtered slices, so reset it here.
@@ -289,9 +294,18 @@ def model_train(
         return model_lgb, conf_scores, conf_object_nums, oof, val_idxs
 
     elif train_test == "inference":
-        print("Train on the latest data")
-        X_inf, y_inf = df[features], df["target"]
-        sw = df["weight"] if sample_weight is not None else None
+        # When test_time_days is set, hold out the last test_time_days days as test data and anchor the
+        # train window on the end of the remaining (train) data; otherwise use all data.
+        if test_time_days is not None:
+            train_end = time.max() - pd.Timedelta(days=test_time_days)
+        else:
+            train_end = time.max()
+        print(f"Train on the last 2 years of data up to {train_end}")
+        # Match the fold scheme's 2-year train window.
+        train_start = train_end - pd.DateOffset(years=2)
+        inf_mask = (time > train_start) & (time <= train_end)
+        X_inf, y_inf = df.loc[inf_mask, features], df.loc[inf_mask, "target"]
+        sw = df.loc[inf_mask, "weight"] if sample_weight is not None else None
         model_lgb = lgb.LGBMClassifier(**params)
         model_lgb.fit(
             X_inf,

@@ -1,3 +1,4 @@
+import ast
 from typing import List, Optional, Tuple, Union
 
 import lightgbm as lgb
@@ -5,6 +6,107 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import log_loss, precision_score
+
+from .feature_selection_utils import prepare_features
+
+
+def load_train_data(
+    train_path: str, profitable_hours_path: str, test_time_days: int
+) -> Tuple[pd.DataFrame, pd.Timestamp]:
+    """Load the training dataframe and keep only signals fired during profitable hours.
+
+    Filters to buy/sell signals whose hour-of-day is in the latest profitable-hours set, and
+    returns the filtered dataframe together with the test cutoff date (``test_time_days`` before
+    the last timestamp); rows after that date are held out as the test period.
+    """
+    train_df = pd.read_pickle(train_path)
+
+    # all data for the last test_time_days days are test
+    test_date = train_df["time"].max() - pd.to_timedelta(test_time_days, unit="D")
+
+    profitable_hours_df = pd.read_csv(profitable_hours_path)
+    latest = profitable_hours_df.iloc[-1]
+    buy_hours = ast.literal_eval(latest["profitable_buy_hours"])
+    sell_hours = ast.literal_eval(latest["profitable_sell_hours"])
+
+    buy_mask = (train_df["ttype"] == "buy") & (train_df["time"].dt.hour.isin(buy_hours))
+    sell_mask = (train_df["ttype"] == "sell") & (train_df["time"].dt.hour.isin(sell_hours))
+    train_df = train_df[buy_mask | sell_mask].reset_index(drop=True)
+
+    return train_df, test_date
+
+
+def load_selected_features(
+    train_df: pd.DataFrame, params: dict, fi: pd.DataFrame
+) -> Tuple[List[str], dict]:
+    """Select model features from the feature-importance table.
+
+    Consumes the feature-selection hyperparameters (``feature_num``, ``corr_thresh``) from
+    ``params`` when present, so the returned ``params`` holds only LightGBM parameters.
+    """
+    if "feature_num" in params:
+        feature_num = params.pop("feature_num")
+        corr_thresh = params.pop("corr_thresh")
+
+    features, feature_dict = prepare_features(train_df, fi, feature_num, corr_thresh)
+
+    assert len(features) == len(set(features))
+
+    return features, feature_dict
+
+
+def prepare_model_params(
+    train_df: pd.DataFrame, params: dict
+) -> Tuple[dict, float, float, Optional[bool]]:
+    """Finalize LightGBM ``params`` and derive prediction bounds and sample weights.
+
+    Consumes ``high_bound``/``low_bound`` and ``sample_weight`` hyperparameters from ``params``
+    and sets the fixed LightGBM training options. When a ``sample_weight`` scheme ("cos" or
+    "linear") is requested, a time-based ``weight`` column is added to ``train_df`` in place.
+
+    Returns ``(params, high_bound, low_bound, sample_weight)`` where ``sample_weight`` is
+    ``True`` if weighting is enabled and ``None`` otherwise.
+    """
+    # set high and low bound for model predictions
+    # p > high_bound -> 1, p < low_bound -> 0
+    if "high_bound" in params:
+        high_bound = params.pop("high_bound")
+        del params["low_bound"]
+    low_bound = 0
+
+    # add object weights
+    if "sample_weight" in params:
+        sample_weight = params.pop("sample_weight")
+        train_df["weight"] = train_df["time"].astype(np.int64) / int(1e6)
+    else:
+        sample_weight = None
+
+    if sample_weight == "cos":
+        train_df["weight"] = (
+            (train_df["weight"].max() - train_df["weight"])
+            / (train_df["weight"].max() - train_df["weight"].min())
+            * np.pi
+            / 2
+        )
+        train_df["weight"] = np.cos(train_df["weight"])
+        sample_weight = True
+    elif sample_weight == "linear":
+        train_df["weight"] = (train_df["weight"].max() - train_df["weight"]) / (
+            train_df["weight"].max() - train_df["weight"].min()
+        )
+        sample_weight = True
+
+    params["objective"] = "binary"
+    params["verbosity"] = -1
+    if params["boosting_type"] != "goss":
+        params["subsample_freq"] = 1
+    else:
+        params["subsample"] = None
+        params["subsample_freq"] = None
+    params["importance_type"] = "gain"
+    params["metric"] = "average_precison"
+
+    return params, high_bound, low_bound, sample_weight
 
 
 def conf_ppv_npv_acc_score(
@@ -117,8 +219,9 @@ def model_train(
     train_test: str,
     bybit_tickers: Optional[List[str]],
     loop: str = "outer",
-    verbose: bool = False,
+    train_time_years: int = 2,
     test_time_days: Optional[int] = None,
+    verbose: bool = False,
 ) -> Tuple[lgb.LGBMClassifier, list, list, np.ndarray, list]:
     """
     Train/validate model, return:
@@ -127,21 +230,23 @@ def model_train(
         - list of profitable objects by folds (if train_test == "fold")
 
     All windows are calendar-based and anchored on the dataset's last date; the gap between
-    train and validation is 2 weeks. When ``train_test == "fold"``, ``loop`` selects the
-    cross-validation scheme:
+    train and validation is 2 weeks. Each train window spans ``train_time_years`` years
+    (default 2). When ``train_test == "fold"``, ``loop`` selects the cross-validation scheme:
         - "outer": ``n_folds`` folds whose 3-month validation windows tile backwards from the
-          dataset's last date; each fold trains on the 2 years ending 2 weeks before its
-          validation window.
+          dataset's last date; each fold trains on the ``train_time_years`` years ending 2 weeks
+          before its validation window.
         - "inner": nested validation. For each of the ``n_folds`` outer folds, build 3 inner
-          folds whose 3-month validation windows slide back one calendar month each (months
-          22-24, 21-23, 20-22 of the outer fold's train block); each inner fold trains on the
-          2 years ending 2 weeks before its validation window. Results are aggregated across
-          all inner folds of all outer folds. Where windows overlap, oof keeps the prediction
-          of the first (most recent) fold that validated each row.
+          folds whose 3-month validation windows slide back one calendar month each (for the
+          default 2-year block: months 22-24, 21-23, 20-22 of the outer fold's train block);
+          each inner fold trains on the ``train_time_years`` years ending 2 weeks before its
+          validation window. Results are aggregated across all inner folds of all outer folds.
+          Where windows overlap, oof keeps the prediction of the first (most recent) fold that
+          validated each row.
 
     When ``train_test == "inference"`` and ``test_time_days`` is set, the last ``test_time_days`` days are
-    held out as test data and the model is trained on the 2 years ending where that test period
-    begins; if ``test_time_days`` is None, it trains on the 2 years ending at the dataset's last date.
+    held out as test data and the model is trained on the ``train_time_years`` years ending where
+    that test period begins; if ``test_time_days`` is None, it trains on the ``train_time_years``
+    years ending at the dataset's last date.
     """
     # Fold indices are used both positionally (X.iloc / oof) and by label (df.loc), so the
     # index must be a clean 0..n-1 range. Callers pass boolean-filtered slices, so reset it here.
@@ -167,7 +272,7 @@ def model_train(
                 val_end = last_date - pd.DateOffset(months=3 * fold)
                 val_start = val_end - pd.DateOffset(months=3)
                 train_end = val_start - pd.Timedelta(weeks=2)
-                train_start = train_end - pd.DateOffset(years=2)
+                train_start = train_end - pd.DateOffset(years=train_time_years)
 
                 fit_idx, val_idx = _window_indices(
                     time, df, bybit_tickers, train_start, train_end, val_start, val_end
@@ -227,7 +332,7 @@ def model_train(
                     val_end = anchor - pd.DateOffset(months=inner_fold)
                     val_start = val_end - pd.DateOffset(months=3)
                     train_end = val_start - pd.Timedelta(weeks=2)
-                    train_start = train_end - pd.DateOffset(years=2)
+                    train_start = train_end - pd.DateOffset(years=train_time_years)
 
                     fit_idx, val_idx = _window_indices(
                         time, df, bybit_tickers, train_start, train_end, val_start, val_end
@@ -300,9 +405,8 @@ def model_train(
             train_end = time.max() - pd.Timedelta(days=test_time_days)
         else:
             train_end = time.max()
-        print(f"Train on the last 2 years of data up to {train_end}")
-        # Match the fold scheme's 2-year train window.
-        train_start = train_end - pd.DateOffset(years=2)
+        print(f"Train on the last {train_time_years} years of data up to {train_end}")
+        train_start = train_end - pd.DateOffset(years=train_time_years)
         inf_mask = (time > train_start) & (time <= train_end)
         X_inf, y_inf = df.loc[inf_mask, features], df.loc[inf_mask, "target"]
         sw = df.loc[inf_mask, "weight"] if sample_weight is not None else None

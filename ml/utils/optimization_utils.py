@@ -63,6 +63,8 @@ def load_best_params(row_num: int = 0) -> dict:
             params["class_weight"] = None
         else:
             params["class_weight"] = "balanced"
+    else:
+        params["class_weight"] = None
     return params
 
 

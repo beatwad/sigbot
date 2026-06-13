@@ -6,7 +6,6 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 risk = 0.0026
-leverage = 4
 min_free_balance = 0.2
 open_comission = 0.00036
 close_comission = 0.001
@@ -20,6 +19,7 @@ def calculate_profit(
     last_price: float,
     tp: float,
     sl: float,
+    leverage: float,
 ) -> Tuple[float, float]:
     """Calculate profit change according to trade success and commissions."""
     if target == 1:
@@ -54,6 +54,7 @@ def backtest(
     high_bound: float,
     tp: float,
     sl: float,
+    leverage: float = 4,
     show_progress: bool = False,
     max_num_simult_trades: int = 0,
 ) -> Tuple[float, pd.DataFrame]:
@@ -128,7 +129,7 @@ def backtest(
             balance -= quantity * open_comission
             free_balance -= quantity * (1 + open_comission)
             profit, trade_profit = calculate_profit(
-                targets[i], quantity, first_prices[i], last_prices[i], tp, sl
+                targets[i], quantity, first_prices[i], last_prices[i], tp, sl, leverage
             )
         else:
             profit, trade_profit = 0.0, 0.0

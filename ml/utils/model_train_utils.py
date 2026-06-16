@@ -10,11 +10,6 @@ from sklearn.metrics import log_loss, precision_score
 
 from .feature_selection_utils import prepare_features
 
-# Thresholds for the per-fold profitable-hours filter (see get_profitable_hours). An hour is kept
-# only if it qualifies under both the Trust Interval (TI) and Rolling Mean (RM) criteria.
-TI_low_bound = 0.495
-RM_percent_above_0_5 = 60
-
 
 def q10(x):
     return x.quantile(0.1)
@@ -102,11 +97,13 @@ def _profitable_hours_rm(df: pd.DataFrame, RM_percent_above_0_5: float) -> list:
     return summary.query("percent_above_0_5 >= @RM_percent_above_0_5")["hour"].tolist()
 
 
-def get_profitable_hours(df: pd.DataFrame) -> Tuple[list, list]:
+def get_profitable_hours(
+    df: pd.DataFrame, TI_low_bound: float, RM_percent_above_0_5: float
+) -> Tuple[list, list]:
     """Compute profitable buy/sell hours from a (train) dataframe.
 
     For each ``ttype`` the hours found by Trust Interval (TI) and Rolling Mean (RM) are intersected,
-    using the module-level ``TI_low_bound`` and ``RM_percent_above_0_5`` thresholds.
+    using the ``TI_low_bound`` and ``RM_percent_above_0_5`` thresholds.
     """
     df_buy = df[df["ttype"] == "buy"]
     df_sell = df[df["ttype"] == "sell"]
@@ -166,15 +163,18 @@ def load_selected_features(
 
 def prepare_model_params(
     train_df: pd.DataFrame, params: dict
-) -> Tuple[dict, float, float, Optional[bool]]:
+) -> Tuple[dict, float, float, Optional[bool], float, float]:
     """Finalize LightGBM ``params`` and derive prediction bounds and sample weights.
 
-    Consumes ``high_bound``/``low_bound`` and ``sample_weight`` hyperparameters from ``params``
+    Consumes ``high_bound``/``low_bound``, ``sample_weight`` and the profitable-hours thresholds
+    (``TI_low_bound``/``RM_percent_above_0_5``) from ``params`` so they don't leak into LightGBM,
     and sets the fixed LightGBM training options. When a ``sample_weight`` scheme ("cos" or
     "linear") is requested, a time-based ``weight`` column is added to ``train_df`` in place.
 
-    Returns ``(params, high_bound, low_bound, sample_weight)`` where ``sample_weight`` is
-    ``True`` if weighting is enabled and ``None`` otherwise.
+    Returns ``(params, high_bound, low_bound, sample_weight, TI_low_bound, RM_percent_above_0_5)``
+    where ``sample_weight`` is ``True`` if weighting is enabled and ``None`` otherwise. The
+    profitable-hours thresholds fall back to ``model_train``'s defaults when absent from ``params``
+    (e.g. optuna rows produced before they were added to the search).
     """
     # set high and low bound for model predictions
     # p > high_bound -> 1, p < low_bound -> 0
@@ -182,6 +182,10 @@ def prepare_model_params(
         high_bound = params.pop("high_bound")
         del params["low_bound"]
     low_bound = 0
+
+    # profitable-hours thresholds are model_train args, not LightGBM params
+    TI_low_bound = params.pop("TI_low_bound", 0.5)
+    RM_percent_above_0_5 = params.pop("RM_percent_above_0_5", 75)
 
     # add object weights
     if "sample_weight" in params:
@@ -215,7 +219,7 @@ def prepare_model_params(
     params["importance_type"] = "gain"
     params["metric"] = "average_precison"
 
-    return params, high_bound, low_bound, sample_weight
+    return params, high_bound, low_bound, sample_weight, TI_low_bound, RM_percent_above_0_5
 
 
 def conf_ppv_npv_acc_score(
@@ -331,6 +335,8 @@ def model_train(
     train_time_years: int = 2,
     test_time_days: Optional[int] = None,
     verbose: bool = False,
+    TI_low_bound: float = 0.5,
+    RM_percent_above_0_5: float = 75,
     profitable_hours_path: str = "data/context/profitable_hours.csv",
 ) -> Tuple[lgb.LGBMClassifier, list, list, np.ndarray, list]:
     """
@@ -390,7 +396,9 @@ def model_train(
                 )
 
                 # determine profitable hours on this fold's train data and filter train/val by them
-                buy_hours, sell_hours = get_profitable_hours(df.loc[fit_idx])
+                buy_hours, sell_hours = get_profitable_hours(
+                    df.loc[fit_idx], TI_low_bound, RM_percent_above_0_5
+                )
                 fit_idx = _filter_idx_by_hours(df, fit_idx, buy_hours, sell_hours)
                 val_idx = _filter_idx_by_hours(df, val_idx, buy_hours, sell_hours)
 
@@ -456,7 +464,9 @@ def model_train(
                     )
 
                     # determine profitable hours on this fold's train data and filter train/val
-                    buy_hours, sell_hours = get_profitable_hours(df.loc[fit_idx])
+                    buy_hours, sell_hours = get_profitable_hours(
+                        df.loc[fit_idx], TI_low_bound, RM_percent_above_0_5
+                    )
                     fit_idx = _filter_idx_by_hours(df, fit_idx, buy_hours, sell_hours)
                     val_idx = _filter_idx_by_hours(df, val_idx, buy_hours, sell_hours)
 
@@ -533,7 +543,9 @@ def model_train(
         inf_mask = (time > train_start) & (time <= train_end)
 
         # determine profitable hours on the train window and filter the train rows by them
-        buy_hours, sell_hours = get_profitable_hours(df.loc[inf_mask])
+        buy_hours, sell_hours = get_profitable_hours(
+            df.loc[inf_mask], TI_low_bound, RM_percent_above_0_5
+        )
         train_idx = _filter_idx_by_hours(df, df.index[inf_mask].tolist(), buy_hours, sell_hours)
 
         X_inf, y_inf = df.loc[train_idx, features], df.loc[train_idx, "target"]

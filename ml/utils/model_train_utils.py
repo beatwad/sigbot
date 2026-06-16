@@ -1,4 +1,5 @@
-import ast
+import os
+from datetime import datetime
 from typing import List, Optional, Tuple, Union
 
 import lightgbm as lgb
@@ -9,29 +10,137 @@ from sklearn.metrics import log_loss, precision_score
 
 from .feature_selection_utils import prepare_features
 
+# Thresholds for the per-fold profitable-hours filter (see get_profitable_hours). An hour is kept
+# only if it qualifies under both the Trust Interval (TI) and Rolling Mean (RM) criteria.
+TI_low_bound = 0.495
+RM_percent_above_0_5 = 60
 
-def load_train_data(
-    train_path: str, profitable_hours_path: str, test_time_days: int
-) -> Tuple[pd.DataFrame, pd.Timestamp]:
-    """Load the training dataframe and keep only signals fired during profitable hours.
 
-    Filters to buy/sell signals whose hour-of-day is in the latest profitable-hours set, and
-    returns the filtered dataframe together with the test cutoff date (``test_time_days`` before
-    the last timestamp); rows after that date are held out as the test period.
+def q10(x):
+    return x.quantile(0.1)
+
+
+def q20(x):
+    return x.quantile(0.2)
+
+
+def q30(x):
+    return x.quantile(0.3)
+
+
+def q90(x):
+    return x.quantile(0.9)
+
+
+def _trust_interval(row, z=1.95):
+    """Wilson-style trust interval for a Bernoulli proportion (lower, upper)."""
+    sum_, val1 = row["total"], row["count"]
+    val2 = sum_ - val1
+    n = val1 + val2
+    p = val1 / n
+    low_bound = p - z * np.sqrt(p * (1 - p) / n)
+    high_bound = p + z * np.sqrt(p * (1 - p) / n)
+    return round(low_bound, 4), round(high_bound, 4)
+
+
+def _profitable_hours_ti(df: pd.DataFrame, TI_low_bound: float) -> list:
+    """Profitable hours by Trust Interval (TI).
+
+    Pivots `df` by hour-of-day and target, computes the trust interval of the
+    profitable ratio per hour, and keeps hours whose lower bound is at least
+    `TI_low_bound`.
     """
-    train_df = pd.read_pickle(train_path)
+    pvt = df[["target", "pattern", "time", "max_price_deviation"]].copy()
+    pvt["hour"] = pvt["time"].dt.hour
+    pvt = pvt.pivot_table(
+        index=["hour", "target"],
+        values=["pattern", "max_price_deviation"],
+        aggfunc={
+            "pattern": "count",
+            "max_price_deviation": ["median", q10, q20, q30, q90],
+        },
+    ).reset_index()
+    pvt.columns = [
+        "hour",
+        "target",
+        "max_price_dev_q50",
+        "max_price_dev_q10",
+        "max_price_dev_q20",
+        "max_price_dev_q30",
+        "max_price_dev_q90",
+        "pattern",
+    ]
+    pvt["total"] = pvt.groupby("hour")["pattern"].transform("sum")
+    pvt = pvt.rename(columns={"pattern": "count"})
+    pvt = pvt[pvt["target"] == 1]
+    pvt["trust_interval"] = pvt.apply(_trust_interval, axis=1)
+    mask = pvt["trust_interval"].apply(lambda x: x[0]) >= TI_low_bound
+    return pvt.loc[mask, "hour"].tolist()
+
+
+def _profitable_hours_rm(df: pd.DataFrame, RM_percent_above_0_5: float) -> list:
+    """Profitable hours by Rolling Mean (RM).
+
+    For each hour-of-day, takes the 168-period rolling mean of the target and
+    keeps hours whose rolling mean stays above 0.5 for at least
+    `RM_percent_above_0_5` percent of the time.
+    """
+    pvt = df[["time", "target"]].copy()
+    pvt["hour"] = pvt["time"].dt.hour
+    pvt = pvt.pivot_table(index="time", columns="hour", values="target", aggfunc="mean")
+
+    results = []
+    for hour in range(24):
+        if hour in pvt.columns:
+            valid_rolling = pvt[hour].dropna().rolling(window=168).mean().dropna()
+            pct_above = (valid_rolling > 0.5).mean() * 100 if len(valid_rolling) > 0 else np.nan
+        else:
+            pct_above = np.nan
+        results.append({"hour": hour, "percent_above_0_5": pct_above})
+
+    summary = pd.DataFrame(results)
+    return summary.query("percent_above_0_5 >= @RM_percent_above_0_5")["hour"].tolist()
+
+
+def get_profitable_hours(df: pd.DataFrame) -> Tuple[list, list]:
+    """Compute profitable buy/sell hours from a (train) dataframe.
+
+    For each ``ttype`` the hours found by Trust Interval (TI) and Rolling Mean (RM) are intersected,
+    using the module-level ``TI_low_bound`` and ``RM_percent_above_0_5`` thresholds.
+    """
+    df_buy = df[df["ttype"] == "buy"]
+    df_sell = df[df["ttype"] == "sell"]
+    buy_hours = sorted(
+        set(_profitable_hours_rm(df_buy, RM_percent_above_0_5))
+        & set(_profitable_hours_ti(df_buy, TI_low_bound))
+    )
+    sell_hours = sorted(
+        set(_profitable_hours_rm(df_sell, RM_percent_above_0_5))
+        & set(_profitable_hours_ti(df_sell, TI_low_bound))
+    )
+    return buy_hours, sell_hours
+
+
+def _filter_idx_by_hours(df: pd.DataFrame, idx: list, buy_hours: list, sell_hours: list) -> list:
+    """Keep only indices whose signal fired during a profitable hour for its ttype."""
+    sub = df.loc[idx]
+    hour = sub["time"].dt.hour
+    buy_mask = (sub["ttype"] == "buy") & hour.isin(buy_hours)
+    sell_mask = (sub["ttype"] == "sell") & hour.isin(sell_hours)
+    return sub[buy_mask | sell_mask].index.tolist()
+
+
+def load_train_data(train_path: str, test_time_days: int) -> Tuple[pd.DataFrame, pd.Timestamp]:
+    """Load the training dataframe and compute the test cutoff date.
+
+    Returns the dataframe together with the test cutoff date (``test_time_days`` before the last
+    timestamp); rows after that date are held out as the test period. Profitable-hours filtering is
+    applied per-fold on train data inside :func:`model_train`, not here.
+    """
+    train_df = pd.read_pickle(train_path).reset_index(drop=True)
 
     # all data for the last test_time_days days are test
     test_date = train_df["time"].max() - pd.to_timedelta(test_time_days, unit="D")
-
-    profitable_hours_df = pd.read_csv(profitable_hours_path)
-    latest = profitable_hours_df.iloc[-1]
-    buy_hours = ast.literal_eval(latest["profitable_buy_hours"])
-    sell_hours = ast.literal_eval(latest["profitable_sell_hours"])
-
-    buy_mask = (train_df["ttype"] == "buy") & (train_df["time"].dt.hour.isin(buy_hours))
-    sell_mask = (train_df["ttype"] == "sell") & (train_df["time"].dt.hour.isin(sell_hours))
-    train_df = train_df[buy_mask | sell_mask].reset_index(drop=True)
 
     return train_df, test_date
 
@@ -222,6 +331,7 @@ def model_train(
     train_time_years: int = 2,
     test_time_days: Optional[int] = None,
     verbose: bool = False,
+    profitable_hours_path: str = "data/context/profitable_hours.csv",
 ) -> Tuple[lgb.LGBMClassifier, list, list, np.ndarray, list]:
     """
     Train/validate model, return:
@@ -246,7 +356,8 @@ def model_train(
     When ``train_test == "inference"`` and ``test_time_days`` is set, the last ``test_time_days`` days are
     held out as test data and the model is trained on the ``train_time_years`` years ending where
     that test period begins; if ``test_time_days`` is None, it trains on the ``train_time_years``
-    years ending at the dataset's last date.
+    years ending at the dataset's last date and appends the profitable hours found on that train
+    window to ``profitable_hours_path`` (the CSV the live bot reads).
     """
     # Fold indices are used both positionally (X.iloc / oof) and by label (df.loc), so the
     # index must be a clean 0..n-1 range. Callers pass boolean-filtered slices, so reset it here.
@@ -277,6 +388,12 @@ def model_train(
                 fit_idx, val_idx = _window_indices(
                     time, df, bybit_tickers, train_start, train_end, val_start, val_end
                 )
+
+                # determine profitable hours on this fold's train data and filter train/val by them
+                buy_hours, sell_hours = get_profitable_hours(df.loc[fit_idx])
+                fit_idx = _filter_idx_by_hours(df, fit_idx, buy_hours, sell_hours)
+                val_idx = _filter_idx_by_hours(df, val_idx, buy_hours, sell_hours)
+
                 val_idxs.extend(val_idx)
 
                 if verbose:
@@ -337,6 +454,12 @@ def model_train(
                     fit_idx, val_idx = _window_indices(
                         time, df, bybit_tickers, train_start, train_end, val_start, val_end
                     )
+
+                    # determine profitable hours on this fold's train data and filter train/val
+                    buy_hours, sell_hours = get_profitable_hours(df.loc[fit_idx])
+                    fit_idx = _filter_idx_by_hours(df, fit_idx, buy_hours, sell_hours)
+                    val_idx = _filter_idx_by_hours(df, val_idx, buy_hours, sell_hours)
+
                     val_idxs.extend(val_idx)
 
                     if verbose:
@@ -408,8 +531,13 @@ def model_train(
         print(f"Train on the last {train_time_years} years of data up to {train_end}")
         train_start = train_end - pd.DateOffset(years=train_time_years)
         inf_mask = (time > train_start) & (time <= train_end)
-        X_inf, y_inf = df.loc[inf_mask, features], df.loc[inf_mask, "target"]
-        sw = df.loc[inf_mask, "weight"] if sample_weight is not None else None
+
+        # determine profitable hours on the train window and filter the train rows by them
+        buy_hours, sell_hours = get_profitable_hours(df.loc[inf_mask])
+        train_idx = _filter_idx_by_hours(df, df.index[inf_mask].tolist(), buy_hours, sell_hours)
+
+        X_inf, y_inf = df.loc[train_idx, features], df.loc[train_idx, "target"]
+        sw = df.loc[train_idx, "weight"] if sample_weight is not None else None
         model_lgb = lgb.LGBMClassifier(**params)
         model_lgb.fit(
             X_inf,
@@ -420,4 +548,37 @@ def model_train(
             callbacks=[lgb.log_evaluation(100)],
         )
 
-        return model_lgb, [], [], np.array([]), np.array([])
+        # held-out test indices (after train_end), filtered by the same profitable hours so the
+        # caller can backtest on the same hour set the model was trained on
+        if test_time_days is not None:
+            test_mask = time > train_end
+            if bybit_tickers is not None:
+                test_mask = test_mask & df["ticker"].isin(bybit_tickers)
+            test_idx = _filter_idx_by_hours(df, df.index[test_mask].tolist(), buy_hours, sell_hours)
+        else:
+            test_idx = []
+
+        # When training the final model on all data (no held-out test), persist the profitable
+        # hours so the live bot (ml/inference.py) predicts only during them. Mirrors the row layout
+        # of the former find_profitable_hours, minus the per-method (RM/TI) hour lists.
+        if test_time_days is None:
+            new_row = pd.DataFrame(
+                [
+                    {
+                        "time": datetime.now(),
+                        "test_date": None,
+                        "TI_low_bound": TI_low_bound,
+                        "RM_percent_above_0_5": RM_percent_above_0_5,
+                        "profitable_buy_hours": buy_hours,
+                        "profitable_sell_hours": sell_hours,
+                    }
+                ]
+            )
+            os.makedirs(os.path.dirname(profitable_hours_path), exist_ok=True)
+            if os.path.exists(profitable_hours_path):
+                new_row = pd.concat(
+                    [pd.read_csv(profitable_hours_path), new_row], ignore_index=True
+                )
+            new_row.to_csv(profitable_hours_path, index=False)
+
+        return model_lgb, [], [], np.array([]), np.array(test_idx)

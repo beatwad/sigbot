@@ -111,8 +111,6 @@ def make_objective(
             "feature_num": trial.suggest_int("feature_num", 30, 600),
             "corr_thresh": trial.suggest_float("corr_thresh", 0.5, 0.99),
             "sample_weight": trial.suggest_categorical("sample_weight", [None, "cos", "linear"]),
-            "TI_low_bound": trial.suggest_float("TI_low_bound", 0.45, 0.55),
-            "RM_percent_above_0_5": trial.suggest_float("RM_percent_above_0_5", 50.0, 80.0),
         }
 
         # goss is not supported by the CUDA backend; run it on CPU, GPU otherwise
@@ -131,8 +129,6 @@ def make_objective(
         corr_thresh = params.pop("corr_thresh")
         sample_weight = params.pop("sample_weight")
         feature_num = params.pop("feature_num")
-        TI_low_bound = params.pop("TI_low_bound")
-        RM_percent_above_0_5 = params.pop("RM_percent_above_0_5")
 
         # Only deep-copy train_df when we need to attach a weight column; otherwise read it
         # directly (prepare_features and model_train do not mutate it).
@@ -169,8 +165,6 @@ def make_objective(
             bybit_tickers=bybit_tickers,
             loop="inner",
             verbose=False,
-            TI_low_bound=TI_low_bound,
-            RM_percent_above_0_5=RM_percent_above_0_5,
         )
 
         y = df["target"].iloc[val_idxs]

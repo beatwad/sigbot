@@ -28,10 +28,6 @@ class Model:
         List of favorite exchanges to filter predictions.
     feature_dict : dict
         Dictionary of features which are used for model prediction.
-    time_to_predict_buy : list
-        List of hours when the model is allowed to make buy predictions.
-    time_to_predict_sell : list
-        List of hours when the model is allowed to make sell predictions.
     cols_to_scale : list
         List of numerical columns to be scaled.
     pred_thresh : float
@@ -50,12 +46,6 @@ class Model:
         feature_path = configs["Model"]["params"]["feature_path"]
         with open(feature_path) as f:
             self.feature_dict = json.load(f)
-        # time (hour) when model is allowed to predict — loaded from profitable hours CSV
-        profitable_hours_path = configs["Model"]["params"]["profitable_hours_path"]
-        profitable_hours = pd.read_csv(profitable_hours_path)
-        last_row = profitable_hours.iloc[-1]
-        self.time_to_predict_buy = json.loads(last_row["profitable_buy_hours"])
-        self.time_to_predict_sell = json.loads(last_row["profitable_sell_hours"])
         self.cols_to_scale = configs["Model"]["params"]["cols_to_scale"]
         self.pred_thresh = configs["Model"]["params"]["pred_thresh"]
 
@@ -110,11 +100,6 @@ class Model:
             point_idx = point[2]
             pattern = point[5]
             point_time = tmp_df.iloc[point_idx, tmp_df.columns.get_loc("time")]
-            # predict only at selected hours
-            if ttype == "buy" and point_time.hour not in self.time_to_predict_buy:
-                continue
-            if ttype == "sell" and point_time.hour not in self.time_to_predict_sell:
-                continue
             # predict only for selected patterns and exchanges
             if (
                 pattern not in self.patterns_to_predict

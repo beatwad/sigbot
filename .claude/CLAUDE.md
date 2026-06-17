@@ -101,7 +101,7 @@ All runtime behaviour is driven by JSON config files in `config/`. The active co
 | `optimization_utils.py` | Optuna objective and study helpers |
 | `boosting_uncertainty.py` | Uncertainty estimation for boosting predictions |
 | `reparation_utils.py` | Utilities for fixing/patching data issues |
-| `stat_tests.py` | Statistical tests (e.g. profitable-hours analysis) |
+| `stat_tests.py` | Statistical tests (e.g. better hyperparameters analysis) |
 | `ticker_loader.py` | Loads ticker lists (e.g. from Bybit) for data preparation |
 
 ### Model artifacts (`ml/model/`)
@@ -168,7 +168,6 @@ Market-wide context files joined into training features.
 |---|---|
 | `btcd.csv` | BTC dominance daily OHLCV (columns: `time`, `btcd_open/high/low/close/volume`). Historical data from 2014. |
 | `btcdom.csv` | BTC.D index 4h OHLCV (columns: `time`, `btcdom_open/high/low/close/volume`). Data from 2021. |
-| `profitable_hours.csv` | Output of statistical hour-of-day analysis. Columns: `time`, `test_date`, `TI_low_bound`, `RM_percent_above_0_5`, `profitable_buy_hours_RM`, `profitable_buy_hours_TI`, `profitable_buy_hours` (intersection of RM and TI), `profitable_sell_hours_RM`, `profitable_sell_hours_TI`, `profitable_sell_hours`. Used to filter signal firing times. |
 
 ## Important Constraints
 

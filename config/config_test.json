@@ -433,7 +433,6 @@
     "params": {
       "model_path": "ml/model/lgbm.pkl",
       "feature_path": "ml/model/features.json",
-      "profitable_hours_path": "ml/data/profitable_hours.csv",
       "patterns_to_predict": [
         "STOCH_RSI_Volume24"
       ],

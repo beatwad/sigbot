@@ -6,9 +6,9 @@ import pandas as pd
 from scipy.stats import ttest_rel
 from shaphypetune import BoostBoruta
 from sklearn.feature_selection import RFECV
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix, log_loss
-from sklearn.model_selection import TimeSeriesSplit
 from sklearn.preprocessing import StandardScaler
 
 try:
@@ -31,22 +31,31 @@ def ppv_npv_acc_lgbm(y_true, y_pred):
     return "ppv_npv_acc", ppv_npv_acc(y_true, y_pred), False
 
 
-def boruta_selction(df, features, params, n_folds=4):
+def boruta_selction(df, features, params, n_folds=4, train_time_years=1):
+    from ml.utils.model_train_utils import _window_indices
+
     boruta_df_ = pd.DataFrame()
 
+    df = df.reset_index(drop=True)
     X, y, time = df[features], df["target"], df["time"]
+    last_date = time.max()
 
-    tss = TimeSeriesSplit(
-        gap=0, max_train_size=None, n_splits=n_folds, test_size=(len(X) * 2) // (n_folds * 3)
-    )
-
-    # Stratify based on Class and Alpha (3 types of conditions)
-    for fold, (train_idx, val_idx) in enumerate(tss.split(time)):
+    for fold in range(n_folds):
         print(f"Fold: {fold}")
-        # Split the dataset according to the fold indexes.
-        X_train = X.iloc[train_idx]
+        # 2-year train / 3-month validation windows tiling backwards from the last date, with a
+        # 2-week gap between them (same split as the outer loop of model_train).
+        val_end = last_date - pd.DateOffset(months=3 * fold)
+        val_start = val_end - pd.DateOffset(months=3)
+        train_end = val_start - pd.Timedelta(weeks=2)
+        train_start = train_end - pd.DateOffset(years=train_time_years)
+
+        fit_idx, val_idx = _window_indices(
+            time, df, None, train_start, train_end, val_start, val_end
+        )
+
+        X_train = X.iloc[fit_idx]
         X_val = X.iloc[val_idx]
-        y_train = y.iloc[train_idx]
+        y_train = y.iloc[fit_idx]
         y_val = y.iloc[val_idx]
 
         clf = lgb.LGBMClassifier(**params)
@@ -79,34 +88,38 @@ def boruta_selction(df, features, params, n_folds=4):
     return boruta_df_
 
 
-def lgbm_tuning(df, features, params, bybit_tickers, n_folds=4, n_repeats=1, permut=False):
+def lgbm_tuning(
+    df, features, params, bybit_tickers, n_folds=4, n_repeats=1, permut=False, train_time_years=1
+):
+    from ml.utils.model_train_utils import _window_indices
+
     outer_cv_score = []
 
     perm_df_ = pd.DataFrame()
     feature_importances_ = pd.DataFrame()
 
+    df = df.reset_index(drop=True)
     X, y, time = df[features], df["target"], df["time"]
+    last_date = time.max()
 
     for repeat in range(n_repeats):
         print(f"Repeat #{repeat + 1}")
 
-        tss = TimeSeriesSplit(
-            gap=0, max_train_size=None, n_splits=n_folds, test_size=(len(X) * 2) // (n_folds * 3)
-        )
-
         oof = np.zeros(len(df))
+        all_val_idx = []
 
-        for fold, (fit_idx, val_idx) in enumerate(tss.split(time)):
-            if fold == 0:
-                first_val_idx = val_idx[0]
+        for fold in range(n_folds):
+            # 2-year train / 3-month validation windows tiling backwards from the last date, with a
+            # 2-week gap between them (same split as the outer loop of model_train).
+            val_end = last_date - pd.DateOffset(months=3 * fold)
+            val_start = val_end - pd.DateOffset(months=3)
+            train_end = val_start - pd.Timedelta(weeks=2)
+            train_start = train_end - pd.DateOffset(years=train_time_years)
 
-            max_train_time = time[fit_idx].max() + pd.to_timedelta(96, unit="h")
-            max_val_time = time[val_idx].max()
-            val_idx = time[
-                (time > max_train_time)
-                & (time <= max_val_time)
-                & (df["ticker"].isin(bybit_tickers))
-            ].index.tolist()
+            fit_idx, val_idx = _window_indices(
+                time, df, bybit_tickers, train_start, train_end, val_start, val_end
+            )
+            all_val_idx.extend(val_idx)
 
             X_train = X.iloc[fit_idx]
             X_val = X.iloc[val_idx]
@@ -156,7 +169,8 @@ def lgbm_tuning(df, features, params, bybit_tickers, n_folds=4, n_repeats=1, per
                 else:
                     perm_df_ += perm_importance_df
 
-        outer_cv = log_loss(y[first_val_idx:], oof[first_val_idx:])
+        all_val_idx = sorted(set(all_val_idx))
+        outer_cv = log_loss(y.iloc[all_val_idx], oof[all_val_idx])
         outer_cv_score.append(outer_cv)
 
     print(f"Outer Holdout avg score: log_loss: {np.mean(outer_cv_score):.5f}")

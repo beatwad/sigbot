@@ -13,3 +13,4 @@ services:
     env_file:
       - .env
     command: python3 main.py
+    restart: unless-stopped

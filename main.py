@@ -14,7 +14,7 @@ from bot.bot import SigBot
 from config.config import ConfigFactory
 from log.log import format_exception
 
-logger.add("log/log.log")
+logger.add("log/log.log", rotation="20 MB", retention=10)
 
 
 class Main:

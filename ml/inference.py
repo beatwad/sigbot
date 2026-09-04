@@ -9,7 +9,7 @@ import json
 import joblib
 import pandas as pd
 from loguru import logger
-from utils.data_utils import add_indicators, merge_btc_dominance, merge_fng, scale_cols
+from ml.utils.data_utils import add_indicators, merge_btc_dominance, merge_fng, scale_cols
 
 
 class Model:

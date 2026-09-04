@@ -14,3 +14,5 @@ services:
       - .env
     command: python3 main.py
     restart: unless-stopped
+    # Host has 2 vCPUs and also runs the VPN; leave it a core.
+    cpus: 1.0
